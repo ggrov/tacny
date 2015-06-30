@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TacnyDriver", "TacnyDriver\TacnyDriver.csproj", "{6F761865-501E-4F68-9F6F-5DFE4923CCA3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TacnyMain", "Core\TacnyMain.csproj", "{5C725137-5006-44D6-AEE3-7E11AA446897}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D68D70F0-BD07-4176-B3DE-0B00612F84F7} = {D68D70F0-BD07-4176-B3DE-0B00612F84F7}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatementInterpreter", "StatementInterpreter\StatementInterpreter.csproj", "{D68D70F0-BD07-4176-B3DE-0B00612F84F7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6F761865-501E-4F68-9F6F-5DFE4923CCA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F761865-501E-4F68-9F6F-5DFE4923CCA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F761865-501E-4F68-9F6F-5DFE4923CCA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F761865-501E-4F68-9F6F-5DFE4923CCA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C725137-5006-44D6-AEE3-7E11AA446897}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C725137-5006-44D6-AEE3-7E11AA446897}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C725137-5006-44D6-AEE3-7E11AA446897}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C725137-5006-44D6-AEE3-7E11AA446897}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D68D70F0-BD07-4176-B3DE-0B00612F84F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D68D70F0-BD07-4176-B3DE-0B00612F84F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D68D70F0-BD07-4176-B3DE-0B00612F84F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D68D70F0-BD07-4176-B3DE-0B00612F84F7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+EndGlobal
