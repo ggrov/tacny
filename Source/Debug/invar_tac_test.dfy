@@ -5,7 +5,6 @@ predicate method is_even(s : int)
 
 tactic invar_tactic(i : int, f : bool) 
 {	
-/*
 	var aaa := extract_guard();
     aaa := replace_operator("<", "<=", aaa);
    	var invar2 := create_invariant(aaa);
@@ -13,11 +12,7 @@ tactic invar_tactic(i : int, f : bool)
 	var qqq := replace_singleton(i, |s|, f);  // replace |s| with i in formula f
 	var invar := create_invariant(qqq); // creates an invariant from a given expression
     add_invariant(invar);
-*/	
-if 1 == 1
-    {
-    	extract_guard();
-    }
+
 }
 
 method max(s : seq<char>) returns (max : char)
@@ -26,7 +21,7 @@ ensures forall k :: 0 <= k < |s| ==> max >= s[k]
 	var i := 0;
 	while (i < |s|)
 	// go through every updatestmt if its in tac dic resolve tac body
-	invar_tactic(i, forall k :: 0 <= k < |s| ==> |s| >= s[k]) || guard_tactic();
+	invar_tactic(i, forall k :: 0 <= k < |s| ==> |s| >= s[k]);
 	{
 		if(s[i] >= max) {
 			max := s[i];
