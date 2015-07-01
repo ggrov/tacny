@@ -9,9 +9,10 @@ tactic invar_tactic(i : int, f : bool)
     aaa := replace_operator("<", "<=", aaa);
    	var invar2 := create_invariant(aaa);
     add_invariant(invar2);
-	var qqq := replace_singleton(i, |s|, f);  // replace |s| with i in formula f
+    is_valid();
+	/*var qqq := replace_singleton(i, |s|, f);  // replace |s| with i in formula f
 	var invar := create_invariant(qqq); // creates an invariant from a given expression
-    add_invariant(invar);
+    add_invariant(invar);*/
 
 }
 
@@ -21,7 +22,7 @@ ensures forall k :: 0 <= k < |s| ==> max >= s[k]
 	var i := 0;
 	while (i < |s|)
 	// go through every updatestmt if its in tac dic resolve tac body
-	invar_tactic(i, forall k :: 0 <= k < |s| ==> |s| >= s[k]);
+	invar_tactic(i, forall k :: 0 <= k < |s| ==> max >= s[k]);
 	{
 		if(s[i] >= max) {
 			max := s[i];

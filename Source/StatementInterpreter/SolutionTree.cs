@@ -140,6 +140,146 @@ namespace Tacny
             }
         }
 
+        public string GenerateProgram(ref Dafny.Program prog)
+        {
+            if (!isLeaf())
+                throw new Exception("Only leaf nodes can be generated to programs");
+
+            List<Dafny.Program> prog_list = new List<Dafny.Program>();
+            Action ac = this.state;
+            Method m = (Method)ac.md;
+            UpdateStmt tac_call = ac.tac_call;
+            List<Statement> body = m.Body.Body;
+            body = InsertSolution(body, tac_call, ac.resolved);
+
+            m = new Method(m.tok, m.Name, m.HasStaticKeyword, m.IsGhost,
+                m.TypeArgs, m.Ins, m.Outs, m.Req, m.Mod, m.Ens, m.Decreases,
+                new BlockStmt(m.Body.Tok, m.Body.EndTok, body), m.Attributes, m.SignatureEllipsis);
+            ClassDecl curDecl;
+
+            for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++)
+            {
+                TopLevelDecl d = prog.DefaultModuleDef.TopLevelDecls[i];
+                if (d is ClassDecl)
+                {
+                    // scan each member for tactic calls and resolve if found
+                    curDecl = (ClassDecl)d;
+                    for (int j = 0; j < curDecl.Members.Count; j++)
+                    {
+                        MemberDecl md = curDecl.Members[j];
+                        if (md is Method)
+                        {
+                            Method old_m = (Method)md;
+                            if (old_m.Name == m.Name)
+                            {
+                                curDecl.Members[j] = m;
+                            }
+                        }
+                    }
+                    prog.DefaultModuleDef.TopLevelDecls[i] = RemoveTactics(curDecl);
+                }
+            }
+
+            return null;
+        }
+
+        private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)
+        {
+            WhileStmt ws = null;
+            BlockStmt bs = null;
+            int index = body.IndexOf(tac_call);
+            List<Statement> newBody = new List<Statement>();
+            if (index == 0)
+            {
+                newBody = body;
+                newBody.InsertRange(0, solution);
+                return newBody;
+            }
+
+            // check where from tac_call has been made
+            int i = index + 1;
+            while (i < body.Count)
+            {
+                Statement stmt = body[i];
+                // if we found a block statement check behind to find the asociated while statement
+                if (stmt is BlockStmt)
+                {
+                    int j = index;
+                    while (j > 0)
+                    {
+                        Statement stmt_2 = body[j];
+                        if (stmt_2 is WhileStmt)
+                        {
+                            ws = (WhileStmt)stmt_2;
+                            break;
+                        }
+                        else if (!(stmt_2 is UpdateStmt))
+                        {
+                            return null;
+                        }
+
+                        j--;
+                    }
+                    bs = (BlockStmt)stmt;
+                    break;
+                }
+                else if (!(stmt is UpdateStmt))
+                {
+                    return null;
+                }
+
+                i++;
+            }
+            //// tactic called from a while statement
+            if (ws != null && bs != null)
+            {
+                Statement[] tmp = body.ToArray();
+                int l_bound = body.IndexOf(ws);
+                int u_boud = body.IndexOf(bs);
+                // tactic called in a while statement should 
+                //  return onlyt a single solution item which is a WhileStmt
+                WhileStmt mod_ws = (WhileStmt)solution[0];
+                mod_ws = new WhileStmt(mod_ws.Tok, mod_ws.EndTok, mod_ws.Guard, mod_ws.Invariants,
+                    mod_ws.Decreases, mod_ws.Mod, bs);
+                tmp[l_bound] = mod_ws;
+                l_bound++;
+
+
+                // for now remove everything between while stmt and block stmt
+                while (l_bound <= u_boud)
+                {
+                    tmp[l_bound] = null;
+                    l_bound++;
+                }
+
+                foreach (Statement st in tmp)
+                {
+                    if (st != null)
+                        newBody.Add(st);
+                }
+            }
+            else
+            {
+                newBody = body;
+                newBody.InsertRange(index, solution);
+            }
+
+            return newBody;
+        }
+
+        private static TopLevelDecl RemoveTactics(ClassDecl cd)
+        {
+            List<MemberDecl> mdl = new List<MemberDecl>();
+            foreach (MemberDecl md in cd.Members)
+            {
+                if (!(md is Tactic))
+                    mdl.Add(md);
+
+            }
+            return new ClassDecl(cd.tok, cd.Name, cd.Module, cd.TypeArgs, mdl, cd.Attributes, cd.TraitsTyp);
+        }
+
+
     }
 
 

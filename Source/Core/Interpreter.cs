@@ -69,16 +69,6 @@ namespace Tacny
 
     public class Interpreter : ResolutionErrorReporter
     {
-        enum Atomic
-        {
-            UNDEFINED = 0,
-            ASSERT,
-            ADD_INVAR,
-            CREATE_INVAR,
-            REPLACE_SINGLETON,
-            EXTRACT_GUARD,
-            REPLACE_OP
-        };
 
         private Dictionary<string, MemberDecl> tactics = new Dictionary<string, MemberDecl>();
         private Dafny.Program program;
@@ -188,11 +178,14 @@ namespace Tacny
         private string VerifySolutionTree(SolutionTree sol_tree, ref Dafny.Program result)
         {
             string err = null;
+            result = null;
             if (sol_tree.isLeaf())
             {
                 if (!sol_tree.isFinal)
-                    return "VerifdySolutionTree: Received non final leaf";
-                Dafny.Program prog = GenerateProgram(sol_tree);
+                    return "VerifySolutionTree: Received non final leaf";
+                Dafny.Program prog;
+                Tacny.Main.ParseCheck(fileNames, programId, out prog);
+                sol_tree.GenerateProgram(ref prog);
                 err = Tacny.Main.ResolveProgram(prog);
                 if (err != null)
                     return err;
@@ -214,149 +207,14 @@ namespace Tacny
                 foreach (SolutionTree child in sol_tree.children)
                 {
                     err = VerifySolutionTree(child, ref result);
-                    if (err == "done")
-                        return null;
+                    if (result != null)
+                        break;
+                   
                 }
             }
-            return "VerifySolution: Unable to verifyt the generated soution";
-        }
-
-        private Dafny.Program GenerateProgram(SolutionTree st)
-        {
-            List<Dafny.Program> prog_list = new List<Dafny.Program>();
-            Action ac = st.state;
-            Method m = (Method)ac.md;
-            UpdateStmt tac_call = ac.tac_call;
-            List<Statement> body = m.Body.Body;
-            body = InsertSolution(body, tac_call, ac.resolved);
-
-            m = new Method(m.tok, m.Name, m.HasStaticKeyword, m.IsGhost,
-                m.TypeArgs, m.Ins, m.Outs, m.Req, m.Mod, m.Ens, m.Decreases,
-                new BlockStmt(m.Body.Tok, m.Body.EndTok, body), m.Attributes, m.SignatureEllipsis);
-            Dafny.Program prog;
-            Tacny.Main.ParseCheck(fileNames, programId, out prog);
-            ClassDecl curDecl;
-
-            for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++)
-            {
-                TopLevelDecl d = prog.DefaultModuleDef.TopLevelDecls[i];
-                if (d is ClassDecl)
-                {
-                    // scan each member for tactic calls and resolve if found
-                    curDecl = (ClassDecl)d;
-                    for (int j = 0; j < curDecl.Members.Count; j++)
-                    {
-                        MemberDecl md = curDecl.Members[j];
-                        if (md is Method)
-                        {
-                            Method old_m = (Method)md;
-                            if (old_m.Name == m.Name)
-                            {
-                                curDecl.Members[j] = m;
-                            }
-                        }
-                    }
-                    prog.DefaultModuleDef.TopLevelDecls[i] = RemoveTactics(curDecl);
-                }
-            }
-
-            return prog;
-        }
-
-        private List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)
-        {
-            WhileStmt ws = null;
-            BlockStmt bs = null;
-            int index = body.IndexOf(tac_call);
-            List<Statement> newBody = new List<Statement>();
-            if (index == 0)
-            {
-                newBody = body;
-                newBody.InsertRange(0, solution);
-                return newBody;
-            }
-
-            // check where from tac_call has been made
-            int i = index+1;
-            while (i < body.Count)
-            {
-                Statement stmt = body[i];
-                // if we found a block statement check behind to find the asociated while statement
-                if (stmt is BlockStmt)
-                {
-                    int j = index;
-                    while (j > 0)
-                    {
-                        Statement stmt_2 = body[j];
-                        if (stmt_2 is WhileStmt)
-                        {
-                            ws = (WhileStmt)stmt_2;
-                            break;
-                        }
-                        else if (!(stmt_2 is UpdateStmt))
-                        {
-                            return null;
-                        }
-
-                        j--;
-                    }
-                    bs = (BlockStmt)stmt;
-                    break;
-                }
-                else if (!(stmt is UpdateStmt))
-                {
-                    return null;
-                }
-
-                i++;
-            }
-            //// tactic called from a while statement
-            if (ws != null && bs != null)
-            {
-                Statement[] tmp = body.ToArray();
-                int l_bound = body.IndexOf(ws);
-                int u_boud = body.IndexOf(bs);
-                // tactic called in a while statement should 
-                //  return onlyt a single solution item which is a WhileStmt
-                WhileStmt mod_ws = (WhileStmt)solution[0];
-                mod_ws = new WhileStmt(mod_ws.Tok, mod_ws.EndTok, mod_ws.Guard, mod_ws.Invariants,
-                    mod_ws.Decreases, mod_ws.Mod, bs);
-                tmp[l_bound] = mod_ws;
-                l_bound++;
-                
-
-                // for now remove everything between while stmt and block stmt
-                while (l_bound  <= u_boud)
-                {
-                    tmp[l_bound] = null;
-                    l_bound++;
-                }
-
-                foreach (Statement st in tmp)
-                {
-                    if (st != null)
-                        newBody.Add(st);
-                }
-            }
-            else
-            {
-                newBody = body;
-                newBody.InsertRange(index, solution);
-            }
-
-            return newBody;
-        }
-
-        private TopLevelDecl RemoveTactics(ClassDecl cd)
-        {
-            List<MemberDecl> mdl = new List<MemberDecl>();
-            foreach (MemberDecl md in cd.Members)
-            {
-                if (!(md is Tactic))
-                    mdl.Add(md);
-
-            }
-            return new ClassDecl(cd.tok, cd.Name, cd.Module, cd.TypeArgs, mdl, cd.Attributes, cd.TraitsTyp);
+            if (result != null)
+                return null;
+            return "VerifySolution: Unable to verify the generated soution";
         }
 
         // will probably require some handling to unresolvable tactics
@@ -399,7 +257,7 @@ namespace Tacny
             return null;
         }
 
-        private List<Statement> CleanBody(List<Statement> oldBody)
+        private static List<Statement> CleanBody(List<Statement> oldBody)
         {
             List<Statement> newBody = new List<Statement>();
             for (int i = 0; i < oldBody.Count; i++)
@@ -456,7 +314,7 @@ namespace Tacny
 
             foreach (Statement st in tac.Body.Body)
             {
-                err = CallAction(st, action, ref solution_tree);
+                err = Action.CallAction(st, action, ref solution_tree);
                 if (err != null)
                     Error(st, err, null);
                 solution_tree = solution_tree.GetLeftMost();
@@ -496,7 +354,7 @@ namespace Tacny
                 for (int i = index + 1; i < ac.tac.Body.Body.Count; i++)
                 {
                     
-                    CallAction(ac.tac.Body.Body[i], ac, ref solution_tree);
+                    Action.CallAction(ac.tac.Body.Body[i], ac, ref solution_tree);
                     solution_tree = solution_tree.GetLeftMostUndersolved();
                     ac = solution_tree.state;
                 }
@@ -519,74 +377,7 @@ namespace Tacny
             return null;
         }
 
-        private static string CallAction(Statement st, Action action,
-            ref SolutionTree solution_tree)
-        {
-            string err;
-            switch (GetType(st))
-            {
-                case Atomic.CREATE_INVAR:   // Create invariants from preconditions
-                    err = action.CreateInvar(st, ref solution_tree);
-                    break;
-                case Atomic.ADD_INVAR:      // Add invariants to dafny program
-                    err = action.AddInvar(st, ref solution_tree);
-                    break;
-                case Atomic.REPLACE_SINGLETON:
-                    err = action.ReplaceSingleton(st, ref solution_tree);
-                    break;
-                case Atomic.EXTRACT_GUARD:
-                    err = action.ExtractGuard(st, ref solution_tree);
-                    break;
-                case Atomic.REPLACE_OP:
-                    err = action.ReplaceOperator(st, ref solution_tree);
-                    break;
-                default:
-                    throw new tcce.UnreachableException();
-            }
-            return err;
-        }
-
-
-        private static Atomic GetType(Statement s)
-        {
-            Contract.Requires(s != null);
-            ExprRhs er;
-            UpdateStmt us;
-            if (s is UpdateStmt)
-            {
-                us = s as UpdateStmt;
-
-            }
-            else if (s is VarDeclStmt)
-            {
-                VarDeclStmt vds = s as VarDeclStmt;
-                us = vds.Update as UpdateStmt;
-            }
-            else
-            {
-                return Atomic.UNDEFINED;
-            }
-
-            er = (ExprRhs)us.Rhss[0];
-            ApplySuffix ass = er.Expr as ApplySuffix;
-
-            switch (ass.Lhs.tok.val)
-            {
-                case "add_assert":
-                    return Atomic.ASSERT;
-                case "add_invariant":
-                    return Atomic.ADD_INVAR;
-                case "create_invariant":
-                    return Atomic.CREATE_INVAR;
-                case "extract_guard":
-                    return Atomic.EXTRACT_GUARD;
-                case "replace_operator":
-                    return Atomic.REPLACE_OP;
-                case "replace_singleton":
-                    return Atomic.REPLACE_SINGLETON;
-                default:
-                    return Atomic.UNDEFINED;
-            }
-        }
+      
+  
     }
 }
