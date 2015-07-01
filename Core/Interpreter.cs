@@ -71,22 +71,18 @@ namespace Tacny
     {
 
         private Dictionary<string, MemberDecl> tactics = new Dictionary<string, MemberDecl>();
-        private Dafny.Program program;
+        private Program tacnyProgram;
         private SolutionTree solution_tree = null;
-        private IList<string> fileNames;
-        private string programId;
 
-        public Interpreter(Dafny.Program program, IList<string> fileNames, string programId)
+        public Interpreter(Program tacnyProgram)
         {
-            Contract.Requires(program != null);
-            this.program = program;
-            this.fileNames = fileNames;
-            this.programId = programId;
+            Contract.Requires(tacnyProgram != null);
+            this.tacnyProgram = tacnyProgram;
         }
 
         public bool HasTactics()
         {
-            foreach (TopLevelDecl tld in program.DefaultModuleDef.TopLevelDecls)
+            foreach (TopLevelDecl tld in tacnyProgram.program.DefaultModuleDef.TopLevelDecls)
             {
                 if (tld is Dafny.ClassDecl)
                 {
@@ -136,10 +132,11 @@ namespace Tacny
             return false;
         }
 
-        public string ResolveProgram(ref Dafny.Program prg)
+        public string ResolveProgram()
         {
             ClassDecl curDecl;
             string err;
+            Dafny.Program prg = tacnyProgram.program;
 
             for (int i = 0; i < prg.DefaultModuleDef.TopLevelDecls.Count; i++)
             {
@@ -166,6 +163,9 @@ namespace Tacny
             }
 
             err = VerifySolutionTree(solution_tree, ref prg);
+            if (err != null)
+                tacnyProgram.program = prg;
+
             return err;
         }
 
@@ -183,24 +183,20 @@ namespace Tacny
             {
                 if (!sol_tree.isFinal)
                     return "VerifySolutionTree: Received non final leaf";
-                Dafny.Program prog;
-                Tacny.Main.ParseCheck(fileNames, programId, out prog);
+                Dafny.Program prog = tacnyProgram.NewProgram();
                 sol_tree.GenerateProgram(ref prog);
-                err = Tacny.Main.ResolveProgram(prog);
+                err = Program.ResolveProgram(prog);
                 if (err != null)
                     return err;
-                Bpl.Program boogieProgram;
-                PipelineOutcome po;
-                Bpl.PipelineStatistics stats;
-
-                Tacny.Main.Translate(prog, fileNames, programId, out boogieProgram);
-                po = Tacny.Main.BoogiePipeline(boogieProgram, prog, fileNames, programId, out stats);
-                if (stats.ErrorCount == 0)
+                Program.MaybePrintProgram(prog, DafnyOptions.O.DafnyPrintResolvedFile);
+                tacnyProgram.VerifyProgram(prog);
+                if (tacnyProgram.stats.ErrorCount == 0)
                 {
                     result = prog;
+
                     return "done";
                 }
-                // do something with resolution results'in the future
+
             }
             else
             {

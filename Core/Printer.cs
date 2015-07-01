@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Diagnostics.Contracts;
-using System.Text;
 using Microsoft.Dafny;
+using Dafny = Microsoft.Dafny;
 using Bpl = Microsoft.Boogie;
 
 namespace Tacny
 {
-    class Printer : Microsoft.Dafny.Printer
+    class Printer : Dafny.Printer
     {
         TextWriter wr;
         DafnyOptions.PrintModes printMode;
@@ -21,7 +19,7 @@ namespace Tacny
             this.printMode = printMode;
         }
 
-        public new void PrintProgram(Program prog)
+        public void PrintProgram(Dafny.Program prog)
         {
             Contract.Requires(prog != null);
             if (Bpl.CommandLineOptions.Clo.ShowEnv != Bpl.CommandLineOptions.ShowEnvironment.Never)

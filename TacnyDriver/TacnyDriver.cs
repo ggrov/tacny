@@ -129,6 +129,7 @@ namespace Tacny
         static ExitValue ProcessFiles(IList<string/*!*/>/*!*/ fileNames, bool lookForSnapshots = true, string programId = null)
         {
             Contract.Requires(tcce.NonNullElements(fileNames));
+            string err;
 
             if (programId == null)
             {
@@ -167,20 +168,23 @@ namespace Tacny
 
             using (XmlFileScope xf = new XmlFileScope(CommandLineOptions.Clo.XmlSink, fileNames[fileNames.Count - 1]))
             {
-                Dafny.Program dafnyProgram;
+                Tacny.Program tacnyProgram;
                 string programName = fileNames.Count == 1 ? fileNames[0] : "the program";
-                string err = Tacny.Main.ParseCheck(fileNames, programName, out dafnyProgram);
-                if (err != null)
+                try
+                {
+                    tacnyProgram = new Tacny.Program(fileNames, programId);
+                }
+                catch (ArgumentException ex)
                 {
                     exitValue = ExitValue.DAFNY_ERROR;
-                    printer.ErrorWriteLine(Console.Out, err);
+                    printer.ErrorWriteLine(Console.Out, ex.Message);
+                    return exitValue;
                 }
-                else if (dafnyProgram != null && !CommandLineOptions.Clo.NoResolve && !CommandLineOptions.Clo.NoTypecheck
-                  && DafnyOptions.O.DafnyVerify)
-                {
-                    PipelineStatistics stats;
 
-                    err = Tacny.Main.ResolveTactics(ref dafnyProgram, fileNames, programId, out stats);
+                
+                if (!CommandLineOptions.Clo.NoResolve && !CommandLineOptions.Clo.NoTypecheck && DafnyOptions.O.DafnyVerify)
+                {
+                    err = Tacny.Main.ResolveProgram(ref tacnyProgram);
                     if (err != null)
                     {
                         exitValue = ExitValue.DAFNY_ERROR;
@@ -188,19 +192,13 @@ namespace Tacny
                     }
                     else
                     {
-                        compile_dfy(dafnyProgram, fileNames, stats);
+                        tacnyProgram.Compile();
                     }
                 }
             }
             return exitValue;
         }
 
-        private static void compile_dfy(Dafny.Program dafnyProgram, IList<string> fileNames, PipelineStatistics stats)
-        {
-            //printer.WriteTrailer(stats);
-            if ((DafnyOptions.O.Compile /*&& allOk*/ && CommandLineOptions.Clo.ProcsToCheck == null) || DafnyOptions.O.ForceCompile)
-                Dafny.DafnyDriver.CompileDafnyProgram(dafnyProgram, fileNames[0]);
-        }
 
         /// <summary>
         /// Clean up before exiting

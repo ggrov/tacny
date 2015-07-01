@@ -502,8 +502,6 @@ namespace Tacny
                 return "replace_operator: " + err;
 
             Method m = (Method)md;
-            // The call to tactic should always follow the while statment body
-            // thus the following is safe
 
             ws = FindWhileStmt(tac_call, md);
             if (ws == null)
@@ -547,8 +545,6 @@ namespace Tacny
             Method m = (Method)md;
             WhileStmt nws = null;
 
-
-
             WhileStmt ws = FindWhileStmt(tac_call, md);
             if (ws == null)
                 return "add_invariant: add_invariant can only be called from a while loop";
@@ -573,6 +569,7 @@ namespace Tacny
             solution_tree.AddChild(new SolutionTree(this, solution_tree, st));
             return null;
         }
+
 
         public string Composition(Statement st, ref SolutionTree solution_tree)
         {
@@ -610,8 +607,6 @@ namespace Tacny
         /// <returns></returns>
         public string IsValid(Statement st, ref SolutionTree solution_tree)
         {
-
-
             if (!solution_tree.isLeaf())
                 solution_tree = solution_tree.GetLeftMost();
 
@@ -633,7 +628,6 @@ namespace Tacny
                 type = GetStatementType((ApplySuffix)exp);
             else
                 return "Invalid composition guard; Expected atomic statement; Received " + exp.GetType();
-
 
             return null;
         }
@@ -689,7 +683,7 @@ namespace Tacny
         }
 
         public string Finalize(ref SolutionTree solution_tree)
-        {
+        {       
             // for now try to copy dict values
             resolved = new List<Statement>(updated_statements.Values);
             SolutionTree st = new SolutionTree(this, solution_tree);
