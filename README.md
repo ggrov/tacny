@@ -1,6 +1,6 @@
 # {Tacny} := Tactics for Dafny #
 
-This repository contains the Source code for Tacny. Tacny atempts to introdude tactics to Dafny language.
+This repository contains the Source code for Tacny - a tool that implements tactics for the Dafny program verifier.
 # Build Guide #
 
 ### Requirements ###
