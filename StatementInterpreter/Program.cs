@@ -54,7 +54,6 @@ namespace Tacny
 
         public static string ResolveProgram(Dafny.Program program)
         {
-
             Dafny.Resolver r = new Dafny.Resolver(program);
             r.ResolveProgram(program);
 
@@ -63,6 +62,21 @@ namespace Tacny
                 return string.Format("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
             }
             return null;
+        }
+
+        public List<TopLevelDecl> GetGlobalDecls(Dafny.Program prog = null)
+        {
+            if (prog == null)
+                prog = this.program;
+            List<TopLevelDecl> res = new List<TopLevelDecl>();
+
+            foreach (TopLevelDecl tld in prog.DefaultModuleDef.TopLevelDecls)
+            {
+                if (tld is DatatypeDecl/* || tld  is RedirectingTypeDecl*/)
+                    res.Add(tld);
+
+            }
+            return res;
         }
 
         #region Parser

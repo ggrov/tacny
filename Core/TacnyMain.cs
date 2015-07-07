@@ -36,6 +36,7 @@ namespace Tacny
             }
             else
             {
+                tacnyProgram.ResolveProgram();
                 tacnyProgram.VerifyProgram();
             }
 

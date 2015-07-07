@@ -1,13 +1,10 @@
-﻿using System;
+﻿using Microsoft.Dafny;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Diagnostics.Contracts;
-using Microsoft.Boogie;
-using Bpl = Microsoft.Boogie;
-using Microsoft.Dafny;
+using System.Linq;
 using Dafny = Microsoft.Dafny;
-
+using Microsoft.Boogie;
 
 namespace Tacny
 {
@@ -24,21 +21,30 @@ namespace Tacny
             REPLACE_OP,
             COMPOSITION,
             IS_VALID,
+            GENERATE_MATCH,
         };
 
-        public readonly MemberDecl md; // the Class Member from which the tactic has been called
-        public readonly Tactic tac;  // The called tactic
-        public readonly UpdateStmt tac_call;  // call to the tactic
+        public readonly MemberDecl md = null; // the Class Member from which the tactic has been called
+        public readonly Tactic tac = null;  // The called tactic
+        public readonly UpdateStmt tac_call = null;  // call to the tactic
 
-        private Dictionary<Dafny.IVariable, object> local_variables = new Dictionary<Dafny.IVariable, object>();
-        private Dictionary<Statement, Statement> updated_statements = new Dictionary<Statement, Statement>();
+        protected readonly Dictionary<string, DatatypeDecl> global_variables = new Dictionary<string, DatatypeDecl>();
+        protected Dictionary<Dafny.IVariable, object> local_variables = new Dictionary<Dafny.IVariable, object>();
+        protected Dictionary<Statement, Statement> updated_statements = new Dictionary<Statement, Statement>();
 
         public List<Statement> resolved = new List<Statement>();
 
-        public Action()
-        { }
+        public Action(Action ac)
+        {
+            this.md = ac.md;
+            this.tac = ac.tac;
+            this.tac_call = ac.tac_call;
+            this.global_variables = ac.global_variables;
+            this.local_variables = ac.local_variables;
+            this.updated_statements = ac.updated_statements;
+        }
 
-        public Action(MemberDecl md, Tactic tac, UpdateStmt tac_call)
+        public Action(MemberDecl md, Tactic tac, UpdateStmt tac_call, List<TopLevelDecl> global_variables)
         {
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
@@ -46,13 +52,13 @@ namespace Tacny
             this.md = md;
             this.tac = tac;
             this.tac_call = tac_call;
+            FillGlobals(global_variables);
             FillTacticInputs();
         }
 
         private Action(MemberDecl md, Tactic tac, UpdateStmt tac_call,
-            Dictionary<Dafny.IVariable, object> local_variables,
-            Dictionary<Statement, Statement> updated_statements,
-            List<Statement> resolved)
+            Dictionary<Dafny.IVariable, object> local_variables, Dictionary<string, DatatypeDecl> global_variables,
+            Dictionary<Statement, Statement> updated_statements, List<Statement> resolved)
         {
             this.md = md;
             this.tac = tac;
@@ -65,6 +71,8 @@ namespace Tacny
             List<Statement> us_keys = new List<Statement>(updated_statements.Keys);
             List<Statement> us_values = new List<Statement>(updated_statements.Values);
             this.updated_statements = us_keys.ToDictionary(x => x, x => us_values[us_keys.IndexOf(x)]);
+
+            this.global_variables = global_variables;
             this.resolved = resolved;
         }
 
@@ -74,7 +82,7 @@ namespace Tacny
         /// <returns>Action</returns>
         public Action Copy()
         {
-            return new Action(md, tac, tac_call, local_variables, updated_statements, resolved);
+            return new Action(md, tac, tac_call, local_variables, global_variables, updated_statements, resolved);
         }
 
         /// <summary>
@@ -86,14 +94,14 @@ namespace Tacny
         /// <returns>Action</returns>
         public Action Update(MemberDecl md, Tactic tac, UpdateStmt tac_call)
         {
-            Action ac = new Action(md, tac, tac_call, local_variables, updated_statements, resolved);
+            Action ac = new Action(md, tac, tac_call, local_variables, global_variables, updated_statements, resolved);
             ac.FillTacticInputs();
             return ac;
         }
 
-
-        private static Atomic GetStatementType(Statement st)
+        protected static Atomic GetStatementType(Statement st)
         {
+            Contract.Requires(st != null);
             ExprRhs er;
             UpdateStmt us;
             if (st is UpdateStmt)
@@ -106,13 +114,12 @@ namespace Tacny
                 return Atomic.UNDEFINED;
 
             er = (ExprRhs)us.Rhss[0];
-            ApplySuffix ass = er.Expr as ApplySuffix;
-            return GetStatementType(ass);
+            return GetStatementType(er.Expr as ApplySuffix);
         }
 
-        private static Atomic GetStatementType(ApplySuffix ass)
+        protected static Atomic GetStatementType(ApplySuffix ass)
         {
-
+            Contract.Requires(ass != null);
             switch (ass.Lhs.tok.val)
             {
                 case "add_assert":
@@ -127,8 +134,10 @@ namespace Tacny
                     return Atomic.REPLACE_OP;
                 case "replace_singleton":
                     return Atomic.REPLACE_SINGLETON;
-                case "is_valid":
-                    return Atomic.IS_VALID;
+                case "generate_match":
+                    return Atomic.GENERATE_MATCH;
+                //case "is_valid":
+                //    return Atomic.IS_VALID;
                 default:
                     return Atomic.UNDEFINED;
             }
@@ -141,25 +150,28 @@ namespace Tacny
             switch (GetStatementType(st))
             {
                 case Atomic.CREATE_INVAR:
-                    err = action.CreateInvar(st, ref solution_tree);
+                    err = action.CallCreateInvariant(st, ref solution_tree);
                     break;
                 case Atomic.ADD_INVAR:
-                    err = action.AddInvar(st, ref solution_tree);
+                    err = action.CallAddInvariant(st, ref solution_tree);
                     break;
                 case Atomic.REPLACE_SINGLETON:
-                    err = action.ReplaceSingleton(st, ref solution_tree);
+                    err = action.CallReplaceSingleton(st, ref solution_tree);
                     break;
                 case Atomic.EXTRACT_GUARD:
                     err = action.ExtractGuard(st, ref solution_tree);
                     break;
                 case Atomic.REPLACE_OP:
-                    err = action.ReplaceOperator(st, ref solution_tree);
+                    err = action.CallReplaceOperator(st, ref solution_tree);
                     break;
                 case Atomic.COMPOSITION:
-                    err = action.Composition(st, ref solution_tree);
+                    err = action.CallComposition(st, ref solution_tree);
                     break;
                 case Atomic.IS_VALID:
                     err = action.IsValid(st, ref solution_tree);
+                    break;
+                case Atomic.GENERATE_MATCH:
+                    err = action.CallGenerateMatch(st, ref solution_tree);
                     break;
                 default:
                     throw new cce.UnreachableException();
@@ -182,13 +194,27 @@ namespace Tacny
         }
 
         /// <summary>
+        /// Clear global variables and popualte the dictionary with the provided list
+        /// </summary>
+        /// <param name="globals">Global variables</param>
+        private void FillGlobals(List<TopLevelDecl> globals)
+        {
+            this.global_variables.Clear();
+            foreach (TopLevelDecl tld in globals)
+            {
+                if (tld is DatatypeDecl /*|| tld is RedirectingTypeDecl*/) // TODO what is RedirectingType
+                    this.global_variables.Add(tld.Name, (DatatypeDecl)tld);
+            }
+        }
+
+        /// <summary>
         /// Extract statement arguments and local variable definition
         /// </summary>
         /// <param name="st">Atomic statement</param>
         /// <param name="lv">Local variable</param>
         /// <param name="call_arguments">List of arguments</param>
         /// <returns>Error message</returns>
-        private string InitArgs(Statement st, out IVariable lv, out List<Expression> call_arguments)
+        protected string InitArgs(Statement st, out IVariable lv, out List<Expression> call_arguments)
         {
             lv = null;
             call_arguments = null;
@@ -204,7 +230,10 @@ namespace Tacny
             else if (st is UpdateStmt)
             {
                 UpdateStmt us = (UpdateStmt)st;
-                NameSegment ns = (NameSegment)us.Lhss[0];
+                if(us.Lhss.Count != 1)
+                    return "Wrong number of method result arguments; Expected 1 got " + us.Lhss.Count;
+                
+                NameSegment ns = (NameSegment)us.Lhss[0];   
                 if (HasLocalWithName(ns))
                 {
                     lv = GetLocalKeyByName(ns);
@@ -219,7 +248,7 @@ namespace Tacny
             return null;
         }
 
-        private string ProcessArg(Expression argument, out Expression result)
+        protected string ProcessArg(Expression argument, out Expression result)
         {
             result = null;
             if (argument is NameSegment)
@@ -235,20 +264,54 @@ namespace Tacny
             return null;
         }
 
+        private string CallReplaceSingleton(Statement st, ref SolutionTree solution_tree)
+        {
+            SingletonAction rs = new SingletonAction(this);
+            return rs.Replace(st, ref solution_tree);
+        }
+
+        private string CallAddInvariant(Statement st, ref SolutionTree solution_tree)
+        {
+            InvariantAction ia = new InvariantAction(this);
+            return ia.AddInvar(st, ref solution_tree);
+        }
+
+        private string CallCreateInvariant(Statement st, ref SolutionTree solution_tree)
+        {
+            InvariantAction ia = new InvariantAction(this);
+            return ia.CreateInvar(st, ref solution_tree);
+        }
+
+        private string CallReplaceOperator(Statement st, ref SolutionTree solution_tree)
+        {
+            OperatorAction oa = new OperatorAction(this);
+            return oa.ReplaceOperator(st, ref solution_tree);
+        }
+
+        private string CallGenerateMatch(Statement st, ref SolutionTree solution_tree)
+        {
+            MatchAction ma = new MatchAction(this);
+            return ma.GenerateMatch(st, ref solution_tree);
+        }
+
+        private string CallComposition(Statement st, ref SolutionTree solution_tree)
+        {
+            CompositionAction ca = new CompositionAction(this);
+            return ca.Composition(st, ref solution_tree);
+        }
         /// <summary>
         /// Find closest while statement to the tactic call
         /// </summary>
         /// <param name="tac_stmt">Tactic call</param>
         /// <param name="member">Method</param>
         /// <returns>WhileStmt</returns>
-        private static WhileStmt FindWhileStmt(Statement tac_stmt, MemberDecl member)
+        protected static WhileStmt FindWhileStmt(Statement tac_stmt, MemberDecl member)
         {
             Method m = (Method)member;
 
             int index = m.Body.Body.IndexOf(tac_stmt);
             if (index <= 0)
                 return null;
-
             while (index > 0)
             {
                 Statement stmt = m.Body.Body[index];
@@ -256,238 +319,9 @@ namespace Tacny
                 if (stmt is WhileStmt)
                     return (WhileStmt)stmt;
                 index--;
-
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Replace a singleton with a new term
-        /// </summary>
-        /// <param name="st">replace_singleton(); Statement</param>
-        /// <param name="solution_tree">Reference to the solution tree</param>
-        /// <returns> null if success; error message otherwise</returns>
-        public string ReplaceSingleton(Statement st, ref SolutionTree solution_tree)
-        {
-            Dafny.IVariable lv = null;
-            List<Expression> call_arguments = null;
-            List<Expression> processed_args = new List<Expression>(3);
-            Expression old_singleton = null;
-            Expression new_term = null;
-            Expression formula = null;
-            string err;
-
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-                return "replace_singleton: " + err;
-
-            if (call_arguments.Count != 3)
-                return "replace_singleton: Wrong number of method arguments; Expected 3 got " + call_arguments.Count;
-
-            err = ProcessArg(call_arguments[0], out new_term);
-            if (err != null)
-                return "replace_singleton: " + err;
-
-            err = ProcessArg(call_arguments[1], out old_singleton);
-            if (err != null)
-                return "replace_singleton: " + err;
-
-            err = ProcessArg(call_arguments[2], out formula);
-            if (err != null)
-                return "replace_singleton: " + err;
-
-            ExpressionTree et = ExpressionTree.ExpressionToTree(formula);
-
-            List<Expression> exp_list = new List<Expression>();
-
-            err = ReplaceTerm(old_singleton, new_term, et, ref exp_list);
-            if (err != null)
-                return err;
-            // branch
-            if (exp_list.Count > 0)
-            {
-                for (int i = 0; i < exp_list.Count; i++)
-                {
-                    BranchLocals(lv, exp_list[i], solution_tree, st);
-                }
             }
             return null;
-        }
-
-        private string ReplaceTerm(Expression old_singleton, Expression new_term, ExpressionTree formula, ref List<Expression> nexp)
-        {
-            Contract.Requires(nexp != null);
-            Contract.Requires(old_singleton != null);
-            Contract.Requires(new_term != null);
-            NameSegment curNs = null;
-            NameSegment oldNs = null;
-
-            if (formula == null)
-                return null;
-
-            if (formula.isLeaf())
-            {
-                if (formula.data.GetType() == old_singleton.GetType() && formula.was_replaced == false)
-                {
-                    if (formula.data is NameSegment)
-                    {
-                        curNs = (NameSegment)formula.data;
-                        oldNs = (NameSegment)old_singleton;
-
-                    }
-                    else if (formula.data is UnaryOpExpr)
-                    {
-                        curNs = (NameSegment)((UnaryOpExpr)formula.data).E;
-                        oldNs = (NameSegment)((UnaryOpExpr)old_singleton).E;
-                    }
-                    else
-                        return "Unsuported data: " + formula.data.GetType();
-
-                    if (curNs.Name == oldNs.Name)
-                    {
-                        ExpressionTree nt = formula.Copy();
-                        nt.data = new_term;
-
-                        if (nt.parent.lChild == nt)
-                            nt.parent.lChild = nt;
-                        else
-                            nt.parent.rChild = nt;
-
-                        nexp.Add(nt.root.TreeToExpression());
-                    }
-                }
-                return null;
-            }
-            ReplaceTerm(old_singleton, new_term, formula.lChild, ref nexp);
-            ReplaceTerm(old_singleton, new_term, formula.rChild, ref nexp);
-            return null;
-        }
-
-        public string ReplaceOperator(Statement st, ref SolutionTree solution_tree)
-        {
-            Dafny.IVariable lv = null;
-            List<Expression> call_arguments = null;
-            StringLiteralExpr old_operator = null;
-            StringLiteralExpr new_operator = null;
-            Expression formula = null;
-            BinaryExpr.Opcode old_op;
-            BinaryExpr.Opcode new_op;
-            string err;
-
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-                return "replace_operator: " + err;
-
-            if (call_arguments.Count != 3)
-                return "replace_operator: Wrong number of method arguments; Expected 3 got " + call_arguments.Count;
-
-
-            old_operator = (StringLiteralExpr)call_arguments[0];
-            new_operator = (StringLiteralExpr)call_arguments[1];
-            if (call_arguments[2] is NameSegment)
-            {
-                if (!HasLocalWithName(call_arguments[2] as NameSegment))
-                    return ""; // formula not passed
-                else
-                    formula = (Expression)GetLocalValueByName(call_arguments[2] as NameSegment);
-            }
-            else if (call_arguments[2] is Expression)
-            {
-                formula = (Expression)call_arguments[2];
-            }
-
-            try
-            {
-                old_op = ToOpCode((string)old_operator.Value);
-                new_op = ToOpCode((string)new_operator.Value);
-            }
-            catch (ArgumentException e)
-            {
-                return e.Message;
-            }
-
-            ExpressionTree et = ExpressionTree.ExpressionToTree(formula);
-            List<Expression> exp_list = new List<Expression>();
-
-            ReplaceOp(old_op, new_op, et, ref exp_list);
-
-            if (exp_list.Count == 0)
-                exp_list.Add(formula);
-
-            // smells like unnecessary branching if no replacement happened.
-            for (int i = 0; i < exp_list.Count; i++)
-            {
-                BranchLocals(lv, exp_list[i], solution_tree, st);
-            }
-
-            return null;
-        }
-
-        protected Expression ReplaceOp(BinaryExpr.Opcode old_op, BinaryExpr.Opcode new_op, ExpressionTree formula, ref List<Expression> nexp)
-        {
-            Contract.Requires(nexp != null);
-            if (formula == null)
-                return null;
-
-            if (formula.data is BinaryExpr)
-            {
-                if (((BinaryExpr)formula.data).Op == old_op)
-                {
-                    ExpressionTree nt = formula.Copy();
-                    nt.data = new BinaryExpr(formula.data.tok, new_op, ((BinaryExpr)formula.data).E0, ((BinaryExpr)formula.data).E1);
-                    nexp.Add(nt.root.TreeToExpression());
-                    return null;
-                }
-            }
-            ReplaceOp(old_op, new_op, formula.lChild, ref nexp);
-            ReplaceOp(old_op, new_op, formula.rChild, ref nexp);
-            return null;
-        }
-
-        protected BinaryExpr.Opcode ToOpCode(string op)
-        {
-            foreach (BinaryExpr.Opcode code in Enum.GetValues(typeof(BinaryExpr.Opcode)))
-            {
-                try
-                {
-                    if (BinaryExpr.OpcodeString(code) == op)
-                        return code;
-                }
-                catch (cce.UnreachableException)
-                {
-                    throw new ArgumentException("Invalid argument; Expected binary operator, received " + op);
-                }
-
-            }
-            throw new ArgumentException("Invalid argument; Expected binary operator, received " + op);
-        }
-
-        public string CreateInvar(Statement st, ref SolutionTree solution_tree)
-        {
-            Dafny.IVariable lv = null;
-            List<Expression> call_arguments = null;
-            Expression formula = null;
-            MaybeFreeExpression invariant = null;
-            string err;
-
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-                return "create_invariant: " + err;
-
-            if (call_arguments.Count != 1)
-                return "create_invariant: Wrong number of method arguments; Expected 1 got " + call_arguments.Count;
-
-            if (!HasLocalWithName(call_arguments[0] as NameSegment))
-                return "create_invariant: Local variable " + ((NameSegment)call_arguments[0]).Name + " is undefined";
-
-            formula = (Expression)GetLocalValueByName(call_arguments[0] as NameSegment);
-
-            invariant = new MaybeFreeExpression(formula);
-
-            BranchLocals(lv, invariant, solution_tree, st);
-            return null;
-        }
+        }       
 
         public string ExtractGuard(Statement st, ref SolutionTree solution_tree)
         {
@@ -512,93 +346,6 @@ namespace Tacny
             return null;
         }
 
-        public string AddInvar(Statement st, ref SolutionTree solution_tree)
-        {
-
-            List<Expression> call_arguments = null;
-            MaybeFreeExpression invariant = null;
-            MaybeFreeExpression[] invar_arr = null;
-            List<MaybeFreeExpression> invar = null; // HACK
-            UpdateStmt us = null;
-
-            if (st is UpdateStmt)
-                us = st as UpdateStmt;
-            else
-                return "add_invariant: does not have a return value";
-
-            call_arguments = GetCallArguments(us);
-
-            if (call_arguments.Count != 1)
-                return "add_invariant: Wrong number of method arguments; Expected 1 got " + call_arguments.Count;
-
-            Expression exp = call_arguments[0];
-            if (exp is NameSegment)
-            {
-                invariant = (MaybeFreeExpression)GetLocalValueByName((NameSegment)exp);
-                if (invariant == null)
-                    return "add_invariant: Local variable " + exp.tok.val + " undefined";
-
-            }
-            else
-                return "add_invariant: Wrong expression type; Received " + exp.GetType() + " Expected Dafny.NameSegment";
-
-            Method m = (Method)md;
-            WhileStmt nws = null;
-
-            WhileStmt ws = FindWhileStmt(tac_call, md);
-            if (ws == null)
-                return "add_invariant: add_invariant can only be called from a while loop";
-            // if we already added new invariants to the statement, use the updated statement instead
-            if (updated_statements.ContainsKey(ws))
-            {
-                nws = (WhileStmt)updated_statements[ws];
-                invar_arr = nws.Invariants.ToArray();
-            }
-            else
-                invar_arr = ws.Invariants.ToArray();
-
-            invar = new List<MaybeFreeExpression>(invar_arr);
-            invar.Add(invariant);
-            nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, invar, ws.Decreases, ws.Mod, ws.Body);
-
-            if (!updated_statements.ContainsKey(ws))
-                updated_statements.Add(ws, nws);
-            else
-                updated_statements[ws] = nws;
-
-            solution_tree.AddChild(new SolutionTree(this, solution_tree, st));
-            return null;
-        }
-
-
-        public string Composition(Statement st, ref SolutionTree solution_tree)
-        {
-            IfStmt if_stmt = null;
-            WhileStmt while_stmt = null;
-            string err;
-
-            if (st is IfStmt)
-                if_stmt = (IfStmt)st;
-            else if (st is WhileStmt)
-                while_stmt = (WhileStmt)st;
-            else
-                return "composition: Internal error unexpected Statement type: " + st.GetType();
-
-            if (if_stmt != null)
-            {
-                Expression guard = if_stmt.Guard;
-                Atomic guard_type;
-                // get guard type
-                err = AnalyseGuard(guard, out guard_type);
-                if (err != null)
-                    return "composition: " + err;
-                
-                // call the matching statement
-                // depending on the results analyse the required body.
-            }
-            return null;
-        }
-
         /// <summary>
         /// Forces current node verification
         /// </summary>
@@ -614,31 +361,14 @@ namespace Tacny
             return null;
         }
         
-        private string AnalyseGuard(Expression guard, out Atomic type)
-        {
-            Expression exp;
-            type = Atomic.UNDEFINED;
 
-            if (guard is ParensExpression)
-                exp = ((ParensExpression)guard).E;
-            else
-                exp = guard;
-
-            if (exp is ApplySuffix)
-                type = GetStatementType((ApplySuffix)exp);
-            else
-                return "Invalid composition guard; Expected atomic statement; Received " + exp.GetType();
-
-            return null;
-        }
-
-        private static List<Expression> GetCallArguments(UpdateStmt us)
+        protected static List<Expression> GetCallArguments(UpdateStmt us)
         {
             ExprRhs er = (ExprRhs)us.Rhss[0];
             return ((ApplySuffix)er.Expr).Args;
         }
 
-        private bool HasLocalWithName(NameSegment ns)
+        protected bool HasLocalWithName(NameSegment ns)
         {
             if (ns == null)
                 return false;
@@ -654,7 +384,7 @@ namespace Tacny
             return false;
         }
 
-        private object GetLocalValueByName(NameSegment ns)
+        protected object GetLocalValueByName(NameSegment ns)
         {
             Contract.Requires(ns != null);
 
@@ -669,7 +399,7 @@ namespace Tacny
             return null;
         }
 
-        private Dafny.IVariable GetLocalKeyByName(NameSegment ns)
+        protected IVariable GetLocalKeyByName(NameSegment ns)
         {
             Contract.Requires(ns != null);
             List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
@@ -679,6 +409,16 @@ namespace Tacny
                 if (lv.DisplayName == ns.Name)
                     return lv;
             }
+            return null;
+        }
+
+        protected DatatypeDecl GetGlobalWithName(NameSegment ns)
+        {
+            if (ns == null)
+                return null;
+            if (global_variables.ContainsKey(ns.Name))
+                return global_variables[ns.Name];
+
             return null;
         }
 
@@ -692,7 +432,7 @@ namespace Tacny
             return null;
         }
 
-        private void BranchLocals(IVariable lv, object value, SolutionTree solution_tree, Statement st)
+        protected void BranchLocals(IVariable lv, object value, SolutionTree solution_tree, Statement st)
         {
             Action ac = this.Copy();
             if (!ac.local_variables.ContainsKey(lv))

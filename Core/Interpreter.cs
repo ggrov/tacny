@@ -70,7 +70,8 @@ namespace Tacny
     public class Interpreter : ResolutionErrorReporter
     {
 
-        private Dictionary<string, MemberDecl> tactics = new Dictionary<string, MemberDecl>();
+        private Dictionary<string, Tactic> tactics = new Dictionary<string, Tactic>();
+        private List<MemberDecl> members = new List<MemberDecl>();
         private Program tacnyProgram;
         private SolutionTree solution_tree = null;
 
@@ -98,74 +99,52 @@ namespace Tacny
             return false;
         }
 
-        /// <summary>
-        /// Check if MemberDecl contains calls to tactics
-        /// </summary>
-        /// <returns></returns>
-        private bool HasTactics(MemberDecl md)
-        {
-            if (md is Method)
-            {
-                Method m = (Method)md;
-                if (m.Body == null)
-                    return false;
-                foreach (Statement s in m.Body.SubStatements)
-                {
-                    // go deeper and check if it's a CallStmt
-                    if (s is UpdateStmt)
-                    {
-                        UpdateStmt us = (UpdateStmt)s;
-                        ExprRhs er = us.Rhss[0] as ExprRhs;
-                        if (er == null)
-                            return false;
-                        ApplySuffix asx = er.Expr as ApplySuffix;
-                        if (asx == null)
-                            return false;
-                        string name = asx.Lhs.tok.val;
-                        string sPatten = ".+_tactic$";
-                        bool tmp = Regex.IsMatch(name, sPatten);
-                        return tmp;
-
-                    }
-                }
-            }
-            return false;
-        }
-
         public string ResolveProgram()
         {
             ClassDecl curDecl;
-            string err;
+            string err = null;
             Dafny.Program prg = tacnyProgram.program;
 
             for (int i = 0; i < prg.DefaultModuleDef.TopLevelDecls.Count; i++)
             {
                 TopLevelDecl d = prg.DefaultModuleDef.TopLevelDecls[i];
-                if (d is ClassDecl)
+                curDecl = d as ClassDecl;
+                if (curDecl != null)
                 {
                     // scan each member for tactic calls and resolve if found
-                    curDecl = (ClassDecl)d;
+                    
                     for (int j = 0; j < curDecl.Members.Count; j++)
                     {
                         MemberDecl md = curDecl.Members[j];
                         if (md is Tactic)
-                        {
                             tactics.Add(md.Name, (Tactic)md);
-                        }
                         else
-                        {
-                            err = ScanMemberBody(md);
-                            if (err != null)
-                                return err;
-                        }
+                            members.Add(md);
                     }
                 }
             }
 
-            err = VerifySolutionTree(solution_tree, ref prg);
-            if (err != null)
-                tacnyProgram.program = prg;
+            if (tactics.Count > 0)
+            {
+                foreach (MemberDecl md in members)
+                {
+                    err = ScanMemberBody(md);
+                    if (err != null)
+                        return err;
+                }
 
+                if (solution_tree != null)
+                {
+                    err = VerifySolutionTree(solution_tree, ref prg);
+                    if (err != null)
+                        tacnyProgram.program = prg;
+                }
+            }
+            else
+            {
+                tacnyProgram.ResolveProgram();
+                tacnyProgram.VerifyProgram();
+            }
             return err;
         }
 
@@ -205,7 +184,7 @@ namespace Tacny
                     err = VerifySolutionTree(child, ref result);
                     if (result != null)
                         break;
-                   
+
                 }
             }
             if (result != null)
@@ -234,53 +213,17 @@ namespace Tacny
                     if (asx == null)
                         return "change me error 2"; // TODO
                     string name = asx.Lhs.tok.val;
-                    string sPatten = ".+_tactic$";
 
-                    if (Regex.IsMatch(name, sPatten))
+                    if (tactics.ContainsKey(name))
                     {
-                        Tactic tac;
-                        if (!tactics.ContainsKey(name))
-                            return "Error during resolution; tactic " + name + " not defined";
-                        tac = (Tactic)tactics[name];
-                        string err = ResolveTacticBody(tac, st as UpdateStmt, md); // generate a solution tree
+                        string err = ResolveTacticBody(tactics[name], st as UpdateStmt, md); // generate a solution tree
                         if (err != null)
                             return err;
-
                     }
                 }
             }
 
             return null;
-        }
-
-        private static List<Statement> CleanBody(List<Statement> oldBody)
-        {
-            List<Statement> newBody = new List<Statement>();
-            for (int i = 0; i < oldBody.Count; i++)
-            {
-                Statement s = oldBody[i];
-                if (s is WhileStmt)
-                {
-                    if (oldBody[i + 1] is BlockStmt)
-                    {
-                        WhileStmt ws = (WhileStmt)s;
-
-                        ws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, ws.Invariants, ws.Decreases, ws.Mod, (BlockStmt)oldBody[i + 1]);
-                        oldBody[i] = ws;
-                        oldBody[i + 1] = null;
-                    }
-                    else
-                    {
-                        oldBody[i] = null;
-                    }
-                }
-            }
-
-            foreach (Statement s in oldBody)
-                if (s != null)
-                    newBody.Add(s);
-
-            return newBody;
         }
 
         /// <summary>
@@ -303,7 +246,7 @@ namespace Tacny
             }
             else
             {
-                action = new Action(md, tac, tac_call);
+                action = new Action(md, tac, tac_call, tacnyProgram.GetGlobalDecls());
                 solution_tree = new SolutionTree(action);
             }
             string err = null;
@@ -349,7 +292,7 @@ namespace Tacny
 
                 for (int i = index + 1; i < ac.tac.Body.Body.Count; i++)
                 {
-                    
+
                     Action.CallAction(ac.tac.Body.Body[i], ac, ref solution_tree);
                     solution_tree = solution_tree.GetLeftMostUndersolved();
                     ac = solution_tree.state;
@@ -373,7 +316,7 @@ namespace Tacny
             return null;
         }
 
-      
-  
+
+
     }
 }

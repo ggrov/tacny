@@ -192,6 +192,7 @@ namespace Tacny
             if (index == 0)
             {
                 newBody = body;
+                newBody.RemoveAt(index);
                 newBody.InsertRange(0, solution);
                 return newBody;
             }
@@ -261,6 +262,7 @@ namespace Tacny
             else
             {
                 newBody = body;
+                newBody.RemoveAt(index);
                 newBody.InsertRange(index, solution);
             }
 
