@@ -52,7 +52,7 @@ namespace Tacny
             return ResolveProgram(program);
         }
 
-        public static string ResolveProgram(Dafny.Program program)
+        public string ResolveProgram(Dafny.Program program)
         {
             Dafny.Resolver r = new Dafny.Resolver(program);
             r.ResolveProgram(program);

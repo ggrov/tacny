@@ -21,12 +21,14 @@ namespace Tacny
             REPLACE_OP,
             COMPOSITION,
             IS_VALID,
-            GENERATE_MATCH,
+            ADD_MATCH,
+            ADD_IF,
         };
 
         public readonly MemberDecl md = null; // the Class Member from which the tactic has been called
         public readonly Tactic tac = null;  // The called tactic
         public readonly UpdateStmt tac_call = null;  // call to the tactic
+        public readonly Program program;
 
         protected readonly Dictionary<string, DatatypeDecl> global_variables = new Dictionary<string, DatatypeDecl>();
         protected Dictionary<Dafny.IVariable, object> local_variables = new Dictionary<Dafny.IVariable, object>();
@@ -42,9 +44,10 @@ namespace Tacny
             this.global_variables = ac.global_variables;
             this.local_variables = ac.local_variables;
             this.updated_statements = ac.updated_statements;
+            this.program = ac.program;
         }
 
-        public Action(MemberDecl md, Tactic tac, UpdateStmt tac_call, List<TopLevelDecl> global_variables)
+        public Action(MemberDecl md, Tactic tac, UpdateStmt tac_call, Program program, List<TopLevelDecl> global_variables)
         {
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
@@ -52,17 +55,19 @@ namespace Tacny
             this.md = md;
             this.tac = tac;
             this.tac_call = tac_call;
+            this.program = program;
             FillGlobals(global_variables);
             FillTacticInputs();
         }
 
-        private Action(MemberDecl md, Tactic tac, UpdateStmt tac_call,
+        private Action(MemberDecl md, Tactic tac, UpdateStmt tac_call, Program program,
             Dictionary<Dafny.IVariable, object> local_variables, Dictionary<string, DatatypeDecl> global_variables,
             Dictionary<Statement, Statement> updated_statements, List<Statement> resolved)
         {
             this.md = md;
             this.tac = tac;
             this.tac_call = tac_call;
+            this.program = program;
 
             List<IVariable> lv_keys = new List<IVariable>(local_variables.Keys);
             List<object> lv_values = new List<object>(local_variables.Values);
@@ -82,7 +87,7 @@ namespace Tacny
         /// <returns>Action</returns>
         public Action Copy()
         {
-            return new Action(md, tac, tac_call, local_variables, global_variables, updated_statements, resolved);
+            return new Action(md, tac, tac_call, program, local_variables, global_variables, updated_statements, resolved);
         }
 
         /// <summary>
@@ -94,7 +99,7 @@ namespace Tacny
         /// <returns>Action</returns>
         public Action Update(MemberDecl md, Tactic tac, UpdateStmt tac_call)
         {
-            Action ac = new Action(md, tac, tac_call, local_variables, global_variables, updated_statements, resolved);
+            Action ac = new Action(md, tac, tac_call, program, local_variables, global_variables, updated_statements, resolved);
             ac.FillTacticInputs();
             return ac;
         }
@@ -104,16 +109,23 @@ namespace Tacny
             Contract.Requires(st != null);
             ExprRhs er;
             UpdateStmt us;
-            if (st is UpdateStmt)
+
+            if (st is IfStmt || st is WhileStmt)
+                return Atomic.COMPOSITION;
+            else if (st is TacnyIfBlockStmt)
+                return Atomic.ADD_IF;
+            else if (st is TacnyCasesBlockStmt)
+                return Atomic.ADD_MATCH;
+            else if (st is UpdateStmt)
                 us = st as UpdateStmt;
             else if (st is VarDeclStmt)
                 us = ((VarDeclStmt)st).Update as UpdateStmt;
-            else if (st is IfStmt || st is WhileStmt)
-                return Atomic.COMPOSITION;
+
             else
                 return Atomic.UNDEFINED;
 
             er = (ExprRhs)us.Rhss[0];
+
             return GetStatementType(er.Expr as ApplySuffix);
         }
 
@@ -134,10 +146,8 @@ namespace Tacny
                     return Atomic.REPLACE_OP;
                 case "replace_singleton":
                     return Atomic.REPLACE_SINGLETON;
-                case "generate_match":
-                    return Atomic.GENERATE_MATCH;
-                //case "is_valid":
-                //    return Atomic.IS_VALID;
+                case "is_valid":
+                    return Atomic.IS_VALID;
                 default:
                     return Atomic.UNDEFINED;
             }
@@ -156,22 +166,22 @@ namespace Tacny
                     err = action.CallAddInvariant(st, ref solution_tree);
                     break;
                 case Atomic.REPLACE_SINGLETON:
-                    err = action.CallReplaceSingleton(st, ref solution_tree);
+                    err = action.CallSingletonAction(st, ref solution_tree);
                     break;
                 case Atomic.EXTRACT_GUARD:
                     err = action.ExtractGuard(st, ref solution_tree);
                     break;
                 case Atomic.REPLACE_OP:
-                    err = action.CallReplaceOperator(st, ref solution_tree);
+                    err = action.CallOperatorAction(st, ref solution_tree);
                     break;
                 case Atomic.COMPOSITION:
-                    err = action.CallComposition(st, ref solution_tree);
+                    err = action.CallCompositionAction(st, ref solution_tree);
                     break;
-                case Atomic.IS_VALID:
-                    err = action.IsValid(st, ref solution_tree);
+                case Atomic.ADD_MATCH:
+                    err = action.CallMatchAction((TacnyCasesBlockStmt)st, ref solution_tree);
                     break;
-                case Atomic.GENERATE_MATCH:
-                    err = action.CallGenerateMatch(st, ref solution_tree);
+                case Atomic.ADD_IF:
+                    err = action.CallIfAction((TacnyIfBlockStmt)st, ref solution_tree);
                     break;
                 default:
                     throw new cce.UnreachableException();
@@ -230,10 +240,10 @@ namespace Tacny
             else if (st is UpdateStmt)
             {
                 UpdateStmt us = (UpdateStmt)st;
-                if(us.Lhss.Count != 1)
+                if (us.Lhss.Count != 1)
                     return "Wrong number of method result arguments; Expected 1 got " + us.Lhss.Count;
-                
-                NameSegment ns = (NameSegment)us.Lhss[0];   
+
+                NameSegment ns = (NameSegment)us.Lhss[0];
                 if (HasLocalWithName(ns))
                 {
                     lv = GetLocalKeyByName(ns);
@@ -264,7 +274,7 @@ namespace Tacny
             return null;
         }
 
-        private string CallReplaceSingleton(Statement st, ref SolutionTree solution_tree)
+        private string CallSingletonAction(Statement st, ref SolutionTree solution_tree)
         {
             SingletonAction rs = new SingletonAction(this);
             return rs.Replace(st, ref solution_tree);
@@ -282,22 +292,28 @@ namespace Tacny
             return ia.CreateInvar(st, ref solution_tree);
         }
 
-        private string CallReplaceOperator(Statement st, ref SolutionTree solution_tree)
+        private string CallOperatorAction(Statement st, ref SolutionTree solution_tree)
         {
             OperatorAction oa = new OperatorAction(this);
             return oa.ReplaceOperator(st, ref solution_tree);
         }
 
-        private string CallGenerateMatch(Statement st, ref SolutionTree solution_tree)
+        private string CallMatchAction(TacnyCasesBlockStmt st, ref SolutionTree solution_tree)
         {
             MatchAction ma = new MatchAction(this);
             return ma.GenerateMatch(st, ref solution_tree);
         }
 
-        private string CallComposition(Statement st, ref SolutionTree solution_tree)
+        private string CallCompositionAction(Statement st, ref SolutionTree solution_tree)
         {
             CompositionAction ca = new CompositionAction(this);
             return ca.Composition(st, ref solution_tree);
+        }
+
+        private string CallIfAction(TacnyIfBlockStmt st, ref SolutionTree solution_tree)
+        {
+            IfAction ia = new IfAction(this);
+            return ia.AddIf(st, ref solution_tree);
         }
         /// <summary>
         /// Find closest while statement to the tactic call
@@ -321,7 +337,7 @@ namespace Tacny
                 index--;
             }
             return null;
-        }       
+        }
 
         public string ExtractGuard(Statement st, ref SolutionTree solution_tree)
         {
@@ -345,22 +361,6 @@ namespace Tacny
             BranchLocals(lv, guard, solution_tree, st);
             return null;
         }
-
-        /// <summary>
-        /// Forces current node verification
-        /// </summary>
-        /// <param name="st"></param>
-        /// <param name="solution_tree"></param>
-        /// <returns></returns>
-        public string IsValid(Statement st, ref SolutionTree solution_tree)
-        {
-            if (!solution_tree.isLeaf())
-                solution_tree = solution_tree.GetLeftMost();
-
-            //Dafny.Program prog = solution_tree.GenerateProgram
-            return null;
-        }
-        
 
         protected static List<Expression> GetCallArguments(UpdateStmt us)
         {
@@ -387,12 +387,18 @@ namespace Tacny
         protected object GetLocalValueByName(NameSegment ns)
         {
             Contract.Requires(ns != null);
+            return GetLocalValueByName(ns.Name);
+        }
+
+        protected object GetLocalValueByName(string name)
+        {
+            Contract.Requires(name != null || name != "");
 
             List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
 
             foreach (Dafny.IVariable lv in ins)
             {
-                if (lv.Name == ns.Name)
+                if (lv.Name == name)
                     return local_variables[lv];
             }
 
@@ -402,11 +408,17 @@ namespace Tacny
         protected IVariable GetLocalKeyByName(NameSegment ns)
         {
             Contract.Requires(ns != null);
+            return GetLocalKeyByName(ns.Name);
+        }
+
+        protected IVariable GetLocalKeyByName(string name)
+        {
+            Contract.Requires(name != null);
             List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
 
             foreach (Dafny.IVariable lv in ins)
             {
-                if (lv.DisplayName == ns.Name)
+                if (lv.DisplayName == name)
                     return lv;
             }
             return null;
@@ -423,7 +435,7 @@ namespace Tacny
         }
 
         public string Finalize(ref SolutionTree solution_tree)
-        {       
+        {
             // for now try to copy dict values
             resolved = new List<Statement>(updated_statements.Values);
             SolutionTree st = new SolutionTree(this, solution_tree);

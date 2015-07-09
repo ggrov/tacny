@@ -10,46 +10,42 @@ namespace Tacny
     {
         public MatchAction(Action action) : base(action) { }
 
-        public string GenerateMatch(Statement st, ref SolutionTree solution_tree)
+        public string GenerateMatch(TacnyCasesBlockStmt st, ref SolutionTree solution_tree)
         {
-            IVariable lv = null;
-            List<Expression> call_arguments;
             DatatypeDecl datatype = null;
             MatchStmt ms;
+            ParensExpression guard;
+            NameSegment ns;
             string datatype_name;
             string err;
 
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-                return "generate_match: " + err;
-            
-            if (call_arguments.Count != 1)
-                return "generate_match: Wrong number of method arguments; Expected 1 got " + call_arguments.Count;
+            guard = st.Guard as ParensExpression;
 
-            NameSegment ns = call_arguments[0] as NameSegment;
+            if (guard == null)
+                ns = st.Guard as NameSegment;
+            else
+                ns = guard.E as NameSegment;
+
             if (ns == null)
                 return "generate_match: unexpected argument";
 
+
             // messy way to do this. but works for now
             Dafny.Formal formal = (Dafny.Formal)GetLocalKeyByName(ns);
-            if (formal.Type.Equals(Dafny.Type.Bool))
-            {
 
-            }
-            else
-            {
-                datatype_name = formal.Type.ToString();
+            datatype_name = formal.Type.ToString();
 
-                if (!global_variables.ContainsKey(datatype_name))
-                    return "generate_match: global datatype " + ns.Name + " is not defined";
+            if (!global_variables.ContainsKey(datatype_name))
+                return "generate_match: global datatype " + ns.Name + " is not defined";
 
-                datatype = global_variables[datatype_name];
-                ns = (NameSegment)local_variables[formal];
-                GenerateMatchStmt(ns, datatype, out ms);
+            datatype = global_variables[datatype_name];
+            ns = (NameSegment)local_variables[formal];
+            // TODO: check if NS if of correct type
+            GenerateMatchStmt(ns, datatype, out ms);
 
-                updated_statements.Add(ms, ms);
-            }
-            
+            updated_statements.Add(ms, ms);
+
+
 
             solution_tree.AddChild(new SolutionTree(this, solution_tree, st));
 

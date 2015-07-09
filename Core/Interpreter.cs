@@ -164,7 +164,7 @@ namespace Tacny
                     return "VerifySolutionTree: Received non final leaf";
                 Dafny.Program prog = tacnyProgram.NewProgram();
                 sol_tree.GenerateProgram(ref prog);
-                err = Program.ResolveProgram(prog);
+                err = tacnyProgram.ResolveProgram(prog);
                 if (err != null)
                     return err;
                 Program.MaybePrintProgram(prog, DafnyOptions.O.DafnyPrintResolvedFile);
@@ -246,7 +246,7 @@ namespace Tacny
             }
             else
             {
-                action = new Action(md, tac, tac_call, tacnyProgram.GetGlobalDecls());
+                action = new Action(md, tac, tac_call, tacnyProgram, tacnyProgram.GetGlobalDecls());
                 solution_tree = new SolutionTree(action);
             }
             string err = null;

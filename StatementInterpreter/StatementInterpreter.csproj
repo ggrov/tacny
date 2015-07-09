@@ -52,11 +52,13 @@
     <Reference Include="Core">
       <HintPath>..\..\..\boogie\Binaries\Core.dll</HintPath>
     </Reference>
-    <Reference Include="Dafny">
-      <HintPath>..\..\..\dafny\Binaries\Dafny.exe</HintPath>
+    <Reference Include="Dafny, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\Dafny.exe</HintPath>
     </Reference>
-    <Reference Include="DafnyPipeline">
-      <HintPath>..\..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
+    <Reference Include="DafnyPipeline, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
     </Reference>
     <Reference Include="Doomed">
       <HintPath>..\..\..\boogie\Binaries\Doomed.dll</HintPath>
@@ -102,6 +104,8 @@
   <ItemGroup>
     <Compile Include="Action.cs" />
     <Compile Include="CompositionAction.cs" />
+    <Compile Include="ConditionalAction.cs" />
+    <Compile Include="IfAction.cs" />
     <Compile Include="InvariantAction.cs" />
     <Compile Include="MatchAction.cs" />
     <Compile Include="OperatorAction.cs" />
@@ -112,6 +116,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -41,11 +41,12 @@
     <Reference Include="Core">
       <HintPath>..\..\..\boogie\Binaries\Core.dll</HintPath>
     </Reference>
-    <Reference Include="Dafny">
-      <HintPath>..\..\..\dafny\Binaries\Dafny.exe</HintPath>
+    <Reference Include="Dafny, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\Dafny.exe</HintPath>
     </Reference>
     <Reference Include="DafnyPipeline">
-      <HintPath>..\..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
+      <HintPath>..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
     </Reference>
     <Reference Include="ExecutionEngine">
       <HintPath>..\..\..\boogie\Binaries\ExecutionEngine.dll</HintPath>
