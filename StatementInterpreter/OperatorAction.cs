@@ -8,7 +8,7 @@ namespace Tacny
     {
         public OperatorAction(Action action) : base(action) { }
 
-        public string ReplaceOperator(Statement st, ref SolutionTree solution_tree)
+        public string ReplaceOperator(Statement st, ref List<Solution> solution_list)
         {
             IVariable lv = null;
             List<Expression> call_arguments = null;
@@ -30,16 +30,13 @@ namespace Tacny
             old_operator = (StringLiteralExpr)call_arguments[0];
             new_operator = (StringLiteralExpr)call_arguments[1];
             if (call_arguments[2] is NameSegment)
-            {
                 if (!HasLocalWithName(call_arguments[2] as NameSegment))
                     return ""; // formula not passed
                 else
                     formula = (Expression)GetLocalValueByName(call_arguments[2] as NameSegment);
-            }
+
             else if (call_arguments[2] is Expression)
-            {
                 formula = (Expression)call_arguments[2];
-            }
 
             try
             {
@@ -62,7 +59,8 @@ namespace Tacny
             // smells like unnecessary branching if no replacement happened.
             for (int i = 0; i < exp_list.Count; i++)
             {
-                BranchLocals(lv, exp_list[i], solution_tree, st);
+                AddLocal(lv, exp_list[i]);
+                solution_list.Add(new Solution(this.Copy()));
             }
 
             return null;

@@ -7,7 +7,7 @@ namespace Tacny
     {
         public InvariantAction(Action action) : base(action) { }
 
-        public string CreateInvar(Statement st, ref SolutionTree solution_tree)
+        public string CreateInvar(Statement st, ref List<Solution> solution_list)
         {
             IVariable lv = null;
             List<Expression> call_arguments = null;
@@ -29,11 +29,12 @@ namespace Tacny
 
             invariant = new MaybeFreeExpression(formula);
 
-            BranchLocals(lv, invariant, solution_tree, st);
+            AddLocal(lv, invariant);
+            solution_list.Add(new Solution(this.Copy()));
             return null;
         }
 
-        public string AddInvar(Statement st, ref SolutionTree solution_tree)
+        public string AddInvar(Statement st, ref List<Solution> solution_list)
         {
 
             List<Expression> call_arguments = null;
@@ -87,7 +88,7 @@ namespace Tacny
             else
                 updated_statements[ws] = nws;
 
-            solution_tree.AddChild(new SolutionTree(this, solution_tree, st));
+            solution_list.Add(new Solution(this.Copy()));
             return null;
         }
     }

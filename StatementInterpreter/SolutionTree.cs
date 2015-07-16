@@ -128,14 +128,14 @@ namespace Tacny
         {
             for (int i = 0; i < counter; i++)
             {
-                Console.Write(separator);     
+                Console.Write(separator);
             }
             Console.WriteLine(id);
             if (children != null)
             {
                 foreach (SolutionTree st in children)
                 {
-                    st.PrintTree(separator, counter+1);
+                    st.PrintTree(separator, counter + 1);
                 }
             }
         }
@@ -147,14 +147,18 @@ namespace Tacny
 
             List<Dafny.Program> prog_list = new List<Dafny.Program>();
             Action ac = this.state;
-            Method m = (Method)ac.md;
+            Method method = (Method)Program.FindMember(prog, ac.md.Name);
+            if (method == null)
+                throw new Exception("Method not found");
             UpdateStmt tac_call = ac.tac_call;
-            List<Statement> body = m.Body.Body;
+            List<Statement> body = method.Body.Body;
             body = InsertSolution(body, tac_call, ac.resolved);
+            if (body == null)
+                throw new Exception("Body not filled");
 
-            m = new Method(m.tok, m.Name, m.HasStaticKeyword, m.IsGhost,
-                m.TypeArgs, m.Ins, m.Outs, m.Req, m.Mod, m.Ens, m.Decreases,
-                new BlockStmt(m.Body.Tok, m.Body.EndTok, body), m.Attributes, m.SignatureEllipsis);
+            Method nMethod = new Method(method.tok, method.Name, method.HasStaticKeyword, method.IsGhost,
+                method.TypeArgs, method.Ins, method.Outs, method.Req, method.Mod, method.Ens, method.Decreases,
+                new BlockStmt(method.Body.Tok, method.Body.EndTok, body), method.Attributes, method.SignatureEllipsis);
             ClassDecl curDecl;
 
             for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++)
@@ -170,9 +174,9 @@ namespace Tacny
                         if (md is Method)
                         {
                             Method old_m = (Method)md;
-                            if (old_m.Name == m.Name)
+                            if (old_m.Name == nMethod.Name)
                             {
-                                curDecl.Members[j] = m;
+                                curDecl.Members[j] = nMethod;
                             }
                         }
                     }
@@ -183,21 +187,37 @@ namespace Tacny
             return null;
         }
 
+        // doesnt work 
+        // do a propper fix
         private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)
         {
             WhileStmt ws = null;
             BlockStmt bs = null;
-            int index = body.IndexOf(tac_call);
+            int index = -1;
+            for (int j = 0; j < body.Count; j++)
+            {
+                UpdateStmt us = body[j] as UpdateStmt;
+                if (us != null)
+                {
+                    if (us.Tok.line == tac_call.Tok.line && us.Tok.col == tac_call.Tok.col)
+                    {
+                        index = j;
+                        break;
+                    }
+                }
+            }
             List<Statement> newBody = new List<Statement>();
             if (index == 0)
             {
-                newBody = body;
+                Statement[] tmp = body.ToArray();
+                newBody = new List<Statement>(tmp);
                 newBody.RemoveAt(index);
                 newBody.InsertRange(0, solution);
                 return newBody;
             }
 
             // check where from tac_call has been made
+            // this doesnt work...
             int i = index + 1;
             while (i < body.Count)
             {
@@ -261,7 +281,8 @@ namespace Tacny
             }
             else
             {
-                newBody = body;
+                Statement[] tmp = body.ToArray();
+                newBody = new List<Statement>(tmp);
                 newBody.RemoveAt(index);
                 newBody.InsertRange(index, solution);
             }

@@ -14,42 +14,70 @@ namespace Tacny
     {
         private IList<string> fileNames;
         private string programId;
-        public Dafny.Program program;
+        private Dafny.Program _program;
+        public Dafny.Program program
+        {
+            set
+            {
+                resolved = false;
+                _program = value;
+            }
+            get
+            {
+                return _program;
+            }
+            
+        }
         public Bpl.ErrorInformation errorInfo;
         public PipelineOutcome po;
         public Bpl.PipelineStatistics stats;
+        public bool resolved = false;
 
         public Program(IList<string> fileNames, string programId, string programName = null)
         {
             this.fileNames = fileNames;
             this.programId = programId;
-            string err = ParseCheck(fileNames, programId, out program);
+            string err = ParseCheck(fileNames, programId, out _program);
             if (err != null)
                 throw new ArgumentException(err);
         }
 
-        public Dafny.Program NewProgram()
+        public Program newProgram()
+        {
+            return new Program(fileNames, programId);
+        }
+
+        public Dafny.Program parseProgram()
         {
             Dafny.Program prog;
             ParseCheck(fileNames, programId, out prog);
             return prog;
         }
 
-        public void VerifyProgram()
+        public string VerifyProgram()
         {
+            string err = null;
+            if (!resolved)
+                 err = ResolveProgram();
+            if (err != null)
+                return err;
             VerifyProgram(program);
+            return null;
         }
 
         public void VerifyProgram(Dafny.Program prog)
         {
             Bpl.Program boogieProgram;
             Translate(prog, fileNames, programId, out boogieProgram);
-            po = BoogiePipeline(boogieProgram, prog, fileNames, programId, out stats);
+            po = BoogiePipeline(boogieProgram, prog, fileNames, programId);
         }
 
         public string ResolveProgram()
         {
-            return ResolveProgram(program);
+            string err = ResolveProgram(program);
+            if (err == null)
+                resolved = true;
+            return err;
         }
 
         public string ResolveProgram(Dafny.Program program)
@@ -58,25 +86,52 @@ namespace Tacny
             r.ResolveProgram(program);
 
             if (r.ErrorCount != 0)
-            {
                 return string.Format("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
-            }
             return null;
         }
 
-        public List<TopLevelDecl> GetGlobalDecls(Dafny.Program prog = null)
+        public static MemberDecl FindMember(Dafny.Program program, string name)
         {
-            if (prog == null)
-                prog = this.program;
-            List<TopLevelDecl> res = new List<TopLevelDecl>();
-
-            foreach (TopLevelDecl tld in prog.DefaultModuleDef.TopLevelDecls)
+            foreach (var item in program.DefaultModuleDef.TopLevelDecls)
             {
-                if (tld is DatatypeDecl/* || tld  is RedirectingTypeDecl*/)
-                    res.Add(tld);
+                ClassDecl cd = item as ClassDecl;
+                if(cd != null)
+                    foreach (var member in cd.Members)           
+                        if (member.Name == name)
+                            return member;
+            }
+
+            return null;
+        }
+
+        public List<DatatypeDecl> GetGlobals(Dafny.Program prog)
+        {
+            List<DatatypeDecl> data = new List<DatatypeDecl>();
+            foreach (TopLevelDecl d in prog.DefaultModuleDef.TopLevelDecls)
+            {
+                DatatypeDecl dd = d as DatatypeDecl;
+                if (dd != null)
+                    data.Add(dd);
 
             }
-            return res;
+
+            return data;
+        }
+
+        public Token GetErrorToken()
+        {
+            if (errorInfo != null)
+                return (Token) errorInfo.Tok;
+
+            return null;
+        }
+
+        public bool HasError()
+        {
+            if (stats != null)
+                return stats.ErrorCount > 0;
+            
+            return false;
         }
 
         #region Parser
@@ -191,7 +246,7 @@ namespace Tacny
         }
         #endregion
 
-        #region BoogiePipeline
+        #region Boogie
         /// <summary>
         /// Translates Dafny program to Boogie program
         /// </summary>
@@ -211,7 +266,7 @@ namespace Tacny
         /// Pipeline the boogie program to Dafny where it is valid
         /// </summary>
         /// <returns>Exit value</returns>
-        public Bpl.PipelineOutcome BoogiePipeline(Bpl.Program boogieProgram, Dafny.Program dafnyProgram, IList<string> fileNames, string programId, out Bpl.PipelineStatistics stats)
+        public Bpl.PipelineOutcome BoogiePipeline(Bpl.Program boogieProgram, Dafny.Program dafnyProgram, IList<string> fileNames, string programIds)
         {
 
             string bplFilename;
@@ -424,8 +479,6 @@ namespace Tacny
 
         #endregion
 
-
-        
         public void MaybePrintProgram(string filename)
         {
             MaybePrintProgram(program, filename);
@@ -435,22 +488,20 @@ namespace Tacny
         /// </summary>
         /// <param name="prog"></param>
         /// <param name="filename"></param>
-        public static void MaybePrintProgram(Dafny.Program prog, string filename)
+        public void MaybePrintProgram(Dafny.Program prog, string filename)
         {
+            TextWriter tw = null;
+            if (filename == null)
+                tw = System.Console.Out;
             if (filename != null)
             {
-                TextWriter tw;
                 if (filename == "-")
-                {
                     tw = System.Console.Out;
-                }
                 else
-                {
                     tw = new System.IO.StreamWriter(filename);
-                }
-                Printer pr = new Printer(tw, DafnyOptions.O.PrintMode);
-                pr.PrintProgram(prog);
             }
+            Printer pr = new Printer(tw, DafnyOptions.O.PrintMode);
+            pr.PrintProgram(prog);
         }
     }
 }

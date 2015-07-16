@@ -128,10 +128,6 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="AssertActionBackup.txt" />
-    <Content Include="RepalceTerm_Backup.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\StatementInterpreter\StatementInterpreter.csproj">
       <Project>{d68d70f0-bd07-4176-b3de-0b00612f84f7}</Project>
       <Name>StatementInterpreter</Name>

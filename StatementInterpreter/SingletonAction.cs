@@ -13,9 +13,9 @@ namespace Tacny
         /// Replace a singleton with a new term
         /// </summary>
         /// <param name="st">replace_singleton(); Statement</param>
-        /// <param name="solution_tree">Reference to the solution tree</param>
+        /// <param name="solution_list">Reference to the solution tree</param>
         /// <returns> null if success; error message otherwise</returns>
-        public string Replace(Statement st, ref SolutionTree solution_tree)
+        public string Replace(Statement st, ref List<Solution> solution_list)
         {
             IVariable lv = null;
             List<Expression> call_arguments = null;
@@ -32,11 +32,11 @@ namespace Tacny
             if (call_arguments.Count != 3)
                 return "replace_singleton: Wrong number of method arguments; Expected 3 got " + call_arguments.Count;
 
-            err = ProcessArg(call_arguments[0], out new_term);
+            err = ProcessArg(call_arguments[0], out old_singleton);
             if (err != null)
                 return "replace_singleton: " + err;
 
-            err = ProcessArg(call_arguments[1], out old_singleton);
+            err = ProcessArg(call_arguments[1], out new_term);
             if (err != null)
                 return "replace_singleton: " + err;
 
@@ -56,7 +56,8 @@ namespace Tacny
             {
                 for (int i = 0; i < exp_list.Count; i++)
                 {
-                    BranchLocals(lv, exp_list[i], solution_tree, st);
+                    AddLocal(lv, exp_list[i]);
+                    solution_list.Add(new Solution(this.Copy()));
                 }
             }
             return null;

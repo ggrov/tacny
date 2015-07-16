@@ -24,9 +24,11 @@ namespace Tacny
         /// <param name="args"></param>
         static int Main(string[] args)
         {
+
+  
             int ret = 0;
             var thread = new System.Threading.Thread(
-                new System.Threading.ThreadStart(() =>
+                new System.Threading.ThreadStart(() =>  
                 { ret = ThreadMain(args); }),
                  0x10000000); // 256MB stack size to prevent stack
 

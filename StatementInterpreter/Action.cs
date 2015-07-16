@@ -27,8 +27,10 @@ namespace Tacny
 
         public readonly MemberDecl md = null; // the Class Member from which the tactic has been called
         public readonly Tactic tac = null;  // The called tactic
+        public  List<Statement> tac_body = new List<Statement>(); // body of the currently worked tactic
         public readonly UpdateStmt tac_call = null;  // call to the tactic
-        public readonly Program program;
+        public Solution solution;
+        public Program program;
 
         protected readonly Dictionary<string, DatatypeDecl> global_variables = new Dictionary<string, DatatypeDecl>();
         protected Dictionary<Dafny.IVariable, object> local_variables = new Dictionary<Dafny.IVariable, object>();
@@ -40,6 +42,7 @@ namespace Tacny
         {
             this.md = ac.md;
             this.tac = ac.tac;
+            this.tac_body = ac.tac_body;
             this.tac_call = ac.tac_call;
             this.global_variables = ac.global_variables;
             this.local_variables = ac.local_variables;
@@ -55,18 +58,20 @@ namespace Tacny
             this.md = md;
             this.tac = tac;
             this.tac_call = tac_call;
+            this.tac_body = tac.Body.Body;
             this.program = program;
             FillGlobals(global_variables);
             FillTacticInputs();
         }
 
-        private Action(MemberDecl md, Tactic tac, UpdateStmt tac_call, Program program,
+        private Action(MemberDecl md, Tactic tac, List<Statement> tac_body, UpdateStmt tac_call, Program program,
             Dictionary<Dafny.IVariable, object> local_variables, Dictionary<string, DatatypeDecl> global_variables,
             Dictionary<Statement, Statement> updated_statements, List<Statement> resolved)
         {
             this.md = md;
             this.tac = tac;
             this.tac_call = tac_call;
+            this.tac_body = tac_body;
             this.program = program;
 
             List<IVariable> lv_keys = new List<IVariable>(local_variables.Keys);
@@ -87,7 +92,11 @@ namespace Tacny
         /// <returns>Action</returns>
         public Action Copy()
         {
-            return new Action(md, tac, tac_call, program, local_variables, global_variables, updated_statements, resolved);
+            var m = (Method)md;
+            return new Action(
+                    new Method(m.tok, m.Name, m.HasStaticKeyword, m.IsGhost, m.TypeArgs, m.Ins, m.Outs, m.Req, m.Mod, m.Ens, m.Decreases, m.Body, m.Attributes, m.SignatureEllipsis),
+                    new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword, tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens, tac.Decreases, tac.Body, tac.Attributes, tac.SignatureEllipsis),
+                    tac_body, tac_call, program.newProgram(), local_variables, global_variables, updated_statements, resolved);
         }
 
         /// <summary>
@@ -99,7 +108,7 @@ namespace Tacny
         /// <returns>Action</returns>
         public Action Update(MemberDecl md, Tactic tac, UpdateStmt tac_call)
         {
-            Action ac = new Action(md, tac, tac_call, program, local_variables, global_variables, updated_statements, resolved);
+            Action ac = new Action(md, tac, tac.Body.Body, tac_call, program, local_variables, global_variables, updated_statements, resolved);
             ac.FillTacticInputs();
             return ac;
         }
@@ -129,6 +138,24 @@ namespace Tacny
             return GetStatementType(er.Expr as ApplySuffix);
         }
 
+
+        public string ResolveOne(ref List<Solution> result, Solution solution)
+        {
+            string err = null;
+         
+            if(result == null)
+                result = new List<Solution>();
+            
+            if (tac_body.Count < 1)
+                return err;
+
+            this.solution = solution;
+            err = Action.CallAction(tac_body[0], this, ref result);
+
+           tac_body.RemoveAt(0);
+            return err;
+        }
+
         protected static Atomic GetStatementType(ApplySuffix ass)
         {
             Contract.Requires(ass != null);
@@ -153,35 +180,35 @@ namespace Tacny
             }
         }
 
-        public static string CallAction(Statement st, Action action, ref SolutionTree solution_tree)
+        public static string CallAction(Statement st, Action action, ref List<Solution> solution_list)
         {
             Contract.Requires(st != null);
             string err;
             switch (GetStatementType(st))
             {
                 case Atomic.CREATE_INVAR:
-                    err = action.CallCreateInvariant(st, ref solution_tree);
+                    err = action.CallCreateInvariant(st, ref solution_list);
                     break;
                 case Atomic.ADD_INVAR:
-                    err = action.CallAddInvariant(st, ref solution_tree);
+                    err = action.CallAddInvariant(st, ref solution_list);
                     break;
                 case Atomic.REPLACE_SINGLETON:
-                    err = action.CallSingletonAction(st, ref solution_tree);
+                    err = action.CallSingletonAction(st, ref solution_list);
                     break;
                 case Atomic.EXTRACT_GUARD:
-                    err = action.ExtractGuard(st, ref solution_tree);
+                    err = action.ExtractGuard(st, ref solution_list);
                     break;
                 case Atomic.REPLACE_OP:
-                    err = action.CallOperatorAction(st, ref solution_tree);
+                    err = action.CallOperatorAction(st, ref solution_list);
                     break;
-                case Atomic.COMPOSITION:
-                    err = action.CallCompositionAction(st, ref solution_tree);
-                    break;
+                //case Atomic.COMPOSITION:
+                //    err = action.CallCompositionAction(st, ref solution_list);
+                //    break;
                 case Atomic.ADD_MATCH:
-                    err = action.CallMatchAction((TacnyCasesBlockStmt)st, ref solution_tree);
+                    err = action.CallMatchAction((TacnyCasesBlockStmt)st, ref solution_list);
                     break;
                 case Atomic.ADD_IF:
-                    err = action.CallIfAction((TacnyIfBlockStmt)st, ref solution_tree);
+                    err = action.CallIfAction((TacnyIfBlockStmt)st, ref solution_list);
                     break;
                 default:
                     throw new cce.UnreachableException();
@@ -274,47 +301,48 @@ namespace Tacny
             return null;
         }
 
-        private string CallSingletonAction(Statement st, ref SolutionTree solution_tree)
+        private string CallSingletonAction(Statement st, ref List<Solution> solution_list)
         {
             SingletonAction rs = new SingletonAction(this);
-            return rs.Replace(st, ref solution_tree);
+            return rs.Replace(st, ref solution_list);
         }
 
-        private string CallAddInvariant(Statement st, ref SolutionTree solution_tree)
+        private string CallAddInvariant(Statement st, ref List<Solution> solution_list)
         {
             InvariantAction ia = new InvariantAction(this);
-            return ia.AddInvar(st, ref solution_tree);
+            return ia.AddInvar(st, ref solution_list);
         }
 
-        private string CallCreateInvariant(Statement st, ref SolutionTree solution_tree)
+        private string CallCreateInvariant(Statement st, ref List<Solution> solution_list)
         {
             InvariantAction ia = new InvariantAction(this);
-            return ia.CreateInvar(st, ref solution_tree);
+            return ia.CreateInvar(st, ref solution_list);
         }
 
-        private string CallOperatorAction(Statement st, ref SolutionTree solution_tree)
+        private string CallOperatorAction(Statement st, ref List<Solution> solution_list)
         {
             OperatorAction oa = new OperatorAction(this);
-            return oa.ReplaceOperator(st, ref solution_tree);
+            return oa.ReplaceOperator(st, ref solution_list);
         }
 
-        private string CallMatchAction(TacnyCasesBlockStmt st, ref SolutionTree solution_tree)
+        private string CallMatchAction(TacnyCasesBlockStmt st, ref List<Solution> solution_list)
         {
             MatchAction ma = new MatchAction(this);
-            return ma.GenerateMatch(st, ref solution_tree);
+            return ma.GenerateMatch(st, ref solution_list);
         }
 
-        private string CallCompositionAction(Statement st, ref SolutionTree solution_tree)
+        private string CallCompositionAction(Statement st, ref List<Solution> solution_list)
         {
             CompositionAction ca = new CompositionAction(this);
-            return ca.Composition(st, ref solution_tree);
+            return ca.Composition(st, ref solution_list);
         }
 
-        private string CallIfAction(TacnyIfBlockStmt st, ref SolutionTree solution_tree)
+        private string CallIfAction(TacnyIfBlockStmt st, ref List<Solution> solution_list)
         {
             IfAction ia = new IfAction(this);
-            return ia.AddIf(st, ref solution_tree);
+            return ia.AddIf(st, ref solution_list);
         }
+
         /// <summary>
         /// Find closest while statement to the tactic call
         /// </summary>
@@ -339,7 +367,7 @@ namespace Tacny
             return null;
         }
 
-        public string ExtractGuard(Statement st, ref SolutionTree solution_tree)
+        public string ExtractGuard(Statement st, ref List<Solution> solution_list)
         {
             WhileStmt ws = null;
             Dafny.IVariable lv = null;
@@ -358,7 +386,9 @@ namespace Tacny
                 return "extract_guard: extract_guard can only be called from a while loop";
             guard = ws.Guard;
 
-            BranchLocals(lv, guard, solution_tree, st);
+            AddLocal(lv, guard);
+
+            solution_list.Add(new Solution(this.Copy()));
             return null;
         }
 
@@ -434,25 +464,27 @@ namespace Tacny
             return null;
         }
 
-        public string Finalize(ref SolutionTree solution_tree)
+        public string Fin()
         {
             // for now try to copy dict values
             resolved = new List<Statement>(updated_statements.Values);
-            SolutionTree st = new SolutionTree(this, solution_tree);
-            st.isFinal = true;
-            solution_tree.AddChild(st);
+            
             return null;
         }
 
-        protected void BranchLocals(IVariable lv, object value, SolutionTree solution_tree, Statement st)
+        protected void AddLocal(IVariable lv, object value)
         {
-            Action ac = this.Copy();
-            if (!ac.local_variables.ContainsKey(lv))
-                ac.local_variables.Add(lv, value);
+            if (!local_variables.ContainsKey(lv))
+                local_variables.Add(lv, value);
             else
-                ac.local_variables[lv] = value;
+                local_variables[lv] = value;
+        }
 
-            solution_tree.AddChild(new SolutionTree(ac, solution_tree, st));
+        protected static Token CreateToken(string val, int line, int col)
+        {
+            var tok = new Token(line, col);
+            tok.val = val;
+            return tok;
         }
     }
 }

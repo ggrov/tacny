@@ -72,13 +72,16 @@ namespace Tacny
 
         private Dictionary<string, Tactic> tactics = new Dictionary<string, Tactic>();
         private List<MemberDecl> members = new List<MemberDecl>();
+        private List<TopLevelDecl> globals = new List<TopLevelDecl>();
         private Program tacnyProgram;
-        private SolutionTree solution_tree = null;
+
+        private SolutionList solution_list = null;
 
         public Interpreter(Program tacnyProgram)
         {
             Contract.Requires(tacnyProgram != null);
             this.tacnyProgram = tacnyProgram;
+            this.solution_list = new SolutionList();
         }
 
         public bool HasTactics()
@@ -112,7 +115,7 @@ namespace Tacny
                 if (curDecl != null)
                 {
                     // scan each member for tactic calls and resolve if found
-                    
+
                     for (int j = 0; j < curDecl.Members.Count; j++)
                     {
                         MemberDecl md = curDecl.Members[j];
@@ -121,6 +124,12 @@ namespace Tacny
                         else
                             members.Add(md);
                     }
+                }
+                else
+                {
+                    DatatypeDecl dd = d as DatatypeDecl;
+                    if (dd != null)
+                        globals.Add(dd);
                 }
             }
 
@@ -133,18 +142,17 @@ namespace Tacny
                         return err;
                 }
 
-                if (solution_tree != null)
+                if (solution_list != null)
                 {
-                    err = VerifySolutionTree(solution_tree, ref prg);
+                    err = VerifySolutionList(solution_list, ref prg);
                     if (err != null)
                         tacnyProgram.program = prg;
+
+                    return err;
                 }
             }
-            else
-            {
-                tacnyProgram.ResolveProgram();
-                tacnyProgram.VerifyProgram();
-            }
+            tacnyProgram.ResolveProgram();
+            tacnyProgram.VerifyProgram();
             return err;
         }
 
@@ -154,39 +162,28 @@ namespace Tacny
         /// </summary>
         /// <param name="solution_tree"></param>
         /// <returns></returns>
-        private string VerifySolutionTree(SolutionTree sol_tree, ref Dafny.Program result)
+        private string VerifySolutionList(SolutionList sol_tree, ref Dafny.Program result)
         {
             string err = null;
             result = null;
-            if (sol_tree.isLeaf())
+            Dafny.Program prog = tacnyProgram.parseProgram();
+            foreach (var item in sol_tree.plist)
             {
-                if (!sol_tree.isFinal)
-                    return "VerifySolutionTree: Received non final leaf";
-                Dafny.Program prog = tacnyProgram.NewProgram();
-                sol_tree.GenerateProgram(ref prog);
-                err = tacnyProgram.ResolveProgram(prog);
-                if (err != null)
-                    return err;
-                Program.MaybePrintProgram(prog, DafnyOptions.O.DafnyPrintResolvedFile);
-                tacnyProgram.VerifyProgram(prog);
-                if (tacnyProgram.stats.ErrorCount == 0)
-                {
-                    result = prog;
-
-                    return "done";
-                }
-
+                if (!item.isFinal)
+                    return "VerifySolutionTree: Received non final solution";
+                item.GenerateProgram(ref prog);
             }
-            else
+            err = tacnyProgram.ResolveProgram(prog);
+            if (err != null)
+                return err;
+            tacnyProgram.MaybePrintProgram(prog, DafnyOptions.O.DafnyPrintResolvedFile);
+            tacnyProgram.VerifyProgram(prog);
+            if (tacnyProgram.stats.ErrorCount == 0)
             {
-                foreach (SolutionTree child in sol_tree.children)
-                {
-                    err = VerifySolutionTree(child, ref result);
-                    if (result != null)
-                        break;
-
-                }
+                result = prog;
+                return "done";
             }
+
             if (result != null)
                 return null;
             return "VerifySolution: Unable to verify the generated soution";
@@ -238,85 +235,32 @@ namespace Tacny
             Contract.Requires(tac != null);
             Contract.Requires(tac_call != null);
             Contract.Requires(md != null);
-            Action action;
-            if (solution_tree != null)
-            {
-                solution_tree = solution_tree.GetLeftMost();
-                action = solution_tree.state.Update(md, tac, tac_call);
-            }
-            else
-            {
-                action = new Action(md, tac, tac_call, tacnyProgram, tacnyProgram.GetGlobalDecls());
-                solution_tree = new SolutionTree(action);
-            }
+
+            //local solution list
+            SolutionList solution_list = new SolutionList(new Solution(new Action(md, tac, tac_call, tacnyProgram, globals)));
             string err = null;
 
-            foreach (Statement st in tac.Body.Body)
-            {
-                err = Action.CallAction(st, action, ref solution_tree);
-                if (err != null)
-                    Error(st, err, null);
-                solution_tree = solution_tree.GetLeftMost();
-                action = solution_tree.state;
-            }
 
-            // fully resolve the left most branch
-            err = action.Finalize(ref solution_tree);
-            if (err != null)
+            while (!solution_list.IsFinal())
             {
-                Error(tac_call, err);
-                err = null;
-            }
-
-            // time to backtrack ^.^ 
-            solution_tree = solution_tree.root;
-            err = FinalizeTree(solution_tree);
-            solution_tree.PrintTree("-");
-            return null;
-        }
-
-        private static string FinalizeTree(SolutionTree solution_tree)
-        {
-            string err;
-            if (solution_tree.isFinal)
-            {
-                return null;
-            }
-            else if (solution_tree.isLeaf())
-            {
-                // resolve the node
-                Action ac = solution_tree.state;
-                int index = ac.tac.Body.Body.IndexOf(solution_tree.last_resolved);
-                if (index < 0)
-                    return "Error occured during tree finalization, index of last resolved statement is out of bound";
-
-                for (int i = index + 1; i < ac.tac.Body.Body.Count; i++)
+                List<Solution> result = null;
+                foreach (var solution in solution_list.plist)
                 {
-
-                    Action.CallAction(ac.tac.Body.Body[i], ac, ref solution_tree);
-                    solution_tree = solution_tree.GetLeftMostUndersolved();
-                    ac = solution_tree.state;
-                }
-                // finalize only leaf nodes
-                if (solution_tree.isLeaf())
-                    return ac.Finalize(ref solution_tree);
-                return null;
-            }
-            else
-            {
-                for (int i = 0; i < solution_tree.children.Count; i++)
-                {
-                    err = FinalizeTree(solution_tree.children[i]);
+                    err = solution.state.ResolveOne(ref result, solution);
                     if (err != null)
                         return err;
+                    foreach (var res in result)
+                        res.parent = solution;
                 }
-                solution_tree.isFinal = true;
+
+                if (result.Count > 0)
+                    solution_list.AddRange(result);
+                else
+                    solution_list.SetIsFinal();
             }
 
+            this.solution_list.AddFinal(solution_list.plist);
             return null;
         }
-
-
-
     }
 }

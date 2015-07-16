@@ -12,7 +12,7 @@ namespace Tacny
 
         
         
-        public string Composition(Statement st, ref SolutionTree solution_tree)
+        public string Composition(Statement st, ref List<Solution> solution_tree)
         {
             IfStmt if_stmt = st as IfStmt;
             WhileStmt while_stmt = st as WhileStmt;
@@ -27,7 +27,7 @@ namespace Tacny
                 err = AnalyseGuard(guard, out guard_type);
                 if (err != null)
                     return "composition: " + err;
-                err = CallGuard(guard_type, ref solution_tree, out res);
+                err = CallGuard(guard_type, out res);
             }
             else if (while_stmt != null) { }
             else
@@ -55,14 +55,14 @@ namespace Tacny
             return null;
         }
 
-        private string CallGuard(Atomic type, ref SolutionTree solution_tree, out ConditionalAction.ConditionResult result)
+        private string CallGuard(Atomic type, out ConditionalAction.ConditionResult result)
         {
             string err;
             switch (type)
             {
                 case Atomic.IS_VALID:
                     ConditionalAction ca = new ConditionalAction(this);
-                    err = ca.IsValid(ref solution_tree, out result);
+                    err = ca.IsValid(out result);
                     break;
                 default:
                     throw new cce.UnreachableException();
