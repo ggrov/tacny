@@ -33,6 +33,8 @@ namespace Tacny
         public Bpl.PipelineStatistics stats;
         public bool resolved = false;
 
+        public Dictionary<MemberDecl, List<Token>> tokens;
+
         public Program(IList<string> fileNames, string programId, string programName = null)
         {
             this.fileNames = fileNames;
@@ -338,7 +340,7 @@ namespace Tacny
                     //return ExecutionEngine.InferAndVerify(program, stats, programId);
                     return ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo =>
                     {
-                        errorInfo.BoogieErrorCode = null;
+                        //errorInfo.BoogieErrorCode = null;
                         this.errorInfo = errorInfo;
                         Console.WriteLine(errorInfo.FullMsg);
                         //errorListHolder.AddError(new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1, ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(), System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename), errorInfo.ImplementationName, requestId);
@@ -478,6 +480,24 @@ namespace Tacny
         }
 
         #endregion
+
+        public void ExractTokens()
+        {
+            if (!resolved)
+                ResolveProgram();
+            tokens = new Dictionary<MemberDecl, List<Token>>();
+            foreach(var tld in program.DefaultModuleDef.TopLevelDecls)
+            {
+                ClassDecl cd = tld as ClassDecl;
+                if (cd != null)
+                {
+                    foreach (var member in cd.Members)
+                    {
+                        tokens.Add(member, new List<Token>());
+                    }
+                }
+            }
+        }
 
         public void MaybePrintProgram(string filename)
         {

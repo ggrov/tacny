@@ -12,15 +12,21 @@ namespace Tacny
     public class SolutionList
     {
 
-
         public List<Solution> plist;
 
-        public SolutionList() { plist = new List<Solution>(); }
+        private List<List<Solution>> final; // a list of solutions ofr each tactic
+
+        public SolutionList()
+        {
+            plist = new List<Solution>();
+            final = new List<List<Solution>>();
+        }
 
         public SolutionList(Solution solution)
         {
             Contract.Requires(solution != null);
             plist = new List<Solution>() { solution };
+            final = new List<List<Solution>>();
         }
 
         public void Add(Solution solution)
@@ -36,7 +42,7 @@ namespace Tacny
 
         public void AddFinal(List<Solution> solutions)
         {
-            plist.AddRange(solutions);
+            final.Add(solutions);
         }
 
         public bool IsFinal()
@@ -46,7 +52,6 @@ namespace Tacny
                     return false;
             return true;
         }
-
 
         public void SetIsFinal()
         {
@@ -60,12 +65,9 @@ namespace Tacny
                 item.isFinal = false;
         }
 
-        public void UpdateState(Action action)
+        public List<List<Solution>> GetFinal()
         {
-            foreach (var item in plist)
-            {
-                item.state.Update(action.md, action.tac, action.tac_call);
-            }
+            return final;
         }
     }
 
@@ -95,11 +97,9 @@ namespace Tacny
 
         public string GenerateProgram(ref Dafny.Program prog)
         {
-            if (!isFinal)
-                throw new Exception("Only leaf nodes can be generated to programs");
 
             List<Dafny.Program> prog_list = new List<Dafny.Program>();
-            Action ac = this.state;
+            Action ac = state.Copy();
             ac.Fin();
             Method method = (Method)Program.FindMember(prog, ac.md.Name);
             if (method == null)
@@ -136,25 +136,14 @@ namespace Tacny
             return null;
         }
 
-        // doesnt work 
-        // do a propper fix
         private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)
         {
             WhileStmt ws = null;
             BlockStmt bs = null;
-            int index = -1;
-            for (int j = 0; j < body.Count; j++)
-            {
-                UpdateStmt us = body[j] as UpdateStmt;
-                if (us != null)
-                {
-                    if (us.Tok.line == tac_call.Tok.line && us.Tok.col == tac_call.Tok.col)
-                    {
-                        index = j;
-                        break;
-                    }
-                }
-            }
+            int index = FindTacCall(body, tac_call);
+            if (index == -1)
+                return null;
+
             List<Statement> newBody = new List<Statement>();
             if (index == 0)
             {
@@ -166,37 +155,31 @@ namespace Tacny
             }
 
             // check where from tac_call has been made
-            // this doesnt work...
             int i = index + 1;
             while (i < body.Count)
             {
                 Statement stmt = body[i];
+                bs = stmt as BlockStmt;
                 // if we found a block statement check behind to find the asociated while statement
-                if (stmt is BlockStmt)
+                if (bs != null)
                 {
                     int j = index;
                     while (j > 0)
                     {
                         Statement stmt_2 = body[j];
-                        if (stmt_2 is WhileStmt)
-                        {
-                            ws = (WhileStmt)stmt_2;
+                        ws = stmt_2 as WhileStmt;
+                        if (ws != null)
                             break;
-                        }
+
                         else if (!(stmt_2 is UpdateStmt))
-                        {
                             return null;
-                        }
 
                         j--;
                     }
-                    bs = (BlockStmt)stmt;
                     break;
                 }
                 else if (!(stmt is UpdateStmt))
-                {
                     return null;
-                }
 
                 i++;
             }
@@ -207,7 +190,7 @@ namespace Tacny
                 int l_bound = body.IndexOf(ws);
                 int u_boud = body.IndexOf(bs);
                 // tactic called in a while statement should 
-                //  return onlyt a single solution item which is a WhileStmt
+                //  return only a single solution item which is a WhileStmt
                 WhileStmt mod_ws = (WhileStmt)solution[0];
                 mod_ws = new WhileStmt(mod_ws.Tok, mod_ws.EndTok, mod_ws.Guard, mod_ws.Invariants,
                     mod_ws.Decreases, mod_ws.Mod, bs);
@@ -223,10 +206,8 @@ namespace Tacny
                 }
 
                 foreach (Statement st in tmp)
-                {
                     if (st != null)
                         newBody.Add(st);
-                }
             }
             else
             {
@@ -239,16 +220,28 @@ namespace Tacny
             return newBody;
         }
 
+        private static int FindTacCall(List<Statement> body, UpdateStmt tac_call)
+        {
+            for (int j = 0; j < body.Count; j++)
+            {
+                UpdateStmt us = body[j] as UpdateStmt;
+                if (us != null)
+                    if (us.Tok.line == tac_call.Tok.line && us.Tok.col == tac_call.Tok.col)
+                        return j;
+            }
+            return -1;
+        }
+
         private static TopLevelDecl RemoveTactics(ClassDecl cd)
         {
             List<MemberDecl> mdl = new List<MemberDecl>();
             foreach (MemberDecl md in cd.Members)
-            {
                 if (!(md is Tactic))
                     mdl.Add(md);
 
-            }
             return new ClassDecl(cd.tok, cd.Name, cd.Module, cd.TypeArgs, mdl, cd.Attributes, cd.TraitsTyp);
         }
+
+
     }
 }

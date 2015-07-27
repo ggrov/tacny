@@ -13,6 +13,7 @@ namespace Tacny
     /// </summary>
     class ConditionalAction : Action
     {
+
         public class ConditionResult
         {
             public readonly bool success;

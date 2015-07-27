@@ -6,6 +6,11 @@ namespace Tacny
 {
     class OperatorAction : Action
     {
+        public override string FormatError(string error)
+        {
+            return "ERROR replace_operator: " + error;
+        }
+
         public OperatorAction(Action action) : base(action) { }
 
         public string ReplaceOperator(Statement st, ref List<Solution> solution_list)
@@ -21,23 +26,17 @@ namespace Tacny
 
             err = InitArgs(st, out lv, out call_arguments);
             if (err != null)
-                return "replace_operator: " + err;
+                return FormatError(err);
 
             if (call_arguments.Count != 3)
-                return "replace_operator: Wrong number of method arguments; Expected 3 got " + call_arguments.Count;
+                return FormatError("replace_operator: Wrong number of method arguments; Expected 3 got " + call_arguments.Count);
 
 
             old_operator = (StringLiteralExpr)call_arguments[0];
             new_operator = (StringLiteralExpr)call_arguments[1];
-            if (call_arguments[2] is NameSegment)
-                if (!HasLocalWithName(call_arguments[2] as NameSegment))
-                    return ""; // formula not passed
-                else
-                    formula = (Expression)GetLocalValueByName(call_arguments[2] as NameSegment);
-
-            else if (call_arguments[2] is Expression)
-                formula = (Expression)call_arguments[2];
-
+            err = ProcessArg(call_arguments[2], out formula);
+            if (err != null)
+                return FormatError(err);
             try
             {
                 old_op = ToOpCode((string)old_operator.Value);
@@ -45,7 +44,7 @@ namespace Tacny
             }
             catch (ArgumentException e)
             {
-                return e.Message;
+                return FormatError(e.Message);
             }
 
             ExpressionTree et = ExpressionTree.ExpressionToTree(formula);

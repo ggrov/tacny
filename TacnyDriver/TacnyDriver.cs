@@ -186,7 +186,9 @@ namespace Tacny
                 
                 if (!CommandLineOptions.Clo.NoResolve && !CommandLineOptions.Clo.NoTypecheck && DafnyOptions.O.DafnyVerify)
                 {
-                    err = Tacny.Main.ResolveProgram(ref tacnyProgram);
+                    Interpreter r = new Interpreter(tacnyProgram);
+
+                    err = r.ResolveProgram();
                     if (err != null)
                     {
                         exitValue = ExitValue.DAFNY_ERROR;

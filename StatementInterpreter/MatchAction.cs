@@ -8,6 +8,11 @@ namespace Tacny
 {
     class MatchAction : Action
     {
+        public override string FormatError(string error)
+        {
+            return "ERROR cases: " + error;
+        }
+
         public MatchAction(Action action) : base(action) { }
 
         private Token oldToken = null;
@@ -42,9 +47,9 @@ namespace Tacny
             ParensExpression guard;
             NameSegment ns;
             string datatype_name;
-            string err;
+
             Program prog = program.newProgram();
-            bool[] ctorFlags;
+            bool[] ctorFlags;  // used to keep track of which cases statements require a body
             guard = st.Guard as ParensExpression;
 
             if (guard == null)
@@ -53,14 +58,14 @@ namespace Tacny
                 ns = guard.E as NameSegment;
 
             if (ns == null)
-                return "cases: unexpected cases argument";
+                return FormatError("unexpected argument");
 
             Dafny.Formal formal = (Dafny.Formal)GetLocalKeyByName(ns);
 
             datatype_name = formal.Type.ToString();
 
             if (!global_variables.ContainsKey(datatype_name))
-                return "cases: global datatype " + ns.Name + " is not defined";
+                return FormatError("global datatype " + ns.Name + " is not defined");
 
             datatype = global_variables[datatype_name];
             initFlags(datatype, out ctorFlags);
@@ -88,6 +93,9 @@ namespace Tacny
                         break;
                     this.oldToken = prog.GetErrorToken();
                     int index = GetErrorIndex(oldToken, ms);
+                    // the verification error is not caused by the match stmt
+                    if (index == -1)
+                        break;
                     ctorFlags[index] = true;
                     updated_statements.Remove(ms);
                     GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, st.Body.Body, out ms, ctorFlags);
@@ -100,7 +108,9 @@ namespace Tacny
                     prog.MaybePrintProgram(dprog, null);
                 }
             }
-            // regenerate match stmt to get na unresolved one
+            /*
+             * HACK Recreate the match block as the old one was modified by the resolver
+             * */
             updated_statements.Remove(ms);
             GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, st.Body.Body, out ms, ctorFlags);
             updated_statements.Add(ms, ms);

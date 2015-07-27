@@ -24,10 +24,10 @@ namespace Tacny
             ADD_MATCH,
             ADD_IF,
         };
-
+        
         public readonly MemberDecl md = null; // the Class Member from which the tactic has been called
         public readonly Tactic tac = null;  // The called tactic
-        public  List<Statement> tac_body = new List<Statement>(); // body of the currently worked tactic
+        public List<Statement> tac_body = new List<Statement>(); // body of the currently worked tactic
         public readonly UpdateStmt tac_call = null;  // call to the tactic
         public Solution solution;
         public Program program;
@@ -71,7 +71,7 @@ namespace Tacny
             this.md = md;
             this.tac = tac;
             this.tac_call = tac_call;
-            this.tac_body = tac_body;
+            this.tac_body = tac_body;// new List<Statement>(tac_body.ToArray());
             this.program = program;
 
             List<IVariable> lv_keys = new List<IVariable>(local_variables.Keys);
@@ -83,7 +83,7 @@ namespace Tacny
             this.updated_statements = us_keys.ToDictionary(x => x, x => us_values[us_keys.IndexOf(x)]);
 
             this.global_variables = global_variables;
-            this.resolved = resolved;
+            this.resolved = new List<Statement>(resolved.ToArray());
         }
 
         /// <summary>
@@ -113,6 +113,37 @@ namespace Tacny
             return ac;
         }
 
+        
+        public virtual string FormatError(string err)
+        {
+            return "Error: " + err;
+        }
+        
+        public static string ResolveOne(ref List<Solution> result, List<Solution> solution_list)
+        {
+            string err = null;
+
+            if (result == null)
+                result = new List<Solution>();
+
+            foreach (var solution in solution_list)
+            {
+                if (solution.state.tac_body.Count < 1)
+                    continue;
+
+                solution.state.solution = solution;
+                err = solution.state.CallAction(solution.state.tac_body[0], ref result);
+                foreach (var res in result)
+                    if (res.parent == null)
+                        res.parent = solution;
+
+                if(solution_list.IndexOf(solution) == solution_list.Count  - 1)
+                    solution.state.tac_body.RemoveAt(0);
+            }
+            
+            return err;
+        }
+
         protected static Atomic GetStatementType(Statement st)
         {
             Contract.Requires(st != null);
@@ -136,24 +167,6 @@ namespace Tacny
             er = (ExprRhs)us.Rhss[0];
 
             return GetStatementType(er.Expr as ApplySuffix);
-        }
-
-
-        public string ResolveOne(ref List<Solution> result, Solution solution)
-        {
-            string err = null;
-         
-            if(result == null)
-                result = new List<Solution>();
-            
-            if (tac_body.Count < 1)
-                return err;
-
-            this.solution = solution;
-            err = Action.CallAction(tac_body[0], this, ref result);
-
-           tac_body.RemoveAt(0);
-            return err;
         }
 
         protected static Atomic GetStatementType(ApplySuffix ass)
@@ -180,35 +193,48 @@ namespace Tacny
             }
         }
 
-        public static string CallAction(Statement st, Action action, ref List<Solution> solution_list)
+        public string CallAction(object call, ref List<Solution> solution_list)
         {
-            Contract.Requires(st != null);
+            Contract.Requires(call != null);
             string err;
-            switch (GetStatementType(st))
+            Atomic type = Atomic.UNDEFINED;
+            Statement st = call as Statement;
+            ApplySuffix aps = null;
+            if (st != null)
+                type = GetStatementType(st);
+            else
+            {
+                aps = call as ApplySuffix;
+                if (aps != null)
+                    type = GetStatementType(aps);
+                else
+                    return "unexpected call argument: expectet Statement or ApplySuffix; Received " + call.GetType();
+            }
+            switch (type)
             {
                 case Atomic.CREATE_INVAR:
-                    err = action.CallCreateInvariant(st, ref solution_list);
+                    err = CallCreateInvariant(st, ref solution_list);
                     break;
                 case Atomic.ADD_INVAR:
-                    err = action.CallAddInvariant(st, ref solution_list);
+                    err = CallAddInvariant(st, ref solution_list);
                     break;
                 case Atomic.REPLACE_SINGLETON:
-                    err = action.CallSingletonAction(st, ref solution_list);
+                    err = CallSingletonAction(st, ref solution_list);
                     break;
                 case Atomic.EXTRACT_GUARD:
-                    err = action.ExtractGuard(st, ref solution_list);
+                    err = ExtractGuard(st, ref solution_list);
                     break;
                 case Atomic.REPLACE_OP:
-                    err = action.CallOperatorAction(st, ref solution_list);
+                    err = CallOperatorAction(st, ref solution_list);
                     break;
                 //case Atomic.COMPOSITION:
                 //    err = action.CallCompositionAction(st, ref solution_list);
                 //    break;
                 case Atomic.ADD_MATCH:
-                    err = action.CallMatchAction((TacnyCasesBlockStmt)st, ref solution_list);
+                    err = CallMatchAction((TacnyCasesBlockStmt)st, ref solution_list);
                     break;
                 case Atomic.ADD_IF:
-                    err = action.CallIfAction((TacnyIfBlockStmt)st, ref solution_list);
+                    err = CallIfAction((TacnyIfBlockStmt)st, ref solution_list);
                     break;
                 default:
                     throw new cce.UnreachableException();
@@ -239,9 +265,18 @@ namespace Tacny
             this.global_variables.Clear();
             foreach (TopLevelDecl tld in globals)
             {
-                if (tld is DatatypeDecl /*|| tld is RedirectingTypeDecl*/) // TODO what is RedirectingType
-                    this.global_variables.Add(tld.Name, (DatatypeDecl)tld);
+                DatatypeDecl dc = tld as DatatypeDecl;
+                if (dc != null)
+                    this.global_variables.Add(tld.Name, dc);
+                //if (tld is DatatypeDecl /*|| tld is RedirectingTypeDecl*/) // TODO what is RedirectingType
+
             }
+        }
+
+        protected string InitArgs(Statement st, out List<Expression> call_arguments)
+        {
+            IVariable lv;
+            return InitArgs(st, out lv, out call_arguments);
         }
 
         /// <summary>
@@ -255,29 +290,34 @@ namespace Tacny
         {
             lv = null;
             call_arguments = null;
-            if (st is VarDeclStmt)
+            VarDeclStmt vds = null;
+            UpdateStmt us = null;
+
+            if ((vds = st as VarDeclStmt) != null)
             {
-                VarDeclStmt vds = (VarDeclStmt)st;
                 if (vds.Locals.Count != 1)
                     return "Wrong number of method result arguments; Expected 1 got " + vds.Locals.Count;
                 lv = vds.Locals[0];
                 call_arguments = GetCallArguments(vds.Update as UpdateStmt);
 
             }
-            else if (st is UpdateStmt)
+            else if ((us = st as UpdateStmt) != null)
             {
-                UpdateStmt us = (UpdateStmt)st;
-                if (us.Lhss.Count != 1)
-                    return "Wrong number of method result arguments; Expected 1 got " + us.Lhss.Count;
-
-                NameSegment ns = (NameSegment)us.Lhss[0];
-                if (HasLocalWithName(ns))
+                if (us.Lhss.Count == 0)
                 {
-                    lv = GetLocalKeyByName(ns);
                     call_arguments = GetCallArguments(us);
                 }
                 else
-                    return "Local variable " + ns.Name + " not declared";
+                {
+                    NameSegment ns = (NameSegment)us.Lhss[0];
+                    if (HasLocalWithName(ns))
+                    {
+                        lv = GetLocalKeyByName(ns);
+                        call_arguments = GetCallArguments(us);
+                    }
+                    else
+                        return "Local variable " + ns.Name + " not declared";
+                }
             }
             else
                 return "Wrong number of method result arguments; Expected 1 got 0";
@@ -287,13 +327,37 @@ namespace Tacny
 
         protected string ProcessArg(Expression argument, out Expression result)
         {
+            object tmp;
+            string err = ProcessArg(argument, out tmp);
+            result = (Expression)tmp;
+            return err;
+        }
+
+        protected string ProcessArg(Expression argument, out object result)
+        {
             result = null;
-            if (argument is NameSegment)
+            NameSegment ns = null;
+            ApplySuffix aps = null;
+            if ((ns = argument as NameSegment) != null)
             {
-                if (!HasLocalWithName(argument as NameSegment))
+                if (!HasLocalWithName(ns))
                     return "Argument not passed";
 
-                result = (Expression)GetLocalValueByName(argument as NameSegment);
+                result = GetLocalValueByName(ns);
+            }
+            else if ((aps = argument as ApplySuffix) != null)
+            {
+                // create a VarDeclStmt
+                // first create an UpdateStmt
+                UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
+                // create a unique local variable
+                Dafny.LocalVariable lv = new Dafny.LocalVariable(aps.tok, aps.tok, aps.Lhs.tok.val, null, false);
+                VarDeclStmt vds = new VarDeclStmt(us.Tok, us.EndTok, new List<Dafny.LocalVariable>() { lv }, us);
+                List<Solution> sol_list = new List<Solution>();
+                CallAction(vds, ref sol_list);
+                result = local_variables[lv];
+                local_variables.Remove(lv);
+
             }
             else
                 result = argument;
@@ -356,12 +420,15 @@ namespace Tacny
             int index = m.Body.Body.IndexOf(tac_stmt);
             if (index <= 0)
                 return null;
+
             while (index > 0)
             {
                 Statement stmt = m.Body.Body[index];
 
-                if (stmt is WhileStmt)
-                    return (WhileStmt)stmt;
+                WhileStmt ws = stmt as WhileStmt;
+                if (ws != null)
+                    return ws;
+
                 index--;
             }
             return null;
@@ -377,7 +444,7 @@ namespace Tacny
 
             err = InitArgs(st, out lv, out call_arguments);
             if (err != null)
-                return "replace_operator: " + err;
+                return "extract_guard: " + err;
 
             Method m = (Method)md;
 
@@ -467,8 +534,8 @@ namespace Tacny
         public string Fin()
         {
             // for now try to copy dict values
-            resolved = new List<Statement>(updated_statements.Values);
-            
+            resolved = new List<Statement>(updated_statements.Values.ToArray());
+
             return null;
         }
 

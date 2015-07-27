@@ -6,6 +6,11 @@ namespace Tacny
 {
     class SingletonAction : Action
     {
+        
+        public override string FormatError(string error)
+        {
+            return "ERROR replace_singleton: " + error;
+        }
 
         public SingletonAction(Action action) : base(action)
         { }
@@ -27,22 +32,22 @@ namespace Tacny
 
             err = InitArgs(st, out lv, out call_arguments);
             if (err != null)
-                return "replace_singleton: " + err;
+                return FormatError(err);
 
             if (call_arguments.Count != 3)
-                return "replace_singleton: Wrong number of method arguments; Expected 3 got " + call_arguments.Count;
+                return FormatError("Wrong number of method arguments; Expected 3 got " + call_arguments.Count);
 
             err = ProcessArg(call_arguments[0], out old_singleton);
             if (err != null)
-                return "replace_singleton: " + err;
+                return FormatError(err);
 
             err = ProcessArg(call_arguments[1], out new_term);
             if (err != null)
-                return "replace_singleton: " + err;
+                return FormatError(err);
 
             err = ProcessArg(call_arguments[2], out formula);
             if (err != null)
-                return "replace_singleton: " + err;
+                return FormatError(err);
 
             ExpressionTree et = ExpressionTree.ExpressionToTree(formula);
 

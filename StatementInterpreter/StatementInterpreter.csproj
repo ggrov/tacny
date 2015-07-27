@@ -113,7 +113,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SingletonAction.cs" />
     <Compile Include="SolutionList.cs" />
-    <Compile Include="SolutionTree.cs" />
+    <Compile Include="ExpressionTree.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

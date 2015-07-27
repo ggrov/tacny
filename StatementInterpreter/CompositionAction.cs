@@ -10,7 +10,11 @@ namespace Tacny
     {
         public CompositionAction(Action action) : base(action) { }
 
-        
+        public override string FormatError(string error)
+        {
+            return "ERROR composition: " + error;
+        }
+
         
         public string Composition(Statement st, ref List<Solution> solution_tree)
         {
@@ -26,12 +30,12 @@ namespace Tacny
                 // get guard type
                 err = AnalyseGuard(guard, out guard_type);
                 if (err != null)
-                    return "composition: " + err;
+                    return FormatError(err);
                 err = CallGuard(guard_type, out res);
             }
             else if (while_stmt != null) { }
             else
-                return "composition: Internal error unexpected Statement type: " + st.GetType();
+                return FormatError("Internal error unexpected Statement type: " + st.GetType());
             return null;
         }
 

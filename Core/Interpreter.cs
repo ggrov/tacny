@@ -162,31 +162,27 @@ namespace Tacny
         /// </summary>
         /// <param name="solution_tree"></param>
         /// <returns></returns>
-        private string VerifySolutionList(SolutionList sol_tree, ref Dafny.Program result)
+        private string VerifySolutionList(SolutionList solution_list, ref Dafny.Program result)
         {
             string err = null;
             result = null;
-            Dafny.Program prog = tacnyProgram.parseProgram();
-            foreach (var item in sol_tree.plist)
+            List<Solution> final = new List<Solution>(); // list of verified solutions
+            foreach (var list in solution_list.GetFinal())
             {
-                if (!item.isFinal)
-                    return "VerifySolutionTree: Received non final solution";
-                item.GenerateProgram(ref prog);
+                //List<Solution> tmp = new List<Solution>();
+                final.Add(list[0]);
             }
-            err = tacnyProgram.ResolveProgram(prog);
+            tacnyProgram.program = tacnyProgram.parseProgram();
+            Dafny.Program prg = tacnyProgram.program;
+            foreach (var tmp in final)
+                tmp.GenerateProgram(ref prg);
+            err = tacnyProgram.ResolveProgram();
+            tacnyProgram.ExractTokens();
+            tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
             if (err != null)
                 return err;
-            tacnyProgram.MaybePrintProgram(prog, DafnyOptions.O.DafnyPrintResolvedFile);
-            tacnyProgram.VerifyProgram(prog);
-            if (tacnyProgram.stats.ErrorCount == 0)
-            {
-                result = prog;
-                return "done";
-            }
-
-            if (result != null)
-                return null;
-            return "VerifySolution: Unable to verify the generated soution";
+            tacnyProgram.VerifyProgram();
+            return null;
         }
 
         // will probably require some handling to unresolvable tactics
@@ -220,7 +216,7 @@ namespace Tacny
                 }
             }
 
-            return null;
+            return null;    
         }
 
         /// <summary>
@@ -244,14 +240,10 @@ namespace Tacny
             while (!solution_list.IsFinal())
             {
                 List<Solution> result = null;
-                foreach (var solution in solution_list.plist)
-                {
-                    err = solution.state.ResolveOne(ref result, solution);
-                    if (err != null)
-                        return err;
-                    foreach (var res in result)
-                        res.parent = solution;
-                }
+
+                err = Action.ResolveOne(ref result, solution_list.plist);
+                if (err != null)
+                    return err;
 
                 if (result.Count > 0)
                     solution_list.AddRange(result);

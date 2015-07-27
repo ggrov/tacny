@@ -8,6 +8,11 @@ namespace Tacny
 {
     class IfAction : Action
     {
+        public override string FormatError(string error)
+        {
+            return "ERROR addif: " + error;
+        }
+
         public IfAction(Action action) : base(action) { }
 
         public string AddIf(TacnyIfBlockStmt st, ref List<Solution> solution_list)
@@ -17,7 +22,7 @@ namespace Tacny
             BlockStmt els = null;
 
             if (st.Body.Body.Count < 1)
-                return "addif: addif body can not be empty";
+                return FormatError("addif body can not be empty");
 
             thn = new BlockStmt(st.Tok, st.EndTok, new List<Statement>() { st.Body.Body[0] });
 
