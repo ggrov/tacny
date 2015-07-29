@@ -196,7 +196,7 @@ namespace Tacny
                     }
                     else
                     {
-                        tacnyProgram.Compile();
+                        tacnyProgram.Print();
                     }
                 }
             }

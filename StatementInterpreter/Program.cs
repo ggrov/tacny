@@ -13,7 +13,16 @@ namespace Tacny
     public class Program
     {
         private IList<string> fileNames;
-        private string programId;
+        private string _programId;
+        public string programId
+        {
+            set
+            {
+                Contract.Requires(_programId == null);
+                _programId = value;
+            }
+            get { return _programId; }
+        }
         private Dafny.Program _program;
         public Dafny.Program program
         {
@@ -53,20 +62,20 @@ namespace Tacny
             tactics = new Dictionary<string, Tactic>();
             members = new List<MemberDecl>();
             globals = new List<DatatypeDecl>();
-            foreach(var item in program.DefaultModuleDef.TopLevelDecls)
+            foreach (var item in program.DefaultModuleDef.TopLevelDecls)
             {
                 ClassDecl curDecl = item as ClassDecl;
                 if (curDecl != null)
                 {
                     // scan each member for tactic calls and resolve if found
 
-                   foreach(var member in curDecl.Members)
+                    foreach (var member in curDecl.Members)
                     {
-                       Tactic tac = member as Tactic;
-                       if (tac != null)
-                           tactics.Add(tac.Name, tac);
-                       else
-                           members.Add(member);
+                        Tactic tac = member as Tactic;
+                        if (tac != null)
+                            tactics.Add(tac.Name, tac);
+                        else
+                            members.Add(member);
                     }
                 }
                 else
@@ -175,6 +184,10 @@ namespace Tacny
             ClearBody(program);
         }
 
+        /// <summary>
+        /// Remove unresolved tactic calls from the program
+        /// </summary>
+        /// <param name="program">Dafny Program</param>
         public void ClearBody(Dafny.Program program)
         {
             foreach (var item in program.DefaultModuleDef.TopLevelDecls)
@@ -193,7 +206,7 @@ namespace Tacny
                                 {
                                     UpdateStmt us = (UpdateStmt)st;
                                     ExprRhs er = us.Rhss[0] as ExprRhs;
-          
+
                                     ApplySuffix asx = er.Expr as ApplySuffix;
                                     string name = asx.Lhs.tok.val;
 
@@ -554,6 +567,17 @@ namespace Tacny
         }
 
         #endregion
+
+        /// <summary>
+        /// Print verified program to file
+        /// </summary>
+        public void Print()
+        {
+            foreach (var filename in fileNames)
+            {
+                MaybePrintProgram(filename.Substring(0, filename.LastIndexOf(".")) + ".tacny.dfy");
+            }
+        }
 
         public void MaybePrintProgram(string filename)
         {

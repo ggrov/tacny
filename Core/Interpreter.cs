@@ -37,6 +37,15 @@ namespace Tacny
             Error(s.Tok, msg, args);
         }
 
+        public static void Warning(string programId, string msg)
+        {
+            Contract.Requires(msg != null);
+            ConsoleColor col = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("{0}: Warning: {1}", string.Format(programId), string.Format(msg));
+            Console.ForegroundColor = col;
+        }
+
         public static void Warning(IToken tok, string msg)
         {
             Contract.Requires(msg != null);
@@ -95,8 +104,7 @@ namespace Tacny
 
                 if (solution_list != null)
                 {
-                    Dafny.Program prg = tacnyProgram.program;
-                    err = VerifySolutionList(solution_list, ref prg);
+                    err = VerifySolutionList(solution_list);
 
                     return err;
                 }
@@ -112,35 +120,33 @@ namespace Tacny
         /// </summary>
         /// <param name="solution_tree"></param>
         /// <returns></returns>
-        private string VerifySolutionList(SolutionList solution_list, ref Dafny.Program result)
+        private string VerifySolutionList(SolutionList solution_list)
         {
             string err = null;
-            result = null;
+
             List<Solution> final = new List<Solution>(); // list of verified solutions
-            Dafny.Program prg;
+            Dafny.Program program;
             foreach (var list in solution_list.GetFinal())
             {
                 int index = 0;
-                //List<Solution> tmp = new List<Solution>();
-                for (int i = 0; i < list.Count; i++ )
+                for (int i = 0; i < list.Count; i++)
                 {
                     index = i;
                     var solution = list[i];
-                    // if solution has already been verified add it to final list
                     if (solution.isFinal)
                     {
                         final.Add(solution);
                         break;
                     }
                     tacnyProgram.program = tacnyProgram.parseProgram();
-                    prg = tacnyProgram.program;
-                    solution.GenerateProgram(ref prg);
-                    // clear body
+                    program = tacnyProgram.program;
+                    solution.GenerateProgram(ref program);
+
                     tacnyProgram.ClearBody();
                     err = tacnyProgram.ResolveProgram();
-                   // tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
+                    // tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
                     if (err != null)
-                        return err;
+                        Warning(tacnyProgram.programId, err);
                     tacnyProgram.VerifyProgram();
                     if (!tacnyProgram.HasError())
                     {
@@ -153,18 +159,15 @@ namespace Tacny
             }
 
             tacnyProgram.program = tacnyProgram.parseProgram();
-            prg = tacnyProgram.program;
+            program = tacnyProgram.program;
             foreach (var solution in final)
-                solution.GenerateProgram(ref prg);
+                solution.GenerateProgram(ref program);
 
-            //tacnyProgram.ClearBody();
             err = tacnyProgram.ResolveProgram();
-            //tacnyProgram.resolved = true;
             tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
             if (err != null)
-                return err;
-            tacnyProgram.VerifyProgram();
-            
+                tacnyProgram.VerifyProgram();
+
             return null;
         }
 
@@ -199,7 +202,7 @@ namespace Tacny
                 }
             }
 
-            return null;    
+            return null;
         }
 
         /// <summary>
