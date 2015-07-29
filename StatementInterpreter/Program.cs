@@ -21,19 +21,22 @@ namespace Tacny
             {
                 resolved = false;
                 _program = value;
+                errorInfo = null;
             }
             get
             {
                 return _program;
             }
-            
+
         }
         public Bpl.ErrorInformation errorInfo;
         public PipelineOutcome po;
         public Bpl.PipelineStatistics stats;
         public bool resolved = false;
 
-        public Dictionary<MemberDecl, List<Token>> tokens;
+        public readonly Dictionary<string, Tactic> tactics;
+        public readonly List<MemberDecl> members;
+        public readonly List<DatatypeDecl> globals;
 
         public Program(IList<string> fileNames, string programId, string programName = null)
         {
@@ -42,6 +45,37 @@ namespace Tacny
             string err = ParseCheck(fileNames, programId, out _program);
             if (err != null)
                 throw new ArgumentException(err);
+            Init(out tactics, out members, out globals);
+        }
+
+        private void Init(out Dictionary<string, Tactic> tactics, out List<MemberDecl> members, out List<DatatypeDecl> globals)
+        {
+            tactics = new Dictionary<string, Tactic>();
+            members = new List<MemberDecl>();
+            globals = new List<DatatypeDecl>();
+            foreach(var item in program.DefaultModuleDef.TopLevelDecls)
+            {
+                ClassDecl curDecl = item as ClassDecl;
+                if (curDecl != null)
+                {
+                    // scan each member for tactic calls and resolve if found
+
+                   foreach(var member in curDecl.Members)
+                    {
+                       Tactic tac = member as Tactic;
+                       if (tac != null)
+                           tactics.Add(tac.Name, tac);
+                       else
+                           members.Add(member);
+                    }
+                }
+                else
+                {
+                    DatatypeDecl dd = item as DatatypeDecl;
+                    if (dd != null)
+                        globals.Add(dd);
+                }
+            }
         }
 
         public Program newProgram()
@@ -60,7 +94,7 @@ namespace Tacny
         {
             string err = null;
             if (!resolved)
-                 err = ResolveProgram();
+                err = ResolveProgram();
             if (err != null)
                 return err;
             VerifyProgram(program);
@@ -97,8 +131,8 @@ namespace Tacny
             foreach (var item in program.DefaultModuleDef.TopLevelDecls)
             {
                 ClassDecl cd = item as ClassDecl;
-                if(cd != null)
-                    foreach (var member in cd.Members)           
+                if (cd != null)
+                    foreach (var member in cd.Members)
                         if (member.Name == name)
                             return member;
             }
@@ -123,7 +157,7 @@ namespace Tacny
         public Token GetErrorToken()
         {
             if (errorInfo != null)
-                return (Token) errorInfo.Tok;
+                return (Token)errorInfo.Tok;
 
             return null;
         }
@@ -132,8 +166,48 @@ namespace Tacny
         {
             if (stats != null)
                 return stats.ErrorCount > 0;
-            
+
             return false;
+        }
+
+        public void ClearBody()
+        {
+            ClearBody(program);
+        }
+
+        public void ClearBody(Dafny.Program program)
+        {
+            foreach (var item in program.DefaultModuleDef.TopLevelDecls)
+            {
+                ClassDecl cd = item as ClassDecl;
+                if (cd != null)
+                {
+                    foreach (var member in cd.Members)
+                    {
+                        Method m = member as Method;
+                        if (m != null)
+                        {
+                            foreach (Statement st in m.Body.Body)
+                            {
+                                if (st is UpdateStmt)
+                                {
+                                    UpdateStmt us = (UpdateStmt)st;
+                                    ExprRhs er = us.Rhss[0] as ExprRhs;
+          
+                                    ApplySuffix asx = er.Expr as ApplySuffix;
+                                    string name = asx.Lhs.tok.val;
+
+                                    if (tactics.ContainsKey(name))
+                                    {
+                                        m.Body = null;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         #region Parser
@@ -480,24 +554,6 @@ namespace Tacny
         }
 
         #endregion
-
-        public void ExractTokens()
-        {
-            if (!resolved)
-                ResolveProgram();
-            tokens = new Dictionary<MemberDecl, List<Token>>();
-            foreach(var tld in program.DefaultModuleDef.TopLevelDecls)
-            {
-                ClassDecl cd = tld as ClassDecl;
-                if (cd != null)
-                {
-                    foreach (var member in cd.Members)
-                    {
-                        tokens.Add(member, new List<Token>());
-                    }
-                }
-            }
-        }
 
         public void MaybePrintProgram(string filename)
         {

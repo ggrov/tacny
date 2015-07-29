@@ -69,10 +69,6 @@ namespace Tacny
 
     public class Interpreter : ResolutionErrorReporter
     {
-
-        private Dictionary<string, Tactic> tactics = new Dictionary<string, Tactic>();
-        private List<MemberDecl> members = new List<MemberDecl>();
-        private List<TopLevelDecl> globals = new List<TopLevelDecl>();
         private Program tacnyProgram;
 
         private SolutionList solution_list = null;
@@ -84,69 +80,23 @@ namespace Tacny
             this.solution_list = new SolutionList();
         }
 
-        public bool HasTactics()
-        {
-            foreach (TopLevelDecl tld in tacnyProgram.program.DefaultModuleDef.TopLevelDecls)
-            {
-                if (tld is Dafny.ClassDecl)
-                {
-                    Dafny.ClassDecl tmp = (Dafny.ClassDecl)tld;
-                    foreach (Dafny.MemberDecl member in tmp.Members)
-                    {
-                        if (member is Dafny.Tactic)
-                            return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
         public string ResolveProgram()
         {
-            ClassDecl curDecl;
             string err = null;
-            Dafny.Program prg = tacnyProgram.program;
 
-            for (int i = 0; i < prg.DefaultModuleDef.TopLevelDecls.Count; i++)
+            if (tacnyProgram.tactics.Count > 0)
             {
-                TopLevelDecl d = prg.DefaultModuleDef.TopLevelDecls[i];
-                curDecl = d as ClassDecl;
-                if (curDecl != null)
+                foreach (var member in tacnyProgram.members)
                 {
-                    // scan each member for tactic calls and resolve if found
-
-                    for (int j = 0; j < curDecl.Members.Count; j++)
-                    {
-                        MemberDecl md = curDecl.Members[j];
-                        if (md is Tactic)
-                            tactics.Add(md.Name, (Tactic)md);
-                        else
-                            members.Add(md);
-                    }
-                }
-                else
-                {
-                    DatatypeDecl dd = d as DatatypeDecl;
-                    if (dd != null)
-                        globals.Add(dd);
-                }
-            }
-
-            if (tactics.Count > 0)
-            {
-                foreach (MemberDecl md in members)
-                {
-                    err = ScanMemberBody(md);
+                    err = ScanMemberBody(member);
                     if (err != null)
                         return err;
                 }
 
                 if (solution_list != null)
                 {
+                    Dafny.Program prg = tacnyProgram.program;
                     err = VerifySolutionList(solution_list, ref prg);
-                    if (err != null)
-                        tacnyProgram.program = prg;
 
                     return err;
                 }
@@ -167,21 +117,54 @@ namespace Tacny
             string err = null;
             result = null;
             List<Solution> final = new List<Solution>(); // list of verified solutions
+            Dafny.Program prg;
             foreach (var list in solution_list.GetFinal())
             {
+                int index = 0;
                 //List<Solution> tmp = new List<Solution>();
-                final.Add(list[0]);
+                for (int i = 0; i < list.Count; i++ )
+                {
+                    index = i;
+                    var solution = list[i];
+                    // if solution has already been verified add it to final list
+                    if (solution.isFinal)
+                    {
+                        final.Add(solution);
+                        break;
+                    }
+                    tacnyProgram.program = tacnyProgram.parseProgram();
+                    prg = tacnyProgram.program;
+                    solution.GenerateProgram(ref prg);
+                    // clear body
+                    tacnyProgram.ClearBody();
+                    err = tacnyProgram.ResolveProgram();
+                   // tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
+                    if (err != null)
+                        return err;
+                    tacnyProgram.VerifyProgram();
+                    if (!tacnyProgram.HasError())
+                    {
+                        final.Add(solution);
+                        break;
+                    }
+                    if (index == list.Count - 1)
+                        final.Add(solution);
+                }
             }
+
             tacnyProgram.program = tacnyProgram.parseProgram();
-            Dafny.Program prg = tacnyProgram.program;
-            foreach (var tmp in final)
-                tmp.GenerateProgram(ref prg);
+            prg = tacnyProgram.program;
+            foreach (var solution in final)
+                solution.GenerateProgram(ref prg);
+
+            //tacnyProgram.ClearBody();
             err = tacnyProgram.ResolveProgram();
-            tacnyProgram.ExractTokens();
+            //tacnyProgram.resolved = true;
             tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
             if (err != null)
                 return err;
             tacnyProgram.VerifyProgram();
+            
             return null;
         }
 
@@ -207,9 +190,9 @@ namespace Tacny
                         return "change me error 2"; // TODO
                     string name = asx.Lhs.tok.val;
 
-                    if (tactics.ContainsKey(name))
+                    if (tacnyProgram.tactics.ContainsKey(name))
                     {
-                        string err = ResolveTacticBody(tactics[name], st as UpdateStmt, md); // generate a solution tree
+                        string err = ResolveTacticBody(tacnyProgram.tactics[name], st as UpdateStmt, md); // generate a solution tree
                         if (err != null)
                             return err;
                     }
@@ -233,7 +216,7 @@ namespace Tacny
             Contract.Requires(md != null);
 
             //local solution list
-            SolutionList solution_list = new SolutionList(new Solution(new Action(md, tac, tac_call, tacnyProgram, globals)));
+            SolutionList solution_list = new SolutionList(new Solution(new Action(md, tac, tac_call, tacnyProgram)));
             string err = null;
 
 
@@ -248,7 +231,7 @@ namespace Tacny
                 if (result.Count > 0)
                     solution_list.AddRange(result);
                 else
-                    solution_list.SetIsFinal();
+                    break;
             }
 
             this.solution_list.AddFinal(solution_list.plist);

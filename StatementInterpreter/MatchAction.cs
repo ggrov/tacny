@@ -81,8 +81,9 @@ namespace Tacny
             
             Dafny.Program dprog = prog.program;
             solution.GenerateProgram(ref dprog);
+            prog.ClearBody();
             prog.VerifyProgram();
-            prog.MaybePrintProgram(dprog, null);
+            //prog.MaybePrintProgram(dprog, null);
             if (prog.HasError() && st.Body.Body.Count > 0)
             {
                 while (prog.HasError())

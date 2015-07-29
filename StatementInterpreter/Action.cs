@@ -24,7 +24,7 @@ namespace Tacny
             ADD_MATCH,
             ADD_IF,
         };
-        
+
         public readonly MemberDecl md = null; // the Class Member from which the tactic has been called
         public readonly Tactic tac = null;  // The called tactic
         public List<Statement> tac_body = new List<Statement>(); // body of the currently worked tactic
@@ -50,7 +50,7 @@ namespace Tacny
             this.program = ac.program;
         }
 
-        public Action(MemberDecl md, Tactic tac, UpdateStmt tac_call, Program program, List<TopLevelDecl> global_variables)
+        public Action(MemberDecl md, Tactic tac, UpdateStmt tac_call, Program program)
         {
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
@@ -60,7 +60,7 @@ namespace Tacny
             this.tac_call = tac_call;
             this.tac_body = tac.Body.Body;
             this.program = program;
-            FillGlobals(global_variables);
+            FillGlobals(program.globals);
             FillTacticInputs();
         }
 
@@ -71,8 +71,8 @@ namespace Tacny
             this.md = md;
             this.tac = tac;
             this.tac_call = tac_call;
-            this.tac_body = tac_body;// new List<Statement>(tac_body.ToArray());
-            this.program = program;
+            this.tac_body = tac_body;   // new List<Statement>(tac_body.ToArray());
+            this.program = program;     
 
             List<IVariable> lv_keys = new List<IVariable>(local_variables.Keys);
             List<object> lv_values = new List<object>(local_variables.Values);
@@ -113,12 +113,12 @@ namespace Tacny
             return ac;
         }
 
-        
+
         public virtual string FormatError(string err)
         {
             return "Error: " + err;
         }
-        
+
         public static string ResolveOne(ref List<Solution> result, List<Solution> solution_list)
         {
             string err = null;
@@ -137,10 +137,10 @@ namespace Tacny
                     if (res.parent == null)
                         res.parent = solution;
 
-                if(solution_list.IndexOf(solution) == solution_list.Count  - 1)
+                if (solution_list.IndexOf(solution) == solution_list.Count - 1)
                     solution.state.tac_body.RemoveAt(0);
             }
-            
+
             return err;
         }
 
@@ -260,17 +260,11 @@ namespace Tacny
         /// Clear global variables and popualte the dictionary with the provided list
         /// </summary>
         /// <param name="globals">Global variables</param>
-        private void FillGlobals(List<TopLevelDecl> globals)
+        private void FillGlobals(List<DatatypeDecl> globals)
         {
             this.global_variables.Clear();
-            foreach (TopLevelDecl tld in globals)
-            {
-                DatatypeDecl dc = tld as DatatypeDecl;
-                if (dc != null)
-                    this.global_variables.Add(tld.Name, dc);
-                //if (tld is DatatypeDecl /*|| tld is RedirectingTypeDecl*/) // TODO what is RedirectingType
-
-            }
+            foreach (DatatypeDecl tld in globals)
+                this.global_variables.Add(tld.Name, tld);
         }
 
         protected string InitArgs(Statement st, out List<Expression> call_arguments)
@@ -534,7 +528,8 @@ namespace Tacny
         public string Fin()
         {
             // for now try to copy dict values
-            resolved = new List<Statement>(updated_statements.Values.ToArray());
+            Statement[] tmp = (Statement[])updated_statements.Values.ToArray().Clone();
+            resolved = new List<Statement>(tmp);
 
             return null;
         }
