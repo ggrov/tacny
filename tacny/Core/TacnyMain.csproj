@@ -53,11 +53,13 @@
       <HintPath>..\..\..\boogie\Binaries\Core.dll</HintPath>
       <Aliases>global</Aliases>
     </Reference>
-    <Reference Include="Dafny">
-      <HintPath>..\..\..\dafny\Binaries\Dafny.exe</HintPath>
+    <Reference Include="Dafny, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\Dafny.exe</HintPath>
     </Reference>
-    <Reference Include="DafnyPipeline">
-      <HintPath>..\..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
+    <Reference Include="DafnyPipeline, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
     </Reference>
     <Reference Include="Doomed">
       <HintPath>..\..\..\boogie\Binaries\Doomed.dll</HintPath>

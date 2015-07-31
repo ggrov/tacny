@@ -144,7 +144,6 @@ namespace Tacny
 
                     tacnyProgram.ClearBody(solution.state.md);
                     err = tacnyProgram.ResolveProgram();
-                    // tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
                     if (err != null)
                         Warning(tacnyProgram.programId, err);
                     tacnyProgram.VerifyProgram();
@@ -163,10 +162,11 @@ namespace Tacny
             foreach (var solution in final)
                 solution.GenerateProgram(ref program);
 
-            err = tacnyProgram.ResolveProgram();
-            tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
+            err = tacnyProgram.VerifyProgram();
             if (err != null)
-                tacnyProgram.VerifyProgram();
+                return err;
+            tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
+            
 
             return null;
         }

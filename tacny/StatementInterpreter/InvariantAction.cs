@@ -63,8 +63,9 @@ namespace Tacny
 
             object tmp;
             err = ProcessArg(call_arguments[0], out tmp);
-            invariant = (MaybeFreeExpression)tmp;
-
+            invariant = tmp as MaybeFreeExpression;
+            if (invariant == null)
+                return FormatError("add_invariant", "Incorrect input type expected Invariant received " + tmp.GetType());
 
             Method m = (Method)md;
             WhileStmt nws = null;

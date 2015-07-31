@@ -600,8 +600,15 @@ namespace Tacny
                 else
                     tw = new System.IO.StreamWriter(filename);
             }
+            PrintProgram(tw, prog, DafnyOptions.O.PrintMode);
+        }
+
+
+        private void PrintProgram(TextWriter tw, Dafny.Program prog, DafnyOptions.PrintModes printMode = DafnyOptions.PrintModes.Everything)
+        {
             Printer pr = new Printer(tw, DafnyOptions.O.PrintMode);
-            pr.PrintProgram(prog);
+            pr.PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, Path.GetFullPath(prog.FullName));
+            tw.Flush();
         }
     }
 }

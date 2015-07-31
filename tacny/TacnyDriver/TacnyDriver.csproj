@@ -45,7 +45,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dafny\Binaries\Dafny.exe</HintPath>
     </Reference>
-    <Reference Include="DafnyPipeline">
+    <Reference Include="DafnyPipeline, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
     </Reference>
     <Reference Include="ExecutionEngine">

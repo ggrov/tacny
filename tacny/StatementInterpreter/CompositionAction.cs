@@ -16,7 +16,7 @@ namespace Tacny
         }
 
         
-        public string Composition(Statement st, ref List<Solution> solution_tree)
+        public string Composition(Statement st, ref List<Solution> solution_list)
         {
             IfStmt if_stmt = st as IfStmt;
             WhileStmt while_stmt = st as WhileStmt;
@@ -31,6 +31,13 @@ namespace Tacny
                 err = AnalyseGuard(guard, out guard_type);
                 if (err != null)
                     return FormatError(err);
+                if (guard_type == Atomic.UNDEFINED)
+                {
+                    updated_statements.Add(st, st);
+                    solution_list.Add(new Solution(this.Copy(), true, null));
+                    return null;
+                }
+
                 err = CallGuard(guard_type, out res);
             }
             else if (while_stmt != null) { }
@@ -53,8 +60,6 @@ namespace Tacny
             ass = exp as ApplySuffix;
             if (ass != null)
                 type = GetStatementType(ass);
-            else
-                return "Invalid composition guard; Expected atomic statement; Received " + exp.GetType();
 
             return null;
         }

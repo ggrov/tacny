@@ -144,6 +144,36 @@ namespace Tacny
             return err;
         }
 
+        protected string ResolveBlockStmt(BlockStmt bs, out List<Statement> stmt_list)
+        {
+            Contract.Requires(bs != null);
+            string err;
+            stmt_list = new List<Statement>();
+            List<Solution> solution_list = new List<Solution>();
+            Action ac = new Action(md, tac, tac_call, program);
+
+            ac.tac_body = bs.Body;
+            
+            foreach (var stmt in ac.tac_body)
+            {
+                err = ac.CallAction(stmt, ref solution_list);
+                if (err != null)
+                    return err;
+
+                foreach (var res in solution_list)
+                    if (res.parent == null)
+                        res.parent = solution;
+
+            }
+
+            foreach (var solution in solution_list)
+            {
+                solution.state.Fin();
+                stmt_list.AddRange(solution.state.resolved);
+            }
+            return null;
+        }
+
         protected static Atomic GetStatementType(Statement st)
         {
             Contract.Requires(st != null);
@@ -287,7 +317,7 @@ namespace Tacny
             call_arguments = null;
             VarDeclStmt vds = null;
             UpdateStmt us = null;
-
+            TacnyBlockStmt tbs = null;
             if ((vds = st as VarDeclStmt) != null)
             {
                 if (vds.Locals.Count != 1)
@@ -313,6 +343,14 @@ namespace Tacny
                     else
                         return "Local variable " + ns.Name + " not declared";
                 }
+            }
+            else if ((tbs = st as TacnyBlockStmt) != null)
+            {
+                ParensExpression pe = tbs.Guard as ParensExpression;
+                if(pe != null)
+                    call_arguments = new List<Expression>() { pe.E };
+                else
+                    call_arguments = new List<Expression>() { tbs.Guard };
             }
             else
                 return "Wrong number of method result arguments; Expected 1 got 0";
@@ -424,7 +462,7 @@ namespace Tacny
             if (index <= 0)
                 return null;
 
-            while (index > 0)
+            while (index >= 0)
             {
                 Statement stmt = m.Body.Body[index];
 

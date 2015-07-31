@@ -50,6 +50,7 @@ namespace Tacny
             ParensExpression guard;
             NameSegment ns;
             string datatype_name;
+            string err;
 
             Program prog = program.newProgram();
             bool[] ctorFlags;  // used to keep track of which cases statements require a body
@@ -64,7 +65,8 @@ namespace Tacny
                 return FormatError("unexpected cases argument");
 
             Dafny.Formal formal = (Dafny.Formal)GetLocalKeyByName(ns);
-
+            if (formal == null)
+                return FormatError("argument " + ns.Name + " is not declared");
             datatype_name = formal.Type.ToString();
 
             if (!global_variables.ContainsKey(datatype_name))
@@ -74,10 +76,13 @@ namespace Tacny
             initFlags(datatype, out ctorFlags);
             
             ns = (NameSegment)local_variables[formal];
+            List<Statement> body;
+            err = ResolveBlockStmt(st.Body, out body);
+            if (err != null)
+                return FormatError(err);
 
-            // TODO: check if NS if of correct type
             GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype,
-                                        st.Body.Body, out ms, ctorFlags);
+                                        body, out ms, ctorFlags);
 
             updated_statements.Add(ms, ms);
 
@@ -103,7 +108,8 @@ namespace Tacny
                         break;
                     ctorFlags[index] = true;
                     updated_statements.Remove(ms);
-                    GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, st.Body.Body, out ms, ctorFlags);
+                    err = ResolveBlockStmt(st.Body, out body);
+                    GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, body, out ms, ctorFlags);
                     updated_statements.Add(ms, ms);
                     solution = new Solution(this.Copy(), true, null);
                     prog.program = prog.parseProgram();
@@ -118,7 +124,8 @@ namespace Tacny
              * HACK Recreate the match block as the old one was modified by the resolver
              * */
             updated_statements.Remove(ms);
-            GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, st.Body.Body, out ms, ctorFlags);
+            err = ResolveBlockStmt(st.Body, out body);
+            GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, body, out ms, ctorFlags);
             updated_statements.Add(ms, ms);
             solution = new Solution(this.Copy(), true, null);
             
