@@ -1036,10 +1036,10 @@ MethodDecl<MemberModifiers mmod, bool allowConstructor, out Method/*!*/ m>
      } else if (isLemma) {
        m = new Lemma(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
                      req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
-     } else if(isTactic) {
+     }else if(isTactic) {
 	   m = new Tactic(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
                      req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
-	   } else {
+	 } else {
        m = new Method(tok, id.val, mmod.IsStatic, mmod.IsGhost, typeArgs, ins, outs,
                       req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
      }
@@ -1680,7 +1680,7 @@ TacnyIfBlockStmt<out Statement/*!*/ tacnyIfStmt>
      List<GuardedAlternative> alternatives;
      tacnyIfStmt = dummyStmt;  // to please the compiler
   .)
-  "addif"                       (. x = t; .)
+  "add_if"                       (. x = t; .)
   (
     IF(IsAlternative())
     AlternativeBlock<out alternatives, out endTok>

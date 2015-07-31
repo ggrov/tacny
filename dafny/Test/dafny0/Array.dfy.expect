@@ -1,0 +1,115 @@
+Array.dfy(13,8): Error: assignment may update an array element not in the enclosing context's modifies clause
+Execution trace:
+    (0,0): anon0
+    (0,0): anon5_Then
+    (0,0): anon2
+    (0,0): anon6_Then
+Array.dfy(20,16): Error: target object may be null
+Execution trace:
+    (0,0): anon0
+Array.dfy(27,6): Error: index out of range
+Execution trace:
+    (0,0): anon0
+Array.dfy(51,20): Error: assertion violation
+Execution trace:
+    (0,0): anon0
+    (0,0): anon12_Then
+    (0,0): anon13_Then
+    (0,0): anon14_Then
+    (0,0): anon6
+    (0,0): anon15_Then
+    (0,0): anon16_Then
+    (0,0): anon9
+    (0,0): anon11
+Array.dfy(59,8): Error: assignment may update an array element not in the enclosing context's modifies clause
+Execution trace:
+    (0,0): anon0
+    (0,0): anon5_Then
+    (0,0): anon2
+    (0,0): anon6_Then
+Array.dfy(66,8): Error: assignment may update an array element not in the enclosing context's modifies clause
+Execution trace:
+    (0,0): anon0
+    (0,0): anon5_Then
+    (0,0): anon2
+    (0,0): anon6_Then
+Array.dfy(110,21): Error: upper bound below lower bound or above length of array
+Execution trace:
+    (0,0): anon0
+    (0,0): anon14_Else
+    (0,0): anon18_Then
+    (0,0): anon19_Then
+    (0,0): anon20_Then
+    (0,0): anon11
+Array.dfy(120,8): Error: insufficient reads clause to read the indicated range of array elements
+Execution trace:
+    (0,0): anon0
+    (0,0): anon9_Else
+    (0,0): anon10_Then
+    (0,0): anon11_Then
+    (0,0): anon12_Then
+Array.dfy(122,8): Error: insufficient reads clause to read the indicated range of array elements
+Execution trace:
+    (0,0): anon0
+    (0,0): anon9_Else
+    (0,0): anon10_Then
+    (0,0): anon11_Then
+    (0,0): anon12_Else
+Array.dfy(123,8): Error: insufficient reads clause to read the indicated range of array elements
+Execution trace:
+    (0,0): anon0
+    (0,0): anon9_Else
+    (0,0): anon10_Then
+    (0,0): anon11_Then
+    (0,0): anon12_Else
+Array.dfy(124,8): Error: insufficient reads clause to read the indicated range of array elements
+Execution trace:
+    (0,0): anon0
+    (0,0): anon9_Else
+    (0,0): anon10_Then
+    (0,0): anon11_Then
+    (0,0): anon12_Else
+Array.dfy(163,6): Error: insufficient reads clause to read array element
+Execution trace:
+    (0,0): anon0
+    (0,0): anon7_Else
+    (0,0): anon8_Then
+    (0,0): anon9_Then
+Array.dfy(171,6): Error: insufficient reads clause to read array element
+Execution trace:
+    (0,0): anon0
+    (0,0): anon7_Else
+    (0,0): anon8_Then
+    (0,0): anon9_Then
+Array.dfy(187,6): Error: assignment may update an array element not in the enclosing context's modifies clause
+Execution trace:
+    (0,0): anon0
+Array.dfy(194,6): Error: assignment may update an array element not in the enclosing context's modifies clause
+Execution trace:
+    (0,0): anon0
+Array.dfy(219,1): Error BP5003: A postcondition might not hold on this return path.
+Array.dfy(218,11): Related location: This is the postcondition that might not hold.
+Execution trace:
+    (0,0): anon0
+Array.dfy(243,1): Error BP5003: A postcondition might not hold on this return path.
+Array.dfy(242,11): Related location: This is the postcondition that might not hold.
+Execution trace:
+    (0,0): anon0
+Array.dfy(249,1): Error BP5003: A postcondition might not hold on this return path.
+Array.dfy(248,11): Related location: This is the postcondition that might not hold.
+Execution trace:
+    (0,0): anon0
+Array.dfy(264,10): Error: value assigned to a nat must be non-negative
+Execution trace:
+    (0,0): anon0
+    (0,0): anon5_Then
+    (0,0): anon2
+    (0,0): anon6_Then
+Array.dfy(265,5): Error: value assigned to a nat must be non-negative
+Execution trace:
+    (0,0): anon0
+    (0,0): anon5_Then
+    (0,0): anon2
+    (0,0): anon6_Then
+
+Dafny program verifier finished with 49 verified, 20 errors
