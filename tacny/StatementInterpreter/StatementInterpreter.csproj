@@ -105,7 +105,9 @@
     <Compile Include="Action.cs" />
     <Compile Include="CompositionAction.cs" />
     <Compile Include="ConditionalAction.cs" />
+    <Compile Include="GuardAction.cs" />
     <Compile Include="IfAction.cs" />
+    <Compile Include="StatementRegister.cs" />
     <Compile Include="InvariantAction.cs" />
     <Compile Include="MatchAction.cs" />
     <Compile Include="OperatorAction.cs" />

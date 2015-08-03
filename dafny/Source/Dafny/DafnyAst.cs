@@ -4169,6 +4169,7 @@ namespace Microsoft.Dafny {
   {
 	  public readonly Expression Guard;
 	  public readonly BlockStmt Body;
+	  public virtual string WhatKind {get{return "BlockStmt";}}
 	  [ContractInvariantMethod]
 	  void ObjectInvariant()
 	  {
@@ -4209,6 +4210,7 @@ namespace Microsoft.Dafny {
 
   public class TacnyIfBlockStmt : TacnyBlockStmt
   {
+  	public virtual string WhatKind {get{return "addif";}}
 	  public TacnyIfBlockStmt(IToken tok, IToken endTok, Expression guard, BlockStmt body)
 		  : base(tok, endTok, guard, body)
 	  {
@@ -4222,6 +4224,7 @@ namespace Microsoft.Dafny {
 
   public class TacnyCasesBlockStmt : TacnyBlockStmt
   {
+      public virtual string WhatKind { get { return "cases"; } }
 	  public TacnyCasesBlockStmt(IToken tok, IToken endTok, Expression guard, BlockStmt body)
 		  : base(tok, endTok, guard, body)
 	  {

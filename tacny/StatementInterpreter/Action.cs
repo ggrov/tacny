@@ -8,22 +8,12 @@ using Microsoft.Boogie;
 
 namespace Tacny
 {
+    public interface AtomicStmt
+    {
+        string Resolve(Statement st, ref List<Solution> solution_list);
+    }
     public class Action
     {
-        public enum Atomic
-        {
-            UNDEFINED = 0,
-            ASSERT,
-            ADD_INVAR,
-            CREATE_INVAR,
-            REPLACE_SINGLETON,
-            EXTRACT_GUARD,
-            REPLACE_OP,
-            COMPOSITION,
-            IS_VALID,
-            ADD_MATCH,
-            ADD_IF,
-        };
 
         public readonly MemberDecl md = null; // the Class Member from which the tactic has been called
         public readonly Tactic tac = null;  // The called tactic
@@ -72,7 +62,7 @@ namespace Tacny
             this.tac = tac;
             this.tac_call = tac_call;
             this.tac_body = new List<Statement>(tac_body.ToArray());
-            this.program = program;     
+            this.program = program;
 
             List<IVariable> lv_keys = new List<IVariable>(local_variables.Keys);
             List<object> lv_values = new List<object>(local_variables.Values);
@@ -85,6 +75,7 @@ namespace Tacny
             this.global_variables = global_variables;
             this.resolved = new List<Statement>(resolved.ToArray());
         }
+
 
         /// <summary>
         /// Create a deep copy of an action
@@ -153,7 +144,7 @@ namespace Tacny
             Action ac = new Action(md, tac, tac_call, program);
 
             ac.tac_body = bs.Body;
-            
+
             foreach (var stmt in ac.tac_body)
             {
                 err = ac.CallAction(stmt, ref solution_list);
@@ -173,7 +164,7 @@ namespace Tacny
             }
             return null;
         }
-
+        /*
         protected static Atomic GetStatementType(Statement st)
         {
             Contract.Requires(st != null);
@@ -222,7 +213,7 @@ namespace Tacny
                     return Atomic.UNDEFINED;
             }
         }
-
+        
         public string CallAction(object call, ref List<Solution> solution_list)
         {
             Contract.Requires(call != null);
@@ -271,6 +262,31 @@ namespace Tacny
                     break;
             }
             return err;
+        }
+        */
+        public string CallAction(object call, ref List<Solution> solution_list)
+        {
+            System.Type type;
+            Statement st = call as Statement;
+            ApplySuffix aps;
+            if (st != null)
+                type = StatementRegister.GetStatementType(st);
+            else
+            {
+                aps = call as ApplySuffix;
+                if (aps != null)
+                    type = StatementRegister.GetStatementType(StatementRegister.GetAtomicType(aps.Lhs.tok.val));
+                else
+                    return "unexpected call argument: expectet Statement or ApplySuffix; Received " + call.GetType();
+            }
+            if (type == null)
+                return "could not determine atomic statement type";
+            var qq = Activator.CreateInstance(type, new object[] { this }) as AtomicStmt;
+
+            if (qq == null)
+                return "Atomic Statement does not inherit the AtomicStmt interface";
+
+            return qq.Resolve(st, ref solution_list);
         }
 
         /// <summary>
@@ -347,7 +363,7 @@ namespace Tacny
             else if ((tbs = st as TacnyBlockStmt) != null)
             {
                 ParensExpression pe = tbs.Guard as ParensExpression;
-                if(pe != null)
+                if (pe != null)
                     call_arguments = new List<Expression>() { pe.E };
                 else
                     call_arguments = new List<Expression>() { tbs.Guard };
@@ -397,7 +413,7 @@ namespace Tacny
 
             return null;
         }
-
+        /*
         private string CallSingletonAction(Statement st, ref List<Solution> solution_list)
         {
             SingletonAction rs = new SingletonAction(this);
@@ -439,7 +455,7 @@ namespace Tacny
             IfAction ia = new IfAction(this);
             return ia.AddIf(st, ref solution_list);
         }
-
+        */
         private string CallDefaultAction(Statement st, ref List<Solution> solution_list)
         {
             Action state = this.Copy();

@@ -4,7 +4,7 @@ using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
 namespace Tacny
 {
-    class OperatorAction : Action
+    class OperatorAction : Action, AtomicStmt
     {
         public override string FormatError(string error)
         {
@@ -13,6 +13,11 @@ namespace Tacny
 
         public OperatorAction(Action action) : base(action) { }
 
+        public string Resolve(Statement st, ref List<Solution> solution_list)
+        {
+            return ReplaceOperator(st, ref solution_list);
+        }
+        
         public string ReplaceOperator(Statement st, ref List<Solution> solution_list)
         {
             IVariable lv = null;

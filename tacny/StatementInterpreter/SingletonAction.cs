@@ -4,16 +4,24 @@ using System.Diagnostics.Contracts;
 
 namespace Tacny
 {
-    class SingletonAction : Action
+    class SingletonAction : Action, AtomicStmt
     {
-        
+
         public override string FormatError(string error)
         {
             return "ERROR replace_singleton: " + error;
         }
 
-        public SingletonAction(Action action) : base(action)
+        public SingletonAction(Action action)
+            : base(action)
         { }
+
+        public string Resolve(Statement st, ref List<Solution> solution_list)
+        {
+            return Replace(st, ref solution_list);
+        }
+
+
         /// <summary>
         /// Replace a singleton with a new term
         /// </summary>
@@ -117,5 +125,6 @@ namespace Tacny
             ReplaceTerm(old_singleton, new_term, formula.rChild, ref nexp);
             return null;
         }
+
     }
 }

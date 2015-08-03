@@ -9,7 +9,7 @@ using Microsoft.Boogie;
 
 namespace Tacny
 {
-    class MatchAction : Action
+    class MatchAction : Action, AtomicStmt
     {
         public override string FormatError(string error)
         {
@@ -17,6 +17,11 @@ namespace Tacny
         }
 
         public MatchAction(Action action) : base(action) { }
+
+        public string Resolve(Statement st, ref List<Solution> solution_list)
+        {
+            return GenerateMatch(st as TacnyCasesBlockStmt, ref solution_list);
+        }
 
         private Token oldToken = null;
         /*

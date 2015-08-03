@@ -1,9 +1,11 @@
-﻿using System;
+﻿using Microsoft.Dafny;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
+using System.Linq;
+using Dafny = Microsoft.Dafny;
+using Microsoft.Boogie;
+
 namespace Tacny
 {
     class CompositionAction : Action
@@ -26,12 +28,12 @@ namespace Tacny
             if (if_stmt != null)
             {
                 Expression guard = if_stmt.Guard;
-                Atomic guard_type;
+                StatementRegister.Atomic guard_type;
                 // get guard type
                 err = AnalyseGuard(guard, out guard_type);
                 if (err != null)
                     return FormatError(err);
-                if (guard_type == Atomic.UNDEFINED)
+                if (guard_type == StatementRegister.Atomic.UNDEFINED)
                 {
                     updated_statements.Add(st, st);
                     solution_list.Add(new Solution(this.Copy(), true, null));
@@ -46,11 +48,11 @@ namespace Tacny
             return null;
         }
 
-        private string AnalyseGuard(Expression guard, out Atomic type)
+        private string AnalyseGuard(Expression guard, out StatementRegister.Atomic type)
         {
             Expression exp;
             ApplySuffix ass;
-            type = Atomic.UNDEFINED;
+            type = StatementRegister.Atomic.UNDEFINED;
             
             if (guard is ParensExpression)
                 exp = ((ParensExpression)guard).E;
@@ -59,17 +61,17 @@ namespace Tacny
 
             ass = exp as ApplySuffix;
             if (ass != null)
-                type = GetStatementType(ass);
+                type = StatementRegister.GetAtomicType(ass.Lhs.tok.val);
 
             return null;
         }
 
-        private string CallGuard(Atomic type, out ConditionalAction.ConditionResult result)
+        private string CallGuard(StatementRegister.Atomic type, out ConditionalAction.ConditionResult result)
         {
             string err;
             switch (type)
             {
-                case Atomic.IS_VALID:
+                case StatementRegister.Atomic.IS_VALID:
                     ConditionalAction ca = new ConditionalAction(this);
                     err = ca.IsValid(out result);
                     break;

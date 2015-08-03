@@ -3,7 +3,7 @@ using Microsoft.Dafny;
 
 namespace Tacny
 {
-    class InvariantAction : Action
+    class InvariantAction : Action, AtomicStmt
     {
 
         public string FormatError(string method, string error)
@@ -12,6 +12,19 @@ namespace Tacny
         }
 
         public InvariantAction(Action action) : base(action) { }
+
+        public string Resolve(Statement st, ref List<Solution> solution_list)
+        {
+            switch (StatementRegister.GetAtomicType(st))
+            {
+                case StatementRegister.Atomic.ADD_INVAR:
+                    return AddInvar(st, ref solution_list);
+                case StatementRegister.Atomic.CREATE_INVAR:
+                    return CreateInvar(st, ref solution_list);
+                default:
+                    throw new cce.UnreachableException();
+            }
+        }
 
         public string CreateInvar(Statement st, ref List<Solution> solution_list)
         {
