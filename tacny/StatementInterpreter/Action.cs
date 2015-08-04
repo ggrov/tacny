@@ -12,6 +12,7 @@ namespace Tacny
     {
         string Resolve(Statement st, ref List<Solution> solution_list);
     }
+
     public class Action
     {
 
@@ -22,11 +23,12 @@ namespace Tacny
         public Solution solution;
         public Program program;
 
-        protected readonly Dictionary<string, DatatypeDecl> global_variables = new Dictionary<string, DatatypeDecl>();
         protected Dictionary<Dafny.IVariable, object> local_variables = new Dictionary<Dafny.IVariable, object>();
         protected Dictionary<Statement, Statement> updated_statements = new Dictionary<Statement, Statement>();
 
         public List<Statement> resolved = new List<Statement>();
+
+        protected readonly GlobalContext globalContext;
 
         public Action(Action ac)
         {
@@ -34,10 +36,10 @@ namespace Tacny
             this.tac = ac.tac;
             this.tac_body = ac.tac_body;
             this.tac_call = ac.tac_call;
-            this.global_variables = ac.global_variables;
             this.local_variables = ac.local_variables;
             this.updated_statements = ac.updated_statements;
-            this.program = ac.program;
+            this.globalContext = ac.globalContext;
+            this.program = ac.globalContext.program;
         }
 
         public Action(MemberDecl md, Tactic tac, UpdateStmt tac_call, Program program)
@@ -50,19 +52,21 @@ namespace Tacny
             this.tac_call = tac_call;
             this.tac_body = new List<Statement>(tac.Body.Body.ToArray());
             this.program = program;
-            FillGlobals(program.globals);
+            globalContext = new GlobalContext(md, tac_call, program);
             FillTacticInputs();
         }
 
-        private Action(MemberDecl md, Tactic tac, List<Statement> tac_body, UpdateStmt tac_call, Program program,
-            Dictionary<Dafny.IVariable, object> local_variables, Dictionary<string, DatatypeDecl> global_variables,
-            Dictionary<Statement, Statement> updated_statements, List<Statement> resolved)
+        private Action(MemberDecl md, Tactic tac, List<Statement> tac_body, UpdateStmt tac_call,
+            Dictionary<Dafny.IVariable, object> local_variables, 
+            Dictionary<Statement, Statement> updated_statements, 
+            List<Statement> resolved, GlobalContext globalContext)
         {
             this.md = md;
             this.tac = tac;
             this.tac_call = tac_call;
             this.tac_body = new List<Statement>(tac_body.ToArray());
-            this.program = program;
+            this.program = globalContext.program.NewProgram();
+            this.globalContext = globalContext;
 
             List<IVariable> lv_keys = new List<IVariable>(local_variables.Keys);
             List<object> lv_values = new List<object>(local_variables.Values);
@@ -72,7 +76,7 @@ namespace Tacny
             List<Statement> us_values = new List<Statement>(updated_statements.Values);
             this.updated_statements = us_keys.ToDictionary(x => x, x => us_values[us_keys.IndexOf(x)]);
 
-            this.global_variables = global_variables;
+            
             this.resolved = new List<Statement>(resolved.ToArray());
         }
 
@@ -87,28 +91,52 @@ namespace Tacny
             return new Action(
                     new Method(m.tok, m.Name, m.HasStaticKeyword, m.IsGhost, m.TypeArgs, m.Ins, m.Outs, m.Req, m.Mod, m.Ens, m.Decreases, m.Body, m.Attributes, m.SignatureEllipsis),
                     new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword, tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens, tac.Decreases, tac.Body, tac.Attributes, tac.SignatureEllipsis),
-                    tac_body, tac_call, program.newProgram(), local_variables, global_variables, updated_statements, resolved);
+                    tac_body, tac_call, local_variables, updated_statements, resolved, globalContext);
         }
-
-        /// <summary>
-        /// Create a copy of action with new method, tactic and tactic call params
-        /// </summary>
-        /// <param name="md">Method from which the tactic was called</param>
-        /// <param name="tac">Called tactic</param>
-        /// <param name="tac_call">Tactic_call</param>
-        /// <returns>Action</returns>
-        public Action Update(MemberDecl md, Tactic tac, UpdateStmt tac_call)
-        {
-            Action ac = new Action(md, tac, tac.Body.Body, tac_call, program, local_variables, global_variables, updated_statements, resolved);
-            ac.FillTacticInputs();
-            return ac;
-        }
-
 
         public virtual string FormatError(string err)
         {
             return "Error: " + err;
         }
+
+        public static string ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, out SolutionList result)
+        {
+            result = new SolutionList();
+            List<Solution> res = result.plist;
+            string err = ResolveTactic(tac, tac_call, md, tacnyProgram, ref res);
+            result.plist = res;
+            result.AddFinal(res);
+            return err;
+
+        }
+        public static string ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, ref List<Solution> result)
+        {
+            Contract.Requires(tac != null);
+            Contract.Requires(tac_call != null);
+            Contract.Requires(md != null);
+            result = null;
+            //local solution list
+            SolutionList solution_list = new SolutionList(new Solution(new Action(md, tac, tac_call, tacnyProgram)));
+            string err = null;
+
+            while (!solution_list.IsFinal())
+            {
+                List<Solution> res = null;
+
+                err = Action.ResolveOne(ref res, solution_list.plist);
+                if (err != null)
+                    return err;
+
+                if (res.Count > 0)
+                    solution_list.AddRange(res);
+                else
+                    break;
+            }
+
+            result = solution_list.plist;
+            return null;
+        }
+
 
         public static string ResolveOne(ref List<Solution> result, List<Solution> solution_list)
         {
@@ -164,106 +192,7 @@ namespace Tacny
             }
             return null;
         }
-        /*
-        protected static Atomic GetStatementType(Statement st)
-        {
-            Contract.Requires(st != null);
-            ExprRhs er;
-            UpdateStmt us;
 
-            if (st is IfStmt || st is WhileStmt)
-                return Atomic.COMPOSITION;
-            else if (st is TacnyIfBlockStmt)
-                return Atomic.ADD_IF;
-            else if (st is TacnyCasesBlockStmt)
-                return Atomic.ADD_MATCH;
-            else if (st is UpdateStmt)
-                us = st as UpdateStmt;
-            else if (st is VarDeclStmt)
-                us = ((VarDeclStmt)st).Update as UpdateStmt;
-
-            else
-                return Atomic.UNDEFINED;
-
-            er = (ExprRhs)us.Rhss[0];
-
-            return GetStatementType(er.Expr as ApplySuffix);
-        }
-
-        protected static Atomic GetStatementType(ApplySuffix ass)
-        {
-            Contract.Requires(ass != null);
-            switch (ass.Lhs.tok.val)
-            {
-                case "add_assert":
-                    return Atomic.ASSERT;
-                case "add_invariant":
-                    return Atomic.ADD_INVAR;
-                case "create_invariant":
-                    return Atomic.CREATE_INVAR;
-                case "extract_guard":
-                    return Atomic.EXTRACT_GUARD;
-                case "replace_operator":
-                    return Atomic.REPLACE_OP;
-                case "replace_singleton":
-                    return Atomic.REPLACE_SINGLETON;
-                case "is_valid":
-                    return Atomic.IS_VALID;
-                default:
-                    return Atomic.UNDEFINED;
-            }
-        }
-        
-        public string CallAction(object call, ref List<Solution> solution_list)
-        {
-            Contract.Requires(call != null);
-            string err;
-            Atomic type = Atomic.UNDEFINED;
-            Statement st = call as Statement;
-            ApplySuffix aps = null;
-            if (st != null)
-                type = GetStatementType(st);
-            else
-            {
-                aps = call as ApplySuffix;
-                if (aps != null)
-                    type = GetStatementType(aps);
-                else
-                    return "unexpected call argument: expectet Statement or ApplySuffix; Received " + call.GetType();
-            }
-            switch (type)
-            {
-                case Atomic.CREATE_INVAR:
-                    err = CallCreateInvariant(st, ref solution_list);
-                    break;
-                case Atomic.ADD_INVAR:
-                    err = CallAddInvariant(st, ref solution_list);
-                    break;
-                case Atomic.REPLACE_SINGLETON:
-                    err = CallSingletonAction(st, ref solution_list);
-                    break;
-                case Atomic.EXTRACT_GUARD:
-                    err = ExtractGuard(st, ref solution_list);
-                    break;
-                case Atomic.REPLACE_OP:
-                    err = CallOperatorAction(st, ref solution_list);
-                    break;
-                case Atomic.COMPOSITION:
-                    err = CallCompositionAction(st, ref solution_list);
-                    break;
-                case Atomic.ADD_MATCH:
-                    err = CallMatchAction((TacnyCasesBlockStmt)st, ref solution_list);
-                    break;
-                case Atomic.ADD_IF:
-                    err = CallIfAction((TacnyIfBlockStmt)st, ref solution_list);
-                    break;
-                default:
-                    err = CallDefaultAction(st, ref solution_list);
-                    break;
-            }
-            return err;
-        }
-        */
         public string CallAction(object call, ref List<Solution> solution_list)
         {
             System.Type type;
@@ -280,11 +209,23 @@ namespace Tacny
                     return "unexpected call argument: expectet Statement or ApplySuffix; Received " + call.GetType();
             }
             if (type == null)
+            {
+                UpdateStmt us = st as UpdateStmt;
+                if (us != null)
+                {
+                    if (program.IsTacticCall(us))
+                    {
+                        return Action.ResolveTactic(program.GetTactic(us), us, tac, program, ref solution_list);
+                    }
+                }
                 return "could not determine atomic statement type";
+            }
+                
             var qq = Activator.CreateInstance(type, new object[] { this }) as AtomicStmt;
 
             if (qq == null)
-                return "Atomic Statement does not inherit the AtomicStmt interface";
+                return CallDefaultAction(st, ref solution_list);
+            //return "Atomic Statement does not inherit the AtomicStmt interface";
 
             return qq.Resolve(st, ref solution_list);
         }
@@ -298,20 +239,7 @@ namespace Tacny
             List<Expression> exps = GetCallArguments(tac_call);
             Contract.Assert(exps.Count == tac.Ins.Count);
             for (int i = 0; i < exps.Count; i++)
-            {
                 local_variables.Add(tac.Ins[i], exps[i]);
-            }
-        }
-
-        /// <summary>
-        /// Clear global variables and popualte the dictionary with the provided list
-        /// </summary>
-        /// <param name="globals">Global variables</param>
-        private void FillGlobals(List<DatatypeDecl> globals)
-        {
-            this.global_variables.Clear();
-            foreach (DatatypeDecl tld in globals)
-                this.global_variables.Add(tld.Name, tld);
         }
 
         protected string InitArgs(Statement st, out List<Expression> call_arguments)
@@ -345,9 +273,7 @@ namespace Tacny
             else if ((us = st as UpdateStmt) != null)
             {
                 if (us.Lhss.Count == 0)
-                {
                     call_arguments = GetCallArguments(us);
-                }
                 else
                 {
                     NameSegment ns = (NameSegment)us.Lhss[0];
@@ -413,49 +339,7 @@ namespace Tacny
 
             return null;
         }
-        /*
-        private string CallSingletonAction(Statement st, ref List<Solution> solution_list)
-        {
-            SingletonAction rs = new SingletonAction(this);
-            return rs.Replace(st, ref solution_list);
-        }
 
-        private string CallAddInvariant(Statement st, ref List<Solution> solution_list)
-        {
-            InvariantAction ia = new InvariantAction(this);
-            return ia.AddInvar(st, ref solution_list);
-        }
-
-        private string CallCreateInvariant(Statement st, ref List<Solution> solution_list)
-        {
-            InvariantAction ia = new InvariantAction(this);
-            return ia.CreateInvar(st, ref solution_list);
-        }
-
-        private string CallOperatorAction(Statement st, ref List<Solution> solution_list)
-        {
-            OperatorAction oa = new OperatorAction(this);
-            return oa.ReplaceOperator(st, ref solution_list);
-        }
-
-        private string CallMatchAction(TacnyCasesBlockStmt st, ref List<Solution> solution_list)
-        {
-            MatchAction ma = new MatchAction(this);
-            return ma.GenerateMatch(st, ref solution_list);
-        }
-
-        private string CallCompositionAction(Statement st, ref List<Solution> solution_list)
-        {
-            CompositionAction ca = new CompositionAction(this);
-            return ca.Composition(st, ref solution_list);
-        }
-
-        private string CallIfAction(TacnyIfBlockStmt st, ref List<Solution> solution_list)
-        {
-            IfAction ia = new IfAction(this);
-            return ia.AddIf(st, ref solution_list);
-        }
-        */
         private string CallDefaultAction(Statement st, ref List<Solution> solution_list)
         {
             Action state = this.Copy();
@@ -488,31 +372,6 @@ namespace Tacny
 
                 index--;
             }
-            return null;
-        }
-
-        public string ExtractGuard(Statement st, ref List<Solution> solution_list)
-        {
-            WhileStmt ws = null;
-            Dafny.IVariable lv = null;
-            Expression guard = null;
-            string err;
-            List<Expression> call_arguments; // we don't care about this
-
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-                return "extract_guard: " + err;
-
-            Method m = (Method)md;
-
-            ws = FindWhileStmt(tac_call, md);
-            if (ws == null)
-                return "extract_guard: extract_guard can only be called from a while loop";
-            guard = ws.Guard;
-
-            AddLocal(lv, guard);
-
-            solution_list.Add(new Solution(this.Copy()));
             return null;
         }
 
@@ -578,16 +437,6 @@ namespace Tacny
             return null;
         }
 
-        protected DatatypeDecl GetGlobalWithName(NameSegment ns)
-        {
-            if (ns == null)
-                return null;
-            if (global_variables.ContainsKey(ns.Name))
-                return global_variables[ns.Name];
-
-            return null;
-        }
-
         public string Fin()
         {
             // for now try to copy dict values
@@ -611,5 +460,149 @@ namespace Tacny
             tok.val = val;
             return tok;
         }
+
+        /*
+protected static Atomic GetStatementType(Statement st)
+{
+    Contract.Requires(st != null);
+    ExprRhs er;
+    UpdateStmt us;
+
+    if (st is IfStmt || st is WhileStmt)
+        return Atomic.COMPOSITION;
+    else if (st is TacnyIfBlockStmt)
+        return Atomic.ADD_IF;
+    else if (st is TacnyCasesBlockStmt)
+        return Atomic.ADD_MATCH;
+    else if (st is UpdateStmt)
+        us = st as UpdateStmt;
+    else if (st is VarDeclStmt)
+        us = ((VarDeclStmt)st).Update as UpdateStmt;
+
+    else
+        return Atomic.UNDEFINED;
+
+    er = (ExprRhs)us.Rhss[0];
+
+    return GetStatementType(er.Expr as ApplySuffix);
+}
+
+protected static Atomic GetStatementType(ApplySuffix ass)
+{
+    Contract.Requires(ass != null);
+    switch (ass.Lhs.tok.val)
+    {
+        case "add_assert":
+            return Atomic.ASSERT;
+        case "add_invariant":
+            return Atomic.ADD_INVAR;
+        case "create_invariant":
+            return Atomic.CREATE_INVAR;
+        case "extract_guard":
+            return Atomic.EXTRACT_GUARD;
+        case "replace_operator":
+            return Atomic.REPLACE_OP;
+        case "replace_singleton":
+            return Atomic.REPLACE_SINGLETON;
+        case "is_valid":
+            return Atomic.IS_VALID;
+        default:
+            return Atomic.UNDEFINED;
     }
 }
+        
+public string CallAction(object call, ref List<Solution> solution_list)
+{
+    Contract.Requires(call != null);
+    string err;
+    Atomic type = Atomic.UNDEFINED;
+    Statement st = call as Statement;
+    ApplySuffix aps = null;
+    if (st != null)
+        type = GetStatementType(st);
+    else
+    {
+        aps = call as ApplySuffix;
+        if (aps != null)
+            type = GetStatementType(aps);
+        else
+            return "unexpected call argument: expectet Statement or ApplySuffix; Received " + call.GetType();
+    }
+    switch (type)
+    {
+        case Atomic.CREATE_INVAR:
+            err = CallCreateInvariant(st, ref solution_list);
+            break;
+        case Atomic.ADD_INVAR:
+            err = CallAddInvariant(st, ref solution_list);
+            break;
+        case Atomic.REPLACE_SINGLETON:
+            err = CallSingletonAction(st, ref solution_list);
+            break;
+        case Atomic.EXTRACT_GUARD:
+            err = ExtractGuard(st, ref solution_list);
+            break;
+        case Atomic.REPLACE_OP:
+            err = CallOperatorAction(st, ref solution_list);
+            break;
+        case Atomic.COMPOSITION:
+            err = CallCompositionAction(st, ref solution_list);
+            break;
+        case Atomic.ADD_MATCH:
+            err = CallMatchAction((TacnyCasesBlockStmt)st, ref solution_list);
+            break;
+        case Atomic.ADD_IF:
+            err = CallIfAction((TacnyIfBlockStmt)st, ref solution_list);
+            break;
+        default:
+            err = CallDefaultAction(st, ref solution_list);
+            break;
+    }
+    return err;
+}
+         *      private string CallSingletonAction(Statement st, ref List<Solution> solution_list)
+        {
+            SingletonAction rs = new SingletonAction(this);
+            return rs.Replace(st, ref solution_list);
+        }
+
+        private string CallAddInvariant(Statement st, ref List<Solution> solution_list)
+        {
+            InvariantAction ia = new InvariantAction(this);
+            return ia.AddInvar(st, ref solution_list);
+        }
+
+        private string CallCreateInvariant(Statement st, ref List<Solution> solution_list)
+        {
+            InvariantAction ia = new InvariantAction(this);
+            return ia.CreateInvar(st, ref solution_list);
+        }
+
+        private string CallOperatorAction(Statement st, ref List<Solution> solution_list)
+        {
+            OperatorAction oa = new OperatorAction(this);
+            return oa.ReplaceOperator(st, ref solution_list);
+        }
+
+        private string CallMatchAction(TacnyCasesBlockStmt st, ref List<Solution> solution_list)
+        {
+            MatchAction ma = new MatchAction(this);
+            return ma.GenerateMatch(st, ref solution_list);
+        }
+
+        private string CallCompositionAction(Statement st, ref List<Solution> solution_list)
+        {
+            CompositionAction ca = new CompositionAction(this);
+            return ca.Composition(st, ref solution_list);
+        }
+
+        private string CallIfAction(TacnyIfBlockStmt st, ref List<Solution> solution_list)
+        {
+            IfAction ia = new IfAction(this);
+            return ia.AddIf(st, ref solution_list);
+        }
+*/
+    }
+}
+
+

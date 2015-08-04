@@ -136,7 +136,7 @@ namespace Tacny
             return null;
         }
 
-        private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)
+        private static List<Statement>  InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)
         {
             WhileStmt ws = null;
             BlockStmt bs = null;
@@ -164,7 +164,7 @@ namespace Tacny
                 if (bs != null)
                 {
                     int j = index;
-                    while (j > 0)
+                    while (j >= 0)
                     {
                         Statement stmt_2 = body[j];
                         ws = stmt_2 as WhileStmt;
@@ -191,10 +191,18 @@ namespace Tacny
                 int u_boud = body.IndexOf(bs);
                 // tactic called in a while statement should 
                 //  return only a single solution item which is a WhileStmt
-                WhileStmt mod_ws = (WhileStmt)solution[0];
-                mod_ws = new WhileStmt(mod_ws.Tok, mod_ws.EndTok, mod_ws.Guard, mod_ws.Invariants,
-                    mod_ws.Decreases, mod_ws.Mod, bs);
-                tmp[l_bound] = mod_ws;
+                if (solution.Count > 0)
+                {
+                    WhileStmt mod_ws = (WhileStmt)solution[0];
+                    mod_ws = new WhileStmt(mod_ws.Tok, mod_ws.EndTok, mod_ws.Guard, mod_ws.Invariants,
+                        mod_ws.Decreases, mod_ws.Mod, bs);
+                    tmp[l_bound] = mod_ws;
+                }
+                else
+                {
+                    ws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, ws.Invariants, ws.Decreases, ws.Mod, bs);
+                    tmp[l_bound] = ws;
+                }
                 l_bound++;
 
 

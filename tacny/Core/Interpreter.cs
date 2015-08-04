@@ -166,7 +166,7 @@ namespace Tacny
             if (err != null)
                 return err;
             tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
-            
+
 
             return null;
         }
@@ -178,24 +178,14 @@ namespace Tacny
             if (m == null)
                 return null;
 
-            List<Statement> newBody = new List<Statement>();
-            //extract body from tactics 
             foreach (Statement st in m.Body.Body)
             {
-                if (st is UpdateStmt)
+                UpdateStmt us = st as UpdateStmt;
+                if (us != null)
                 {
-                    UpdateStmt us = (UpdateStmt)st;
-                    ExprRhs er = us.Rhss[0] as ExprRhs;
-                    if (er == null)
-                        return "change me error 1"; // TODO
-                    ApplySuffix asx = er.Expr as ApplySuffix;
-                    if (asx == null)
-                        return "change me error 2"; // TODO
-                    string name = asx.Lhs.tok.val;
-
-                    if (tacnyProgram.tactics.ContainsKey(name))
+                    if (tacnyProgram.IsTacticCall(us))
                     {
-                        string err = ResolveTacticBody(tacnyProgram.tactics[name], st as UpdateStmt, md); // generate a solution tree
+                        string err = Action.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, out solution_list);
                         if (err != null)
                             return err;
                     }
@@ -221,7 +211,6 @@ namespace Tacny
             //local solution list
             SolutionList solution_list = new SolutionList(new Solution(new Action(md, tac, tac_call, tacnyProgram)));
             string err = null;
-
 
             while (!solution_list.IsFinal())
             {

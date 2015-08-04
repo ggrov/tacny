@@ -57,7 +57,7 @@ namespace Tacny
             string datatype_name;
             string err;
 
-            Program prog = program.newProgram();
+            Program prog = program.NewProgram();
             bool[] ctorFlags;  // used to keep track of which cases statements require a body
             guard = st.Guard as ParensExpression;
 
@@ -74,10 +74,10 @@ namespace Tacny
                 return FormatError("argument " + ns.Name + " is not declared");
             datatype_name = formal.Type.ToString();
 
-            if (!global_variables.ContainsKey(datatype_name))
+            if (!globalContext.ContainsGlobalKey(datatype_name))
                 return FormatError("global datatype " + ns.Name + " is not defined");
 
-            datatype = global_variables[datatype_name];
+            datatype = globalContext.GetGlobal(datatype_name);
             initFlags(datatype, out ctorFlags);
             
             ns = (NameSegment)local_variables[formal];

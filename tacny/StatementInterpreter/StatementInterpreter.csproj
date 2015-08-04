@@ -103,6 +103,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Action.cs" />
+    <Compile Include="Context.cs" />
     <Compile Include="CompositionAction.cs" />
     <Compile Include="ConditionalAction.cs" />
     <Compile Include="GuardAction.cs" />

@@ -87,7 +87,7 @@ namespace Tacny
             }
         }
 
-        public Program newProgram()
+        public Program NewProgram()
         {
             return new Program(fileNames, programId);
         }
@@ -221,6 +221,37 @@ namespace Tacny
                     }
                 }
             }
+        }
+
+        private string GetSignature(UpdateStmt us)
+        {
+            ExprRhs er = us.Rhss[0] as ExprRhs;
+            if (er == null)
+                return null;
+            ApplySuffix asx = er.Expr as ApplySuffix;
+            if (asx == null)
+                return null;
+            return asx.Lhs.tok.val;
+        }
+
+        public bool IsTacticCall(UpdateStmt us)
+        {
+            string name = GetSignature(us);
+            if (name == null)
+                return false;
+            return tactics.ContainsKey(name);
+        }
+
+        public Tactic GetTactic(UpdateStmt us)
+        {
+            string name = GetSignature(us);
+            if (name == null)
+                return null;
+
+            if (!tactics.ContainsKey(name))
+                return null;
+
+            return tactics[name];
         }
 
         #region Parser
