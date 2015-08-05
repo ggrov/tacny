@@ -106,7 +106,7 @@ namespace Tacny
                 throw new Exception("Method not found");
             UpdateStmt tac_call = ac.tac_call;
             List<Statement> body = method.Body.Body;
-            body = InsertSolution(body, tac_call, ac.resolved);
+            body = InsertSolution(body, tac_call, ac.GetResolved());
             if (body == null)
                 throw new Exception("Body not filled");
 

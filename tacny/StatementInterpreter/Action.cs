@@ -23,21 +23,17 @@ namespace Tacny
         public Solution solution;
         public Program program;
 
-        protected Dictionary<Dafny.IVariable, object> local_variables = new Dictionary<Dafny.IVariable, object>();
-        protected Dictionary<Statement, Statement> updated_statements = new Dictionary<Statement, Statement>();
-
-        public List<Statement> resolved = new List<Statement>();
-
         protected readonly GlobalContext globalContext;
+        protected LocalContext localContext;
 
-        public Action(Action ac)
+        protected Action(Action ac)
         {
             this.md = ac.md;
             this.tac = ac.tac;
             this.tac_body = ac.tac_body;
             this.tac_call = ac.tac_call;
-            this.local_variables = ac.local_variables;
-            this.updated_statements = ac.updated_statements;
+
+            this.localContext = ac.localContext;
             this.globalContext = ac.globalContext;
             this.program = ac.globalContext.program;
         }
@@ -52,14 +48,13 @@ namespace Tacny
             this.tac_call = tac_call;
             this.tac_body = new List<Statement>(tac.Body.Body.ToArray());
             this.program = program;
-            globalContext = new GlobalContext(md, tac_call, program);
+            this.localContext = new LocalContext(md, tac, tac_call);
+            this.globalContext = new GlobalContext(md, tac_call, program);
             FillTacticInputs();
         }
 
         private Action(MemberDecl md, Tactic tac, List<Statement> tac_body, UpdateStmt tac_call,
-            Dictionary<Dafny.IVariable, object> local_variables, 
-            Dictionary<Statement, Statement> updated_statements, 
-            List<Statement> resolved, GlobalContext globalContext)
+                       LocalContext localContext, GlobalContext globalContext)
         {
             this.md = md;
             this.tac = tac;
@@ -67,17 +62,7 @@ namespace Tacny
             this.tac_body = new List<Statement>(tac_body.ToArray());
             this.program = globalContext.program.NewProgram();
             this.globalContext = globalContext;
-
-            List<IVariable> lv_keys = new List<IVariable>(local_variables.Keys);
-            List<object> lv_values = new List<object>(local_variables.Values);
-            this.local_variables = lv_keys.ToDictionary(x => x, x => lv_values[lv_keys.IndexOf(x)]);
-
-            List<Statement> us_keys = new List<Statement>(updated_statements.Keys);
-            List<Statement> us_values = new List<Statement>(updated_statements.Values);
-            this.updated_statements = us_keys.ToDictionary(x => x, x => us_values[us_keys.IndexOf(x)]);
-
-            
-            this.resolved = new List<Statement>(resolved.ToArray());
+            this.localContext = localContext.Copy();
         }
 
 
@@ -91,7 +76,7 @@ namespace Tacny
             return new Action(
                     new Method(m.tok, m.Name, m.HasStaticKeyword, m.IsGhost, m.TypeArgs, m.Ins, m.Outs, m.Req, m.Mod, m.Ens, m.Decreases, m.Body, m.Attributes, m.SignatureEllipsis),
                     new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword, tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens, tac.Decreases, tac.Body, tac.Attributes, tac.SignatureEllipsis),
-                    tac_body, tac_call, local_variables, updated_statements, resolved, globalContext);
+                    tac_body, tac_call, localContext, globalContext);
         }
 
         public virtual string FormatError(string err)
@@ -188,7 +173,7 @@ namespace Tacny
             foreach (var solution in solution_list)
             {
                 solution.state.Fin();
-                stmt_list.AddRange(solution.state.resolved);
+                stmt_list.AddRange(solution.state.GetResolved());
             }
             return null;
         }
@@ -218,7 +203,7 @@ namespace Tacny
                         return Action.ResolveTactic(program.GetTactic(us), us, tac, program, ref solution_list);
                     }
                 }
-                return "could not determine atomic statement type";
+                return CallDefaultAction(st, ref solution_list);
             }
                 
             var qq = Activator.CreateInstance(type, new object[] { this }) as AtomicStmt;
@@ -235,11 +220,7 @@ namespace Tacny
         /// </summary>
         public void FillTacticInputs()
         {
-            local_variables.Clear();
-            List<Expression> exps = GetCallArguments(tac_call);
-            Contract.Assert(exps.Count == tac.Ins.Count);
-            for (int i = 0; i < exps.Count; i++)
-                local_variables.Add(tac.Ins[i], exps[i]);
+            localContext.FillTacticInputs();
         }
 
         protected string InitArgs(Statement st, out List<Expression> call_arguments)
@@ -330,8 +311,8 @@ namespace Tacny
                 VarDeclStmt vds = new VarDeclStmt(us.Tok, us.EndTok, new List<Dafny.LocalVariable>() { lv }, us);
                 List<Solution> sol_list = new List<Solution>();
                 CallAction(vds, ref sol_list);
-                result = local_variables[lv];
-                local_variables.Remove(lv);
+                result = localContext.local_variables[lv];
+                localContext.local_variables.Remove(lv);
 
             }
             else
@@ -343,7 +324,7 @@ namespace Tacny
         private string CallDefaultAction(Statement st, ref List<Solution> solution_list)
         {
             Action state = this.Copy();
-            state.updated_statements.Add(st, st);
+            state.localContext.updated_statements.Add(st, st);
             solution_list.Add(new Solution(state, null));
             return null;
         }
@@ -383,75 +364,37 @@ namespace Tacny
 
         protected bool HasLocalWithName(NameSegment ns)
         {
-            if (ns == null)
-                return false;
-
-            List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
-
-            foreach (Dafny.IVariable lv in ins)
-            {
-                if (lv.Name == ns.Name)
-                    return true;
-            }
-
-            return false;
+            return localContext.HasLocalWithName(ns);
         }
 
         protected object GetLocalValueByName(NameSegment ns)
         {
-            Contract.Requires(ns != null);
-            return GetLocalValueByName(ns.Name);
+            return localContext.GetLocalValueByName(ns.Name);
         }
 
         protected object GetLocalValueByName(string name)
         {
-            Contract.Requires(name != null || name != "");
-
-            List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
-
-            foreach (Dafny.IVariable lv in ins)
-            {
-                if (lv.Name == name)
-                    return local_variables[lv];
-            }
-
-            return null;
+            return localContext.GetLocalValueByName(name);
         }
 
         protected IVariable GetLocalKeyByName(NameSegment ns)
         {
-            Contract.Requires(ns != null);
-            return GetLocalKeyByName(ns.Name);
+            return localContext.GetLocalKeyByName(ns.Name);
         }
 
         protected IVariable GetLocalKeyByName(string name)
         {
-            Contract.Requires(name != null);
-            List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
-
-            foreach (Dafny.IVariable lv in ins)
-            {
-                if (lv.DisplayName == name)
-                    return lv;
-            }
-            return null;
+            return localContext.GetLocalKeyByName(name);
         }
 
-        public string Fin()
+        public void Fin()
         {
-            // for now try to copy dict values
-            Statement[] tmp = (Statement[])updated_statements.Values.ToArray().Clone();
-            resolved = new List<Statement>(tmp);
-
-            return null;
+            localContext.Fin();
         }
 
         protected void AddLocal(IVariable lv, object value)
         {
-            if (!local_variables.ContainsKey(lv))
-                local_variables.Add(lv, value);
-            else
-                local_variables[lv] = value;
+            localContext.AddLocal(lv, value);
         }
 
         protected static Token CreateToken(string val, int line, int col)
@@ -459,6 +402,11 @@ namespace Tacny
             var tok = new Token(line, col);
             tok.val = val;
             return tok;
+        }
+
+        public List<Statement> GetResolved()
+        {
+            return localContext.resolved;
         }
 
         /*

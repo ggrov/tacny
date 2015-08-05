@@ -70,7 +70,9 @@ namespace Tacny
             else if ((us = st as UpdateStmt) != null) { }
             else if ((vds = st as VarDeclStmt) != null)
                 us = vds.Update as UpdateStmt;
-            
+            if (us == null)
+                return Atomic.UNDEFINED;
+
             er = (ExprRhs)us.Rhss[0];
 
             ApplySuffix aps = er.Expr as ApplySuffix;

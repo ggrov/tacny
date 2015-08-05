@@ -79,8 +79,8 @@ namespace Tacny
 
             datatype = globalContext.GetGlobal(datatype_name);
             initFlags(datatype, out ctorFlags);
-            
-            ns = (NameSegment)local_variables[formal];
+
+            ns = localContext.GetLocalValueByName(formal) as NameSegment;
             List<Statement> body;
             err = ResolveBlockStmt(st.Body, out body);
             if (err != null)
@@ -89,15 +89,15 @@ namespace Tacny
             GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype,
                                         body, out ms, ctorFlags);
 
-            updated_statements.Add(ms, ms);
+            localContext.AddUpdated(ms, ms);
 
             Solution solution = new Solution(this.Copy(), true, null);
-            
+
             Dafny.Program dprog = prog.program;
             solution.GenerateProgram(ref dprog);
             prog.ClearBody(md);
             prog.VerifyProgram();
-                prog.MaybePrintProgram(dprog, null);
+            prog.MaybePrintProgram(dprog, null);
             if (prog.HasError() && st.Body.Body.Count > 0)
             {
                 while (prog.HasError())
@@ -112,10 +112,10 @@ namespace Tacny
                     if (index == -1)
                         break;
                     ctorFlags[index] = true;
-                    updated_statements.Remove(ms);
+                    localContext.RemoveUpdated(ms);
                     err = ResolveBlockStmt(st.Body, out body);
                     GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, body, out ms, ctorFlags);
-                    updated_statements.Add(ms, ms);
+                    localContext.AddUpdated(ms, ms);
                     solution = new Solution(this.Copy(), true, null);
                     prog.program = prog.parseProgram();
                     dprog = prog.program;
@@ -128,12 +128,12 @@ namespace Tacny
             /*
              * HACK Recreate the match block as the old one was modified by the resolver
              * */
-            updated_statements.Remove(ms);
+            localContext.RemoveUpdated(ms);
             err = ResolveBlockStmt(st.Body, out body);
             GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, body, out ms, ctorFlags);
-            updated_statements.Add(ms, ms);
+            localContext.AddUpdated(ms, ms);
             solution = new Solution(this.Copy(), true, null);
-            
+
             solution_list.Add(solution);
 
 
@@ -152,7 +152,7 @@ namespace Tacny
             foreach (DatatypeCtor dc in datatype.Ctors)
             {
                 MatchCaseStmt mcs;
-                if(flags[i])
+                if (flags[i])
                     GenerateMatchCaseStmt(line, dc, body, out mcs);
                 else
                     GenerateMatchCaseStmt(line, dc, new List<Statement>(), out mcs);
@@ -190,7 +190,7 @@ namespace Tacny
         }
 
 
-        private void initFlags(DatatypeDecl datatype, out bool [] flags)
+        private void initFlags(DatatypeDecl datatype, out bool[] flags)
         {
             flags = new bool[datatype.Ctors.Count];
             for (int i = 0; i < flags.Length; i++)
