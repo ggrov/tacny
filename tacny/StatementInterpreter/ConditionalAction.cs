@@ -36,7 +36,7 @@ namespace Tacny
         public string IsValid(out ConditionResult result)
         {
             string err;
-            
+            Solution solution = new Solution(this.Copy());
             Dafny.Program prog = program.parseProgram();
             err = solution.GenerateProgram(ref prog);
             err = program.ResolveProgram(prog);

@@ -16,23 +16,14 @@ namespace Tacny
     public class Action
     {
 
-        public readonly MemberDecl md = null; // the Class Member from which the tactic has been called
-        public readonly Tactic tac = null;  // The called tactic
-        public List<Statement> tac_body = new List<Statement>(); // body of the currently worked tactic
-        public readonly UpdateStmt tac_call = null;  // call to the tactic
-        public Solution solution;
+        //public Solution solution;
         public Program program;
 
-        protected readonly GlobalContext globalContext;
-        protected LocalContext localContext;
+        public readonly GlobalContext globalContext;
+        public LocalContext localContext;
 
         protected Action(Action ac)
         {
-            this.md = ac.md;
-            this.tac = ac.tac;
-            this.tac_body = ac.tac_body;
-            this.tac_call = ac.tac_call;
-
             this.localContext = ac.localContext;
             this.globalContext = ac.globalContext;
             this.program = ac.globalContext.program;
@@ -43,23 +34,22 @@ namespace Tacny
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
 
-            this.md = md;
-            this.tac = tac;
-            this.tac_call = tac_call;
-            this.tac_body = new List<Statement>(tac.Body.Body.ToArray());
             this.program = program;
             this.localContext = new LocalContext(md, tac, tac_call);
             this.globalContext = new GlobalContext(md, tac_call, program);
             FillTacticInputs();
         }
 
-        private Action(MemberDecl md, Tactic tac, List<Statement> tac_body, UpdateStmt tac_call,
-                       LocalContext localContext, GlobalContext globalContext)
+        public Action(MemberDecl md, Tactic tac, UpdateStmt tac_call, GlobalContext globalContext)
         {
-            this.md = md;
-            this.tac = tac;
-            this.tac_call = tac_call;
-            this.tac_body = new List<Statement>(tac_body.ToArray());
+            this.localContext = new LocalContext(md, tac, tac_call);
+            this.globalContext = globalContext;
+            this.program = globalContext.program;
+
+        }
+
+        private Action(LocalContext localContext, GlobalContext globalContext)
+        {
             this.program = globalContext.program.NewProgram();
             this.globalContext = globalContext;
             this.localContext = localContext.Copy();
@@ -72,11 +62,7 @@ namespace Tacny
         /// <returns>Action</returns>
         public Action Copy()
         {
-            var m = (Method)md;
-            return new Action(
-                    new Method(m.tok, m.Name, m.HasStaticKeyword, m.IsGhost, m.TypeArgs, m.Ins, m.Outs, m.Req, m.Mod, m.Ens, m.Decreases, m.Body, m.Attributes, m.SignatureEllipsis),
-                    new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword, tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens, tac.Decreases, tac.Body, tac.Attributes, tac.SignatureEllipsis),
-                    tac_body, tac_call, localContext, globalContext);
+            return new Action(localContext, globalContext);
         }
 
         public virtual string FormatError(string err)
@@ -86,22 +72,34 @@ namespace Tacny
 
         public static string ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, out SolutionList result)
         {
+            Contract.Requires(tac != null);
+            Contract.Requires(tac_call != null);
+            Contract.Requires(md != null);
             result = new SolutionList();
             List<Solution> res = result.plist;
-            string err = ResolveTactic(tac, tac_call, md, tacnyProgram, ref res);
+            string err = ResolveTactic(new Action(md, tac, tac_call, tacnyProgram), ref res);
+
             result.plist = res;
             result.AddFinal(res);
             return err;
 
         }
-        public static string ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, ref List<Solution> result)
+
+        /// <summary>
+        /// Resolves tactic body
+        /// </summary>
+        /// <param name="tac">The tactic to to be resolved</param>
+        /// <param name="tac_call">tactic call</param>
+        /// <param name="md">MemberDecl from where the tactic has been called</param>
+        /// <param name="tacnyProgram"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        public static string ResolveTactic(Action action, ref List<Solution> result)
         {
-            Contract.Requires(tac != null);
-            Contract.Requires(tac_call != null);
-            Contract.Requires(md != null);
+            Contract.Requires(action != null);
             result = null;
             //local solution list
-            SolutionList solution_list = new SolutionList(new Solution(new Action(md, tac, tac_call, tacnyProgram)));
+            SolutionList solution_list = new SolutionList(new Solution(action));
             string err = null;
 
             while (!solution_list.IsFinal())
@@ -132,17 +130,22 @@ namespace Tacny
 
             foreach (var solution in solution_list)
             {
-                if (solution.state.tac_body.Count < 1)
+                if (solution.state.localContext.IsResolved())
                     continue;
 
-                solution.state.solution = solution;
-                err = solution.state.CallAction(solution.state.tac_body[0], ref result);
-                foreach (var res in result)
-                    if (res.parent == null)
-                        res.parent = solution;
+                //solution.state.solution = solution;
+                err = solution.state.CallAction(solution.state.localContext.GetCurrentStatement(), ref result);
+                if (err != null)
+                    return err;
 
                 if (solution_list.IndexOf(solution) == solution_list.Count - 1)
-                    solution.state.tac_body.RemoveAt(0);
+                    foreach (var res in result)
+                        if (res.parent == null)
+                        {
+                            res.parent = solution;
+                            res.state.localContext.IncCounter();
+                        }
+
             }
 
             return err;
@@ -154,19 +157,16 @@ namespace Tacny
             string err;
             stmt_list = new List<Statement>();
             List<Solution> solution_list = new List<Solution>();
-            Action ac = new Action(md, tac, tac_call, program);
 
-            ac.tac_body = bs.Body;
-
-            foreach (var stmt in ac.tac_body)
+            foreach (var stmt in bs.Body)
             {
-                err = ac.CallAction(stmt, ref solution_list);
+                err = this.CallAction(stmt, ref solution_list);
                 if (err != null)
                     return err;
 
-                foreach (var res in solution_list)
-                    if (res.parent == null)
-                        res.parent = solution;
+                //foreach (var res in solution_list)
+                //    if (res.parent == null)
+                //        res.parent = solution;
 
             }
 
@@ -200,12 +200,31 @@ namespace Tacny
                 {
                     if (program.IsTacticCall(us))
                     {
-                        return Action.ResolveTactic(program.GetTactic(us), us, tac, program, ref solution_list);
+                        Action ac = new Action(localContext.tac, program.GetTactic(us), us, globalContext);
+                        ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
+                        List<Expression> exps = ((ApplySuffix)er.Expr).Args;
+                        Contract.Assert(exps.Count == ac.localContext.tac.Ins.Count);
+                        for (int i = 0; i < exps.Count; i++)
+                        {
+                            ac.AddLocal(ac.localContext.tac.Ins[i], GetLocalValueByName(exps[i] as NameSegment));
+                        }
+
+                        List<Solution> sol_list = new List<Solution>();
+                        string err = Action.ResolveTactic(ac, ref sol_list);
+                        if (err != null)
+                            return err;
+
+                        foreach (var solution in sol_list)
+                        {
+                            solution_list.Add(new Solution(this.Copy()));
+                        }
+
+                        return null;
                     }
                 }
                 return CallDefaultAction(st, ref solution_list);
             }
-                
+
             var qq = Activator.CreateInstance(type, new object[] { this }) as AtomicStmt;
 
             if (qq == null)
@@ -299,7 +318,7 @@ namespace Tacny
                 if (!HasLocalWithName(ns))
                     return "Argument not passed";
 
-                result = GetLocalValueByName(ns);
+                result = GetLocalValueByName(ns.Name);
             }
             else if ((aps = argument as ApplySuffix) != null)
             {
@@ -310,7 +329,9 @@ namespace Tacny
                 Dafny.LocalVariable lv = new Dafny.LocalVariable(aps.tok, aps.tok, aps.Lhs.tok.val, null, false);
                 VarDeclStmt vds = new VarDeclStmt(us.Tok, us.EndTok, new List<Dafny.LocalVariable>() { lv }, us);
                 List<Solution> sol_list = new List<Solution>();
-                CallAction(vds, ref sol_list);
+                string err = CallAction(vds, ref sol_list);
+                if (err != null)
+                    return err;
                 result = localContext.local_variables[lv];
                 localContext.local_variables.Remove(lv);
 
@@ -324,7 +345,7 @@ namespace Tacny
         private string CallDefaultAction(Statement st, ref List<Solution> solution_list)
         {
             Action state = this.Copy();
-            state.localContext.updated_statements.Add(st, st);
+            state.globalContext.AddUpdated(st, st);
             solution_list.Add(new Solution(state, null));
             return null;
         }
@@ -389,7 +410,7 @@ namespace Tacny
 
         public void Fin()
         {
-            localContext.Fin();
+            globalContext.Fin();
         }
 
         protected void AddLocal(IVariable lv, object value)
@@ -406,7 +427,12 @@ namespace Tacny
 
         public List<Statement> GetResolved()
         {
-            return localContext.resolved;
+            return globalContext.resolved;
+        }
+
+        public UpdateStmt GetTacticCall()
+        {
+            return localContext.tac_call;
         }
 
         /*

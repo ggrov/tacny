@@ -33,9 +33,8 @@ namespace Tacny
             if (err != null)
                 return "extract_guard: " + err;
 
-            Method m = (Method)md;
 
-            ws = FindWhileStmt(tac_call, md);
+            ws = FindWhileStmt(globalContext.tac_call, globalContext.md);
             if (ws == null)
                 return "extract_guard: extract_guard can only be called from a while loop";
             guard = ws.Guard;

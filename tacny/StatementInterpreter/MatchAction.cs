@@ -89,13 +89,13 @@ namespace Tacny
             GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype,
                                         body, out ms, ctorFlags);
 
-            localContext.AddUpdated(ms, ms);
+            globalContext.AddUpdated(ms, ms);
 
             Solution solution = new Solution(this.Copy(), true, null);
 
             Dafny.Program dprog = prog.program;
             solution.GenerateProgram(ref dprog);
-            prog.ClearBody(md);
+            prog.ClearBody(localContext.md);
             prog.VerifyProgram();
             prog.MaybePrintProgram(dprog, null);
             if (prog.HasError() && st.Body.Body.Count > 0)
@@ -112,15 +112,15 @@ namespace Tacny
                     if (index == -1)
                         break;
                     ctorFlags[index] = true;
-                    localContext.RemoveUpdated(ms);
+                    globalContext.RemoveUpdated(ms);
                     err = ResolveBlockStmt(st.Body, out body);
                     GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, body, out ms, ctorFlags);
-                    localContext.AddUpdated(ms, ms);
+                    globalContext.AddUpdated(ms, ms);
                     solution = new Solution(this.Copy(), true, null);
                     prog.program = prog.parseProgram();
                     dprog = prog.program;
                     solution.GenerateProgram(ref dprog);
-                    prog.ClearBody(md);
+                    prog.ClearBody(localContext.md);
                     prog.VerifyProgram();
                     prog.MaybePrintProgram(dprog, null);
                 }
@@ -128,10 +128,10 @@ namespace Tacny
             /*
              * HACK Recreate the match block as the old one was modified by the resolver
              * */
-            localContext.RemoveUpdated(ms);
+            globalContext.RemoveUpdated(ms);
             err = ResolveBlockStmt(st.Body, out body);
             GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, body, out ms, ctorFlags);
-            localContext.AddUpdated(ms, ms);
+            globalContext.AddUpdated(ms, ms);
             solution = new Solution(this.Copy(), true, null);
 
             solution_list.Add(solution);
@@ -147,6 +147,7 @@ namespace Tacny
 
             List<MatchCaseStmt> cases = new List<MatchCaseStmt>();
             result = null;
+            UpdateStmt tac_call = GetTacticCall();
             int line = tac_call.Tok.line + 1;
             int i = 0;
             foreach (DatatypeCtor dc in datatype.Ctors)

@@ -76,23 +76,22 @@ namespace Tacny
 
             object tmp;
             err = ProcessArg(call_arguments[0], out tmp);
+            if (err != null)
+                return FormatError(err);
             invariant = tmp as MaybeFreeExpression;
             if (invariant == null)
                 return FormatError("add_invariant", "Incorrect input type expected Invariant received " + tmp.GetType());
 
-            Method m = (Method)md;
             WhileStmt nws = null;
 
-            WhileStmt ws = FindWhileStmt(tac_call, md);
+            WhileStmt ws = FindWhileStmt(globalContext.tac_call, globalContext.md);
             if (ws == null)
                 return FormatError("add_invariant", "add_invariant can only be called from a while loop");
             // if we already added new invariants to the statement, use the updated statement instead
-            nws = localContext.GetUpdated(ws) as WhileStmt;
+            nws = globalContext.GetUpdated(ws) as WhileStmt;
             
             if (nws != null)
-            {
                 invar_arr = nws.Invariants.ToArray();    
-            }
             else
                 invar_arr = ws.Invariants.ToArray();
 
@@ -100,7 +99,7 @@ namespace Tacny
             invar.Add(invariant);
             nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, invar, ws.Decreases, ws.Mod, ws.Body);
 
-            localContext.AddUpdated(ws, nws);
+            globalContext.AddUpdated(ws, nws);
 
             solution_list.Add(new Solution(this.Copy()));
             return null;

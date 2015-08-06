@@ -1,4 +1,4 @@
-﻿    using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
@@ -101,10 +101,10 @@ namespace Tacny
             List<Dafny.Program> prog_list = new List<Dafny.Program>();
             Action ac = state.Copy();
             ac.Fin();
-            Method method = (Method)Program.FindMember(prog, ac.md.Name);
+            Method method = (Method)Program.FindMember(prog, ac.localContext.md.Name);
             if (method == null)
                 throw new Exception("Method not found");
-            UpdateStmt tac_call = ac.tac_call;
+            UpdateStmt tac_call = ac.GetTacticCall();
             List<Statement> body = method.Body.Body;
             body = InsertSolution(body, tac_call, ac.GetResolved());
             if (body == null)
@@ -136,7 +136,7 @@ namespace Tacny
             return null;
         }
 
-        private static List<Statement>  InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)
+        private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)
         {
             WhileStmt ws = null;
             BlockStmt bs = null;

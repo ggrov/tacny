@@ -200,20 +200,23 @@ namespace Tacny
                         Method m = member as Method;
                         if (m != null && m.Name != md.Name)
                         {
-                            foreach (Statement st in m.Body.Body)
+                            if (m.Body != null)
                             {
-                                if (st is UpdateStmt)
+                                foreach (Statement st in m.Body.Body)
                                 {
-                                    UpdateStmt us = (UpdateStmt)st;
-                                    ExprRhs er = us.Rhss[0] as ExprRhs;
-
-                                    ApplySuffix asx = er.Expr as ApplySuffix;
-                                    string name = asx.Lhs.tok.val;
-
-                                    if (tactics.ContainsKey(name))
+                                    if (st is UpdateStmt)
                                     {
-                                        m.Body = null;
-                                        break;
+                                        UpdateStmt us = (UpdateStmt)st;
+                                        ExprRhs er = us.Rhss[0] as ExprRhs;
+
+                                        ApplySuffix asx = er.Expr as ApplySuffix;
+                                        string name = asx.Lhs.tok.val;
+
+                                        if (tactics.ContainsKey(name))
+                                        {
+                                            m.Body = null;
+                                            break;
+                                        }
                                     }
                                 }
                             }

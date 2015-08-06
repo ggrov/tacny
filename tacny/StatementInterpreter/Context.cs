@@ -30,19 +30,21 @@ namespace Tacny
         public readonly Tactic tac = null;  // The called tactic
         public List<Statement> tac_body = new List<Statement>(); // body of the currently worked tactic
         public Dictionary<Dafny.IVariable, object> local_variables = new Dictionary<Dafny.IVariable, object>();
-        public Dictionary<Statement, Statement> updated_statements = new Dictionary<Statement, Statement>();
-        public List<Statement> resolved = new List<Statement>();
+        
+        
+        private int tacCounter;
 
         public LocalContext(MemberDecl md, Tactic tac, UpdateStmt tac_call)
             : base(md, tac_call)
         {
             this.tac = tac;
             this.tac_body = new List<Statement>(tac.Body.Body.ToArray());
+            this.tacCounter = 0;
             FillTacticInputs();
         }
 
-        public LocalContext(MemberDecl md, Tactic tac, UpdateStmt tac_call, List<Statement> tac_body, Dictionary<Dafny.IVariable, object> local_variables,
-            Dictionary<Statement, Statement> updated_statements, List<Statement> resolved)
+        public LocalContext(MemberDecl md, Tactic tac, UpdateStmt tac_call, 
+            List<Statement> tac_body, Dictionary<Dafny.IVariable, object> local_variables, int tacCounter)
             : base(md, tac_call)
         {
             this.tac = tac;
@@ -52,11 +54,7 @@ namespace Tacny
             List<object> lv_values = new List<object>(local_variables.Values);
             this.local_variables = lv_keys.ToDictionary(x => x, x => lv_values[lv_keys.IndexOf(x)]);
 
-            List<Statement> us_keys = new List<Statement>(updated_statements.Keys);
-            List<Statement> us_values = new List<Statement>(updated_statements.Values);
-            this.updated_statements = us_keys.ToDictionary(x => x, x => us_values[us_keys.IndexOf(x)]);
-
-            this.resolved = new List<Statement>(resolved.ToArray());
+            this.tacCounter = tacCounter;
         }
 
         public LocalContext Copy()
@@ -66,7 +64,7 @@ namespace Tacny
                             tac.TypeArgs, tac.Ins, tac.Outs, tac.Req,
                             tac.Mod, tac.Ens, tac.Decreases, tac.Body,
                             tac.Attributes, tac.SignatureEllipsis),
-                tac_call, tac_body, local_variables, updated_statements, resolved);
+                tac_call, tac_body, local_variables, tacCounter);
         }
 
 
@@ -92,6 +90,12 @@ namespace Tacny
                 if (lv.Name == ns.Name)
                     return true;
             return false;
+        }
+
+        public object GetLocalValueByName(NameSegment ns)
+        {
+            Contract.Requires(ns != null);
+            return GetLocalValueByName(ns.Name);
         }
 
         public object GetLocalValueByName(IVariable ns)
@@ -135,6 +139,60 @@ namespace Tacny
                 local_variables[lv] = value;
         }
 
+        
+
+        public void IncCounter()
+        {
+            if (tacCounter < tac.Body.Body.Count)
+                tacCounter++;
+            else
+                throw new ArgumentOutOfRangeException("Tactic counter exceeded tactic body length");
+        }
+
+        public int GetCounter()
+        {
+            return tacCounter;
+        }
+
+        public Statement GetCurrentStatement()
+        {
+            if (tacCounter >= tac.Body.Body.Count)
+                return null;
+            return this.tac.Body.Body[tacCounter];
+        }
+
+        public bool IsResolved()
+        {
+            return tacCounter == tac.Body.Body.Count;
+        }
+    }
+
+    public class GlobalContext : Context
+    {
+        protected readonly Dictionary<string, DatatypeDecl> global_variables = new Dictionary<string, DatatypeDecl>();
+        public Dictionary<Statement, Statement> updated_statements = new Dictionary<Statement, Statement>();
+        public List<Statement> resolved = new List<Statement>();
+        public Program program;
+
+
+        public GlobalContext(MemberDecl md, UpdateStmt tac_call, Program program)
+            : base(md, tac_call)
+        {
+            this.program = program;
+            foreach (DatatypeDecl tld in program.globals)
+                this.global_variables.Add(tld.Name, tld);
+        }
+
+        public bool ContainsGlobalKey(string name)
+        {
+            return global_variables.ContainsKey(name);
+        }
+
+        public DatatypeDecl GetGlobal(string name)
+        {
+            return global_variables[name];
+        }
+
         public void AddUpdated(Statement key, Statement value)
         {
             if (!updated_statements.ContainsKey(key))
@@ -161,31 +219,6 @@ namespace Tacny
             // for now try to copy dict values
             Statement[] tmp = (Statement[])updated_statements.Values.ToArray().Clone();
             resolved = new List<Statement>(tmp);
-        }
-    }
-
-    public class GlobalContext : Context
-    {
-        protected readonly Dictionary<string, DatatypeDecl> global_variables = new Dictionary<string, DatatypeDecl>();
-        public Program program;
-
-
-        public GlobalContext(MemberDecl md, UpdateStmt tac_call, Program program)
-            : base(md, tac_call)
-        {
-            this.program = program;
-            foreach (DatatypeDecl tld in program.globals)
-                this.global_variables.Add(tld.Name, tld);
-        }
-
-        public bool ContainsGlobalKey(string name)
-        {
-            return global_variables.ContainsKey(name);
-        }
-
-        public DatatypeDecl GetGlobal(string name)
-        {
-            return global_variables[name];
         }
     }
 }

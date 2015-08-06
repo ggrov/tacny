@@ -35,7 +35,7 @@ namespace Tacny
                     return FormatError(err);
                 if (guard_type == StatementRegister.Atomic.UNDEFINED)
                 {
-                    localContext.AddUpdated(st, st);
+                    globalContext.AddUpdated(st, st);
                     solution_list.Add(new Solution(this.Copy(), true, null));
                     return null;
                 }

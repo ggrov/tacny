@@ -142,7 +142,7 @@ namespace Tacny
                     program = tacnyProgram.program;
                     solution.GenerateProgram(ref program);
 
-                    tacnyProgram.ClearBody(solution.state.md);
+                    tacnyProgram.ClearBody(solution.state.globalContext.md);
                     err = tacnyProgram.ResolveProgram();
                     if (err != null)
                         Warning(tacnyProgram.programId, err);
@@ -171,11 +171,12 @@ namespace Tacny
             return null;
         }
 
-        // will probably require some handling to unresolvable tactics
         private string ScanMemberBody(MemberDecl md)
         {
             Method m = md as Method;
             if (m == null)
+                return null;
+            if (m.Body == null)
                 return null;
 
             foreach (Statement st in m.Body.Body)
