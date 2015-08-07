@@ -32,7 +32,7 @@ namespace Tacny
             
 
             GenerateIfStmt(st.Tok.line, st.Guard, thn, els, out iss);
-            globalContext.AddUpdated(iss, iss);
+            AddUpdated(iss, iss);
             solution_list.Add(new Solution(this.Copy()));
 
             return null;

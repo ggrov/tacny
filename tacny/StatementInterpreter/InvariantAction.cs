@@ -88,7 +88,7 @@ namespace Tacny
             if (ws == null)
                 return FormatError("add_invariant", "add_invariant can only be called from a while loop");
             // if we already added new invariants to the statement, use the updated statement instead
-            nws = globalContext.GetUpdated(ws) as WhileStmt;
+            nws = GetUpdated(ws) as WhileStmt;
             
             if (nws != null)
                 invar_arr = nws.Invariants.ToArray();    
@@ -99,7 +99,7 @@ namespace Tacny
             invar.Add(invariant);
             nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, invar, ws.Decreases, ws.Mod, ws.Body);
 
-            globalContext.AddUpdated(ws, nws);
+            AddUpdated(ws, nws);
 
             solution_list.Add(new Solution(this.Copy()));
             return null;

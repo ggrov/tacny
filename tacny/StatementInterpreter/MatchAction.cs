@@ -20,7 +20,8 @@ namespace Tacny
 
         public string Resolve(Statement st, ref List<Solution> solution_list)
         {
-            return GenerateMatch(st as TacnyCasesBlockStmt, ref solution_list);
+            string err = GenerateMatch(st as TacnyCasesBlockStmt, ref solution_list);
+            return err;
         }
 
         private Token oldToken = null;
@@ -51,14 +52,16 @@ namespace Tacny
         public string GenerateMatch(TacnyCasesBlockStmt st, ref List<Solution> solution_list)
         {
             DatatypeDecl datatype = null;
-            MatchStmt ms;
+            MatchStmt ms = null;
             ParensExpression guard;
             NameSegment ns;
             string datatype_name;
             string err;
+            List<Statement> body;
+            Solution solution;
+            Dafny.Program dprog;
 
-            Program prog = program.NewProgram();
-            bool[] ctorFlags;  // used to keep track of which cases statements require a body
+            bool[] ctorFlags; //localContext.ctorFlags; // used to keep track of which cases statements require a body
             guard = st.Guard as ParensExpression;
 
             if (guard == null)
@@ -72,6 +75,7 @@ namespace Tacny
             Dafny.Formal formal = (Dafny.Formal)GetLocalKeyByName(ns);
             if (formal == null)
                 return FormatError("argument " + ns.Name + " is not declared");
+          
             datatype_name = formal.Type.ToString();
 
             if (!globalContext.ContainsGlobalKey(datatype_name))
@@ -81,61 +85,46 @@ namespace Tacny
             initFlags(datatype, out ctorFlags);
 
             ns = localContext.GetLocalValueByName(formal) as NameSegment;
-            List<Statement> body;
-            err = ResolveBlockStmt(st.Body, out body);
-            if (err != null)
-                return FormatError(err);
-
-            GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype,
-                                        body, out ms, ctorFlags);
-
-            globalContext.AddUpdated(ms, ms);
-
-            Solution solution = new Solution(this.Copy(), true, null);
-
-            Dafny.Program dprog = prog.program;
-            solution.GenerateProgram(ref dprog);
-            prog.ClearBody(localContext.md);
-            prog.VerifyProgram();
-            prog.MaybePrintProgram(dprog, null);
-            if (prog.HasError() && st.Body.Body.Count > 0)
+            
+            while (program.HasError())
             {
-                while (prog.HasError())
+
+                // if the error token has not changed since last iteration
+                // break
+                if (AnalyseError(program.GetErrorToken()))
+                    break;
+                this.oldToken = program.GetErrorToken();
+                if (oldToken != null)
                 {
-                    // if the error token has not changed since last iteration
-                    // break
-                    if (AnalyseError(prog.GetErrorToken()))
-                        break;
-                    this.oldToken = prog.GetErrorToken();
                     int index = GetErrorIndex(oldToken, ms);
                     // the verification error is not caused by the match stmt
                     if (index == -1)
                         break;
                     ctorFlags[index] = true;
-                    globalContext.RemoveUpdated(ms);
-                    err = ResolveBlockStmt(st.Body, out body);
-                    GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, body, out ms, ctorFlags);
-                    globalContext.AddUpdated(ms, ms);
-                    solution = new Solution(this.Copy(), true, null);
-                    prog.program = prog.parseProgram();
-                    dprog = prog.program;
-                    solution.GenerateProgram(ref dprog);
-                    prog.ClearBody(localContext.md);
-                    prog.VerifyProgram();
-                    prog.MaybePrintProgram(dprog, null);
                 }
+                
+                err = ResolveBody(st.Body, out body);
+                GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, body, out ms, ctorFlags);
+                AddUpdated(ms, ms);
+                solution = new Solution(this.Copy(), true, null);
+                dprog = program.ParseProgram();
+                solution.GenerateProgram(ref dprog);
+                program.ClearBody(localContext.md);
+                program.VerifyProgram();
+                program.MaybePrintProgram(dprog, null);
+                RemoveUpdated(ms); 
             }
+            
             /*
              * HACK Recreate the match block as the old one was modified by the resolver
-             * */
-            globalContext.RemoveUpdated(ms);
-            err = ResolveBlockStmt(st.Body, out body);
+             */
+            RemoveUpdated(ms);
+            err = ResolveBody(st.Body, out body);
             GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, body, out ms, ctorFlags);
-            globalContext.AddUpdated(ms, ms);
+            AddUpdated(ms, ms);
             solution = new Solution(this.Copy(), true, null);
 
             solution_list.Add(solution);
-
 
             return null;
         }

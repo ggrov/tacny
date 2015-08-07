@@ -37,7 +37,7 @@ namespace Tacny
         {
             string err;
             Solution solution = new Solution(this.Copy());
-            Dafny.Program prog = program.parseProgram();
+            Dafny.Program prog = program.ParseProgram();
             err = solution.GenerateProgram(ref prog);
             err = program.ResolveProgram(prog);
             program.VerifyProgram(prog);

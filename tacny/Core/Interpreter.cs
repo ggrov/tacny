@@ -138,7 +138,7 @@ namespace Tacny
                         final.Add(solution);
                         break;
                     }
-                    tacnyProgram.program = tacnyProgram.parseProgram();
+                    
                     program = tacnyProgram.program;
                     solution.GenerateProgram(ref program);
 
@@ -157,8 +157,8 @@ namespace Tacny
                 }
             }
 
-            tacnyProgram.program = tacnyProgram.parseProgram();
-            program = tacnyProgram.program;
+
+            program = tacnyProgram.ParseProgram();
             foreach (var solution in final)
                 solution.GenerateProgram(ref program);
 
@@ -217,7 +217,7 @@ namespace Tacny
             {
                 List<Solution> result = null;
 
-                err = Action.ResolveOne(ref result, solution_list.plist);
+                err = Action.ResolveStatement(ref result, solution_list.plist);
                 if (err != null)
                     return err;
 

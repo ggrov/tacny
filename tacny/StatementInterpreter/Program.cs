@@ -87,15 +87,24 @@ namespace Tacny
             }
         }
 
+        /// <summary>
+        /// Create new tacny Program instance
+        /// </summary>
+        /// <returns></returns>
         public Program NewProgram()
         {
             return new Program(fileNames, programId);
         }
 
-        public Dafny.Program parseProgram()
+        /// <summary>
+        /// Create new instance of the working Dafny.Program
+        /// </summary>
+        /// <returns>Instance of dafny.Program</returns>
+        public Dafny.Program ParseProgram()
         {
             Dafny.Program prog;
             ParseCheck(fileNames, programId, out prog);
+            this.program = prog;
             return prog;
         }
 
@@ -176,7 +185,7 @@ namespace Tacny
             if (stats != null)
                 return stats.ErrorCount > 0;
 
-            return false;
+            return true;
         }
 
         public void ClearBody(MemberDecl md)
