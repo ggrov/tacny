@@ -22,6 +22,7 @@ namespace Tacny
             IS_VALID,
             ADD_MATCH,
             ADD_IF,
+            TRY_ALL,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -33,7 +34,8 @@ namespace Tacny
             {"replace_operator", Atomic.REPLACE_OP},
             {"is_valid", Atomic.IS_VALID},
             {"cases", Atomic.ADD_MATCH},
-            {"addif", Atomic.ADD_IF}
+            {"addif", Atomic.ADD_IF},
+            {"tryall", Atomic.TRY_ALL},
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -45,6 +47,7 @@ namespace Tacny
             {Atomic.ADD_MATCH, typeof(MatchAction)},
             {Atomic.REPLACE_OP, typeof(OperatorAction)},
             {Atomic.EXTRACT_GUARD, typeof(GuardAction)},
+            {Atomic.TRY_ALL, typeof(TryAllAction)},
         };
 
 
@@ -76,6 +79,9 @@ namespace Tacny
             er = (ExprRhs)us.Rhss[0];
 
             ApplySuffix aps = er.Expr as ApplySuffix;
+            if(aps == null)
+                return Atomic.UNDEFINED;
+
             name = aps.Lhs.tok.val;
             if (!atomic_signature.ContainsKey(name))
                 return Atomic.UNDEFINED;

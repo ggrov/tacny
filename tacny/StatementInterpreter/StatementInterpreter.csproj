@@ -117,6 +117,7 @@
     <Compile Include="SingletonAction.cs" />
     <Compile Include="SolutionList.cs" />
     <Compile Include="ExpressionTree.cs" />
+    <Compile Include="TryAllAction.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

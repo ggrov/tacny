@@ -44,7 +44,7 @@ namespace Tacny
         public bool resolved = false;
 
         public readonly Dictionary<string, Tactic> tactics;
-        public readonly List<MemberDecl> members;
+        public readonly Dictionary<string, MemberDecl> members;
         public readonly List<DatatypeDecl> globals;
 
         public Program(IList<string> fileNames, string programId, string programName = null)
@@ -57,10 +57,10 @@ namespace Tacny
             Init(out tactics, out members, out globals);
         }
 
-        private void Init(out Dictionary<string, Tactic> tactics, out List<MemberDecl> members, out List<DatatypeDecl> globals)
+        private void Init(out Dictionary<string, Tactic> tactics, out Dictionary<string, MemberDecl> members, out List<DatatypeDecl> globals)
         {
             tactics = new Dictionary<string, Tactic>();
-            members = new List<MemberDecl>();
+            members = new Dictionary<string, MemberDecl>();
             globals = new List<DatatypeDecl>();
             foreach (var item in program.DefaultModuleDef.TopLevelDecls)
             {
@@ -75,7 +75,7 @@ namespace Tacny
                         if (tac != null)
                             tactics.Add(tac.Name, tac);
                         else
-                            members.Add(member);
+                            members.Add(member.Name, member);
                     }
                 }
                 else
@@ -254,16 +254,29 @@ namespace Tacny
             return tactics.ContainsKey(name);
         }
 
+        public Tactic GetTactic(string name)
+        {
+            if (!tactics.ContainsKey(name))
+                return null;
+
+            return tactics[name];
+        }
+
         public Tactic GetTactic(UpdateStmt us)
         {
             string name = GetSignature(us);
             if (name == null)
                 return null;
 
-            if (!tactics.ContainsKey(name))
-                return null;
+            return GetTactic(name);
+        }
 
-            return tactics[name];
+        public MemberDecl GetMember(string name)
+        {
+            Contract.Requires(name != null);
+            if (!members.ContainsKey(name))
+                return null;
+            return members[name];
         }
 
         #region Parser

@@ -97,7 +97,7 @@ namespace Tacny
             {
                 foreach (var member in tacnyProgram.members)
                 {
-                    err = ScanMemberBody(member);
+                    err = ScanMemberBody(member.Value);
                     if (err != null)
                         return err;
                 }
@@ -138,15 +138,16 @@ namespace Tacny
                         final.Add(solution);
                         break;
                     }
-                    
-                    program = tacnyProgram.program;
+
+                    program = tacnyProgram.ParseProgram();
                     solution.GenerateProgram(ref program);
 
                     tacnyProgram.ClearBody(solution.state.globalContext.md);
-                    err = tacnyProgram.ResolveProgram();
+                    
+                    err = tacnyProgram.VerifyProgram();
                     if (err != null)
                         Warning(tacnyProgram.programId, err);
-                    tacnyProgram.VerifyProgram();
+                    tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
                     if (!tacnyProgram.HasError())
                     {
                         final.Add(solution);
@@ -163,9 +164,10 @@ namespace Tacny
                 solution.GenerateProgram(ref program);
 
             err = tacnyProgram.VerifyProgram();
+            tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
             if (err != null)
                 return err;
-            tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
+            
 
 
             return null;
@@ -178,21 +180,25 @@ namespace Tacny
                 return null;
             if (m.Body == null)
                 return null;
-
+            List<IVariable> variables = new List<IVariable>();
+            variables.AddRange(m.Ins);
+            variables.AddRange(m.Outs);
             foreach (Statement st in m.Body.Body)
             {
+                VarDeclStmt vds = st as VarDeclStmt;
+                if (vds != null)
+                    variables.AddRange(vds.Locals);
                 UpdateStmt us = st as UpdateStmt;
                 if (us != null)
                 {
                     if (tacnyProgram.IsTacticCall(us))
                     {
-                        string err = Action.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, out solution_list);
+                        string err = Action.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, out solution_list);
                         if (err != null)
                             return err;
                     }
                 }
             }
-
             return null;
         }
 

@@ -198,7 +198,9 @@ namespace Tacny
     
     public class GlobalContext : Context
     {
-        protected readonly Dictionary<string, DatatypeDecl> global_variables = new Dictionary<string, DatatypeDecl>();
+        protected readonly Dictionary<string, DatatypeDecl> datatypes = new Dictionary<string, DatatypeDecl>();
+        public Dictionary<string, IVariable> global_variables = new Dictionary<string, IVariable>();
+        public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
         public List<Statement> resolved = new List<Statement>();
 
         public Program program;
@@ -209,17 +211,41 @@ namespace Tacny
         {
             this.program = program;
             foreach (DatatypeDecl tld in program.globals)
-                this.global_variables.Add(tld.Name, tld);
+                this.datatypes.Add(tld.Name, tld);
+
         }
 
         public bool ContainsGlobalKey(string name)
         {
-            return global_variables.ContainsKey(name);
+            return datatypes.ContainsKey(name);
         }
 
         public DatatypeDecl GetGlobal(string name)
         {
-            return global_variables[name];
+            return datatypes[name];
+        }
+
+        public void RegsiterGlobalVariables(List<IVariable> globals)
+        {
+            foreach (var item in globals)
+            {
+                if (!global_variables.ContainsKey(item.Name))
+                    global_variables.Add(item.Name, item);
+                else
+                    global_variables[item.Name] = item;
+            }
+        }
+
+        public void RegisterTempVariable(IVariable var)
+        {
+            if (!global_variables.ContainsKey(var.Name))
+                global_variables.Add(var.Name, var);
+        }
+
+        public void RemoveTempVariable(IVariable var)
+        {
+            if (global_variables.ContainsKey(var.Name))
+                global_variables.Remove(var.Name);
         }
     }
     #endregion

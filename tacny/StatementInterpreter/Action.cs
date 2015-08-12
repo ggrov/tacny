@@ -70,14 +70,16 @@ namespace Tacny
             return "Error: " + err;
         }
 
-        public static string ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, out SolutionList result)
+        public static string ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, out SolutionList result)
         {
             Contract.Requires(tac != null);
             Contract.Requires(tac_call != null);
             Contract.Requires(md != null);
             result = new SolutionList();
             List<Solution> res = result.plist;
-            string err = ResolveTactic(new Action(md, tac, tac_call, tacnyProgram), ref res);
+            Action ac = new Action(md, tac, tac_call, tacnyProgram);
+            ac.globalContext.RegsiterGlobalVariables(variables);
+            string err = ResolveTactic(ac, ref res);
 
             result.plist = res;
             result.AddFinal(res);
@@ -199,10 +201,10 @@ namespace Tacny
                     {
                         Action ac;
                         Tactic tac = program.GetTactic(us);
-                        if (tacticCache.ContainsKey(tac))
-                            ac = tacticCache[tac];
-                        else
-                            ac = new Action(localContext.tac, tac, us, globalContext);
+                        //if (tacticCache.ContainsKey(tac))
+                        //ac = tacticCache[tac];
+                        //else
+                        ac = new Action(localContext.tac, tac, us, globalContext);
 
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
                         List<Expression> exps = ((ApplySuffix)er.Expr).Args;
@@ -225,11 +227,11 @@ namespace Tacny
                             }
                             solution_list.Add(new Solution(action));
                         }
-                        
-                        if (tacticCache.ContainsKey(tac))
-                            tacticCache[tac] = ac;
-                        else
-                            tacticCache.Add(tac, ac);
+
+                        //if (tacticCache.ContainsKey(tac))
+                        //    tacticCache[tac] = ac;
+                        //else
+                        //    tacticCache.Add(tac, ac);
 
                         return null;
                     }
@@ -448,7 +450,7 @@ namespace Tacny
             return localContext.tac_call;
         }
 
-        protected void AddUpdated(Statement key, Statement value)
+        public void AddUpdated(Statement key, Statement value)
         {
             Contract.Requires(key != null && value != null);
             localContext.AddUpdated(key, value);

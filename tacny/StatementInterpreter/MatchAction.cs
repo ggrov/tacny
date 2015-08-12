@@ -82,7 +82,7 @@ namespace Tacny
                 return FormatError("global datatype " + ns.Name + " is not defined");
 
             datatype = globalContext.GetGlobal(datatype_name);
-            initFlags(datatype, out ctorFlags);
+            InitFlags(datatype, out ctorFlags);
 
             ns = localContext.GetLocalValueByName(formal) as NameSegment;
             
@@ -103,8 +103,8 @@ namespace Tacny
                     ctorFlags[index] = true;
                 }
                 
-                err = ResolveBody(st.Body, out body);
-                GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, body, out ms, ctorFlags);
+                //err = ResolveBody(st.Body, out body);
+                GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, st.Body, out ms, ctorFlags);
                 AddUpdated(ms, ms);
                 solution = new Solution(this.Copy(), true, null);
                 dprog = program.ParseProgram();
@@ -119,8 +119,8 @@ namespace Tacny
              * HACK Recreate the match block as the old one was modified by the resolver
              */
             RemoveUpdated(ms);
-            err = ResolveBody(st.Body, out body);
-            GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, body, out ms, ctorFlags);
+            
+            GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, st.Body, out ms, ctorFlags);
             AddUpdated(ms, ms);
             solution = new Solution(this.Copy(), true, null);
 
@@ -129,11 +129,11 @@ namespace Tacny
             return null;
         }
 
-        private void GenerateMatchStmt(NameSegment ns, DatatypeDecl datatype, List<Statement> body, out MatchStmt result, bool[] flags)
+        private string GenerateMatchStmt(NameSegment ns, DatatypeDecl datatype, BlockStmt body, out MatchStmt result, bool[] flags)
         {
             Contract.Requires(ns != null);
             Contract.Requires(datatype != null);
-
+            string err;
             List<MatchCaseStmt> cases = new List<MatchCaseStmt>();
             result = null;
             UpdateStmt tac_call = GetTacticCall();
@@ -142,18 +142,19 @@ namespace Tacny
             foreach (DatatypeCtor dc in datatype.Ctors)
             {
                 MatchCaseStmt mcs;
-                if (flags[i])
-                    GenerateMatchCaseStmt(line, dc, body, out mcs);
-                else
-                    GenerateMatchCaseStmt(line, dc, new List<Statement>(), out mcs);
+                err = GenerateMatchCaseStmt(line, dc, body, out mcs, flags[i]);
+                if (err != null)
+                    return err;
                 cases.Add(mcs);
                 i++;
             }
 
             result = new MatchStmt(CreateToken("match", tac_call.Tok.line, tac_call.Tok.col), CreateToken("=>", tac_call.Tok.line, 0), ns, cases, false);
+
+            return null ;
         }
 
-        private static void GenerateMatchCaseStmt(int line, DatatypeCtor dtc, List<Statement> body, out MatchCaseStmt mcs)
+        private string GenerateMatchCaseStmt(int line, DatatypeCtor dtc, BlockStmt body, out MatchCaseStmt mcs, bool genBody)
         {
             Contract.Requires(dtc != null);
             List<CasePattern> casePatterns = new List<CasePattern>();
@@ -164,13 +165,29 @@ namespace Tacny
                 CasePattern cp;
                 GenerateCasePattern(line++, formal, out cp);
                 casePatterns.Add(cp);
-
+                if(genBody)
+                    globalContext.RegisterTempVariable(formal);
             }
 
-            mcs = new MatchCaseStmt(CreateToken("cases", line, 0), dtc.CompileName, casePatterns, body);
+            if (genBody)
+            {
+                List<Statement> result;
+                string err = ResolveBody(body, out result);
+                if (err != null)
+                    return err;
+                mcs = new MatchCaseStmt(CreateToken("cases", line, 0), dtc.CompileName, casePatterns, result);
+            }
+            else
+                mcs = new MatchCaseStmt(CreateToken("cases", line, 0), dtc.CompileName, casePatterns, new List<Statement>());
+
+            foreach (Dafny.Formal formal in dtc.Formals)
+            {
+                globalContext.RemoveTempVariable(formal);
+            }
+            return null;
         }
 
-        private static void GenerateCasePattern(int line, Dafny.Formal formal, out CasePattern cp)
+        private void GenerateCasePattern(int line, Dafny.Formal formal, out CasePattern cp)
         {
             Contract.Requires(formal != null);
             formal = new Dafny.Formal(formal.tok, formal.Name, formal.Type, formal.InParam, formal.IsGhost);
@@ -179,8 +196,7 @@ namespace Tacny
                                     new BoundVar(CreateToken(formal.Name, line, 0), formal.Name, new InferredTypeProxy()));
         }
 
-
-        private void initFlags(DatatypeDecl datatype, out bool[] flags)
+        private static void InitFlags(DatatypeDecl datatype, out bool[] flags)
         {
             flags = new bool[datatype.Ctors.Count];
             for (int i = 0; i < flags.Length; i++)
