@@ -95,7 +95,7 @@ namespace Tacny
             this.parent = parent;
         }
 
-        public string GenerateProgram(ref Dafny.Program prog)
+        public string GenerateProgram(ref Dafny.Program prog, bool isFinal = false)
         {
 
             List<Dafny.Program> prog_list = new List<Dafny.Program>();
@@ -109,6 +109,18 @@ namespace Tacny
             body = InsertSolution(body, tac_call, ac.GetResolved());
             if (body == null)
                 throw new Exception("Body not filled");
+            if (!isFinal)
+            {
+                for (int i = 0; i < body.Count; i++)
+                {
+                    if (body[i] is UpdateStmt)
+                    {
+                        if (state.program.IsTacticCall(body[i] as UpdateStmt))
+                            body.RemoveAt(i);
+                    }
+                }
+            }
+            
 
             Method nMethod = new Method(method.tok, method.Name, method.HasStaticKeyword, method.IsGhost,
                 method.TypeArgs, method.Ins, method.Outs, method.Req, method.Mod, method.Ens, method.Decreases,

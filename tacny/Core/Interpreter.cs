@@ -80,7 +80,7 @@ namespace Tacny
     {
         private Program tacnyProgram;
 
-        private SolutionList solution_list = null;
+        private SolutionList solution_list = new SolutionList();
 
         public Interpreter(Program tacnyProgram)
         {
@@ -161,7 +161,7 @@ namespace Tacny
 
             program = tacnyProgram.ParseProgram();
             foreach (var solution in final)
-                solution.GenerateProgram(ref program);
+                solution.GenerateProgram(ref program, true);
 
             err = tacnyProgram.VerifyProgram();
             tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
@@ -193,7 +193,7 @@ namespace Tacny
                 {
                     if (tacnyProgram.IsTacticCall(us))
                     {
-                        string err = Action.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, out solution_list);
+                        string err = Action.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, ref solution_list);
                         if (err != null)
                             return err;
                     }

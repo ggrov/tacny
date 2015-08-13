@@ -191,6 +191,12 @@ namespace Tacny
                 return updated_statements[key];
             return null;
         }
+
+        public List<Statement> GetAllUpdated()
+        {
+            return new List<Statement>(updated_statements.Values.ToArray());
+        }
+
     }
     #endregion
 
@@ -235,11 +241,13 @@ namespace Tacny
                     global_variables[item.Name] = item;
             }
         }
-
+        
         public void RegisterTempVariable(IVariable var)
         {
             if (!global_variables.ContainsKey(var.Name))
                 global_variables.Add(var.Name, var);
+            else
+                global_variables[var.Name] = var;
         }
 
         public void RemoveTempVariable(IVariable var)

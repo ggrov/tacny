@@ -36,7 +36,7 @@ namespace Tacny
             if (err != null) return err;
 
             m = md as Method;
-            if (m == null) return "tryall supports only tactic calls";
+            if (m == null) return "Member declaration " + md_signature + " not found";
 
             int i = 0;
             foreach (var item in m.Ins)
@@ -67,7 +67,7 @@ namespace Tacny
                     else if (item.Type.Equals(local_decl.Value.Type))
                         args[i].Add(local_decl.Value);
                 }
-
+                /*
                 foreach (var local_decl in globalContext.temp_variables)
                 {
                     Dafny.LocalVariable lv;
@@ -93,6 +93,7 @@ namespace Tacny
                     else if (item.Type.Equals(local_decl.Value.Type))
                         args[i].Add(local_decl.Value);
                 }
+                */
                 i++;
             }
 

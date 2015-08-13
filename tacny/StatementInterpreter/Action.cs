@@ -70,18 +70,16 @@ namespace Tacny
             return "Error: " + err;
         }
 
-        public static string ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, out SolutionList result)
+        public static string ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, ref SolutionList result)
         {
             Contract.Requires(tac != null);
             Contract.Requires(tac_call != null);
             Contract.Requires(md != null);
-            result = new SolutionList();
-            List<Solution> res = result.plist;
+            List<Solution> res = new List<Solution>();
             Action ac = new Action(md, tac, tac_call, tacnyProgram);
             ac.globalContext.RegsiterGlobalVariables(variables);
             string err = ResolveTactic(ac, ref res);
 
-            result.plist = res;
             result.AddFinal(res);
             return err;
 
@@ -99,12 +97,11 @@ namespace Tacny
         public static string ResolveTactic(Action action, ref List<Solution> result)
         {
             Contract.Requires(action != null);
-            result = null;
             //local solution list
             SolutionList solution_list = new SolutionList(new Solution(action));
             string err = null;
 
-            while (!solution_list.IsFinal())
+            while (true)
             {
                 List<Solution> res = null;
 
@@ -118,7 +115,7 @@ namespace Tacny
                     break;
             }
 
-            result = solution_list.plist;
+            result.AddRange(solution_list.plist);
             return null;
         }
 
@@ -155,12 +152,11 @@ namespace Tacny
             return err;
         }
 
-        protected string ResolveBody(BlockStmt bs, out List<Statement> stmt_list)
+        protected string ResolveBody(BlockStmt bs, out List<Solution> solution_list)
         {
             Contract.Requires(bs != null);
             string err;
-            stmt_list = new List<Statement>();
-            List<Solution> solution_list = new List<Solution>();
+            solution_list = new List<Solution>();
 
             foreach (var stmt in bs.Body)
             {
@@ -169,11 +165,6 @@ namespace Tacny
                     return err;
             }
 
-            foreach (var solution in solution_list)
-            {
-                stmt_list.AddRange(solution.state.GetResult().Values.ToArray());
-
-            }
             return null;
         }
 
