@@ -38,4 +38,5 @@ This repository contains the Source code for Tacny - a tool that implements tact
 * Select Debug > TacnyDriver Properties 
 * Under debug tab, select the Working Directory 
 * In the command line arguments type /rprint:- dafny_file.dfy
+* Regsiter Dafny and Boogie Refereces
 * Run Tacny
