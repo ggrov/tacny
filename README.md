@@ -30,3 +30,12 @@ This repository contains the Source code for Tacny - a tool that implements tact
 * Build Dafny with Visual Studio
 * Build DafnyExtension with Visual Studio
 * The Dafny VisualStudio Extension is located in dafny/Binaries/DafnyLanguageService.vsix
+
+### Executing Tacny ###
+* Create a working directory in tacny/tacny directory
+* Create dafny program in the created folder
+* Open Tacny solution in Visual Studio
+* Select Debug > TacnyDriver Properties 
+* Under debug tab, select the Working Directory 
+* In the command line arguments type /rprint:- <dafny_file>.dfy
+* Run Tacny
