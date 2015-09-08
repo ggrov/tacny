@@ -9,7 +9,7 @@ using Microsoft.Boogie;
 
 namespace Tacny
 {
-    class MatchAction : Action, AtomicStmt
+    class MatchAction : Action, IAtomicStmt
     {
         public override string FormatError(string error)
         {

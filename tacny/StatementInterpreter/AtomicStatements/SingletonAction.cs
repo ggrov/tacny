@@ -4,7 +4,7 @@ using System.Diagnostics.Contracts;
 
 namespace Tacny
 {
-    class SingletonAction : Action, AtomicStmt
+    class SingletonAction : Action, IAtomicStmt
     {
 
         public override string FormatError(string error)

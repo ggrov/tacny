@@ -3,7 +3,7 @@ using Microsoft.Dafny;
 
 namespace Tacny
 {
-    class InvariantAction : Action, AtomicStmt
+    class InvariantAction : Action, IAtomicStmt
     {
 
         public string FormatError(string method, string error)

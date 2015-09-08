@@ -8,7 +8,7 @@ using Microsoft.Boogie;
 
 namespace Tacny
 {
-    public interface AtomicStmt
+    public interface IAtomicStmt
     {
         string Resolve(Statement st, ref List<Solution> solution_list);
     }
@@ -230,7 +230,7 @@ namespace Tacny
                 return CallDefaultAction(st, ref solution_list);
             }
 
-            var qq = Activator.CreateInstance(type, new object[] { this }) as AtomicStmt;
+            var qq = Activator.CreateInstance(type, new object[] { this }) as IAtomicStmt;
 
             if (qq == null)
                 return CallDefaultAction(st, ref solution_list);

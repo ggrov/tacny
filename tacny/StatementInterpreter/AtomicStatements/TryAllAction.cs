@@ -5,7 +5,7 @@ using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
 namespace Tacny
 {
-    class TryAllAction : Action, AtomicStmt
+    class TryAllAction : Action, IAtomicStmt
     {
         public TryAllAction(Action action)
             : base(action)

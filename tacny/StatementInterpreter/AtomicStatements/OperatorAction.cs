@@ -4,7 +4,7 @@ using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
 namespace Tacny
 {
-    class OperatorAction : Action, AtomicStmt
+    class OperatorAction : Action, IAtomicStmt
     {
         public override string FormatError(string error)
         {
