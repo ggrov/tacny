@@ -74,7 +74,7 @@ namespace Tacny
 
     public class Solution
     {
-        public Action state;
+        public Atomic state;
         private Solution _parent = null;
         public Solution parent
         {
@@ -84,11 +84,11 @@ namespace Tacny
 
         public bool isFinal = false;
 
-        public Solution(Action state, Solution parent = null)
+        public Solution(Atomic state, Solution parent = null)
             : this(state, false, parent)
         { }
 
-        public Solution(Action state, bool isFinal, Solution parent)
+        public Solution(Atomic state, bool isFinal, Solution parent)
         {
             this.state = state;
             this.isFinal = isFinal;
@@ -99,7 +99,7 @@ namespace Tacny
         {
 
             List<Dafny.Program> prog_list = new List<Dafny.Program>();
-            Action ac = state.Copy();
+            Atomic ac = state.Copy();
             ac.Fin();
             Method method = (Method)Program.FindMember(prog, ac.localContext.md.Name);
             if (method == null)

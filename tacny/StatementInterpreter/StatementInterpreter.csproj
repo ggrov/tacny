@@ -102,22 +102,22 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Action.cs" />
+    <Compile Include="Atomic.cs" />
     <Compile Include="Context.cs" />
-    <Compile Include="AtomicStatements\CompositionAction.cs" />
-    <Compile Include="AtomicStatements\ConditionalAction.cs" />
-    <Compile Include="AtomicStatements\GuardAction.cs" />
-    <Compile Include="AtomicStatements\IfAction.cs" />
-    <Compile Include="AtomicStatements\StatementRegister.cs" />
-    <Compile Include="AtomicStatements\InvariantAction.cs" />
-    <Compile Include="AtomicStatements\MatchAction.cs" />
-    <Compile Include="AtomicStatements\OperatorAction.cs" />
-    <Compile Include="AtomicStatements\Program.cs" />
+    <Compile Include="AtomicStatements\CompositionAtomic.cs" />
+    <Compile Include="AtomicStatements\ConditionalAtomic.cs" />
+    <Compile Include="AtomicStatements\GuardAtomic.cs" />
+    <Compile Include="AtomicStatements\IfAtomic.cs" />
+    <Compile Include="StatementRegister.cs" />
+    <Compile Include="AtomicStatements\InvariantAtomic.cs" />
+    <Compile Include="AtomicStatements\MatchAtomic.cs" />
+    <Compile Include="AtomicStatements\OperatorAtomic.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="AtomicStatements\SingletonAction.cs" />
-    <Compile Include="AtomicStatements\SolutionList.cs" />
-    <Compile Include="AtomicStatements\ExpressionTree.cs" />
-    <Compile Include="AtomicStatements\TryAllAction.cs" />
+    <Compile Include="AtomicStatements\SingletonAtomic.cs" />
+    <Compile Include="SolutionList.cs" />
+    <Compile Include="ExpressionTree.cs" />
+    <Compile Include="AtomicStatements\TryAllAtomic.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

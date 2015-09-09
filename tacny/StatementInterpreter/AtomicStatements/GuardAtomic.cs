@@ -9,11 +9,11 @@ using Microsoft.Boogie;
 
 namespace Tacny
 {
-    class GuardAction : Action, IAtomicStmt
+    class GuardAtomic : Atomic, IAtomicStmt
     {
-        public GuardAction(Action action) : base(action) { }
+        public GuardAtomic(Atomic atomic) : base(atomic) { }
 
-        string Resolve(Statement st, ref List<Solution> solution_list)
+        public string Resolve(Statement st, ref List<Solution> solution_list)
         {
             return ExtractGuard(st, ref solution_list);
         }

@@ -40,14 +40,14 @@ namespace Tacny
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
         {
-            {Atomic.REPLACE_SINGLETON, typeof(SingletonAction)},
-            {Atomic.CREATE_INVAR, typeof(InvariantAction)},
-            {Atomic.ADD_INVAR, typeof(InvariantAction)},
-            {Atomic.ADD_IF, typeof(IfAction)},
-            {Atomic.ADD_MATCH, typeof(MatchAction)},
-            {Atomic.REPLACE_OP, typeof(OperatorAction)},
-            {Atomic.EXTRACT_GUARD, typeof(GuardAction)},
-            {Atomic.TRY_ALL, typeof(TryAllAction)},
+            {Atomic.REPLACE_SINGLETON, typeof(SingletonAtomic)},
+            {Atomic.CREATE_INVAR, typeof(InvariantAtomic)},
+            {Atomic.ADD_INVAR, typeof(InvariantAtomic)},
+            {Atomic.ADD_IF, typeof(IfAtomic)},
+            {Atomic.ADD_MATCH, typeof(MatchAtomic)},
+            {Atomic.REPLACE_OP, typeof(OperatorAtomic)},
+            {Atomic.EXTRACT_GUARD, typeof(GuardAtomic)},
+            {Atomic.TRY_ALL, typeof(TryAllAtomic)},
         };
 
 

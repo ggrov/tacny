@@ -4,14 +4,14 @@ using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
 namespace Tacny
 {
-    class OperatorAction : Action, IAtomicStmt
+    class OperatorAtomic : Atomic, IAtomicStmt
     {
         public override string FormatError(string error)
         {
             return "ERROR replace_operator: " + error;
         }
 
-        public OperatorAction(Action action) : base(action) { }
+        public OperatorAtomic(Atomic atomic) : base(atomic) { }
 
         public string Resolve(Statement st, ref List<Solution> solution_list)
         {

@@ -4,7 +4,7 @@ using System.Diagnostics.Contracts;
 
 namespace Tacny
 {
-    class SingletonAction : Action, IAtomicStmt
+    class SingletonAtomic : Atomic, IAtomicStmt
     {
 
         public override string FormatError(string error)
@@ -12,8 +12,8 @@ namespace Tacny
             return "ERROR replace_singleton: " + error;
         }
 
-        public SingletonAction(Action action)
-            : base(action)
+        public SingletonAtomic(Atomic atomic)
+            : base(atomic)
         { }
 
         public string Resolve(Statement st, ref List<Solution> solution_list)

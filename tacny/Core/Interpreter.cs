@@ -193,7 +193,7 @@ namespace Tacny
                 {
                     if (tacnyProgram.IsTacticCall(us))
                     {
-                        string err = Action.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, ref solution_list);
+                        string err = Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, ref solution_list);
                         if (err != null)
                             return err;
                     }
@@ -216,14 +216,14 @@ namespace Tacny
             Contract.Requires(md != null);
 
             //local solution list
-            SolutionList solution_list = new SolutionList(new Solution(new Action(md, tac, tac_call, tacnyProgram)));
+            SolutionList solution_list = new SolutionList(new Solution(new Atomic(md, tac, tac_call, tacnyProgram)));
             string err = null;
 
             while (!solution_list.IsFinal())
             {
                 List<Solution> result = null;
 
-                err = Action.ResolveStatement(ref result, solution_list.plist);
+                err = Atomic.ResolveStatement(ref result, solution_list.plist);
                 if (err != null)
                     return err;
 

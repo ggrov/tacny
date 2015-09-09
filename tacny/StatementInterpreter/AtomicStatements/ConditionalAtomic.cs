@@ -12,7 +12,7 @@ namespace Tacny
     /// <summary>
     /// Conditional actions should only be called from composition action
     /// </summary>
-    class ConditionalAction : Action
+    class ConditionalAtomic : Atomic
     {
 
         public class ConditionResult
@@ -26,7 +26,7 @@ namespace Tacny
             }
         }
 
-        public ConditionalAction(Action action) : base(action) { }
+        public ConditionalAtomic(Atomic atomic) : base(atomic) { }
 
         /// <summary>
         /// Check whehter current solution is valid

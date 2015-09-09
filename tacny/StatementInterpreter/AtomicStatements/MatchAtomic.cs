@@ -9,14 +9,14 @@ using Microsoft.Boogie;
 
 namespace Tacny
 {
-    class MatchAction : Action, IAtomicStmt
+    class MatchAtomic : Atomic, IAtomicStmt
     {
         public override string FormatError(string error)
         {
             return "ERROR cases: " + error;
         }
 
-        public MatchAction(Action action) : base(action) { }
+        public MatchAtomic(Atomic atomic) : base(atomic) { }
 
         public string Resolve(Statement st, ref List<Solution> solution_list)
         {
@@ -116,7 +116,7 @@ namespace Tacny
                         continue;
                     var sol = result[i];
                     GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, sol.state.localContext.GetAllUpdated(), out ms, ctorFlags);
-                    Action ac = this.Copy();
+                    Atomic ac = this.Copy();
                     ac.AddUpdated(ms, ms);
                     solution = new Solution(ac, true, null);
                     dprog = program.ParseProgram();

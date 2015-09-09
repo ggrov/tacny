@@ -13,7 +13,7 @@ namespace Tacny
         string Resolve(Statement st, ref List<Solution> solution_list);
     }
 
-    public class Action
+    public class Atomic
     {
 
         //public Solution solution;
@@ -22,15 +22,15 @@ namespace Tacny
         public readonly GlobalContext globalContext;
         public LocalContext localContext;
 
-        private Dictionary<Tactic, Action> tacticCache = new Dictionary<Tactic, Action>();
-        protected Action(Action ac)
+        private Dictionary<Tactic, Atomic> tacticCache = new Dictionary<Tactic, Atomic>();
+        protected Atomic(Atomic ac)
         {
             this.localContext = ac.localContext;
             this.globalContext = ac.globalContext;
             this.program = ac.globalContext.program;
         }
 
-        public Action(MemberDecl md, Tactic tac, UpdateStmt tac_call, Program program)
+        public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, Program program)
         {
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
@@ -40,7 +40,7 @@ namespace Tacny
             this.globalContext = new GlobalContext(md, tac_call, program);
         }
 
-        public Action(MemberDecl md, Tactic tac, UpdateStmt tac_call, GlobalContext globalContext)
+        public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, GlobalContext globalContext)
         {
             this.localContext = new LocalContext(md, tac, tac_call);
             this.globalContext = globalContext;
@@ -48,7 +48,7 @@ namespace Tacny
 
         }
 
-        public Action(LocalContext localContext, GlobalContext globalContext, Dictionary<Tactic, Action> tacticCache)
+        public Atomic(LocalContext localContext, GlobalContext globalContext, Dictionary<Tactic, Atomic> tacticCache)
         {
             this.program = globalContext.program.NewProgram();
             this.globalContext = globalContext;
@@ -60,9 +60,9 @@ namespace Tacny
         /// Create a deep copy of an action
         /// </summary>
         /// <returns>Action</returns>
-        public Action Copy()
+        public Atomic Copy()
         {
-            return new Action(localContext, globalContext, tacticCache);
+            return new Atomic(localContext, globalContext, tacticCache);
         }
 
         public virtual string FormatError(string err)
@@ -76,7 +76,7 @@ namespace Tacny
             Contract.Requires(tac_call != null);
             Contract.Requires(md != null);
             List<Solution> res = new List<Solution>();
-            Action ac = new Action(md, tac, tac_call, tacnyProgram);
+            Atomic ac = new Atomic(md, tac, tac_call, tacnyProgram);
             ac.globalContext.RegsiterGlobalVariables(variables);
             string err = ResolveTactic(ac, ref res);
 
@@ -94,7 +94,7 @@ namespace Tacny
         /// <param name="tacnyProgram"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public static string ResolveTactic(Action action, ref List<Solution> result)
+        public static string ResolveTactic(Atomic action, ref List<Solution> result)
         {
             Contract.Requires(action != null);
             //local solution list
@@ -105,7 +105,7 @@ namespace Tacny
             {
                 List<Solution> res = null;
 
-                err = Action.ResolveStatement(ref res, solution_list.plist);
+                err = Atomic.ResolveStatement(ref res, solution_list.plist);
                 if (err != null)
                     return err;
 
@@ -190,12 +190,12 @@ namespace Tacny
                 {
                     if (program.IsTacticCall(us))
                     {
-                        Action ac;
+                        Atomic ac;
                         Tactic tac = program.GetTactic(us);
                         //if (tacticCache.ContainsKey(tac))
                         //ac = tacticCache[tac];
                         //else
-                        ac = new Action(localContext.tac, tac, us, globalContext);
+                        ac = new Atomic(localContext.tac, tac, us, globalContext);
 
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
                         List<Expression> exps = ((ApplySuffix)er.Expr).Args;
@@ -205,13 +205,13 @@ namespace Tacny
                             ac.AddLocal(ac.localContext.tac.Ins[i], GetLocalValueByName(exps[i] as NameSegment));
                         }
                         List<Solution> sol_list = new List<Solution>();
-                        string err = Action.ResolveTactic(ac, ref sol_list);
+                        string err = Atomic.ResolveTactic(ac, ref sol_list);
                         if (err != null)
                             return err;
 
                         foreach (var solution in sol_list)
                         {
-                            Action action = this.Copy();
+                            Atomic action = this.Copy();
                             foreach (KeyValuePair<Statement, Statement> kvp in solution.state.GetResult())
                             {
                                 action.AddUpdated(kvp.Key, kvp.Value);
@@ -349,7 +349,7 @@ namespace Tacny
 
         private string CallDefaultAction(Statement st, ref List<Solution> solution_list)
         {
-            Action state = this.Copy();
+            Atomic state = this.Copy();
             state.AddUpdated(st, st);
             solution_list.Add(new Solution(state, null));
             return null;

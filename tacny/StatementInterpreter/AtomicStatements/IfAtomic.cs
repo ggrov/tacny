@@ -6,14 +6,14 @@ using Microsoft.Boogie;
 
 namespace Tacny
 {
-    class IfAction : Action
+    class IfAtomic : Atomic
     {
         public override string FormatError(string error)
         {
             return "ERROR addif: " + error;
         }
 
-        public IfAction(Action action) : base(action) { }
+        public IfAtomic(Atomic atomic) : base(atomic) { }
 
         public string AddIf(TacnyIfBlockStmt st, ref List<Solution> solution_list)
         {

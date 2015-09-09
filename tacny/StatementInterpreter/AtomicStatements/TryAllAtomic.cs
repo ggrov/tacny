@@ -5,10 +5,10 @@ using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
 namespace Tacny
 {
-    class TryAllAction : Action, IAtomicStmt
+    class TryAllAtomic : Atomic, IAtomicStmt
     {
-        public TryAllAction(Action action)
-            : base(action)
+        public TryAllAtomic(Atomic atomic)
+            : base(atomic)
         { }
 
         public string Resolve(Statement st, ref List<Solution> solution_list)
@@ -103,7 +103,7 @@ namespace Tacny
             {
                 ApplySuffix aps = new ApplySuffix(md_signature.tok, md_signature, new List<Expression>());
                 UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
-                Action ac = this.Copy();
+                Atomic ac = this.Copy();
                 ac.AddUpdated(us, us);
                 solution_list.Add(new Solution(ac));
             }
@@ -113,7 +113,7 @@ namespace Tacny
                 {
                     ApplySuffix aps = new ApplySuffix(md_signature.tok, md_signature, item);
                     UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
-                    Action ac = this.Copy();
+                    Atomic ac = this.Copy();
                     ac.AddUpdated(us, us);
                     solution_list.Add(new Solution(ac));
                 }

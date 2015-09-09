@@ -8,9 +8,9 @@ using Microsoft.Boogie;
 
 namespace Tacny
 {
-    class CompositionAction : Action
+    class CompositionAtomic : Atomic
     {
-        public CompositionAction(Action action) : base(action) { }
+        public CompositionAtomic(Atomic atomic) : base(atomic) { }
 
         public override string FormatError(string error)
         {
@@ -22,7 +22,7 @@ namespace Tacny
         {
             IfStmt if_stmt = st as IfStmt;
             WhileStmt while_stmt = st as WhileStmt;
-            ConditionalAction.ConditionResult res;
+            ConditionalAtomic.ConditionResult res;
             string err;
 
             if (if_stmt != null)
@@ -66,13 +66,13 @@ namespace Tacny
             return null;
         }
 
-        private string CallGuard(StatementRegister.Atomic type, out ConditionalAction.ConditionResult result)
+        private string CallGuard(StatementRegister.Atomic type, out ConditionalAtomic.ConditionResult result)
         {
             string err;
             switch (type)
             {
                 case StatementRegister.Atomic.IS_VALID:
-                    ConditionalAction ca = new ConditionalAction(this);
+                    ConditionalAtomic ca = new ConditionalAtomic(this);
                     err = ca.IsValid(out result);
                     break;
                 default:
