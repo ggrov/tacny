@@ -201,40 +201,5 @@ namespace Tacny
             }
             return null;
         }
-
-        /// <summary>
-        /// Generates a solution tree from the tactics body
-        /// </summary>
-        /// <param name="tac"></param>
-        /// <param name="tac_call"></param>
-        /// <param name="md"></param>
-        /// <returns>null on success otherwise an error message is returned</returns>
-        private string ResolveTacticBody(Tactic tac, UpdateStmt tac_call, MemberDecl md)
-        {
-            Contract.Requires(tac != null);
-            Contract.Requires(tac_call != null);
-            Contract.Requires(md != null);
-
-            //local solution list
-            SolutionList solution_list = new SolutionList(new Solution(new Atomic(md, tac, tac_call, tacnyProgram)));
-            string err = null;
-
-            while (!solution_list.IsFinal())
-            {
-                List<Solution> result = null;
-
-                err = Atomic.ResolveStatement(ref result, solution_list.plist);
-                if (err != null)
-                    return err;
-
-                if (result.Count > 0)
-                    solution_list.AddRange(result);
-                else
-                    break;
-            }
-
-            this.solution_list.AddFinal(solution_list.plist);
-            return null;
-        }
     }
 }

@@ -103,6 +103,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Atomic.cs" />
+    <Compile Include="AtomicStatements\OrAtomic.cs" />
+    <Compile Include="AtomicStatements\VariablesAtomic.cs" />
     <Compile Include="Context.cs" />
     <Compile Include="AtomicStatements\CompositionAtomic.cs" />
     <Compile Include="AtomicStatements\ConditionalAtomic.cs" />
