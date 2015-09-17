@@ -1,4 +1,4 @@
-# the tacny project {tactics for Dafny} #
+# the Tacny tool #
 
 This repository contains the Source code for Tacny - a tool that implements tactics for the Dafny program verifier.
 # Build Guide #
