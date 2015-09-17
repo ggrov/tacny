@@ -29,6 +29,8 @@ namespace Tacny
             err = InitArgs(st, out lv, out call_arguments);
             if (err != null)
                 return "extract_guard: " + err;
+            if (lv == null)
+                return "extract_guard: unexpected number of result arguments";
 
 
             ws = FindWhileStmt(globalContext.tac_call, globalContext.md);

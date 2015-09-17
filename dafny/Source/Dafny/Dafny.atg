@@ -1420,12 +1420,38 @@ FunctionBody<out Expression/*!*/ e, out IToken bodyStart, out IToken bodyEnd>
 BlockStmt<out BlockStmt/*!*/ block, out IToken bodyStart, out IToken bodyEnd>
 = (. Contract.Ensures(Contract.ValueAtReturn(out block) != null);
      List<Statement/*!*/> body = new List<Statement/*!*/>();
+     List<Statement/*!*/> orStmtRhs = new List<Statement/*!*/>();
+     IToken endTok = Token.NoToken;
+     Expression or = null;
   .)
   "{"                                  (. bodyStart = t; .)
   { Stmt<body>
   }
-  "}"                                  (. bodyEnd = t;
-                                          block = new BlockStmt(bodyStart, bodyEnd, body); .)
+  "}"                                  (. bodyEnd = t; .)
+  
+
+  [
+    "||"                          (. bodyStart = t; .)
+      (
+        "{"      
+         { Stmt<orStmtRhs>
+         }
+        "}"                                  (. endTok = t; .)
+        |
+        Expression<out or, false, true>
+        ";"                            (. endTok = t; .)
+      )
+  ]
+
+  (. if(or != null) {
+       block = new OrStmt(bodyStart, endTok, body, or);
+     } else if (orStmtRhs.Count != 0) {
+       block = new OrStmt(bodyStart, endTok, body, orStmtRhs);
+     } else {
+      block = new BlockStmt(bodyStart, bodyEnd, body);
+     }
+
+  .)
   .
 Stmt<.List<Statement/*!*/>/*!*/ ss.>
 = (. Statement/*!*/ s;
@@ -1521,6 +1547,8 @@ UpdateStmt<out Statement/*!*/ s>
      Attributes attrs = null;
      IToken suchThatAssume = null;
      Expression suchThat = null;
+     Expression or = null;
+     List<Statement/*!*/> body = null;
   .)
   Lhs<out e>                       (. x = e.tok; .)
   ( { Attribute<ref attrs> }
@@ -1537,13 +1565,30 @@ UpdateStmt<out Statement/*!*/ s>
         "assume"                   (. suchThatAssume = t; .)
       ]
       Expression<out suchThat, false, true>
+    | "||"                          (. x = t; .)
+      (
+        "{"      
+        (. body = new List<Statement/*!*/>(); .)                            
+         { Stmt<body>
+         }
+        "}"                                  (. endTok = t; .)
+        |
+        Expression<out or, false, true>
+        ";"                            (. endTok = t; .)
+      )
     )
     ";"                            (. endTok = t; .)
   | ":"                            (. SemErr(t, "invalid statement (did you forget the 'label' keyword?)"); .)
+  
   )
+
   (. if (suchThat != null) {
        s = new AssignSuchThatStmt(x, endTok, lhss, suchThat, suchThatAssume, null);
-     } else {
+     } else if(body != null) {
+       s = new OrStmt(x, endTok, lhss, body);
+     } else if(or != null) {
+       s = new OrStmt(x, endTok, lhss, or);
+      } else {
        if (lhss.Count == 0 && rhss.Count == 0) {
          s = new BlockStmt(x, endTok, new List<Statement>()); // error, give empty statement
        } else {
@@ -1596,6 +1641,7 @@ VarDeclStatement<.out Statement/*!*/ s.>
      Expression suchThat = null;
      Attributes attrs = null;
      IToken endTok;
+     Expression or = null;
   .)
   [ "ghost"                                 (. isGhost = true;  x = t; .)
   ]
@@ -1610,6 +1656,10 @@ VarDeclStatement<.out Statement/*!*/ s.>
     Rhs<out r>                     (. rhss.Add(r); .)
     { "," Rhs<out r>               (. rhss.Add(r); .)
     }
+    [
+      "||"                          (. x = t; .)
+        Expression<out or, false, true>
+    ]
   | { Attribute<ref attrs> }
     ":|"                           (. assignTok = t; .)
     [ IF(la.kind == _assume)       /* an Expression can also begin with an "assume", so this says to resolve it to pick up any "assume" here */

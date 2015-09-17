@@ -28,7 +28,7 @@ namespace Tacny
     #region LocalContext
     public class LocalContext : Context
     {
-        public readonly Tactic tac = null;  // The called tactic
+        public Tactic tac = null;  // The called tactic
         public List<Statement> tac_body = new List<Statement>(); // body of the currently worked tactic
         public Dictionary<Dafny.IVariable, object> local_variables = new Dictionary<Dafny.IVariable, object>();
         public Dictionary<Statement, Statement> updated_statements = new Dictionary<Statement, Statement>();
@@ -152,6 +152,11 @@ namespace Tacny
                 tacCounter++;
             else
                 throw new ArgumentOutOfRangeException("Tactic counter exceeded tactic body length");
+        }
+
+        public void DecCounter()
+        {
+            tacCounter--;
         }
 
         public int GetCounter()

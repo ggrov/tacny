@@ -179,9 +179,13 @@ namespace Tacny
             {
                 aps = call as ApplySuffix;
                 if (aps != null)
+                {
                     type = StatementRegister.GetStatementType(StatementRegister.GetAtomicType(aps.Lhs.tok.val));
+                    st = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps)});
+                }
+
                 else
-                    return "unexpected call argument: expectet Statement or ApplySuffix; Received " + call.GetType();
+                    return "unexpected call argument: expected Statement or ApplySuffix; Received " + call.GetType();
             }
             if (type == null)
             {

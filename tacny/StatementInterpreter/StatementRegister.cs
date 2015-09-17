@@ -23,6 +23,7 @@ namespace Tacny
             ADD_MATCH,
             ADD_IF,
             TRY_ALL,
+            OR,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -36,6 +37,7 @@ namespace Tacny
             {"cases", Atomic.ADD_MATCH},
             {"addif", Atomic.ADD_IF},
             {"tryall", Atomic.TRY_ALL},
+            {"||", Atomic.OR},
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -48,6 +50,7 @@ namespace Tacny
             {Atomic.REPLACE_OP, typeof(OperatorAtomic)},
             {Atomic.EXTRACT_GUARD, typeof(GuardAtomic)},
             {Atomic.TRY_ALL, typeof(TryAllAtomic)},
+            {Atomic.OR, typeof(OrAtomic)}
         };
 
 
@@ -55,24 +58,32 @@ namespace Tacny
         {
             Contract.Requires(st != null);
             ExprRhs er;
-            UpdateStmt us;
+            UpdateStmt us = null;
             TacnyBlockStmt tbs;
             VarDeclStmt vds;
+            OrStmt os;
             string name;
             if ((tbs = st as TacnyBlockStmt) != null)
             {
                 TacnyCasesBlockStmt tcbs;
-                TacnyCasesBlockStmt tibs;
+                TacnyIfBlockStmt tibs;
                 if((tcbs = tbs as TacnyCasesBlockStmt) != null)
                     return atomic_signature[tcbs.WhatKind];
-                else if ((tibs = tbs as TacnyCasesBlockStmt) != null)
+                else if ((tibs = tbs as TacnyIfBlockStmt) != null)
                     return atomic_signature[tibs.WhatKind];
             }
-            if (st is IfStmt || st is WhileStmt)
+            else if (((os = st as OrStmt) != null))
+            {
+                return atomic_signature[os.Tok.val];
+            }
+            else if (st is IfStmt || st is WhileStmt)
+            {
                 return Atomic.COMPOSITION;
+            }
             else if ((us = st as UpdateStmt) != null) { }
             else if ((vds = st as VarDeclStmt) != null)
                 us = vds.Update as UpdateStmt;
+            
             if (us == null)
                 return Atomic.UNDEFINED;
 
