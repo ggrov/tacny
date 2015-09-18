@@ -202,6 +202,10 @@ namespace Tacny
             return new List<Statement>(updated_statements.Values.ToArray());
         }
 
+        public List<Statement> GetFreshTacticBody()
+        {
+            return new List<Statement>(tac.Body.Body.ToArray());
+        }
     }
     #endregion
 

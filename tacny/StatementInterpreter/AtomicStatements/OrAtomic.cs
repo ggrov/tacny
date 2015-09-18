@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using Dafny = Microsoft.Dafny;
@@ -27,74 +28,64 @@ namespace Tacny
             string err;
             os = st as OrStmt;
             Tactic tac = localContext.tac;
-            BlockStmt body = tac.Body;
             int index = localContext.GetCounter();
-            List<Statement> body_l = new List<Statement>(body.Body.ToArray());
-            Tactic newTac;
-            Atomic newAtomic;
-            UpdateStmt rhs = UpdateStmt(os.Rhs as ApplySuffix);
+            List<Statement> body_list;
 
-            // check if lhs is a single expression or a block stmt
-            if (os.Body != null)
+            body_list = localContext.GetFreshTacticBody();
+            if (os.Blhs != null)
             {
-                body_l.InsertRange(index, os.Body);
-                newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword, tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
-                    tac.Decreases, new BlockStmt(body.Tok, body.EndTok, body_l), tac.Attributes, tac.SignatureEllipsis);
-
-                newAtomic = this.Copy();
-                newAtomic.localContext.tac = newTac;
-                /* HACK */
-                // decrase the tactic body counter
-                // so the interpreter would execute newly inserted atomic
-                newAtomic.localContext.DecCounter();
-                /* END HACK */
-                solution_list.Add(new Solution(newAtomic));
+                body_list.RemoveAt(index);
+                body_list.InsertRange(index, os.Blhs);
             }
             else
             {
-                UpdateStmt lhs = UpdateStmt(os.Lhss as ApplySuffix);
-
-                // replace the OrStmt with lhs
-                body_l[index] = lhs;
-
-                newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword, tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
-                    tac.Decreases, new BlockStmt(body.Tok, body.EndTok, body_l), tac.Attributes, tac.SignatureEllipsis);
-
-                 newAtomic = this.Copy();
-                 newAtomic.localContext.tac = newTac;
-                /* HACK */
-                // decrase the tactic body counter
-                // so the interpreter would execute newly inserted atomic
-                newAtomic.localContext.DecCounter();
-                /* END HACK */
-                solution_list.Add(new Solution(newAtomic));
+                UpdateStmt lhs = GenUpdateStmt(os.Lhss as ApplySuffix);
+                Contract.Assert(lhs != null);
+                body_list[index] = lhs;
             }
 
-            body_l = new List<Statement>(body.Body.ToArray());
-            body_l[index] = rhs;
-            newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword, tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
-                tac.Decreases, new BlockStmt(body.Tok, body.EndTok, body_l), tac.Attributes, tac.SignatureEllipsis);
+            solution_list.Add(CreateSolution(tac, body_list));
 
-            newAtomic = this.Copy();
-            newAtomic.localContext.tac = newTac;
-            /* HACK */
-            // decrase the tactic body counter
-            // so the interpreter would execute newly inserted atomic
-            newAtomic.localContext.DecCounter();
-            /* END HACK */
+            body_list = localContext.GetFreshTacticBody();
+            if (os.Brhs != null)
+            {
+                body_list.RemoveAt(index);
+                body_list.InsertRange(index, os.Brhs);
+            }
+            else
+            {
+                UpdateStmt rhs = GenUpdateStmt(os.Rhs as ApplySuffix);
+                Contract.Assert(rhs != null);
+                body_list[index] = rhs;
+            }
 
-            solution_list.Add(new Solution(newAtomic));
+            solution_list.Add(CreateSolution(tac, body_list));
+
             return null;
         }
 
 
 
-        private UpdateStmt UpdateStmt(ApplySuffix aps)
+        private UpdateStmt GenUpdateStmt(ApplySuffix aps)
         {
+            Contract.Requires(aps != null);
             return new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
         }
 
+        private Solution CreateSolution(Tactic tac, List<Statement> newBody)
+        {
+            Tactic newTac = newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
+                                        tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
+                                        tac.Decreases, new BlockStmt(tac.Body.Tok, tac.Body.EndTok, newBody),
+                                        tac.Attributes, tac.SignatureEllipsis);
+            Atomic newAtomic = this.Copy();
+            newAtomic.localContext.tac = newTac;
+            /* HACK */
+            // decrase the tactic body counter
+            // so the interpreter would execute newly inserted atomic
+            newAtomic.localContext.DecCounter();
 
-        
+            return new Solution(newAtomic);
+        }
     }
 }

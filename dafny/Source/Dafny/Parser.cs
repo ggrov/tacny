@@ -1879,9 +1879,10 @@ ref Attributes readsAttrs, ref Attributes modAttrs, ref Attributes decrAttrs) {
 				endTok = t; 
 			} else SynErr(169);
 		}
+        int count = orStmtRhs.Count;
 		if(or != null) {
 		 block = new OrStmt(bodyStart, endTok, body, or);
-		} else if (orStmtRhs.Count != 0) {
+		} else if (count >= 1) {
 		 block = new OrStmt(bodyStart, endTok, body, orStmtRhs);
 		} else {
 		block = new BlockStmt(bodyStart, bodyEnd, body);
