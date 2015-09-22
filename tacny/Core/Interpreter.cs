@@ -98,6 +98,8 @@ namespace Tacny
                 foreach (var member in tacnyProgram.members)
                 {
                     err = ScanMemberBody(member.Value);
+                    solution_list.Fin();
+
                     if (err != null)
                         return err;
                 }
@@ -161,7 +163,7 @@ namespace Tacny
 
             program = tacnyProgram.ParseProgram();
             foreach (var solution in final)
-                solution.GenerateProgram(ref program, true);
+                solution.GenerateProgram(ref program);
 
             err = tacnyProgram.VerifyProgram();
             tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);

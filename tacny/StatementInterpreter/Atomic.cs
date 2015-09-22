@@ -75,30 +75,75 @@ namespace Tacny
             Contract.Requires(tac != null);
             Contract.Requires(tac_call != null);
             Contract.Requires(md != null);
-            List<Solution> res = new List<Solution>();
-            Atomic ac = new Atomic(md, tac, tac_call, tacnyProgram);
-            ac.globalContext.RegsiterGlobalVariables(variables);
-            string err = ResolveTactic(ac, ref res);
+            List<Solution> res = null;
+            string err;
+            if (result.plist.Count == 0)
+            {
+                res = new List<Solution>();
+                Atomic ac = new Atomic(md, tac, tac_call, tacnyProgram);
+                ac.globalContext.RegsiterGlobalVariables(variables);
+                err = ResolveTactic(ac, ref res);
+            }
+            else
+            {
+                res = new List<Solution>(result.plist.ToArray());
+                // update local and global contexts for each state
+                foreach (var sol in res)
+                {
+                    MemberDecl target = sol.state.localContext.new_target == null ? md : sol.state.localContext.new_target;
+                    sol.state.localContext = new LocalContext(target, tac, tac_call);
+                    sol.state.globalContext.tac_call = tac_call;
+                    sol.state.globalContext.md = target;
+                }
+                err = ResolveTactic(ref res);
+            }
+            
 
-            result.AddFinal(res);
+            result.AddRange(res);
             return err;
 
         }
 
         /// <summary>
-        /// Resolves tactic body
+        /// Resovle tactic body, given that previous tactic calls have been made
         /// </summary>
-        /// <param name="tac">The tactic to to be resolved</param>
-        /// <param name="tac_call">tactic call</param>
-        /// <param name="md">MemberDecl from where the tactic has been called</param>
-        /// <param name="tacnyProgram"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public static string ResolveTactic(Atomic action, ref List<Solution> result)
+        public static string ResolveTactic(ref List<Solution> result)
         {
-            Contract.Requires(action != null);
+            Contract.Requires(tcce.NonEmpty(result));
+            string err = null;
+            SolutionList solution_list = new SolutionList();
+            solution_list.AddRange(result);
+            while (true)
+            {
+                List<Solution> res = null;
+
+                err = Atomic.ResolveStatement(ref res, solution_list.plist);
+                if (err != null)
+                    return err;
+
+                if (res.Count > 0)
+                    solution_list.AddRange(res);
+                else
+                    break;
+            }
+
+            result.AddRange(solution_list.plist);
+            return null;
+        }
+
+        /// <summary>
+        /// Resolve tactic body, given that no tactic calls have been made before
+        /// </summary>
+        /// <param name="atomic">The base atomic class</param>
+        /// <param name="result">Result list</param>
+        /// <returns>Error message</returns>
+        public static string ResolveTactic(Atomic atomic, ref List<Solution> result)
+        {
+            Contract.Requires(atomic != null);
             //local solution list
-            SolutionList solution_list = new SolutionList(new Solution(action));
+            SolutionList solution_list = new SolutionList(new Solution(atomic));
             string err = null;
 
             while (true)
@@ -320,14 +365,14 @@ namespace Tacny
         protected string ProcessArg(Expression argument, out object result)
         {
             result = null;
-            NameSegment ns = null;
+            NameSegment nameSegment = null;
             ApplySuffix aps = null;
-            if ((ns = argument as NameSegment) != null)
+            if ((nameSegment = argument as NameSegment) != null)
             {
-                if (!HasLocalWithName(ns))
+                if (!HasLocalWithName(nameSegment))
                     return "Argument not passed";
 
-                result = GetLocalValueByName(ns.Name);
+                result = GetLocalValueByName(nameSegment.Name);
             }
             else if ((aps = argument as ApplySuffix) != null)
             {
@@ -421,6 +466,7 @@ namespace Tacny
         {
             globalContext.resolved.Clear();
             globalContext.resolved.AddRange(localContext.updated_statements.Values.ToArray());
+            globalContext.new_target = localContext.new_target;
         }
 
         protected void AddLocal(IVariable lv, object value)

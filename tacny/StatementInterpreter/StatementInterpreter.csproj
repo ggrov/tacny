@@ -103,8 +103,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Atomic.cs" />
+    <Compile Include="AtomicStatements\FailAtomic.cs" />
+    <Compile Include="AtomicStatements\IdAtomic.cs" />
     <Compile Include="AtomicStatements\OrAtomic.cs" />
     <Compile Include="AtomicStatements\VariablesAtomic.cs" />
+    <Compile Include="AtomicStatements\VariantAtomic.cs" />
     <Compile Include="Context.cs" />
     <Compile Include="AtomicStatements\CompositionAtomic.cs" />
     <Compile Include="AtomicStatements\ConditionalAtomic.cs" />
@@ -120,6 +123,7 @@
     <Compile Include="SolutionList.cs" />
     <Compile Include="ExpressionTree.cs" />
     <Compile Include="AtomicStatements\TryAllAtomic.cs" />
+    <Compile Include="tcce.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

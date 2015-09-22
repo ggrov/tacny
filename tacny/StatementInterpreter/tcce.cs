@@ -23,6 +23,11 @@ namespace Tacny
             return collection != null && Contract.ForAll(collection, c => c != null);
         }
         [Pure]
+        public static bool NonEmpty<T>(IList<T> collection) where T : class
+        {
+            return collection != null && collection.Count != 0;
+        }
+        [Pure]
         public static bool NonNullDictionaryAndValues<TKey, TValue>(IDictionary<TKey, TValue> collection) where TValue : class
         {
             return collection != null && NonNullElements(collection.Values);
@@ -36,6 +41,7 @@ namespace Tacny
         public static void BeginExpose(object o)
         {
         }
+
         [Pure]
         public static void EndExpose()
         {

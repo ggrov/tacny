@@ -24,6 +24,9 @@ namespace Tacny
             ADD_IF,
             TRY_ALL,
             OR,
+            ID,
+            FAIL,
+            ADD_VARIANT,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -38,6 +41,9 @@ namespace Tacny
             {"addif", Atomic.ADD_IF},
             {"tryall", Atomic.TRY_ALL},
             {"||", Atomic.OR},
+            {"id", Atomic.ID},
+            {"fail", Atomic.FAIL},
+            {"add_variant", Atomic.ADD_VARIANT},
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -50,7 +56,11 @@ namespace Tacny
             {Atomic.REPLACE_OP, typeof(OperatorAtomic)},
             {Atomic.EXTRACT_GUARD, typeof(GuardAtomic)},
             {Atomic.TRY_ALL, typeof(TryAllAtomic)},
-            {Atomic.OR, typeof(OrAtomic)}
+            {Atomic.OR, typeof(OrAtomic)},
+            {Atomic.COMPOSITION, typeof(CompositionAtomic)},
+            {Atomic.ID, typeof(IdAtomic)},
+            {Atomic.FAIL, typeof(FailAtomic)},
+            {Atomic.ADD_VARIANT, typeof(VariantAtomic)},
         };
 
 

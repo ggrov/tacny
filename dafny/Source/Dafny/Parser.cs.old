@@ -1865,7 +1865,7 @@ ref Attributes readsAttrs, ref Attributes modAttrs, ref Attributes decrAttrs) {
 		bodyEnd = t; 
 		if (la.kind == 90) {
 			Get();
-			x = t; 
+			bodyStart = t; 
 			if (la.kind == 44) {
 				Get();
 				while (StartOf(15)) {
@@ -1881,7 +1881,7 @@ ref Attributes readsAttrs, ref Attributes modAttrs, ref Attributes decrAttrs) {
 		}
 		if(or != null) {
 		 block = new OrStmt(bodyStart, endTok, body, or);
-		} else if (orStmtRhs.Count > 1) {
+		} else if (orStmtRhs.Count != 0) {
 		 block = new OrStmt(bodyStart, endTok, body, orStmtRhs);
 		} else {
 		block = new BlockStmt(bodyStart, bodyEnd, body);
@@ -2315,12 +2315,8 @@ List<Expression/*!*/>/*!*/ decreases, ref Attributes decAttrs, ref Attributes mo
 					endTok = t; 
 				} else if (StartOf(7)) {
 					Expression(out or, false, true);
-					Expect(26);
-					endTok = t; 
 				} else SynErr(184);
 			} else SynErr(185);
-			Expect(26);
-			endTok = t; 
 		} else if (la.kind == 20) {
 			Get();
 			SemErr(t, "invalid statement (did you forget the 'label' keyword?)"); 

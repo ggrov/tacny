@@ -1879,10 +1879,9 @@ ref Attributes readsAttrs, ref Attributes modAttrs, ref Attributes decrAttrs) {
 				endTok = t; 
 			} else SynErr(169);
 		}
-        int count = orStmtRhs.Count;
 		if(or != null) {
 		 block = new OrStmt(bodyStart, endTok, body, or);
-		} else if (count >= 1) {
+		} else if (orStmtRhs.Count != 0) {
 		 block = new OrStmt(bodyStart, endTok, body, orStmtRhs);
 		} else {
 		block = new BlockStmt(bodyStart, bodyEnd, body);
@@ -2316,8 +2315,6 @@ List<Expression/*!*/>/*!*/ decreases, ref Attributes decAttrs, ref Attributes mo
 					endTok = t; 
 				} else if (StartOf(7)) {
 					Expression(out or, false, true);
-					Expect(26);
-					endTok = t; 
 				} else SynErr(184);
 			} else SynErr(185);
 			Expect(26);

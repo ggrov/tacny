@@ -8,8 +8,9 @@ using Microsoft.Boogie;
 
 namespace Tacny
 {
-    class CompositionAtomic : Atomic
+    class CompositionAtomic : Atomic, IAtomicStmt
     {
+
         public CompositionAtomic(Atomic atomic) : base(atomic) { }
 
         public override string FormatError(string error)
@@ -17,7 +18,11 @@ namespace Tacny
             return "ERROR composition: " + error;
         }
 
-        
+        public string Resolve(Statement st, ref List<Solution> solution_list)
+        {
+            throw new NotImplementedException();
+        }
+
         public string Composition(Statement st, ref List<Solution> solution_list)
         {
             IfStmt if_stmt = st as IfStmt;
@@ -80,5 +85,7 @@ namespace Tacny
             }
             return err;
         }
+
+
     }
 }

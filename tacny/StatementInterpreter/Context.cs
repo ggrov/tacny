@@ -10,8 +10,8 @@ namespace Tacny
 {
     public class Context
     {
-        public readonly MemberDecl md;
-        public readonly UpdateStmt tac_call;
+        public MemberDecl md;
+        public UpdateStmt tac_call;
 
         public Context(MemberDecl md, UpdateStmt tac_call)
         {
@@ -32,6 +32,7 @@ namespace Tacny
         public List<Statement> tac_body = new List<Statement>(); // body of the currently worked tactic
         public Dictionary<Dafny.IVariable, object> local_variables = new Dictionary<Dafny.IVariable, object>();
         public Dictionary<Statement, Statement> updated_statements = new Dictionary<Statement, Statement>();
+        public Method new_target = null;
 
         private int tacCounter;
 
@@ -44,9 +45,9 @@ namespace Tacny
             FillTacticInputs();
         }
 
-        public LocalContext(MemberDecl md, Tactic tac, UpdateStmt tac_call, 
+        public LocalContext(MemberDecl md, Tactic tac, UpdateStmt tac_call,
             List<Statement> tac_body, Dictionary<Dafny.IVariable, object> local_variables,
-            Dictionary<Statement, Statement> updated_statements, int tacCounter)
+            Dictionary<Statement, Statement> updated_statements, int tacCounter, Method old_target)
             : base(md, tac_call)
         {
             this.tac = tac;
@@ -60,16 +61,25 @@ namespace Tacny
             List<Statement> us_values = new List<Statement>(updated_statements.Values);
             this.updated_statements = us_keys.ToDictionary(x => x, x => us_values[us_keys.IndexOf(x)]);
             this.tacCounter = tacCounter;
+            if (old_target != null)
+                this.new_target = new Method(old_target.tok, old_target.Name, old_target.HasStaticKeyword, old_target.IsGhost, old_target.TypeArgs,
+                old_target.Ins, old_target.Outs, old_target.Req, old_target.Mod, old_target.Ens, old_target.Decreases, old_target.Body,
+                old_target.Attributes, old_target.SignatureEllipsis);
         }
 
         public LocalContext Copy()
         {
-            return new LocalContext(md,
+            Method old_md = md as Method;
+            return new LocalContext(
+                new Method(old_md.tok, old_md.Name, old_md.HasStaticKeyword, old_md.IsGhost, old_md.TypeArgs,
+                            old_md.Ins, old_md.Outs, old_md.Req, old_md.Mod, old_md.Ens,
+                            new Specification<Expression>(new List<Expression>(old_md.Decreases.Expressions.ToArray()), old_md.Decreases.Attributes),
+                            old_md.Body, old_md.Attributes, old_md.SignatureEllipsis),
                 new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
                             tac.TypeArgs, tac.Ins, tac.Outs, tac.Req,
                             tac.Mod, tac.Ens, tac.Decreases, tac.Body,
                             tac.Attributes, tac.SignatureEllipsis),
-                tac_call, tac_body, local_variables, updated_statements, tacCounter);
+                tac_call, tac_body, local_variables, updated_statements, tacCounter, new_target);
         }
 
 
@@ -144,7 +154,7 @@ namespace Tacny
                 local_variables[lv] = value;
         }
 
-        
+
 
         public void IncCounter()
         {
@@ -210,13 +220,14 @@ namespace Tacny
     #endregion
 
     #region GlobalContext
-    
+
     public class GlobalContext : Context
     {
         protected readonly Dictionary<string, DatatypeDecl> datatypes = new Dictionary<string, DatatypeDecl>();
         public Dictionary<string, IVariable> global_variables = new Dictionary<string, IVariable>();
         public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
         public List<Statement> resolved = new List<Statement>();
+        public Method new_target = null;
 
         public Program program;
 
@@ -250,7 +261,7 @@ namespace Tacny
                     global_variables[item.Name] = item;
             }
         }
-        
+
         public void RegisterTempVariable(IVariable var)
         {
             if (!global_variables.ContainsKey(var.Name))

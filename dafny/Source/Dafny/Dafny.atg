@@ -1568,13 +1568,11 @@ UpdateStmt<out Statement/*!*/ s>
     | "||"                          (. x = t; .)
       (
         "{"      
-        (. body = new List<Statement/*!*/>(); .)                            
-         { Stmt<body>
-         }
-        "}"                                  (. endTok = t; .)
+          (. body = new List<Statement/*!*/>(); .)                            
+          { Stmt<body> }
+         "}"                                  (. endTok = t; .)
         |
         Expression<out or, false, true>
-        ";"                            (. endTok = t; .)
       )
     )
     ";"                            (. endTok = t; .)

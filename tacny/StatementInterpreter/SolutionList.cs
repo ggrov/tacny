@@ -69,6 +69,12 @@ namespace Tacny
         {
             return final;
         }
+
+        public void Fin()
+        {
+            if (plist.Count > 0)
+                AddFinal(plist);
+        }
     }
 
 
@@ -97,11 +103,11 @@ namespace Tacny
 
         public string GenerateProgram(ref Dafny.Program prog, bool isFinal = false)
         {
-
+            Method method = null;
             List<Dafny.Program> prog_list = new List<Dafny.Program>();
             Atomic ac = state.Copy();
             ac.Fin();
-            Method method = (Method)Program.FindMember(prog, ac.localContext.md.Name);
+            method = Program.FindMember(prog, ac.globalContext.md.Name) as Method;
             if (method == null)
                 throw new Exception("Method not found");
             UpdateStmt tac_call = ac.GetTacticCall();
@@ -122,8 +128,10 @@ namespace Tacny
             }
             
 
+            Method n_target = ac.localContext.md as Method;
+            Specification<Expression> decreases = n_target != null ? n_target.Decreases : method.Decreases;
             Method nMethod = new Method(method.tok, method.Name, method.HasStaticKeyword, method.IsGhost,
-                method.TypeArgs, method.Ins, method.Outs, method.Req, method.Mod, method.Ens, method.Decreases,
+                method.TypeArgs, method.Ins, method.Outs, method.Req, method.Mod, method.Ens, decreases,
                 new BlockStmt(method.Body.Tok, method.Body.EndTok, body), method.Attributes, method.SignatureEllipsis);
             ClassDecl curDecl;
 

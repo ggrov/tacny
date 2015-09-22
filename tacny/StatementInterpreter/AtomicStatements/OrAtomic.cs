@@ -32,21 +32,36 @@ namespace Tacny
             List<Statement> body_list;
 
             body_list = localContext.GetFreshTacticBody();
+            // if left hand side is a block insert all the statements to the new body list
             if (os.Blhs != null)
             {
                 body_list.RemoveAt(index);
                 body_list.InsertRange(index, os.Blhs);
             }
-            else
+            else // generate new updatestmt and insert it to body list
             {
                 UpdateStmt lhs = GenUpdateStmt(os.Lhss as ApplySuffix);
                 Contract.Assert(lhs != null);
                 body_list[index] = lhs;
+                StatementRegister.Atomic type = StatementRegister.GetAtomicType(lhs);
+                switch(type)
+                {
+                    case StatementRegister.Atomic.ID:
+                        solution_list.Add(CreateSolution(tac, body_list, false));
+                        return null;
+                    case StatementRegister.Atomic.FAIL:
+                         break;
+                    case StatementRegister.Atomic.UNDEFINED:
+                         //return "OR: undefined lhs statement";
+                    default:
+                        solution_list.Add(CreateSolution(tac, body_list));
+                        break;
+                }   
+                
             }
-
-            solution_list.Add(CreateSolution(tac, body_list));
-
+                        
             body_list = localContext.GetFreshTacticBody();
+
             if (os.Brhs != null)
             {
                 body_list.RemoveAt(index);
@@ -57,9 +72,20 @@ namespace Tacny
                 UpdateStmt rhs = GenUpdateStmt(os.Rhs as ApplySuffix);
                 Contract.Assert(rhs != null);
                 body_list[index] = rhs;
+                StatementRegister.Atomic type = StatementRegister.GetAtomicType(rhs);
+                switch (type)
+                {
+                    case StatementRegister.Atomic.ID:
+                        return "OR: Id() can only be used on the lhs of the statement";
+                    case StatementRegister.Atomic.FAIL:
+                        break;
+                    case StatementRegister.Atomic.UNDEFINED:
+                        //return "OR: undefined rhs statement";
+                    default:
+                        solution_list.Add(CreateSolution(tac, body_list));
+                        break;
+                }
             }
-
-            solution_list.Add(CreateSolution(tac, body_list));
 
             return null;
         }
@@ -72,7 +98,7 @@ namespace Tacny
             return new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
         }
 
-        private Solution CreateSolution(Tactic tac, List<Statement> newBody)
+        private Solution CreateSolution(Tactic tac, List<Statement> newBody, bool decCounter = true)
         {
             Tactic newTac = newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
                                         tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
@@ -83,7 +109,8 @@ namespace Tacny
             /* HACK */
             // decrase the tactic body counter
             // so the interpreter would execute newly inserted atomic
-            newAtomic.localContext.DecCounter();
+            if(decCounter)
+                newAtomic.localContext.DecCounter();
 
             return new Solution(newAtomic);
         }

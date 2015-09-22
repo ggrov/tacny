@@ -24,7 +24,7 @@ namespace Tacny
             get { return _programId; }
         }
         private Dafny.Program _program;
-        public Dafny.Program program
+        public Dafny.Program dafnyProgram
         {
             set
             {
@@ -62,7 +62,7 @@ namespace Tacny
             tactics = new Dictionary<string, Tactic>();
             members = new Dictionary<string, MemberDecl>();
             globals = new List<DatatypeDecl>();
-            foreach (var item in program.DefaultModuleDef.TopLevelDecls)
+            foreach (var item in dafnyProgram.DefaultModuleDef.TopLevelDecls)
             {
                 ClassDecl curDecl = item as ClassDecl;
                 if (curDecl != null)
@@ -104,7 +104,7 @@ namespace Tacny
         {
             Dafny.Program prog;
             ParseCheck(fileNames, programId, out prog);
-            this.program = prog;
+            this.dafnyProgram = prog;
             return prog;
         }
 
@@ -115,7 +115,7 @@ namespace Tacny
                 err = ResolveProgram();
             if (err != null)
                 return err;
-            VerifyProgram(program);
+            VerifyProgram(dafnyProgram);
             return null;
         }
 
@@ -128,7 +128,7 @@ namespace Tacny
 
         public string ResolveProgram()
         {
-            string err = ResolveProgram(program);
+            string err = ResolveProgram(dafnyProgram);
             if (err == null)
                 resolved = true;
             return err;
@@ -190,7 +190,7 @@ namespace Tacny
 
         public void ClearBody(MemberDecl md)
         {
-            ClearBody(md, program);
+            ClearBody(md, dafnyProgram);
         }
 
         /// <summary>
@@ -507,7 +507,7 @@ namespace Tacny
         {
             //printer.WriteTrailer(stats);
             if ((DafnyOptions.O.Compile /*&& allOk*/ && CommandLineOptions.Clo.ProcsToCheck == null) || DafnyOptions.O.ForceCompile)
-                Dafny.DafnyDriver.CompileDafnyProgram(program, fileNames[0]);
+                Dafny.DafnyDriver.CompileDafnyProgram(dafnyProgram, fileNames[0]);
         }
 
         private static void CompileDafnyProgram(Dafny.Program dafnyProgram, string dafnyProgramName, TextWriter outputWriter = null)
@@ -637,7 +637,7 @@ namespace Tacny
 
         public void MaybePrintProgram(string filename)
         {
-            MaybePrintProgram(program, filename);
+            MaybePrintProgram(dafnyProgram, filename);
         }
         /// <summary>
         /// Print the source code

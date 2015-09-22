@@ -12,7 +12,7 @@ namespace Tacny
     /// <summary>
     /// Conditional actions should only be called from composition action
     /// </summary>
-    class ConditionalAtomic : Atomic
+    class ConditionalAtomic : Atomic, IAtomicStmt
     {
 
         public class ConditionResult
@@ -28,6 +28,11 @@ namespace Tacny
 
         public ConditionalAtomic(Atomic atomic) : base(atomic) { }
 
+
+        public string Resolve(Statement st, ref List<Solution> solution_list)
+        {
+            throw new NotImplementedException();
+        }
         /// <summary>
         /// Check whehter current solution is valid
         /// </summary>
@@ -50,6 +55,6 @@ namespace Tacny
 
             return null;
         }
-        
+
     }
 }
