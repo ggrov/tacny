@@ -216,6 +216,11 @@ namespace Tacny
         {
             return new List<Statement>(tac.Body.Body.ToArray());
         }
+
+        public Method GetSourceMethod()
+        {
+            return md as Method;
+        }
     }
     #endregion
 

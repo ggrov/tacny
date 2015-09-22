@@ -235,15 +235,14 @@ namespace Tacny
             if (type == null)
             {
                 UpdateStmt us = st as UpdateStmt;
+
                 if (us != null)
                 {
+                    // if the statement is nested tactic call
                     if (program.IsTacticCall(us))
                     {
                         Atomic ac;
                         Tactic tac = program.GetTactic(us);
-                        //if (tacticCache.ContainsKey(tac))
-                        //ac = tacticCache[tac];
-                        //else
                         ac = new Atomic(localContext.tac, tac, us, globalContext);
 
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
@@ -267,14 +266,19 @@ namespace Tacny
                             }
                             solution_list.Add(new Solution(action));
                         }
-
-                        //if (tacticCache.ContainsKey(tac))
-                        //    tacticCache[tac] = ac;
-                        //else
-                        //    tacticCache.Add(tac, ac);
-
                         return null;
-                    }
+                    } 
+                }
+
+
+                VarDeclStmt vds = st as VarDeclStmt;
+                // if empty variable declaration
+                // register variable to localc with empty value
+                if (vds != null)
+                {
+                    AddLocal(vds.Locals[0], new object());
+                    solution_list.Add(new Solution(this.Copy()));
+                    return null;
                 }
                 return CallDefaultAction(st, ref solution_list);
             }

@@ -106,6 +106,7 @@
     <Compile Include="AtomicStatements\FailAtomic.cs" />
     <Compile Include="AtomicStatements\IdAtomic.cs" />
     <Compile Include="AtomicStatements\OrAtomic.cs" />
+    <Compile Include="AtomicStatements\ParamsAtomic.cs" />
     <Compile Include="AtomicStatements\VariablesAtomic.cs" />
     <Compile Include="AtomicStatements\VariantAtomic.cs" />
     <Compile Include="Context.cs" />

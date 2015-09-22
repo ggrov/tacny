@@ -27,6 +27,8 @@ namespace Tacny
             ID,
             FAIL,
             ADD_VARIANT,
+            VARIABLES,
+            PARAMS,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -44,6 +46,8 @@ namespace Tacny
             {"id", Atomic.ID},
             {"fail", Atomic.FAIL},
             {"add_variant", Atomic.ADD_VARIANT},
+            {"variables", Atomic.VARIABLES},
+            {"params", Atomic.PARAMS}
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -61,9 +65,15 @@ namespace Tacny
             {Atomic.ID, typeof(IdAtomic)},
             {Atomic.FAIL, typeof(FailAtomic)},
             {Atomic.ADD_VARIANT, typeof(VariantAtomic)},
+            {Atomic.VARIABLES, typeof(VariablesAtomic)},
+            {Atomic.PARAMS, typeof(ParamsAtomic)}
         };
 
-
+        /// <summary>
+        /// Return the Atomic type of the statement
+        /// </summary>
+        /// <param name="st">Statement to analyse</param>
+        /// <returns>statement atomic type</returns>
         public static Atomic GetAtomicType(Statement st)
         {
             Contract.Requires(st != null);
@@ -109,7 +119,12 @@ namespace Tacny
 
             return atomic_signature[name];
         }
-
+        
+        /// <summary>
+        /// Return atomic type from string signature
+        /// </summary>
+        /// <param name="name">string signature</param>
+        /// <returns>Atomic type</returns>
         public static Atomic GetAtomicType(string name)
         {
             Contract.Requires(name != null);

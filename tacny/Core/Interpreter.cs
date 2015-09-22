@@ -187,9 +187,11 @@ namespace Tacny
             variables.AddRange(m.Outs);
             foreach (Statement st in m.Body.Body)
             {
+                // register local variables
                 VarDeclStmt vds = st as VarDeclStmt;
                 if (vds != null)
                     variables.AddRange(vds.Locals);
+
                 UpdateStmt us = st as UpdateStmt;
                 if (us != null)
                 {

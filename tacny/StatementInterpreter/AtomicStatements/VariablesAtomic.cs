@@ -22,15 +22,28 @@ namespace Tacny
             string err;
             IVariable lv = null;
             List<Expression> call_arguments; // we don't care about this
+            List<IVariable> locals = new List<IVariable>();
 
             err = InitArgs(st, out lv, out call_arguments);
             if (err != null)
                 return "ERROR variables: " + err;
 
             if (call_arguments.Count != 0)
-                return "ERROR variables: unexpected arguments";
+                return "ERROR variables:  the call does not take any arguments";
 
-            AddLocal(lv, new List<IVariable>(globalContext.global_variables.Values.ToArray()));
+            Method source = localContext.md as Method;
+            if(source == null)
+                return "ERROR variables: unexpected source method type: expected method received " + localContext.md.GetType();
+            foreach (var stmt in source.Body.Body)
+            {
+                VarDeclStmt vds = null;
+                if((vds = stmt as VarDeclStmt) != null)
+                    locals.AddRange(vds.Locals);
+
+                if (stmt.Equals(localContext.tac_call))
+                    break;
+            }
+            AddLocal(lv, locals);
             solution_list.Add(new Solution(this.Copy()));
 
             return null;
