@@ -1,8 +1,8 @@
 m
-mBinaries
-mSource
+rBinaries
 mSource/Dafny
 mSource/DafnyDriver
+mSource/DafnyExtension
 mSource/Jennisys
 mSource/Jennisys/examples
 mTest

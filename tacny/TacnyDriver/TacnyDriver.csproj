@@ -35,11 +35,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Boogie">
+      <HintPath>..\..\boogie\Binaries\Boogie.exe</HintPath>
+    </Reference>
     <Reference Include="Concurrency">
       <HintPath>..\..\..\boogie\Binaries\Concurrency.dll</HintPath>
     </Reference>
     <Reference Include="Core">
-      <HintPath>..\..\..\boogie\Binaries\Core.dll</HintPath>
+      <HintPath>..\..\boogie\Binaries\Core.dll</HintPath>
     </Reference>
     <Reference Include="Dafny, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -50,10 +53,10 @@
       <HintPath>..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
     </Reference>
     <Reference Include="ExecutionEngine">
-      <HintPath>..\..\..\boogie\Binaries\ExecutionEngine.dll</HintPath>
+      <HintPath>..\..\boogie\Binaries\ExecutionEngine.dll</HintPath>
     </Reference>
     <Reference Include="ParserHelper">
-      <HintPath>..\..\..\boogie\Binaries\ParserHelper.dll</HintPath>
+      <HintPath>..\..\boogie\Binaries\ParserHelper.dll</HintPath>
     </Reference>
     <Reference Include="Provers.SMTLib">
       <HintPath>..\..\..\boogie\Binaries\Provers.SMTLib.dll</HintPath>
