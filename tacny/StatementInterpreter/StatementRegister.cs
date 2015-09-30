@@ -29,6 +29,7 @@ namespace Tacny
             ADD_VARIANT,
             VARIABLES,
             PARAMS,
+            SUCH_THAT,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -47,7 +48,8 @@ namespace Tacny
             {"fail", Atomic.FAIL},
             {"add_variant", Atomic.ADD_VARIANT},
             {"variables", Atomic.VARIABLES},
-            {"params", Atomic.PARAMS}
+            {"params", Atomic.PARAMS},
+            {":|", Atomic.SUCH_THAT},
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -66,7 +68,8 @@ namespace Tacny
             {Atomic.FAIL, typeof(FailAtomic)},
             {Atomic.ADD_VARIANT, typeof(VariantAtomic)},
             {Atomic.VARIABLES, typeof(VariablesAtomic)},
-            {Atomic.PARAMS, typeof(ParamsAtomic)}
+            {Atomic.PARAMS, typeof(ParamsAtomic)},
+            {Atomic.SUCH_THAT, typeof(SuchThatAtomic)},
         };
 
         /// <summary>
@@ -102,7 +105,13 @@ namespace Tacny
             }
             else if ((us = st as UpdateStmt) != null) { }
             else if ((vds = st as VarDeclStmt) != null)
+            {
+                AssignSuchThatStmt suchThat = vds.Update as AssignSuchThatStmt;
+                // check if declaration is such that
+                if (suchThat != null)
+                    return atomic_signature[suchThat.Tok.val];
                 us = vds.Update as UpdateStmt;
+            }
             
             if (us == null)
                 return Atomic.UNDEFINED;

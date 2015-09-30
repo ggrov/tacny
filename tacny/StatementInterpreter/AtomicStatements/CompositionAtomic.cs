@@ -20,7 +20,7 @@ namespace Tacny
 
         public string Resolve(Statement st, ref List<Solution> solution_list)
         {
-            throw new NotImplementedException();
+            return Composition(st, ref solution_list);
         }
 
         public string Composition(Statement st, ref List<Solution> solution_list)
@@ -38,6 +38,7 @@ namespace Tacny
                 err = AnalyseGuard(guard, out guard_type);
                 if (err != null)
                     return FormatError(err);
+                // if the guard is not tacny atomic add the if statement "as is"
                 if (guard_type == StatementRegister.Atomic.UNDEFINED)
                 {
                     AddUpdated(st, st);
@@ -46,10 +47,18 @@ namespace Tacny
                 }
 
                 err = CallGuard(guard_type, out res);
+                // todo analyse else
+                // todo execute bodies
+                
             }
-            else if (while_stmt != null) { }
+            else if (while_stmt != null) { 
+            // todo
+            }
             else
                 return FormatError("Internal error unexpected Statement type: " + st.GetType());
+
+
+            
             return null;
         }
 
@@ -83,6 +92,16 @@ namespace Tacny
                 default:
                     throw new cce.UnreachableException();
             }
+
+
+
+
+
+
+
+
+
+
             return err;
         }
 
