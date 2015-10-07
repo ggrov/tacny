@@ -80,18 +80,19 @@ lemma AsimpConst(a: aexp, s: state)
   ensures aval(asimp_const(a), s) == aval(a, s)
 {
   // by induction
+  /* 
   forall a' | a' < a {
     AsimpConst(a', s);  // this invokes the induction hypothesis for every a' that is structurally smaller than a
-  }
+  } */
 /*  Here is an alternative proof.  In the first two cases, the proof is trivial.  The Plus case uses two invocations
-    of the induction hypothesis.
+    of the induction hypothesis. */
   match a
   case N(n) =>
   case V(x) =>
   case Plus(a0, a1) =>
     AsimpConst(a0, s);
     AsimpConst(a1, s);
-*/
+
 }
 
 // more constant folding
