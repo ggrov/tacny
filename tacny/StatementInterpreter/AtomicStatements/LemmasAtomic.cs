@@ -39,7 +39,7 @@ namespace Tacny
                     lemmas.Add(lem);
                 
             }
-
+            IncTotalBranchCount();
             AddLocal(lv, lemmas);
             solution_list.Add(new Solution(this.Copy()));
             return null;

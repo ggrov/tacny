@@ -43,6 +43,11 @@ namespace Tacny
                 if (stmt.Equals(localContext.tac_call))
                     break;
             }
+
+            if (globalContext.temp_variables.Count > 0)
+
+                locals.AddRange(globalContext.temp_variables.Values.ToList());
+            IncTotalBranchCount();
             AddLocal(lv, locals);
             solution_list.Add(new Solution(this.Copy()));
 

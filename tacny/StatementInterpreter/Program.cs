@@ -12,6 +12,7 @@ namespace Tacny
 {
     public class Program
     {
+        const bool DEBUG = false;
         private IList<string> fileNames;
         private string _programId;
         public string programId
@@ -46,6 +47,7 @@ namespace Tacny
         public readonly Dictionary<string, Tactic> tactics;
         public readonly Dictionary<string, MemberDecl> members;
         public readonly List<DatatypeDecl> globals;
+        private Util.Printer printer;
 
         public Program(IList<string> fileNames, string programId, string programName = null)
         {
@@ -138,7 +140,6 @@ namespace Tacny
         {
             Dafny.Resolver r = new Dafny.Resolver(program);
             r.ResolveProgram(program);
-
             if (r.ErrorCount != 0)
                 return string.Format("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
             return null;
@@ -484,8 +485,9 @@ namespace Tacny
                     return ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo =>
                     {
                         //errorInfo.BoogieErrorCode = null;
-                        this.errorInfo = errorInfo;
-                        Console.WriteLine(errorInfo.FullMsg);
+                        if (this.errorInfo == null)
+                            this.errorInfo = errorInfo;
+                        //Console.WriteLine(errorInfo.FullMsg);
                         //errorListHolder.AddError(new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1, ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(), System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename), errorInfo.ImplementationName, requestId);
                         //foreach (var aux in errorInfo.Aux)
                         //{
@@ -631,7 +633,8 @@ namespace Tacny
         {
             foreach (var filename in fileNames)
             {
-                MaybePrintProgram(filename.Substring(0, filename.LastIndexOf(".")) + ".tacny.dfy");
+                printer = new Util.Printer(new System.IO.StreamWriter(filename.Substring(0, filename.LastIndexOf(".")) + ".tacny.dfy"), DafnyOptions.O.PrintMode);
+                printer.PrintProgram(dafnyProgram);
             }
         }
 
@@ -646,6 +649,9 @@ namespace Tacny
         /// <param name="filename"></param>
         public void MaybePrintProgram(Dafny.Program prog, string filename)
         {
+            // if program is not in debug mode disable console printing
+            if (!DEBUG && filename == "-")
+                return;
             TextWriter tw = null;
             if (filename == null)
                 tw = System.Console.Out;
@@ -654,7 +660,16 @@ namespace Tacny
                 if (filename == "-")
                     tw = System.Console.Out;
                 else
-                    tw = new System.IO.StreamWriter(filename);
+                {
+                    try
+                    {
+                        tw = new System.IO.StreamWriter(filename);
+                    }
+                    catch (IOException)
+                    {
+
+                    }
+                }
             }
             PrintProgram(tw, prog, DafnyOptions.O.PrintMode);
         }
@@ -662,9 +677,16 @@ namespace Tacny
 
         private void PrintProgram(TextWriter tw, Dafny.Program prog, DafnyOptions.PrintModes printMode = DafnyOptions.PrintModes.Everything)
         {
-            Printer pr = new Printer(tw, DafnyOptions.O.PrintMode);
-            pr.PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, Path.GetFullPath(prog.FullName));
-            tw.Flush();
+            if (printer == null)
+                printer = new Util.Printer(tw, DafnyOptions.O.PrintMode);
+            printer.PrintProgram(prog);
+        }
+
+        public void PrintDebugMessage(string message, params object[] args)
+        {
+            printer = new Util.Printer(new System.IO.StreamWriter(fileNames[0] + "_debug.dat"), DafnyOptions.O.PrintMode);
+            
+            printer.PrintDebugMessage(message, args);
         }
     }
 }

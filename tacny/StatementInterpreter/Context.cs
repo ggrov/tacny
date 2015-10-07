@@ -58,7 +58,7 @@ namespace Tacny
             this.local_variables = lv_keys.ToDictionary(x => x, x => lv_values[lv_keys.IndexOf(x)]);
 
             List<Statement> us_keys = new List<Statement>(updated_statements.Keys);
-            List<Statement> us_values = new List<Statement>(updated_statements.Values);
+            List<Statement> us_values = Util.Copy.CopyStatementList(new List<Statement>(updated_statements.Values));
             this.updated_statements = us_keys.ToDictionary(x => x, x => us_values[us_keys.IndexOf(x)]);
             this.tacCounter = tacCounter;
             if (old_target != null)
@@ -158,7 +158,7 @@ namespace Tacny
 
         public void IncCounter()
         {
-            if (tacCounter < tac.Body.Body.Count)
+            if (tacCounter < tac_body.Count)
                 tacCounter++;
             else
                 throw new ArgumentOutOfRangeException("Tactic counter exceeded tactic body length");
@@ -176,10 +176,18 @@ namespace Tacny
 
         public Statement GetCurrentStatement()
         {
-            if (tacCounter >= tac.Body.Body.Count)
+            if (tacCounter >= tac_body.Count)
                 return null;
-            return this.tac.Body.Body[tacCounter];
+            return tac_body[tacCounter];
         }
+
+        public Statement GetNextStatement()
+        {
+            if (tacCounter + 1 >= tac_body.Count)
+                return null;
+            return tac_body[tacCounter+1];
+        }
+
 
         public bool IsResolved()
         {
@@ -233,7 +241,8 @@ namespace Tacny
         public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
         public List<Statement> resolved = new List<Statement>();
         public Method new_target = null;
-
+        public int total_branch_count = 0;
+        public int bad_branch_count = 0;
         public Program program;
 
 
@@ -267,18 +276,55 @@ namespace Tacny
             }
         }
 
+        public void ClearGlobalVariables()
+        {
+            global_variables.Clear();
+        }
+
+        public bool HasGlobalVariable(string name)
+        {
+            return global_variables.ContainsKey(name);
+        }
+
+        public IVariable GetGlobalVariable(string name)
+        {
+            if (HasGlobalVariable(name))
+                return global_variables[name];
+            return null;
+        }
+
         public void RegisterTempVariable(IVariable var)
         {
-            if (!global_variables.ContainsKey(var.Name))
-                global_variables.Add(var.Name, var);
+            if (!temp_variables.ContainsKey(var.Name))
+                temp_variables.Add(var.Name, var);
             else
-                global_variables[var.Name] = var;
+                temp_variables[var.Name] = var;
         }
 
         public void RemoveTempVariable(IVariable var)
         {
-            if (global_variables.ContainsKey(var.Name))
-                global_variables.Remove(var.Name);
+            if (temp_variables.ContainsKey(var.Name))
+                temp_variables.Remove(var.Name);
+        }
+
+        public void IncTotalBranchCount(int count)
+        {
+            total_branch_count += count;
+        }
+
+        public int GetTotalBranchCount()
+        {
+            return total_branch_count;
+        }
+
+        public void IncBadBranchCount(int count)
+        {
+           bad_branch_count += count;
+        }
+
+        public int GetBadBranchCount()
+        {
+            return bad_branch_count;
         }
     }
     #endregion

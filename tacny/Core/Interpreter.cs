@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
@@ -79,6 +80,8 @@ namespace Tacny
     public class Interpreter : ResolutionErrorReporter
     {
         private Program tacnyProgram;
+        private int start;
+        private int end;
 
         private SolutionList solution_list = new SolutionList();
 
@@ -87,6 +90,7 @@ namespace Tacny
             Contract.Requires(tacnyProgram != null);
             this.tacnyProgram = tacnyProgram;
             this.solution_list = new SolutionList();
+            start = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
         }
 
         public string ResolveProgram()
@@ -145,7 +149,7 @@ namespace Tacny
                     solution.GenerateProgram(ref program);
 
                     tacnyProgram.ClearBody(solution.state.globalContext.md);
-                    
+
                     err = tacnyProgram.VerifyProgram();
                     if (err != null)
                         Warning(tacnyProgram.programId, err);
@@ -164,12 +168,18 @@ namespace Tacny
             program = tacnyProgram.ParseProgram();
             foreach (var solution in final)
                 solution.GenerateProgram(ref program);
-
             err = tacnyProgram.VerifyProgram();
-            tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
+            end = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            if (final.Count > 0)
+            {
+                tacnyProgram.PrintDebugMessage("Execution time {0}s\nTotal branch count {1} branches\nInvalid branch count {2} branches", 
+                    end - start, 
+                    final[0].state.GetTotalBranchCount(), 
+                    final[0].state.GetBadBranchCount());
+            }
             if (err != null)
                 return err;
-            
+
 
 
             return null;

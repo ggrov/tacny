@@ -48,6 +48,7 @@ namespace Tacny
             invariant = new MaybeFreeExpression(formula);
 
             AddLocal(lv, invariant);
+            IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
             return null;
         }
@@ -98,7 +99,7 @@ namespace Tacny
             invar = new List<MaybeFreeExpression>(invar_arr);
             invar.Add(invariant);
             nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, invar, ws.Decreases, ws.Mod, ws.Body);
-
+            IncTotalBranchCount();
             AddUpdated(ws, nws);
 
             solution_list.Add(new Solution(this.Copy()));

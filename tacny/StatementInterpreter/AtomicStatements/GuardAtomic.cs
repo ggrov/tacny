@@ -39,7 +39,7 @@ namespace Tacny
             guard = ws.Guard;
 
             AddLocal(lv, guard);
-
+            IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
             return null;
         }

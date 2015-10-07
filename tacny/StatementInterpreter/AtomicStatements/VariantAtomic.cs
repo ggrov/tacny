@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.Dafny;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -64,6 +63,7 @@ namespace Tacny
 
             // register new method
             this.localContext.new_target = result;
+            IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
             return null;
         }

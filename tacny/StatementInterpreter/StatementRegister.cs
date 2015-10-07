@@ -30,6 +30,8 @@ namespace Tacny
             VARIABLES,
             PARAMS,
             SUCH_THAT,
+            LEMMAS,
+            MERGE_LISTS,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -42,7 +44,7 @@ namespace Tacny
             {"is_valid", Atomic.IS_VALID},
             {"cases", Atomic.ADD_MATCH},
             {"addif", Atomic.ADD_IF},
-            {"tryall", Atomic.TRY_ALL},
+            {"perm", Atomic.TRY_ALL},
             {"||", Atomic.OR},
             {"id", Atomic.ID},
             {"fail", Atomic.FAIL},
@@ -50,6 +52,8 @@ namespace Tacny
             {"variables", Atomic.VARIABLES},
             {"params", Atomic.PARAMS},
             {":|", Atomic.SUCH_THAT},
+            {"lemmas", Atomic.LEMMAS},
+            {"merge", Atomic.MERGE_LISTS}
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -61,7 +65,7 @@ namespace Tacny
             {Atomic.ADD_MATCH, typeof(MatchAtomic)},
             {Atomic.REPLACE_OP, typeof(OperatorAtomic)},
             {Atomic.EXTRACT_GUARD, typeof(GuardAtomic)},
-            {Atomic.TRY_ALL, typeof(TryAllAtomic)},
+            {Atomic.TRY_ALL, typeof(PermAtomic)},
             {Atomic.OR, typeof(OrAtomic)},
             {Atomic.COMPOSITION, typeof(CompositionAtomic)},
             {Atomic.ID, typeof(IdAtomic)},
@@ -70,6 +74,8 @@ namespace Tacny
             {Atomic.VARIABLES, typeof(VariablesAtomic)},
             {Atomic.PARAMS, typeof(ParamsAtomic)},
             {Atomic.SUCH_THAT, typeof(SuchThatAtomic)},
+            {Atomic.LEMMAS, typeof(LemmasAtomic)},
+            {Atomic.MERGE_LISTS, typeof(MergeAtomic)},
         };
 
         /// <summary>

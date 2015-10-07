@@ -1,7 +1,10 @@
-﻿using System;
+﻿#define DEBUG
+
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
@@ -13,10 +16,8 @@ namespace Tacny
     {
 
         enum ExitValue { VERIFIED = 0, PREPROCESSING_ERROR, DAFNY_ERROR, NOT_VERIFIED }
-        static OutputPrinter printer; // console printer
-        // debug 
-        const bool DEBUG = true;
-        const string PROG_ID = "main_program_id";
+        static OutputPrinter printer; // console 
+            const string PROG_ID = "main_program_id";
 
         /// <summary>
         /// Main method
@@ -30,11 +31,12 @@ namespace Tacny
             var thread = new System.Threading.Thread(
                 new System.Threading.ThreadStart(() =>  
                 { ret = ThreadMain(args); }),
-                 0x10000000); // 256MB stack size to prevent stack
-
+            
+                0x10000000); // 256MB stack size to prevent stack
+            
             thread.Start();
             thread.Join();
-
+            
             return ret;
         }
 
@@ -45,6 +47,8 @@ namespace Tacny
         /// <returns></returns>
         public static int ThreadMain(string[] args)
         {
+            // measure execution time
+           
             Contract.Requires(tcce.NonNullElements(args));
 
             printer = new TacnyConsolePrinter();
@@ -55,8 +59,10 @@ namespace Tacny
             TacnyOptions.Install(new TacnyOptions()); // prep Dafny/Boogie
 
             CommandLineOptions.Clo.RunningBoogieFromCommandLine = true;
-            if (DEBUG)
-                CommandLineOptions.Clo.Wait = true;
+            #if DEBUG
+            CommandLineOptions.Clo.Wait = true;
+            #endif
+                
 
             // parse the file
             if (!CommandLineOptions.Clo.Parse(args))

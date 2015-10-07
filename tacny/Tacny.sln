@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TacnyMain", "Core\TacnyMain
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatementInterpreter", "StatementInterpreter\StatementInterpreter.csproj", "{D68D70F0-BD07-4176-B3DE-0B00612F84F7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Util", "Util\Util.csproj", "{15D5AE0C-9692-417F-B5C0-CEB12B79E785}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +30,10 @@ Global
 		{D68D70F0-BD07-4176-B3DE-0B00612F84F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D68D70F0-BD07-4176-B3DE-0B00612F84F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D68D70F0-BD07-4176-B3DE-0B00612F84F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15D5AE0C-9692-417F-B5C0-CEB12B79E785}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15D5AE0C-9692-417F-B5C0-CEB12B79E785}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15D5AE0C-9692-417F-B5C0-CEB12B79E785}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15D5AE0C-9692-417F-B5C0-CEB12B79E785}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

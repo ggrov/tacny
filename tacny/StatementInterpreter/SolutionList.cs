@@ -42,7 +42,7 @@ namespace Tacny
 
         public void AddFinal(List<Solution> solutions)
         {
-            final.Add(solutions);
+            final.Add(new List<Solution>(solutions.ToArray()));
         }
 
         public bool IsFinal()
@@ -107,7 +107,7 @@ namespace Tacny
             List<Dafny.Program> prog_list = new List<Dafny.Program>();
             Atomic ac = state.Copy();
             ac.Fin();
-            method = Program.FindMember(prog, ac.globalContext.md.Name) as Method;
+            method = Program.FindMember(prog, ac.localContext.md.Name) as Method;
             if (method == null)
                 throw new Exception("Method not found");
             UpdateStmt tac_call = ac.GetTacticCall();

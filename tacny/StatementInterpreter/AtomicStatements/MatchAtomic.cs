@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
-
+using System;
+using System.Threading;
 // todo cases multiple tac calls, cases within cases, tac calls from cases etc.
 // update 
 
@@ -11,6 +13,9 @@ namespace Tacny
 {
     class MatchAtomic : Atomic, IAtomicStmt
     {
+
+        private Token oldToken = null;
+
         public override string FormatError(string error)
         {
             return "ERROR cases: " + error;
@@ -24,7 +29,6 @@ namespace Tacny
             return err;
         }
 
-        private Token oldToken = null;
         /*
          * A matchStatement error token will always be a case tok 
          * we find the first failing cases block and return the index 
@@ -37,16 +41,42 @@ namespace Tacny
 
             return -1;
         }
-        /**
-         * Check whether the error token has been updated
-         **/
-        public bool AnalyseError(Token errorToken)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="errorToken"></param>
+        /// <param name="ms"></param>
+        /// <param name="ctor"></param>
+        /// <returns></returns>
+        public bool ErrorChanged(Token errorToken, MatchStmt ms, int ctor)
         {
+            // check if error has been generated
             if (oldToken == null || errorToken == null)
-                return false;
-            if (errorToken.val == oldToken.val && errorToken.line == oldToken.line)
                 return true;
-            return false;
+
+            /**
+             * 
+             * Check if the error originates in the current cases statement
+             */
+            if (oldToken.line <= ms.Cases[ctor].tok.line + ms.Cases[ctor].Body.Count || errorToken.line == ms.Cases[ctor].tok.line)
+            {
+                // if the error occurs in the last cases element
+                if (ctor + 1 == ms.Cases.Count)
+                {
+                    // check if the error resides anywhere in the last case body
+                    if (errorToken.line > oldToken.line && errorToken.line <= (ms.Cases[ctor].tok.line + ms.Cases[ctor].Body.Count))
+                        return true;
+                    return false;
+                }
+                else
+                {
+                    if (errorToken.line > oldToken.line && errorToken.line <= ms.Cases[ctor + 1].tok.line)
+                        return true;
+                    return false;
+                }
+            }
+            // the error must have changed
+            return true;
         }
 
         public string GenerateMatch(TacnyCasesBlockStmt st, ref List<Solution> solution_list)
@@ -54,15 +84,15 @@ namespace Tacny
             DatatypeDecl datatype = null;
             Solution solution;
             Dafny.Program dprog;
-            List<Solution> result;
+            List<Solution> result = null;
             MatchStmt ms = null;
             ParensExpression guard;
             NameSegment ns;
             string datatype_name;
             string err;
-            int bodyIndex = 0;
             bool[] ctorFlags; //localContext.ctorFlags; // used to keep track of which cases statements require a body
-            bool[] solFlags;
+            int ctor = 0; // current active match case
+            List<Solution> ctor_bodies;
             guard = st.Guard as ParensExpression;
 
             if (guard == null)
@@ -78,110 +108,119 @@ namespace Tacny
                 return FormatError("argument " + ns.Name + " is not declared");
 
             datatype_name = formal.Type.ToString();
+            /**
+             * TODO cleanup
+             * if datatype is Element lookup the formal in global variable registry
+             */
+
+            if (datatype_name == "Element")
+            {
+                if (globalContext.HasGlobalVariable(formal.Name))
+                {
+                    IVariable original_decl = globalContext.GetGlobalVariable(formal.Name);
+                    if (original_decl != null)
+                        datatype_name = original_decl.Type.ToString();
+                    else
+                        return String.Format("match: Argument {0} is not declared", formal.Name);
+                }
+            }
+            else
+                return String.Format("match: Argument {0} is undefined", formal.Name);
+
 
             if (!globalContext.ContainsGlobalKey(datatype_name))
-                return FormatError("global datatype " + ns.Name + " is not defined");
+                return String.Format("cases: datatype {0} is undefined", datatype_name);
             ns = localContext.GetLocalValueByName(formal) as NameSegment;
 
             datatype = globalContext.GetGlobal(datatype_name);
             InitCtorFlags(datatype, out ctorFlags);
-
-            RegisterLocals(datatype);
-            err = ResolveBody(st.Body, out result);
-
-            solFlags = new bool[result.Count];
-            InitSolFlags(solFlags);
+            ctor_bodies = RepeatedDefault<Solution>(4);
 
             dprog = program.ParseProgram();
-            while (program.HasError())
+            while (true)
             {
-
-                // if the error token has not changed since last iteration
-                // break
-                if (AnalyseError(program.GetErrorToken()))
+                if (ctor >= datatype.Ctors.Count)
                     break;
-                this.oldToken = program.GetErrorToken();
-                if (oldToken != null)
-                {
-                    int index = GetErrorIndex(oldToken, ms);
-                    // the verification error is not caused by the match stmt
-                    if (index == -1)
-                        break;
-                    ctorFlags[index] = true;
-                }
-
+                RegisterLocals(datatype, ctor);
+                err = ResolveBody(st.Body, out result);
+                if (err != null)
+                    return err;
                 for (int i = 0; i < result.Count; i++)
                 {
-                    if (!solFlags[i])
-                        continue;
-                    var sol = result[i];
-                    GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, sol.state.localContext.GetAllUpdated(), out ms, ctorFlags);
+                    ctor_bodies[ctor] = result[i];
+                    GenerateMatchStmt(st.Tok.line, new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, ctor_bodies, out ms, ctorFlags);
                     Atomic ac = this.Copy();
                     ac.AddUpdated(ms, ms);
                     solution = new Solution(ac, true, null);
                     dprog = program.ParseProgram();
                     solution.GenerateProgram(ref dprog);
-                    //program.MaybePrintProgram(dprog, null);
                     program.ClearBody(localContext.md);
                     err = program.ResolveProgram();
-                    // skip the slution if resolution failed
+                    // skip the solution if resolution failed    
                     if (err != null)
                     {
-                        solFlags[i] = false;
+                        IncBadBranchCount();
                         continue;
                     }
                     program.VerifyProgram();
                     if (!program.HasError())
+                        break;                    
+                    //program.MaybePrintProgram(dprog, null);
+                    // check if error index has changed
+                    if (CheckError(ms, ref ctorFlags, ctor))
+                    {
+
+                        // if the ctor does not require a body null the value
+                        if (!ctorFlags[ctor])
+                            ctor_bodies[ctor] = null;
                         break;
-                    program.MaybePrintProgram(dprog, null);
-                    // last successfuly resolved (but not necesary valid) resolved body index
-                    bodyIndex = i;
+                    }
+                    IncBadBranchCount();
                 }
-                err = ResolveBody(st.Body, out result);
-                //sanity check if all flags have been set to false, a correct body does not exist
-                if (!ValidateSolFlags(solFlags))
-                    return FormatError("Could not generate a valid match body");
+                RemoveLocals(datatype, ctor);
+                ctor++;
+                //err = ResolveBody(st.Body, out result);
+
 
             }
 
             /*
              * HACK Recreate the match block as the old one was modified by the resolver
              */
-            GenerateMatchStmt(new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, result[bodyIndex].state.localContext.GetAllUpdated(), out ms, ctorFlags);
+            GenerateMatchStmt(st.Tok.line, new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, ctor_bodies, out ms, ctorFlags);
             AddUpdated(ms, ms);
-            solution = new Solution(this.Copy(), true, null);
+            IncTotalBranchCount();
 
-            solution_list.Add(solution);
-            RemoveLocals(datatype);
+            solution_list.Add(new Solution(this.Copy(), true, null));
             return null;
         }
 
-        private string GenerateMatchStmt(NameSegment ns, DatatypeDecl datatype, List<Statement> body, out MatchStmt result, bool[] flags)
+        private string GenerateMatchStmt(int index, NameSegment ns, DatatypeDecl datatype, List<Solution> body, out MatchStmt result, bool[] flags)
         {
             Contract.Requires(ns != null);
             Contract.Requires(datatype != null);
             string err;
             List<MatchCaseStmt> cases = new List<MatchCaseStmt>();
             result = null;
-            UpdateStmt tac_call = GetTacticCall();
-            int line = tac_call.Tok.line + 1;
+            int line = index + 1;
             int i = 0;
             foreach (DatatypeCtor dc in datatype.Ctors)
             {
                 MatchCaseStmt mcs;
-                err = GenerateMatchCaseStmt(line, dc, body, out  mcs, flags[i]);
+                err = GenerateMatchCaseStmt(line, dc, body[i], out  mcs, flags[i]);
                 if (err != null)
                     return err;
                 cases.Add(mcs);
+                line += mcs.Body.Count + 1;
                 i++;
             }
 
-            result = new MatchStmt(CreateToken("match", tac_call.Tok.line, tac_call.Tok.col), CreateToken("=>", tac_call.Tok.line, 0), ns, cases, false);
+            result = new MatchStmt(CreateToken("match", index, 0), CreateToken("=>", index, 0), ns, cases, false);
 
             return null;
         }
 
-        private string GenerateMatchCaseStmt(int line, DatatypeCtor dtc, List<Statement> body, out MatchCaseStmt mcs, bool genBody)
+        private string GenerateMatchCaseStmt(int line, DatatypeCtor dtc, Solution solution, out MatchCaseStmt mcs, bool genBody)
         {
             Contract.Requires(dtc != null);
             List<CasePattern> casePatterns = new List<CasePattern>();
@@ -190,12 +229,20 @@ namespace Tacny
             foreach (Dafny.Formal formal in dtc.Formals)
             {
                 CasePattern cp;
-                GenerateCasePattern(line++, formal, out cp);
+                GenerateCasePattern(line, formal, out cp);
                 casePatterns.Add(cp);
             }
 
             if (genBody)
+            {
+                List<Statement> body = new List<Statement>();
+                if (solution != null)
+                {
+                    Atomic ac = solution.state.Copy();
+                    body = ac.GetAllUpdated();
+                }
                 mcs = new MatchCaseStmt(CreateToken("cases", line, 0), dtc.CompileName, casePatterns, body);
+            }
             else
                 mcs = new MatchCaseStmt(CreateToken("cases", line, 0), dtc.CompileName, casePatterns, new List<Statement>());
 
@@ -230,32 +277,86 @@ namespace Tacny
         {
             for (int i = 0; i < flags.Length; i++)
             {
-                if(flags[i])
+                if (flags[i])
                     return true;
             }
             return false;
         }
 
-        private void RegisterLocals(DatatypeDecl datatype)
+        private void RegisterLocals(List<Dafny.Formal> formals)
         {
+            foreach (var formal in formals)
+                globalContext.RegisterTempVariable(formal);
+        }
+
+        private void RegisterLocals(DatatypeDecl datatype, int index)
+        {
+            int i = 0;
             foreach (var ctor in datatype.Ctors)
             {
-                foreach (var formal in ctor.Formals)
+                if (i == index)
                 {
-                    globalContext.RegisterTempVariable(formal);
+
+                    foreach (var formal in ctor.Formals)
+                    {
+                        // register globals as name segments
+                        globalContext.RegisterTempVariable(new Dafny.LocalVariable(formal.tok, formal.tok, formal.Name, new InferredTypeProxy(), formal.IsGhost));
+                    }
                 }
+                i++;
             }
         }
 
-        public void RemoveLocals(DatatypeDecl datatype)
+        private void RemoveLocals(DatatypeDecl datatype, int index)
         {
+            int i = 0;
             foreach (var ctor in datatype.Ctors)
             {
-                foreach (var formal in ctor.Formals)
+                if (i == index)
                 {
-                    globalContext.RemoveTempVariable(formal);
+                    foreach (var formal in ctor.Formals)
+                    {
+                        globalContext.RemoveTempVariable(formal);
+                    }
                 }
+                i++;
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private bool CheckError(MatchStmt ms, ref bool[] ctorFlags, int ctor)
+        {
+            // if the error token has not changed since last iteration
+            if (!ErrorChanged(program.GetErrorToken(), ms, ctor))
+                return false;
+
+            this.oldToken = program.GetErrorToken();
+            if (oldToken != null)
+            {
+                int index = GetErrorIndex(oldToken, ms);
+                // the verification error is not caused by the match stmt
+                if (index == -1)
+                    return false;
+                ctorFlags[index] = true;
+                return true;
+            }
+            return false;
+        }
+
+        public static List<T> RepeatedDefault<T>(int count)
+        {
+            return Repeated(default(T), count);
+        }
+
+
+        public static List<T> Repeated<T>(T value, int count)
+        {
+            List<T> ret = new List<T>(count);
+            ret.AddRange(Enumerable.Repeat(value, count));
+            return ret;
         }
     }
 }

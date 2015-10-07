@@ -18,7 +18,6 @@ namespace Tacny
 
         //public Solution solution;
         public Program program;
-
         public readonly GlobalContext globalContext;
         public LocalContext localContext;
 
@@ -86,18 +85,25 @@ namespace Tacny
             }
             else
             {
-                res = new List<Solution>(result.plist.ToArray());
+                res = new List<Solution>();
                 // update local and global contexts for each state
-                foreach (var sol in res)
+                foreach (var sol in result.plist)
                 {
                     MemberDecl target = sol.state.localContext.new_target == null ? md : sol.state.localContext.new_target;
-                    sol.state.localContext = new LocalContext(target, tac, tac_call);
-                    sol.state.globalContext.tac_call = tac_call;
-                    sol.state.globalContext.md = target;
+                    GlobalContext gc = sol.state.globalContext;
+                    gc.tac_call = tac_call;
+                    gc.md = target;
+                    // clean up old globals
+                    gc.ClearGlobalVariables();
+                    // register new globals
+                    gc.RegsiterGlobalVariables(variables);
+
+                    Atomic ac = new Atomic(target, tac, tac_call, gc);
+                    res.Add(new Solution(ac));
                 }
                 err = ResolveTactic(ref res);
             }
-            
+
 
             result.AddRange(res);
             return err;
@@ -197,21 +203,56 @@ namespace Tacny
             return err;
         }
 
-        protected string ResolveBody(BlockStmt bs, out List<Solution> solution_list)
+        protected string ResolveBody(BlockStmt body, out List<Solution> result)
         {
-            Contract.Requires(bs != null);
             string err;
-            solution_list = new List<Solution>();
-
-            foreach (var stmt in bs.Body)
+            Atomic atomic = this.Copy();
+            atomic.localContext.tac_body = body.Body;
+            result = new List<Solution>() { new Solution(atomic) };
+            //int bodyCounter = 0;
+            while (true)
             {
-                err = this.CallAction(stmt, ref solution_list);
-                if (err != null)
-                    return err;
-            }
+                //if (bodyCounter >= body.Body.Count)
+                //    break;
+                List<Solution> res = new List<Solution>();
+                foreach (var solution in result)
+                {
+                    Statement nextStmt = solution.state.localContext.GetCurrentStatement();
+                    if (nextStmt == null)
+                        break;
+                    err = solution.state.CallAction(nextStmt, ref res);
+                    if (err != null)
+                        return err;
+                }
 
+                if (res.Count == 0)
+                    break;
+                // update the body counters
+                foreach (var sol in res)
+                    sol.state.localContext.IncCounter();
+               
+                result.Clear();
+                result.AddRange(res);
+                //bodyCounter++;
+            }
             return null;
         }
+
+        //protected string ResolveBody(BlockStmt bs, out List<Solution> solution_list)
+        //{
+        //    Contract.Requires(bs != null);
+        //    string err;
+        //    solution_list = new List<Solution>();
+
+        //    foreach (var stmt in bs.Body)
+        //    {
+        //        err = this.CallAction(stmt, ref solution_list);
+        //        if (err != null)
+        //            return err;
+        //    }
+
+        //    return null;
+        //}
 
         protected string CallAction(object call, ref List<Solution> solution_list)
         {
@@ -226,7 +267,7 @@ namespace Tacny
                 if (aps != null)
                 {
                     type = StatementRegister.GetStatementType(StatementRegister.GetAtomicType(aps.Lhs.tok.val));
-                    st = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps)});
+                    st = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
                 }
 
                 else
@@ -267,7 +308,7 @@ namespace Tacny
                             solution_list.Add(new Solution(action));
                         }
                         return null;
-                    } 
+                    }
                 }
 
 
@@ -513,9 +554,34 @@ namespace Tacny
             return localContext.GetUpdated(key);
         }
 
+        public List<Statement> GetAllUpdated()
+        {
+            return localContext.GetAllUpdated();
+        }
+
         public Dictionary<Statement, Statement> GetResult()
         {
             return localContext.updated_statements;
+        }
+
+        public void IncTotalBranchCount(int count = 1)
+        {
+            globalContext.IncTotalBranchCount(count);
+        }
+
+        public int GetTotalBranchCount()
+        {
+            return globalContext.GetTotalBranchCount();
+        }
+
+        public void IncBadBranchCount(int count = 1)
+        {
+            globalContext.IncBadBranchCount(count);
+        }
+
+        public int GetBadBranchCount()
+        {
+            return globalContext.GetBadBranchCount();
         }
     }
 }

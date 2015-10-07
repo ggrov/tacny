@@ -60,10 +60,12 @@ namespace Tacny
             if (exp_list.Count == 0)
                 exp_list.Add(formula);
 
+            IncTotalBranchCount(exp_list.Count);
             // smells like unnecessary branching if no replacement happened.
             for (int i = 0; i < exp_list.Count; i++)
             {
                 AddLocal(lv, exp_list[i]);
+                
                 solution_list.Add(new Solution(this.Copy()));
             }
 

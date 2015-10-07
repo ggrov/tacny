@@ -106,6 +106,7 @@
     <Compile Include="AtomicStatements\FailAtomic.cs" />
     <Compile Include="AtomicStatements\IdAtomic.cs" />
     <Compile Include="AtomicStatements\LemmasAtomic.cs" />
+    <Compile Include="AtomicStatements\MergeAtomic.cs" />
     <Compile Include="AtomicStatements\OrAtomic.cs" />
     <Compile Include="AtomicStatements\ParamsAtomic.cs" />
     <Compile Include="AtomicStatements\SuchThatAtomic.cs" />
@@ -125,7 +126,7 @@
     <Compile Include="AtomicStatements\SingletonAtomic.cs" />
     <Compile Include="SolutionList.cs" />
     <Compile Include="ExpressionTree.cs" />
-    <Compile Include="AtomicStatements\TryAllAtomic.cs" />
+    <Compile Include="AtomicStatements\PermAtomic.cs" />
     <Compile Include="tcce.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +134,12 @@
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Util\Util.csproj">
+      <Project>{15d5ae0c-9692-417f-b5c0-ceb12b79e785}</Project>
+      <Name>Util</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

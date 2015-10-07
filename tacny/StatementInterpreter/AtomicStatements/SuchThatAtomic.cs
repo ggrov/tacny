@@ -51,7 +51,7 @@ namespace Tacny
             if(!lhs_declaration.Name.Equals(declaration.Name))
                 return String.Format("Declared variable and variable after :| don't match. Expected {0} Received {1}", declaration.Name, lhs_declaration.Name);
 
-            object value;
+            object value = null;
             /* HACK
              * object value will be either a list<T> but T is unkown.
              * Or it will be a NameSegment
@@ -63,6 +63,7 @@ namespace Tacny
             // sanity check so we wouldn't iterate a non enumerable
             if (dynamic_val is IEnumerable)
             {
+                IncTotalBranchCount(dynamic_val.Count);
                 foreach (var item in dynamic_val)
                 {
                     AddLocal(declaration, item);

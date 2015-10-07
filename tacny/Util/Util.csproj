@@ -4,26 +4,24 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6F761865-501E-4F68-9F6F-5DFE4923CCA3}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{15D5AE0C-9692-417F-B5C0-CEB12B79E785}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TacnyDriver</RootNamespace>
-    <AssemblyName>TacnyDriver</AssemblyName>
+    <RootNamespace>Util</RootNamespace>
+    <AssemblyName>Util</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\Binaries\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;#define DEBUG</DefineConstants>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -41,18 +39,13 @@
     <Reference Include="Boogie">
       <HintPath>..\..\boogie\Binaries\Boogie.exe</HintPath>
     </Reference>
-    <Reference Include="Concurrency">
-      <HintPath>..\..\..\boogie\Binaries\Concurrency.dll</HintPath>
-    </Reference>
     <Reference Include="Core">
       <HintPath>..\..\boogie\Binaries\Core.dll</HintPath>
     </Reference>
-    <Reference Include="Dafny, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Dafny">
       <HintPath>..\..\dafny\Binaries\Dafny.exe</HintPath>
     </Reference>
-    <Reference Include="DafnyPipeline, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="DafnyPipeline">
       <HintPath>..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
     </Reference>
     <Reference Include="ExecutionEngine">
@@ -61,9 +54,6 @@
     <Reference Include="ParserHelper">
       <HintPath>..\..\boogie\Binaries\ParserHelper.dll</HintPath>
     </Reference>
-    <Reference Include="Provers.SMTLib">
-      <HintPath>..\..\..\boogie\Binaries\Provers.SMTLib.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -71,30 +61,14 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="VCExpr">
-      <HintPath>..\..\..\boogie\Binaries\VCExpr.dll</HintPath>
-    </Reference>
-    <Reference Include="VCGeneration">
-      <HintPath>..\..\..\boogie\Binaries\VCGeneration.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TacnyDriver.cs" />
+    <Compile Include="Copy.cs" />
+    <Compile Include="Printer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Core\TacnyMain.csproj">
-      <Project>{5c725137-5006-44d6-aee3-7e11aa446897}</Project>
-      <Name>TacnyMain</Name>
-      <Aliases>global</Aliases>
-    </ProjectReference>
-    <ProjectReference Include="..\StatementInterpreter\StatementInterpreter.csproj">
-      <Project>{d68d70f0-bd07-4176-b3de-0b00612f84f7}</Project>
-      <Name>StatementInterpreter</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -25,7 +25,6 @@ namespace Tacny
         private string Branch(Statement st, ref List<Solution> solution_list)
         {
             OrStmt os;
-            string err;
             os = st as OrStmt;
             Tactic tac = localContext.tac;
             int index = localContext.GetCounter();
@@ -111,7 +110,7 @@ namespace Tacny
             // so the interpreter would execute newly inserted atomic
             if(decCounter)
                 newAtomic.localContext.DecCounter();
-
+            IncTotalBranchCount();
             return new Solution(newAtomic);
         }
     }

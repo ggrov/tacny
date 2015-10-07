@@ -41,7 +41,7 @@ namespace Tacny
             input.AddRange(source.Ins);
 
             AddLocal(lv, input);
-
+            IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
             return null;
         }

@@ -5,7 +5,6 @@ using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
 using Bpl = Microsoft.Boogie;
-using Tacny;
 
 namespace Tacny
 {

@@ -67,6 +67,7 @@ namespace Tacny
             // branch
             if (exp_list.Count > 0)
             {
+                IncTotalBranchCount(exp_list.Count);
                 for (int i = 0; i < exp_list.Count; i++)
                 {
                     AddLocal(lv, exp_list[i]);
