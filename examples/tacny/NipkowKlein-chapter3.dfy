@@ -199,11 +199,11 @@ lemma BsimpCorrect(b: bexp, s: state)
     AsimpCorrect(a0, s); AsimpCorrect(a1, s);
 }
 
-tactic mytac(){
+tactic mytac(b : Element){
   cases(b){
-     var b := locals() + params();
-	 var v :| l elem lemmas();
-	 perm(v,b);perm(v,b);
+    var v := merge(variables(), params());
+    var l :| l in lemmas();
+   perm(l,v);perm(l,v);
   }
 }
 
@@ -211,7 +211,7 @@ lemma BsimpCorrect(b: bexp, s: state)
   requires Total(s)
   ensures bval(bsimp(b), s) == bval(b, s)
 {
-  mytac()
+  mytac(b);
 }
 
 
