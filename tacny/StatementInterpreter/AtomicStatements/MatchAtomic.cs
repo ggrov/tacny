@@ -119,17 +119,26 @@ namespace Tacny
                 {
                     IVariable original_decl = globalContext.GetGlobalVariable(formal.Name);
                     if (original_decl != null)
-                        datatype_name = original_decl.Type.ToString();
+                    {
+                        UserDefinedType udt = original_decl.Type as UserDefinedType;
+                        if (udt != null)
+                        {
+                            datatype_name = udt.Name;
+                        }
+                        else
+                            datatype_name = original_decl.Type.ToString();
+                    }
                     else
-                        return String.Format("match: Argument {0} is not declared", formal.Name);
+                        return String.Format("cases: Argument {0} is not declared", formal.Name);
                 }
             }
             else
-                return String.Format("match: Argument {0} is undefined", formal.Name);
+                return String.Format("cases: Argument {0} is undefined", formal.Name);
 
 
             if (!globalContext.ContainsGlobalKey(datatype_name))
-                return String.Format("cases: datatype {0} is undefined", datatype_name);
+        
+        return String.Format("cases: datatype {0} is undefined", datatype_name);
             ns = localContext.GetLocalValueByName(formal) as NameSegment;
 
             datatype = globalContext.GetGlobal(datatype_name);
@@ -162,10 +171,10 @@ namespace Tacny
                         IncBadBranchCount();
                         continue;
                     }
+                    program.MaybePrintProgram(dprog, null);
                     program.VerifyProgram();
                     if (!program.HasError())
                         break;                    
-                    //program.MaybePrintProgram(dprog, null);
                     // check if error index has changed
                     if (CheckError(ms, ref ctorFlags, ctor))
                     {

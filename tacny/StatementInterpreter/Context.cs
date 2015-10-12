@@ -57,29 +57,18 @@ namespace Tacny
             List<object> lv_values = new List<object>(local_variables.Values);
             this.local_variables = lv_keys.ToDictionary(x => x, x => lv_values[lv_keys.IndexOf(x)]);
 
-            List<Statement> us_keys = new List<Statement>(updated_statements.Keys);
-            List<Statement> us_values = Util.Copy.CopyStatementList(new List<Statement>(updated_statements.Values));
-            this.updated_statements = us_keys.ToDictionary(x => x, x => us_values[us_keys.IndexOf(x)]);
+            this.updated_statements = updated_statements;
+
             this.tacCounter = tacCounter;
-            if (old_target != null)
-                this.new_target = new Method(old_target.tok, old_target.Name, old_target.HasStaticKeyword, old_target.IsGhost, old_target.TypeArgs,
-                old_target.Ins, old_target.Outs, old_target.Req, old_target.Mod, old_target.Ens, old_target.Decreases, old_target.Body,
-                old_target.Attributes, old_target.SignatureEllipsis);
+            this.new_target = old_target;
         }
 
         public LocalContext Copy()
         {
-            Method old_md = md as Method;
-            return new LocalContext(
-                new Method(old_md.tok, old_md.Name, old_md.HasStaticKeyword, old_md.IsGhost, old_md.TypeArgs,
-                            old_md.Ins, old_md.Outs, old_md.Req, old_md.Mod, old_md.Ens,
-                            new Specification<Expression>(new List<Expression>(old_md.Decreases.Expressions.ToArray()), old_md.Decreases.Attributes),
-                            old_md.Body, old_md.Attributes, old_md.SignatureEllipsis),
-                new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
-                            tac.TypeArgs, tac.Ins, tac.Outs, tac.Req,
-                            tac.Mod, tac.Ens, tac.Decreases, tac.Body,
-                            tac.Attributes, tac.SignatureEllipsis),
-                tac_call, tac_body, local_variables, updated_statements, tacCounter, new_target);
+            Method newM = Util.Copy.CopyMember(md);
+            Tactic newTac = Util.Copy.CopyMember(tac) as Tactic;
+            Method new_target = Util.Copy.CopyMember(this.new_target);
+            return new LocalContext(newM, newTac, tac_call, tac_body, local_variables, Util.Copy.CopyStatementDict(updated_statements), tacCounter, new_target);
         }
 
 
@@ -169,6 +158,11 @@ namespace Tacny
             tacCounter--;
         }
 
+        public void ResetCounter()
+        {
+            tacCounter = 0;
+        }
+
         public int GetCounter()
         {
             return tacCounter;
@@ -185,7 +179,7 @@ namespace Tacny
         {
             if (tacCounter + 1 >= tac_body.Count)
                 return null;
-            return tac_body[tacCounter+1];
+            return tac_body[tacCounter + 1];
         }
 
 
@@ -319,7 +313,7 @@ namespace Tacny
 
         public void IncBadBranchCount(int count)
         {
-           bad_branch_count += count;
+            bad_branch_count += count;
         }
 
         public int GetBadBranchCount()

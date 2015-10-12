@@ -112,6 +112,7 @@
     <Compile Include="AtomicStatements\SuchThatAtomic.cs" />
     <Compile Include="AtomicStatements\VariablesAtomic.cs" />
     <Compile Include="AtomicStatements\VariantAtomic.cs" />
+    <Compile Include="AtomicStatements\WhileAtomic.cs" />
     <Compile Include="Context.cs" />
     <Compile Include="AtomicStatements\CompositionAtomic.cs" />
     <Compile Include="AtomicStatements\ConditionalAtomic.cs" />

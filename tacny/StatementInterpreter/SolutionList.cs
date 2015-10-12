@@ -105,7 +105,7 @@ namespace Tacny
         {
             Method method = null;
             List<Dafny.Program> prog_list = new List<Dafny.Program>();
-            Atomic ac = state.Copy();
+            Atomic ac = state.Copy();   
             ac.Fin();
             method = Program.FindMember(prog, ac.localContext.md.Name) as Method;
             if (method == null)
@@ -126,15 +126,10 @@ namespace Tacny
                     }
                 }
             }
-            
 
-            Method n_target = ac.localContext.md as Method;
-            Specification<Expression> decreases = n_target != null ? n_target.Decreases : method.Decreases;
-            Method nMethod = new Method(method.tok, method.Name, method.HasStaticKeyword, method.IsGhost,
-                method.TypeArgs, method.Ins, method.Outs, method.Req, method.Mod, method.Ens, decreases,
-                new BlockStmt(method.Body.Tok, method.Body.EndTok, body), method.Attributes, method.SignatureEllipsis);
+
+            Method nMethod = GenerateMethod(method, body, ac.localContext.new_target);
             ClassDecl curDecl;
-
             for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++)
             {
                 curDecl = prog.DefaultModuleDef.TopLevelDecls[i] as ClassDecl;
@@ -154,6 +149,23 @@ namespace Tacny
             }
 
             return null;
+        }
+
+        private static Method GenerateMethod(Method oldMd, List<Statement> body, Method source = null)
+        {
+            Method src = source == null ? oldMd : source;
+            BlockStmt mdBody = new BlockStmt(src.Body.Tok, src.Body.EndTok, body);
+            System.Type type = src.GetType();
+            if(type == typeof(Lemma))
+                return new Lemma(src.tok, src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
+                src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
+            else if(type == typeof(CoLemma))
+                return new CoLemma(src.tok, src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
+                src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
+            else
+            return new Method(src.tok, src.Name, src.HasStaticKeyword, src.IsGhost,
+                src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod, src.Ens, src.Decreases,
+                mdBody, src.Attributes, src.SignatureEllipsis);
         }
 
         private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)

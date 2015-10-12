@@ -49,6 +49,7 @@ namespace Tacny
             }
 
             Method target = Program.FindMember(program.dafnyProgram, localContext.md.Name) as Method;
+            
             if (target == null)
                 return FormatError("add_variant", "Could not find target method");
 
@@ -57,10 +58,26 @@ namespace Tacny
             dec_list = dec_list.Concat(call_arguments).ToList();
 
             Specification<Expression> decreases = new Specification<Expression>(dec_list, target.Decreases.Attributes);
+            Method result = null;
+            if (target is Lemma)
+            {
+                Lemma oldLm = target as Lemma;
+                result = new Lemma(oldLm.tok, oldLm.Name, oldLm.HasStaticKeyword, oldLm.TypeArgs, oldLm.Ins, oldLm.Outs,
+                    oldLm.Req, oldLm.Mod, oldLm.Ens, decreases, oldLm.Body, oldLm.Attributes, oldLm.SignatureEllipsis);
+            }
+            else if (target is CoLemma)
+            {
+                CoLemma oldCl = target as CoLemma;
+                result = new CoLemma(oldCl.tok, oldCl.Name, oldCl.HasStaticKeyword, oldCl.TypeArgs, oldCl.Ins, oldCl.Outs,
+                    oldCl.Req, oldCl.Mod, oldCl.Ens, decreases, oldCl.Body, oldCl.Attributes, oldCl.SignatureEllipsis);
 
-            Method result = new Method(target.tok, target.Name, target.HasStaticKeyword, target.IsGhost, target.TypeArgs,
-                target.Ins, target.Outs, target.Req, target.Mod, target.Ens, decreases, target.Body, target.Attributes, target.SignatureEllipsis);
-
+            }
+            else
+            {
+                result = new Method(target.tok, target.Name, target.HasStaticKeyword, target.IsGhost, target.TypeArgs,
+                    target.Ins, target.Outs, target.Req, target.Mod, target.Ens, decreases, target.Body, target.Attributes,
+                    target.SignatureEllipsis);
+            }
             // register new method
             this.localContext.new_target = result;
             IncTotalBranchCount();

@@ -208,12 +208,11 @@ namespace Tacny
             string err;
             Atomic atomic = this.Copy();
             atomic.localContext.tac_body = body.Body;
+            atomic.localContext.ResetCounter();
             result = new List<Solution>() { new Solution(atomic) };
-            //int bodyCounter = 0;
             while (true)
             {
-                //if (bodyCounter >= body.Body.Count)
-                //    break;
+    
                 List<Solution> res = new List<Solution>();
                 foreach (var solution in result)
                 {
@@ -233,26 +232,9 @@ namespace Tacny
                
                 result.Clear();
                 result.AddRange(res);
-                //bodyCounter++;
             }
             return null;
         }
-
-        //protected string ResolveBody(BlockStmt bs, out List<Solution> solution_list)
-        //{
-        //    Contract.Requires(bs != null);
-        //    string err;
-        //    solution_list = new List<Solution>();
-
-        //    foreach (var stmt in bs.Body)
-        //    {
-        //        err = this.CallAction(stmt, ref solution_list);
-        //        if (err != null)
-        //            return err;
-        //    }
-
-        //    return null;
-        //}
 
         protected string CallAction(object call, ref List<Solution> solution_list)
         {
@@ -317,8 +299,7 @@ namespace Tacny
                 // register variable to localc with empty value
                 if (vds != null)
                 {
-                    AddLocal(vds.Locals[0], new object());
-                    solution_list.Add(new Solution(this.Copy()));
+                    solution_list.Add(RegisterLocalVariable(vds));
                     return null;
                 }
                 return CallDefaultAction(st, ref solution_list);
@@ -331,6 +312,28 @@ namespace Tacny
             //return "Atomic Statement does not inherit the AtomicStmt interface";
 
             return qq.Resolve(st, ref solution_list);
+        }
+
+        private Solution RegisterLocalVariable(VarDeclStmt declaration)
+        {
+            object val = new object();
+            // if declaration has rhs
+            if (declaration.Update != null)
+            {
+                UpdateStmt rhs = declaration.Update as UpdateStmt;
+                // if 
+                if (rhs == null)
+                { /* leave the statement */ }
+                else
+                {
+                    ExprRhs exprRhs = rhs.Rhss[0] as ExprRhs;
+                    Dafny.LiteralExpr litExpr = exprRhs.Expr as Dafny.LiteralExpr;
+                    if (litExpr != null)
+                        val = litExpr;
+                }
+            }
+            AddLocal(declaration.Locals[0], val);
+            return new Solution(this.Copy());
         }
 
         /// <summary>

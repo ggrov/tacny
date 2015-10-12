@@ -23,7 +23,7 @@ namespace Tacny
             string err;
             IVariable lv = null;
             List<Expression> call_arguments; // we don't care about this
-            List<Lemma> lemmas = new List<Lemma>();
+            List<Method> lemmas = new List<Method>();
 
             err = InitArgs(st, out lv, out call_arguments);
             if (err != null)
@@ -35,8 +35,11 @@ namespace Tacny
             foreach (var member in program.members.Values)
             {
                 Lemma lem = member as Lemma;
+                FixpointLemma fl = member as FixpointLemma;
                 if (lem != null)
                     lemmas.Add(lem);
+                else if (fl != null)
+                    lemmas.Add(fl);
                 
             }
             IncTotalBranchCount();

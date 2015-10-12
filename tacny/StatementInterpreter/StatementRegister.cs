@@ -8,6 +8,11 @@ using Microsoft.Boogie;
 
 namespace Tacny
 {
+    /**
+     * TODO
+     * clean up
+     * 
+     */
     class StatementRegister
     {
         public enum Atomic
@@ -21,8 +26,7 @@ namespace Tacny
             COMPOSITION,
             IS_VALID,
             ADD_MATCH,
-            ADD_IF,
-            TRY_ALL,
+            PERM,
             OR,
             ID,
             FAIL,
@@ -32,6 +36,8 @@ namespace Tacny
             SUCH_THAT,
             LEMMAS,
             MERGE_LISTS,
+            WHILE,
+            IF,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -43,8 +49,7 @@ namespace Tacny
             {"replace_operator", Atomic.REPLACE_OP},
             {"is_valid", Atomic.IS_VALID},
             {"cases", Atomic.ADD_MATCH},
-            {"addif", Atomic.ADD_IF},
-            {"perm", Atomic.TRY_ALL},
+            {"perm", Atomic.PERM},
             {"||", Atomic.OR},
             {"id", Atomic.ID},
             {"fail", Atomic.FAIL},
@@ -61,11 +66,10 @@ namespace Tacny
             {Atomic.REPLACE_SINGLETON, typeof(SingletonAtomic)},
             {Atomic.CREATE_INVAR, typeof(InvariantAtomic)},
             {Atomic.ADD_INVAR, typeof(InvariantAtomic)},
-            {Atomic.ADD_IF, typeof(IfAtomic)},
             {Atomic.ADD_MATCH, typeof(MatchAtomic)},
             {Atomic.REPLACE_OP, typeof(OperatorAtomic)},
             {Atomic.EXTRACT_GUARD, typeof(GuardAtomic)},
-            {Atomic.TRY_ALL, typeof(PermAtomic)},
+            {Atomic.PERM, typeof(PermAtomic)},
             {Atomic.OR, typeof(OrAtomic)},
             {Atomic.COMPOSITION, typeof(CompositionAtomic)},
             {Atomic.ID, typeof(IdAtomic)},
@@ -76,6 +80,8 @@ namespace Tacny
             {Atomic.SUCH_THAT, typeof(SuchThatAtomic)},
             {Atomic.LEMMAS, typeof(LemmasAtomic)},
             {Atomic.MERGE_LISTS, typeof(MergeAtomic)},
+            {Atomic.IF, typeof(IfAtomic)},
+            {Atomic.WHILE, typeof(WhileAtomic)},
         };
 
         /// <summary>
@@ -105,9 +111,13 @@ namespace Tacny
             {
                 return atomic_signature[os.Tok.val];
             }
-            else if (st is IfStmt || st is WhileStmt)
+            else if (st is IfStmt)
             {
-                return Atomic.COMPOSITION;
+                return Atomic.IF;
+            }
+            else if (st is WhileStmt)
+            {
+                return Atomic.WHILE;
             }
             else if ((us = st as UpdateStmt) != null) { }
             else if ((vds = st as VarDeclStmt) != null)

@@ -41,7 +41,7 @@ namespace Tacny
                 return err;
             solutions.Add(sol);
             Statement nextStatement = localContext.GetNextStatement();
-            if (StatementRegister.GetAtomicType(nextStatement) == StatementRegister.Atomic.TRY_ALL)
+            if (StatementRegister.GetAtomicType(nextStatement) == StatementRegister.Atomic.PERM)
             {
                 localContext.IncCounter();
                 err = GenPermutations(nextStatement);

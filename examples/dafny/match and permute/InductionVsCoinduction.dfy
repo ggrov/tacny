@@ -89,48 +89,6 @@ colemma {:induction false} SAppendIsAssociativeC(a:Stream, b:Stream, c:Stream)
 {
   match (a) {
   case SNil =>
-  case SCons(h, t) => SAppendIsAssociativeC(t, b, c);
+  case SCons(h, t) => SAppendIsAssociative(t, b, c);
   }
 }
-
-// In fact the proof can be fully automatic.
-colemma SAppendIsAssociative_Auto(a:Stream, b:Stream, c:Stream)
-  ensures SAppend(SAppend(a, b), c) == SAppend(a, SAppend(b, c));
-{
-}
-
-colemma {:induction false} UpPos(n:int)
-  requires n > 0;
-  ensures Pos(Up(n));
-{
-  UpPos(n+1);
-}
-
-colemma UpPos_Auto(n:int)
-  requires n > 0;
-  ensures Pos(Up(n));
-{
-}
-
-// This does induction and coinduction in the same proof.
-colemma {:induction false} FivesUpPos(n:int)
-  requires n > 0;
-  ensures Pos(FivesUp(n));
-  decreases 4 - (n-1) % 5;
-{
-  if (n % 5 == 0) {
-    FivesUpPos#[_k - 1](n + 1);
-  } else {
-    FivesUpPos#[_k](n + 1);
-  }
-}
-
-// Again, Dafny can just employ induction tactic and do it automatically.
-// The only hint required is the decrease clause.
-colemma FivesUpPos_Auto(n:int)
-  requires n > 0;
-  ensures Pos(FivesUp(n));
-  decreases 4 - (n-1) % 5;
-{
-}
-

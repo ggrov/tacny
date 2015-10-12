@@ -28,7 +28,6 @@ namespace Util
             return ret;
         }
 
-
         /// <summary>
         /// Deep copy a statement
         /// </summary>
@@ -97,5 +96,89 @@ namespace Util
         }
 
 
+        public static CoLemma CopyCoLemma(MemberDecl md)
+        {
+            CoLemma oldCl = md as CoLemma;
+            if (oldCl == null)
+                return null;
+            return CopyCoLemma(oldCl);
+        }
+
+        public static CoLemma CopyCoLemma(CoLemma oldCl)
+        {
+
+            return new CoLemma(oldCl.tok, oldCl.Name, oldCl.HasStaticKeyword, oldCl.TypeArgs, oldCl.Ins, oldCl.Outs, oldCl.Req, oldCl.Mod,
+                oldCl.Ens, oldCl.Decreases, oldCl.Body, oldCl.Attributes, oldCl.SignatureEllipsis);
+        }
+
+        public static Lemma CopyLemma(MemberDecl md)
+        {
+            Lemma oldLm = md as Lemma;
+            if (oldLm == null)
+                return null;
+
+            return CopyLemma(oldLm);
+        }
+
+        public static Lemma CopyLemma(Lemma oldLm)
+        {
+            return new Lemma(oldLm.tok, oldLm.Name, oldLm.HasStaticKeyword, oldLm.TypeArgs, oldLm.Ins, oldLm.Outs, oldLm.Req, oldLm.Mod,
+                oldLm.Ens, oldLm.Decreases, oldLm.Body, oldLm.Attributes, oldLm.SignatureEllipsis);
+        }
+
+        public static Method CopyMethod(MemberDecl md)
+        {
+            Method oldMd = md as Method;
+            if (oldMd == null)
+                return null;
+            return CopyMethod(oldMd);
+        }
+
+        public static Method CopyMethod(Method oldMd)
+        {
+            return new Method(oldMd.tok, oldMd.Name, oldMd.HasStaticKeyword, oldMd.IsGhost, oldMd.TypeArgs,
+                oldMd.Ins, oldMd.Outs, oldMd.Req, oldMd.Mod, oldMd.Ens, oldMd.Decreases, oldMd.Body, oldMd.Attributes,
+                oldMd.SignatureEllipsis);
+        }
+
+        public static Tactic CopyTactic(MemberDecl md)
+        {
+            Tactic oldTac = md as Tactic;
+            if (oldTac == null)
+                return null;
+            return CopyTactic(oldTac);
+        }
+
+        public static Tactic CopyTactic(Tactic oldTac)
+        {
+            return new Tactic(oldTac.tok, oldTac.Name, oldTac.HasStaticKeyword, oldTac.TypeArgs,
+                oldTac.Ins, oldTac.Outs, oldTac.Req, oldTac.Mod, oldTac.Ens, oldTac.Decreases, oldTac.Body,
+                oldTac.Attributes, oldTac.SignatureEllipsis);
+        }
+
+        public static Method CopyMember(MemberDecl md)
+        {
+            if (md == null)
+                return null;
+            System.Type type = md.GetType();
+            if (type == typeof(Lemma))
+                return CopyLemma(md);
+            else if (type == typeof(CoLemma))
+                return CopyCoLemma(md);
+            else if (type == typeof(Tactic))
+                return CopyTactic(md);
+            else
+                return CopyMethod(md);
+        }
+
+        //todo test whether oldDict.values require deep copy
+        public static Dictionary<Statement, Statement> CopyStatementDict(Dictionary<Statement, Statement> oldDict)
+        {
+            List<Statement> us_keys = new List<Statement>(oldDict.Keys);
+            List<Statement> us_values = Util.Copy.CopyStatementList(new List<Statement>(oldDict.Values));
+            Dictionary<Statement, Statement> newDict = us_keys.ToDictionary(x => x, x => us_values[us_keys.IndexOf(x)]);
+            return newDict;
+        }
+        
     }
 }
