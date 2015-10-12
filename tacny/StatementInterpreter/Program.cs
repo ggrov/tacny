@@ -211,6 +211,11 @@ namespace Tacny
                         Method m = member as Method;
                         if (m != null && m.Name != md.Name)
                         {
+                            m.Body = null;
+                        }
+                        /*
+                          if (m != null && m.Name != md.Name)
+                        {
                             if (m.Body != null)
                             {
                                 foreach (Statement st in m.Body.Body)
@@ -232,6 +237,7 @@ namespace Tacny
                                 }
                             }
                         }
+                         */
                     }
                 }
             }
@@ -686,7 +692,7 @@ namespace Tacny
         public void PrintDebugMessage(string message, params object[] args)
         {
             printer = new Util.Printer(new System.IO.StreamWriter(fileNames[0] + "_debug.dat"), DafnyOptions.O.PrintMode);
-            
+
             printer.PrintDebugMessage(message, fileNames[0], args);
         }
     }
