@@ -168,13 +168,13 @@ namespace Tacny
             program = tacnyProgram.ParseProgram();
             foreach (var solution in final)
                 solution.GenerateProgram(ref program);
-            err = tacnyProgram.VerifyProgram();
+            //err = tacnyProgram.VerifyProgram();
             end = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
             if (final.Count > 0)
             {
-                tacnyProgram.PrintDebugMessage("Execution time {0}s\nTotal branch count {1} branches\nInvalid branch count {2} branches", 
-                    end - start, 
-                    final[0].state.GetTotalBranchCount(), 
+                tacnyProgram.PrintDebugMessage("Execution time {0}s\nTotal branch count {1} branches\nInvalid branch count {2} branches",
+                    end - start,
+                    final[0].state.GetTotalBranchCount(),
                     final[0].state.GetBadBranchCount());
             }
             if (err != null)
@@ -187,6 +187,7 @@ namespace Tacny
 
         private string ScanMemberBody(MemberDecl md)
         {
+            solution_list.plist.Clear();
             Method m = md as Method;
             if (m == null)
                 return null;
@@ -195,6 +196,8 @@ namespace Tacny
             List<IVariable> variables = new List<IVariable>();
             variables.AddRange(m.Ins);
             variables.AddRange(m.Outs);
+            SolutionList sol_list = new SolutionList();
+            sol_list.AddRange(solution_list.plist);
             foreach (Statement st in m.Body.Body)
             {
                 // register local variables
@@ -207,12 +210,16 @@ namespace Tacny
                 {
                     if (tacnyProgram.IsTacticCall(us))
                     {
-                        string err = Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, ref solution_list);
+                        string err = Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, ref sol_list);
                         if (err != null)
                             return err;
                     }
                 }
             }
+
+
+            solution_list.AddRange(sol_list.plist);
+
             return null;
         }
     }

@@ -115,30 +115,32 @@ namespace Tacny
 
             if (datatype_name == "Element")
             {
-                if (globalContext.HasGlobalVariable(formal.Name))
+                object val = localContext.GetLocalValueByName(formal.Name);
+                NameSegment decl = val as NameSegment;
+                if (decl == null)
+                    return String.Format("cases: Argument {0} is not declared", formal.Name);
+                IVariable original_decl = globalContext.GetGlobalVariable(decl.Name);
+                if (original_decl != null)
                 {
-                    IVariable original_decl = globalContext.GetGlobalVariable(formal.Name);
-                    if (original_decl != null)
+                    UserDefinedType udt = original_decl.Type as UserDefinedType;
+                    if (udt != null)
                     {
-                        UserDefinedType udt = original_decl.Type as UserDefinedType;
-                        if (udt != null)
-                        {
-                            datatype_name = udt.Name;
-                        }
-                        else
-                            datatype_name = original_decl.Type.ToString();
+                        datatype_name = udt.Name;
                     }
                     else
-                        return String.Format("cases: Argument {0} is not declared", formal.Name);
+                        datatype_name = original_decl.Type.ToString();
                 }
+                else
+                    return String.Format("cases: Argument {0} is not declared", formal.Name);
+
             }
             else
                 return String.Format("cases: Argument {0} is undefined", formal.Name);
 
 
             if (!globalContext.ContainsGlobalKey(datatype_name))
-        
-        return String.Format("cases: datatype {0} is undefined", datatype_name);
+
+                return String.Format("cases: datatype {0} is undefined", datatype_name);
             ns = localContext.GetLocalValueByName(formal) as NameSegment;
 
             datatype = globalContext.GetGlobal(datatype_name);
@@ -148,7 +150,7 @@ namespace Tacny
             dprog = program.ParseProgram();
             while (true)
             {
-                if (ctor >= datatype.Ctors.Count)
+                if (ctor >= datatype.Ctors.Count || !program.HasError())
                     break;
                 RegisterLocals(datatype, ctor);
                 err = ResolveBody(st.Body, out result);
@@ -171,10 +173,10 @@ namespace Tacny
                         IncBadBranchCount();
                         continue;
                     }
-                    program.MaybePrintProgram(dprog, null);
+                    //program.MaybePrintProgram(dprog, null);
                     program.VerifyProgram();
                     if (!program.HasError())
-                        break;                    
+                        break;
                     // check if error index has changed
                     if (CheckError(ms, ref ctorFlags, ctor))
                     {

@@ -1,0 +1,215 @@
+codatatype Stream<X> = Nil | Cons(head: X, tail: Stream)
+
+function append(M: Stream, N: Stream): Stream
+{
+  match M
+  case Nil => N
+  case Cons(t, M') => Cons(t, append(M', N))
+}
+
+type X
+
+function f(x: X): X
+function g(x: X): X
+
+function map_f(M: Stream<X>): Stream<X>
+{
+  match M
+  case Nil => Nil
+  case Cons(x, N) => Cons(f(x), map_f(N))
+}
+
+function map_g(M: Stream<X>): Stream<X>
+{
+  match M
+  case Nil => Nil
+  case Cons(x, N) => Cons(g(x), map_g(N))
+}
+
+function map_fg(M: Stream<X>): Stream<X>
+{
+  match M
+  case Nil => Nil
+  case Cons(x, N) => Cons(f(g(x)), map_fg(N))
+}
+
+colemma Theorem0(M: Stream<X>)
+  ensures map_fg(M) == map_f(map_g(M));
+{
+  mytac(M);
+}
+
+colemma Theorem1(M: Stream<X>, N: Stream<X>)
+  ensures map_f(append(M, N)) == append(map_f(M), map_f(N));
+{
+  mytac(M);
+}
+
+lemma Theorem2(M: Stream<X>)
+  ensures append(Nil, M) == M;
+{}
+
+
+colemma Theorem3(M: Stream<X>)
+  ensures append(M, Nil) == M;
+{
+  mytac(M);
+}
+
+colemma Theorem4(M: Stream<X>, N: Stream<X>, P: Stream<X>)
+  ensures append(M, append(N, P)) == append(append(M, N), P);
+{
+  mytac(M);
+}
+
+function FlattenStartMarker<T>(M: Stream<Stream>, startMarker: T): Stream
+{
+  PrependThenFlattenStartMarker(Nil, M, startMarker)
+}
+
+function PrependThenFlattenStartMarker<T>(prefix: Stream, M: Stream<Stream>, startMarker: T): Stream
+{
+  match prefix
+  case Cons(hd, tl) =>
+    Cons(hd, PrependThenFlattenStartMarker(tl, M, startMarker))
+  case Nil =>
+    match M
+    case Nil => Nil
+    case Cons(s, N) => Cons(startMarker, PrependThenFlattenStartMarker(s, N, startMarker))
+}
+
+copredicate StreamOfNonEmpties(M: Stream<Stream>)
+{
+  match M
+  case Nil => true
+  case Cons(s, N) => s.Cons? && StreamOfNonEmpties(N)
+}
+
+function FlattenNonEmpties(M: Stream<Stream>): Stream
+  requires StreamOfNonEmpties(M);
+{
+  PrependThenFlattenNonEmpties(Nil, M)
+}
+
+function PrependThenFlattenNonEmpties(prefix: Stream, M: Stream<Stream>): Stream
+  requires StreamOfNonEmpties(M);
+{
+  match prefix
+  case Cons(hd, tl) =>
+    Cons(hd, PrependThenFlattenNonEmpties(tl, M))
+  case Nil =>
+    match M
+    case Nil => Nil
+    case Cons(s, N) => Cons(s.head, PrependThenFlattenNonEmpties(s.tail, N))
+}
+
+function Prepend<T>(x: T, M: Stream<Stream>): Stream<Stream>
+{
+  match M
+  case Nil => Nil
+  case Cons(s, N) => Cons(Cons(x, s), Prepend(x, N))
+}
+
+colemma Prepend_Lemma<T>(x: T, M: Stream<Stream>)
+  ensures StreamOfNonEmpties(Prepend(x, M));
+{
+  mytac(M);
+}
+
+lemma Theorem_Flatten<T>(M: Stream<Stream>, startMarker: T)
+  ensures
+    StreamOfNonEmpties(Prepend(startMarker, M)) ==> // always holds, on account of Prepend_Lemma;
+                                          // but until (co-)method can be called from functions,
+                                          // this condition is used as an antecedent here
+    FlattenStartMarker(M, startMarker) == FlattenNonEmpties(Prepend(startMarker, M));
+{
+  Prepend_Lemma(startMarker, M);
+  Lemma_Flatten(Nil, M, startMarker);
+}
+
+colemma Lemma_Flatten<T>(prefix: Stream, M: Stream<Stream>, startMarker: T)
+  ensures
+    StreamOfNonEmpties(Prepend(startMarker, M)) ==> // always holds, on account of Prepend_Lemma;
+                                          // but until (co-)method can be called from functions,
+                                          // this condition is used as an antecedent here
+    PrependThenFlattenStartMarker(prefix, M, startMarker) == PrependThenFlattenNonEmpties(prefix, Prepend(startMarker, M));
+{
+  Prepend_Lemma(startMarker, M);
+  match (prefix) {
+    case Cons(hd, tl) =>
+    Lemma_Flatten(tl, M, startMarker);
+    case Nil =>
+      match (M) {
+        case Nil =>
+        case Cons(s, N) =>
+          if (*) {
+            // This is all that's needed for the proof
+            Lemma_Flatten(s, N, startMarker);
+          } else {
+            // ...but here are some calculations that try to show more of what's going on
+            // (It would be nice to have ==#[...] available as an operator in calculations.)
+
+            // massage the LHS:
+            calc {
+              PrependThenFlattenStartMarker(prefix, M, startMarker);
+            ==  // def. PrependThenFlattenStartMarker
+              Cons(startMarker, PrependThenFlattenStartMarker(s, N, startMarker));
+            }
+            // massage the RHS:
+            calc {
+              PrependThenFlattenNonEmpties(prefix, Prepend(startMarker, M));
+            ==  // M == Cons(s, N)
+              PrependThenFlattenNonEmpties(prefix, Prepend(startMarker, Cons(s, N)));
+            ==  // def. Prepend
+              PrependThenFlattenNonEmpties(prefix, Cons(Cons(startMarker, s), Prepend(startMarker, N)));
+            ==  // def. PrependThenFlattenNonEmpties
+              Cons(Cons(startMarker, s).head, PrependThenFlattenNonEmpties(Cons(startMarker, s).tail, Prepend(startMarker, N)));
+            ==  // Cons, head, tail
+              Cons(startMarker, PrependThenFlattenNonEmpties(s, Prepend(startMarker, N)));
+            }
+
+            // all together now:
+            calc {
+              PrependThenFlattenStartMarker(prefix, M, startMarker) ==#[_k] PrependThenFlattenNonEmpties(prefix, Prepend(startMarker, M));
+              { // by the calculation above, we have:
+                assert PrependThenFlattenStartMarker(prefix, M, startMarker) == Cons(startMarker, PrependThenFlattenStartMarker(s, N, startMarker)); }
+              Cons(startMarker, PrependThenFlattenStartMarker(s, N, startMarker)) ==#[_k] PrependThenFlattenNonEmpties(prefix, Prepend(startMarker, M));
+              { // and by the other calculation above, we have:
+                assert PrependThenFlattenNonEmpties(prefix, Prepend(startMarker, M)) == Cons(startMarker, PrependThenFlattenNonEmpties(s, Prepend(startMarker, N))); }
+              Cons(startMarker, PrependThenFlattenStartMarker(s, N, startMarker)) ==#[_k] Cons(startMarker, PrependThenFlattenNonEmpties(s, Prepend(startMarker, N)));
+            ==  // def. of ==#[_k] for _k != 0
+              startMarker == startMarker &&
+              PrependThenFlattenStartMarker(s, N, startMarker) ==#[_k-1] PrependThenFlattenNonEmpties(s, Prepend(startMarker, N));
+              { Lemma_Flatten(s, N, startMarker);
+                // the postcondition of the call we just made (which invokes the co-induction hypothesis) is:
+                assert PrependThenFlattenStartMarker(s, N, startMarker) ==#[_k-1] PrependThenFlattenNonEmpties(s, Prepend(startMarker, N));
+              }
+              true;
+            }
+          }
+      }
+  }
+}
+
+colemma Lemma_FlattenAppend0<T>(s: Stream, M: Stream<Stream>, startMarker: T)
+  ensures PrependThenFlattenStartMarker(s, M, startMarker) == append(s, PrependThenFlattenStartMarker(Nil, M, startMarker));
+{
+  mytac(s);
+}
+
+colemma Lemma_FlattenAppend1<T>(s: Stream, M: Stream<Stream>)
+  requires StreamOfNonEmpties(M);
+  ensures PrependThenFlattenNonEmpties(s, M) == append(s, PrependThenFlattenNonEmpties(Nil, M));
+{
+  mytac(s);
+}
+
+
+tactic mytac(q : Element)
+{
+  cases(q){
+    var l :| l in lemmas();
+    var v := merge(variables(), params());
+    perm(l, v);
+  }
+}

@@ -32,6 +32,7 @@ namespace Tacny
                 resolved = false;
                 _program = value;
                 errorInfo = null;
+                stats = null;
             }
             get
             {
@@ -686,7 +687,7 @@ namespace Tacny
         {
             printer = new Util.Printer(new System.IO.StreamWriter(fileNames[0] + "_debug.dat"), DafnyOptions.O.PrintMode);
             
-            printer.PrintDebugMessage(message, args);
+            printer.PrintDebugMessage(message, fileNames[0], args);
         }
     }
 }
