@@ -18,9 +18,11 @@ namespace Tacny
 
         public string Resolve(Statement st, ref List<Solution> solution_list)
         {
+            // generate all possible member calls
             string err = GenPermutations(st);
             if (err != null)
                 return err;
+            // generate all the possible member combinations
             PermuteResults(ref solution_list);
             return null;
 
@@ -95,7 +97,6 @@ namespace Tacny
             List<List<IVariable>> args = new List<List<IVariable>>();
             List<Expression> call_arguments = null;
             MemberDecl md;
-
             string err;
             Method m;
 
@@ -162,9 +163,6 @@ namespace Tacny
                 ApplySuffix aps = new ApplySuffix(call_arguments[0].tok, new NameSegment(call_arguments[0].tok, md.Name, null), new List<Expression>());
                 UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
                 solution_list.Add(us);
-                //Atomic ac = this.Copy();
-                //ac.AddUpdated(us, us);
-                //solution_list.Add(new Solution(ac));
             }
             else
             {
@@ -176,9 +174,6 @@ namespace Tacny
                     ApplySuffix aps = new ApplySuffix(call_arguments[0].tok, new NameSegment(call_arguments[0].tok, md.Name, null), new_list);
                     UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
                     solution_list.Add(us);
-                    //Atomic ac = this.Copy();
-                    //ac.AddUpdated(us, us);
-                    //solution_list.Add(new Solution(ac));
                 }
             }
             return null;
@@ -211,8 +206,6 @@ namespace Tacny
                 List<UpdateStmt> tmp = new List<UpdateStmt>();
                 tmp.AddRange(current);
                 tmp.Add(methods[depth][i]);
-                //NameSegment ns = new NameSegment(iv.Tok, iv.Name, null);
-                //tmp.Add(ns);
                 GenerateMethodPremutations(methods, depth + 1, tmp, ref result);
             }
         }

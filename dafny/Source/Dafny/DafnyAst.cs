@@ -4981,7 +4981,7 @@ namespace Microsoft.Dafny
         [ContractInvariantMethod]
         void ObjectInvariant()
         {
-            Contract.Invariant(Guard != null);
+            //Contract.Invariant(Guard != null);
             Contract.Invariant(Body != null);
         }
 
@@ -4990,7 +4990,6 @@ namespace Microsoft.Dafny
         {
             Contract.Requires(tok != null);
             Contract.Requires(endTok != null);
-            Contract.Requires(guard != null);
             Contract.Requires(body != null);
 
             this.Guard = guard;
@@ -5045,6 +5044,19 @@ namespace Microsoft.Dafny
         }
     }
 
+    public class TacnySolvedBlockStmt : TacnyBlockStmt
+    {
+        public string WhatKind { get { return "solved"; } }
+        public TacnySolvedBlockStmt(IToken tok, IToken endTok, BlockStmt body)
+            : base(tok, endTok, null, body)
+        {
+            Contract.Requires(tok != null);
+            Contract.Requires(endTok != null);
+            Contract.Requires(body != null);
+
+        }
+    }
+    
     public class GuardedAlternative
     {
         public readonly IToken Tok;

@@ -38,6 +38,7 @@ namespace Tacny
             MERGE_LISTS,
             WHILE,
             IF,
+            SOLVED,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -58,7 +59,8 @@ namespace Tacny
             {"params", Atomic.PARAMS},
             {":|", Atomic.SUCH_THAT},
             {"lemmas", Atomic.LEMMAS},
-            {"merge", Atomic.MERGE_LISTS}
+            {"merge", Atomic.MERGE_LISTS},
+            {"solved", Atomic.SOLVED}
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -82,6 +84,7 @@ namespace Tacny
             {Atomic.MERGE_LISTS, typeof(MergeAtomic)},
             {Atomic.IF, typeof(IfAtomic)},
             {Atomic.WHILE, typeof(WhileAtomic)},
+            {Atomic.SOLVED, typeof(SolvedAtomic)},
         };
 
         /// <summary>
@@ -102,10 +105,13 @@ namespace Tacny
             {
                 TacnyCasesBlockStmt tcbs;
                 TacnyIfBlockStmt tibs;
+                TacnySolvedBlockStmt tsbs;
                 if((tcbs = tbs as TacnyCasesBlockStmt) != null)
                     return atomic_signature[tcbs.WhatKind];
                 else if ((tibs = tbs as TacnyIfBlockStmt) != null)
                     return atomic_signature[tibs.WhatKind];
+                else if ((tsbs = tbs as TacnySolvedBlockStmt) != null)
+                    return atomic_signature[tsbs.WhatKind];
             }
             else if (((os = st as OrStmt) != null))
             {

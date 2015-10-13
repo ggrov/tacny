@@ -26,6 +26,7 @@ namespace Tacny
         public string AddVariant(Statement st, ref List<Solution> solution_list)
         {
             List<Expression> call_arguments = null;
+            Expression input = null;
             UpdateStmt us;
             string err;
             if (st is UpdateStmt)
@@ -44,18 +45,41 @@ namespace Tacny
             {
                 if (wildCard.Value.Equals("*"))
                 {
-                    call_arguments[0] = new WildcardExpr(wildCard.tok);
+                    input = new WildcardExpr(wildCard.tok);
+
+                }
+            }
+            else
+            {
+                // hack
+                object tmp;
+                err = ProcessArg(call_arguments[0], out tmp);
+                 
+                IVariable form = tmp as IVariable;
+                if(form != null)
+                    input = new NameSegment(form.Tok, form.Name, null);
+                else if (tmp is BinaryExpr)
+                {
+                    BinaryExpr bexp = tmp as BinaryExpr;
+                    ProcessArg(bexp.E0, out tmp);
+                    form = tmp as IVariable;
+                    NameSegment e0 = new NameSegment(form.Tok, form.Name, null);
+                    ProcessArg(bexp.E1, out tmp);
+                    form = tmp as IVariable;
+                    NameSegment e1 = new NameSegment(form.Tok, form.Name, null);
+
+                    input = new BinaryExpr(bexp.tok, bexp.Op, e0, e1);
                 }
             }
 
-            Method target = Program.FindMember(program.dafnyProgram, localContext.md.Name) as Method;
+            Method target = Program.FindMember(program.ParseProgram(), localContext.md.Name) as Method;
             
             if (target == null)
                 return FormatError("add_variant", "Could not find target method");
 
             List<Expression> dec_list = target.Decreases.Expressions;
             // insert new variants at the end of the existing variants list
-            dec_list = dec_list.Concat(call_arguments).ToList();
+            dec_list.Add(input);
 
             Specification<Expression> decreases = new Specification<Expression>(dec_list, target.Decreases.Attributes);
             Method result = null;

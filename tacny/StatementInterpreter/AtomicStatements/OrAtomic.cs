@@ -13,14 +13,12 @@ namespace Tacny
     class OrAtomic : Atomic, IAtomicStmt
     {
         public OrAtomic(Atomic atomic) : base(atomic)
-        {
+        { }
 
-        }
         public string Resolve(Statement st, ref List<Solution> solution_list)
         {
             return Branch(st, ref solution_list);
         }
-
 
         private string Branch(Statement st, ref List<Solution> solution_list)
         {
@@ -36,6 +34,7 @@ namespace Tacny
             {
                 body_list.RemoveAt(index);
                 body_list.InsertRange(index, os.Blhs);
+                solution_list.Add(CreateSolution(tac, body_list));
             }
             else // generate new updatestmt and insert it to body list
             {
@@ -58,13 +57,14 @@ namespace Tacny
                 }   
                 
             }
-                        
+
             body_list = localContext.GetFreshTacticBody();
 
             if (os.Brhs != null)
             {
                 body_list.RemoveAt(index);
                 body_list.InsertRange(index, os.Brhs);
+                solution_list.Add(CreateSolution(tac, body_list));
             }
             else
             {
@@ -85,11 +85,8 @@ namespace Tacny
                         break;
                 }
             }
-
             return null;
         }
-
-
 
         private UpdateStmt GenUpdateStmt(ApplySuffix aps)
         {
@@ -104,7 +101,8 @@ namespace Tacny
                                         tac.Decreases, new BlockStmt(tac.Body.Tok, tac.Body.EndTok, newBody),
                                         tac.Attributes, tac.SignatureEllipsis);
             Atomic newAtomic = this.Copy();
-            newAtomic.localContext.tac = newTac;
+            //newAtomic.localContext.tac = newTac;
+            newAtomic.localContext.tac_body = newBody;
             /* HACK */
             // decrase the tactic body counter
             // so the interpreter would execute newly inserted atomic

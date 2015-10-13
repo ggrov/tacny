@@ -1475,6 +1475,7 @@ OneStmt<out Statement/*!*/ s>
   | IfStmt<out s>
   | TacnyIfBlockStmt<out s>
   | TacnyCasesBlockStmt<out s>
+  | TacnySolvedBlockStmt<out s>
   | WhileStmt<out s>
   | MatchStmt<out s>
   | ForallStmt<out s>
@@ -1719,7 +1720,21 @@ IfStmt<out Statement/*!*/ ifStmt>
     .)
   )
   .
-  
+
+TacnySolvedBlockStmt<out Statement/*!*/ tacnySolvedStatement>
+= (. Contract.Ensures(Contract.ValueAtReturn(out tacnySolvedStatement) != null); IToken/*!*/ x;
+     BlockStmt/*!*/ body;
+     IToken bodyStart, bodyEnd, endTok;
+     List<GuardedAlternative> alternatives;
+     tacnySolvedStatement = dummyStmt;  // to please the compiler
+  .)
+  "solved"                       (. x = t; .)
+  (
+    BlockStmt<out body, out bodyStart, out bodyEnd>    (. endTok = body.EndTok; .)
+    (. tacnySolvedStatement = new TacnySolvedBlockStmt(x, endTok, body); .)
+  )
+  .
+ 
 TacnyIfBlockStmt<out Statement/*!*/ tacnyIfStmt>
 = (. Contract.Ensures(Contract.ValueAtReturn(out tacnyIfStmt) != null); IToken/*!*/ x;
      Expression guard = null;  IToken guardEllipsis = null;

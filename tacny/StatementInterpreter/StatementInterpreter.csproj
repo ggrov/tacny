@@ -109,6 +109,7 @@
     <Compile Include="AtomicStatements\MergeAtomic.cs" />
     <Compile Include="AtomicStatements\OrAtomic.cs" />
     <Compile Include="AtomicStatements\ParamsAtomic.cs" />
+    <Compile Include="AtomicStatements\SolvedAtomic.cs" />
     <Compile Include="AtomicStatements\SuchThatAtomic.cs" />
     <Compile Include="AtomicStatements\VariablesAtomic.cs" />
     <Compile Include="AtomicStatements\VariantAtomic.cs" />

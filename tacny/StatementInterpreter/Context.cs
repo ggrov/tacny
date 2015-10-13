@@ -163,6 +163,11 @@ namespace Tacny
             tacCounter = 0;
         }
 
+        public void SetCounter(int val)
+        {
+            tacCounter = val;
+        }
+
         public int GetCounter()
         {
             return tacCounter;
@@ -216,7 +221,7 @@ namespace Tacny
 
         public List<Statement> GetFreshTacticBody()
         {
-            return new List<Statement>(tac.Body.Body.ToArray());
+            return new List<Statement>(tac_body.ToArray());
         }
 
         public Method GetSourceMethod()
