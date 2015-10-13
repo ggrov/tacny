@@ -168,7 +168,7 @@ namespace Tacny
             program = tacnyProgram.ParseProgram();
             foreach (var solution in final)
                 solution.GenerateProgram(ref program);
-            //err = tacnyProgram.VerifyProgram();
+            // print debug data
             end = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
             if (final.Count > 0)
             {

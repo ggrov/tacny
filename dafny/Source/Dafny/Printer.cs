@@ -788,7 +788,56 @@ namespace Microsoft.Dafny {
         PrintRhs(s.Rhs);
         wr.Write(";");
 
-      } else if (stmt is BlockStmt) {
+      } else if (stmt is TacnyCasesBlockStmt) {
+          TacnyCasesBlockStmt tcbs = stmt as TacnyCasesBlockStmt;
+          wr.Write("cases ");
+          PrintExpression(tcbs.Guard, false);
+          PrintStatement(tcbs.Body, indent);
+      } else if (stmt is TacnySolvedBlockStmt) {
+          TacnySolvedBlockStmt tcbs = stmt as TacnySolvedBlockStmt;
+          wr.Write("solved ");
+          PrintStatement(tcbs.Body, indent);
+      }
+      else if (stmt is OrStmt)
+      {
+          OrStmt os = stmt as OrStmt;
+          if (os.Lhss != null)
+          {
+              PrintExpression(os.Lhss, false);
+          }
+          else
+          {
+              wr.Write("{");
+              int ind = indent + IndentAmount;
+              foreach (Statement s in os.Blhs)
+              {
+                  Indent(ind);
+                  PrintStatement(s, ind);
+                  wr.WriteLine();
+              }
+              wr.Write("}");
+          }
+          wr.Write(" || ");
+          if (os.Rhs != null)
+          {
+              PrintExpression(os.Rhs, false);
+          }
+          else
+          {
+              wr.WriteLine("{");
+              int ind = indent + IndentAmount;
+              foreach (Statement s in os.Brhs)
+              {
+                  Indent(ind);
+                  PrintStatement(s, ind);
+                  wr.WriteLine();
+              }
+              Indent(indent);
+              wr.Write("}");
+              wr.Write(";");
+          }
+      } else if (stmt is BlockStmt)
+      {
         wr.WriteLine("{");
         int ind = indent + IndentAmount;
         foreach (Statement s in ((BlockStmt)stmt).Body) {
@@ -916,7 +965,7 @@ namespace Microsoft.Dafny {
           wr.Write("}");
         }
 
-      } else if (stmt is ConcreteUpdateStatement) {
+      }  else if (stmt is ConcreteUpdateStatement) {
         var s = (ConcreteUpdateStatement)stmt;
         string sep = "";
         foreach (var lhs in s.Lhss) {
@@ -969,8 +1018,10 @@ namespace Microsoft.Dafny {
           Contract.Assert(false); throw new cce.UnreachableException();  // unexpected skeleton statement
         }
 
-      } else {
-        Contract.Assert(false); throw new cce.UnreachableException();  // unexpected statement
+      }
+      else
+      {
+          Contract.Assert(false); throw new cce.UnreachableException();  // unexpected statement
       }
     }
 

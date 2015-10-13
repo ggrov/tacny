@@ -42,7 +42,6 @@ class Main {
     ensures forall n :: n in S ==>
                 n.childrenVisited == old(n.childrenVisited) &&
                 n.children == old(n.children)
-    //decreases S - stackNodes
   {
     variant();
     if !root.marked {
@@ -99,7 +98,6 @@ tactic variant(){
     ghost var unmarkedNodes := S - {t};
     while true
       invariant root.marked && t in S && t !in stackNodes
-      // stackNodes has no duplicates:
       invariant forall i, j :: 0 <= i < j < |stackNodes| ==>
                   stackNodes[i] != stackNodes[j]
       invariant forall n :: n in stackNodes ==> n in S
@@ -122,7 +120,6 @@ tactic variant(){
       decreases unmarkedNodes, stackNodes, |t.children| - t.childrenVisited
     {
       if t.childrenVisited == |t.children| {
-        // pop
         t.childrenVisited := 0;
         if |stackNodes| == 0 {
           return;

@@ -26,6 +26,7 @@ namespace Tacny
         public string AddVariant(Statement st, ref List<Solution> solution_list)
         {
             List<Expression> call_arguments = null;
+            List<Expression> dec_list = null;
             Expression input = null;
             UpdateStmt us;
             string err;
@@ -52,11 +53,15 @@ namespace Tacny
             else
             {
                 // hack
+                /*
+                 * TODO:
+                 * Implement propper variable replacement
+                 */
                 object tmp;
                 err = ProcessArg(call_arguments[0], out tmp);
-                 
+
                 IVariable form = tmp as IVariable;
-                if(form != null)
+                if (form != null)
                     input = new NameSegment(form.Tok, form.Name, null);
                 else if (tmp is BinaryExpr)
                 {
@@ -71,39 +76,58 @@ namespace Tacny
                     input = new BinaryExpr(bexp.tok, bexp.Op, e0, e1);
                 }
             }
+            WhileStmt ws = FindWhileStmt(globalContext.tac_call, globalContext.md);
 
-            Method target = Program.FindMember(program.ParseProgram(), localContext.md.Name) as Method;
-            
-            if (target == null)
-                return FormatError("add_variant", "Could not find target method");
-
-            List<Expression> dec_list = target.Decreases.Expressions;
-            // insert new variants at the end of the existing variants list
-            dec_list.Add(input);
-
-            Specification<Expression> decreases = new Specification<Expression>(dec_list, target.Decreases.Attributes);
-            Method result = null;
-            if (target is Lemma)
+            if (ws != null)
             {
-                Lemma oldLm = target as Lemma;
-                result = new Lemma(oldLm.tok, oldLm.Name, oldLm.HasStaticKeyword, oldLm.TypeArgs, oldLm.Ins, oldLm.Outs,
-                    oldLm.Req, oldLm.Mod, oldLm.Ens, decreases, oldLm.Body, oldLm.Attributes, oldLm.SignatureEllipsis);
-            }
-            else if (target is CoLemma)
-            {
-                CoLemma oldCl = target as CoLemma;
-                result = new CoLemma(oldCl.tok, oldCl.Name, oldCl.HasStaticKeyword, oldCl.TypeArgs, oldCl.Ins, oldCl.Outs,
-                    oldCl.Req, oldCl.Mod, oldCl.Ens, decreases, oldCl.Body, oldCl.Attributes, oldCl.SignatureEllipsis);
+                WhileStmt nws = null;
+                dec_list = new List<Expression>(ws.Decreases.Expressions.ToArray());
+
+                dec_list.Add(input);
+                Specification<Expression> decreases = new Specification<Expression>(dec_list, ws.Attributes);
+                nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, ws.Invariants, decreases, ws.Mod, ws.Body);
+                IncTotalBranchCount();
+                AddUpdated(ws, nws);
 
             }
             else
             {
-                result = new Method(target.tok, target.Name, target.HasStaticKeyword, target.IsGhost, target.TypeArgs,
-                    target.Ins, target.Outs, target.Req, target.Mod, target.Ens, decreases, target.Body, target.Attributes,
-                    target.SignatureEllipsis);
+
+
+                Method target = Program.FindMember(program.ParseProgram(), localContext.md.Name) as Method;
+
+                if (target == null)
+                    return FormatError("add_variant", "Could not find target method");
+
+                dec_list = target.Decreases.Expressions;
+                // insert new variants at the end of the existing variants list
+                dec_list.Add(input);
+
+                Specification<Expression> decreases = new Specification<Expression>(dec_list, target.Decreases.Attributes);
+                Method result = null;
+                if (target is Lemma)
+                {
+                    Lemma oldLm = target as Lemma;
+                    result = new Lemma(oldLm.tok, oldLm.Name, oldLm.HasStaticKeyword, oldLm.TypeArgs, oldLm.Ins, oldLm.Outs,
+                        oldLm.Req, oldLm.Mod, oldLm.Ens, decreases, oldLm.Body, oldLm.Attributes, oldLm.SignatureEllipsis);
+                }
+                else if (target is CoLemma)
+                {
+                    CoLemma oldCl = target as CoLemma;
+                    result = new CoLemma(oldCl.tok, oldCl.Name, oldCl.HasStaticKeyword, oldCl.TypeArgs, oldCl.Ins, oldCl.Outs,
+                        oldCl.Req, oldCl.Mod, oldCl.Ens, decreases, oldCl.Body, oldCl.Attributes, oldCl.SignatureEllipsis);
+
+                }
+                else
+                {
+                    result = new Method(target.tok, target.Name, target.HasStaticKeyword, target.IsGhost, target.TypeArgs,
+                        target.Ins, target.Outs, target.Req, target.Mod, target.Ens, decreases, target.Body, target.Attributes,
+                        target.SignatureEllipsis);
+                }
+                // register new method
+                this.localContext.new_target = result;
             }
-            // register new method
-            this.localContext.new_target = result;
+
             IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
             return null;

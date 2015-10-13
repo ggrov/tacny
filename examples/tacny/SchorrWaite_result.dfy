@@ -1,7 +1,4 @@
-// Dafny program verifier version 1.9.5.20511, Copyright (c) 2003-2015, Microsoft.
-// Command Line Options: /rprint:- invar_tac_test.dfy
-// main_program_id
-class Node {
+  class Node {
   var children: seq<Node>
   var marked: bool
   var childrenVisited: int

@@ -37,7 +37,7 @@ namespace Tacny
             thread.Start();
             thread.Join();
             
-            return ret;
+                return ret;
         }
 
         /// <summary>
@@ -181,6 +181,7 @@ namespace Tacny
                 try
                 {
                     tacnyProgram = new Tacny.Program(fileNames, programId);
+                    tacnyProgram.MaybePrintProgram(tacnyProgram.dafnyProgram, programName + "_src");
                 }
                 catch (ArgumentException ex)
                 {
