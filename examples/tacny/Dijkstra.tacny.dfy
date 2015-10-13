@@ -91,7 +91,8 @@ tactic variant(){
   solved {
 
     var f :| f in params();
-    var y :|  y in params() && f != y; 
-    add_variant(f-y);
+
+    add_variant(f) || {var y :|  y in params() && f != y; 
+    add_variant(f-y);};
   }
 }

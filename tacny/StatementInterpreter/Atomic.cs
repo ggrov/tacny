@@ -218,17 +218,28 @@ namespace Tacny
                 {
                     Statement nextStmt = solution.state.localContext.GetCurrentStatement();
                     if (nextStmt == null)
-                        break;
+                    {
+                        // if all the statements have been analysed finalise the solution and skip to th next
+                        solution.isFinal = true;
+                        res.Add(solution);
+                        continue;
+                    }
+
                     err = solution.state.CallAction(nextStmt, ref res);
                     if (err != null)
                         return err;
                 }
 
-                if (res.Count == 0)
+                // check if all solutions are final
+                if (IsFinal(res))
                     break;
-                // update the body counters
+
+                // increment program counter
                 foreach (var sol in res)
-                    sol.state.localContext.IncCounter();
+                {
+                    if(!sol.isFinal)
+                        sol.state.localContext.IncCounter();
+                }
                
                 result.Clear();
                 result.AddRange(res);
@@ -585,6 +596,17 @@ namespace Tacny
         public int GetBadBranchCount()
         {
             return globalContext.GetBadBranchCount();
+        }
+
+        public bool IsFinal(List<Solution> solution_list)
+        {
+            foreach (var item in solution_list)
+            {
+                if (!item.isFinal)
+                    return false;
+            }
+
+                return true;
         }
     }
 }

@@ -33,6 +33,7 @@ namespace Tacny
                 sol.GenerateProgram(ref dprog);
                 program.ClearBody(localContext.md);
                 err = program.ResolveProgram();
+                //program.MaybePrintProgram(dprog, null);
                 // skip the solution if resolution failed    
                 if (err != null)
                 {

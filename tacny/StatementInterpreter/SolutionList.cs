@@ -282,6 +282,5 @@ namespace Tacny
             return new ClassDecl(cd.tok, cd.Name, cd.Module, cd.TypeArgs, mdl, cd.Attributes, cd.TraitsTyp);
         }
 
-
     }
 }
