@@ -5,57 +5,53 @@ datatype List<T> = Nil | Cons(head: T, tail: List<T>)
 
 type vname = string
 
-datatype aexp = N(n: int) | V(x: vname) | Plus(0: aexp, 1: aexp)
+datatype aexp = N(n: int) | V(x: vname) | Plus(a0: aexp, a1: aexp)
 
 type val = int
 
 type state = vname -> val
 
-datatype bexp = Bc(v: bool) | Not(op: bexp) | And(0: bexp, 1: bexp) | Less(a0: aexp, a1: aexp)
+datatype bexp = Bc(v: bool) | Not(op: bexp) | And(a0: bexp, a1: bexp) | Less(l0: aexp, l1: aexp)
 
 class _default {
-  function append<_T0>(xs: List<_T0>, ys: List<_T0>): List<_T0>
-    decreases xs, ys
+  function append(xs: List, ys: List): List
   {
     match xs
     case Nil =>
       ys
-    case Cons(x: _T0, tail: List<_T0>) =>
+    case Cons(x, tail) =>
       Cons(x, append(tail, ys))
   }
 
   predicate Total(s: state)
     reads s.reads
-    decreases set _x0: vname, _o0: object | _o0 in s.reads(_x0) :: _o0
   {
-    forall x: seq<char> :: 
+    forall x :: 
       s.requires(x)
   }
 
   function aval(a: aexp, s: state): val
     requires Total(s)
     reads s.reads
-    decreases set _x0: vname, _o0: object | _o0 in s.reads(_x0) :: _o0, a
   {
     match a
-    case N(n: int) =>
+    case N(n) =>
       n
-    case V(x: seq<char>) =>
+    case V(x) =>
       s(x)
-    case Plus(a0: aexp, a1: aexp) =>
+    case Plus(a0, a1) =>
       aval(a0, s) + aval(a1, s)
   }
 
   function asimp_const(a: aexp): aexp
-    decreases a
   {
     match a
-    case N(n: int) =>
+    case N(n) =>
       a
-    case V(x: seq<char>) =>
+    case V(x) =>
       a
-    case Plus(a0: aexp, a1: aexp) =>
-      var as0: aexp, as1: aexp := asimp_const(a0), asimp_const(a1);
+    case Plus(a0, a1) =>
+      var as0, as1 := asimp_const(a0), asimp_const(a1);
       if as0.N? && as1.N? then
         N(as0.n + as1.n)
       else
@@ -63,7 +59,6 @@ class _default {
   }
 
   function plus(a0: aexp, a1: aexp): aexp
-    decreases a0, a1
   {
     if a0.N? && a1.N? then
       N(a0.n + a1.n)
@@ -82,60 +77,67 @@ class _default {
   }
 
   function asimp(a: aexp): aexp
-    decreases a
   {
     match a
-    case N(n: int) =>
+    case N(n) =>
       a
-    case V(x: seq<char>) =>
+    case V(x) =>
       a
-    case Plus(a0: aexp, a1: aexp) =>
+    case Plus(a0, a1) =>
       plus(asimp(a0), asimp(a1))
   }
 
   lemma AsimpCorrect(a: aexp, s: state)
     requires Total(s)
     ensures aval(asimp(a), s) == aval(a, s)
-    decreases a
   {
-    forall a': aexp | a' < a {
+    forall a' | a' < a {
       AsimpCorrect(a', s);
     }
+  }
+
+  lemma AsimpConst(a: aexp, s: state)
+    requires Total(s)
+    ensures aval(asimp_const(a), s) == aval(a, s)
+  {
+    match a
+    case N(n) =>
+    case V(x) =>
+    case Plus(a0, a1) =>
+      AsimpConst(a0, s);
+      AsimpConst(a1, s);
   }
 
   function bval(b: bexp, s: state): bool
     requires Total(s)
     reads s.reads
-    decreases set _x0: vname, _o0: object | _o0 in s.reads(_x0) :: _o0, b
   {
     match b
-    case Bc(v: bool) =>
+    case Bc(v) =>
       v
-    case Not(b: bexp) =>
+    case Not(b) =>
       !bval(b, s)
-    case And(b0: bexp, b1: bexp) =>
+    case And(b0, b1) =>
       bval(b0, s) &&
       bval(b1, s)
-    case Less(a0: aexp, a1: aexp) =>
+    case Less(a0, a1) =>
       aval(a0, s) < aval(a1, s)
   }
 
   function not(b: bexp): bexp
-    decreases b
   {
     match b
-    case Bc(b0: bool) =>
+    case Bc(b0) =>
       Bc(!b0)
-    case Not(b0: bexp) =>
+    case Not(b0) =>
       b0
-    case And(_: bexp, _: bexp) =>
+    case And(_, _) =>
       Not(b)
-    case Less(_: aexp, _: aexp) =>
+    case Less(_, _) =>
       Not(b)
   }
 
   function and(b0: bexp, b1: bexp): bexp
-    decreases b0, b1
   {
     if b0.Bc? then
       if b0.v then
@@ -152,7 +154,6 @@ class _default {
   }
 
   function less(a0: aexp, a1: aexp): bexp
-    decreases a0, a1
   {
     if a0.N? && a1.N? then
       Bc(a0.n < a1.n)
@@ -161,33 +162,31 @@ class _default {
   }
 
   function bsimp(b: bexp): bexp
-    decreases b
   {
     match b
-    case Bc(v: bool) =>
+    case Bc(v) =>
       b
-    case Not(b0: bexp) =>
+    case Not(b0) =>
       not(bsimp(b0))
-    case And(b0: bexp, b1: bexp) =>
+    case And(b0, b1) =>
       and(bsimp(b0), bsimp(b1))
-    case Less(a0: aexp, a1: aexp) =>
+    case Less(a0, a1) =>
       less(asimp(a0), asimp(a1))
   }
 
-  ghost method BsimpCorrect(b: bexp, s: state)
+  lemma BsimpCorrect(b: bexp, s: state)
     requires Total(s)
     ensures bval(bsimp(b), s) == bval(b, s)
-    decreases b
   {
     match b
-    case Bc(v: bool) =>
-    case Not(op: bexp) =>
+    case Bc(v) =>
+    case Not(op) =>
       BsimpCorrect(op, s);
-    case And(0: bexp, 1: bexp) =>
-      BsimpCorrect(0, s);
-      BsimpCorrect(1, s);
-    case Less(a0: aexp, a1: aexp) =>
-      AsimpCorrect(a1, s);
-      AsimpCorrect(a0, s);
+    case And(a0, a1) =>
+      BsimpCorrect(a0, s);
+      BsimpCorrect(a1, s);
+    case Less(l0, l1) =>
+      AsimpCorrect(l1, s);
+      AsimpCorrect(l0, s);
   }
 }
