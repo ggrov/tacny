@@ -32,8 +32,8 @@ namespace Tacny
                 Dafny.Program dprog = program.ParseProgram();
                 sol.GenerateProgram(ref dprog);
                 program.ClearBody(localContext.md);
-                err = program.ResolveProgram();
                 //program.MaybePrintProgram(dprog, null);
+                err = program.ResolveProgram();
                 // skip the solution if resolution failed    
                 if (err != null)
                 {

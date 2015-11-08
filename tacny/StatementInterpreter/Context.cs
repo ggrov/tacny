@@ -26,7 +26,7 @@ namespace Tacny
     /// Local context for the tactic currently being resolved
     /// </summary>
     #region LocalContext
-    public class LocalContext : Context
+        public class LocalContext : Context
     {
         public Tactic tac = null;  // The called tactic
         public List<Statement> tac_body = new List<Statement>(); // body of the currently worked tactic
@@ -147,7 +147,7 @@ namespace Tacny
 
         public void IncCounter()
         {
-            if (tacCounter < tac_body.Count)
+            if (tacCounter <= tac_body.Count)
                 tacCounter++;
             else
                 throw new ArgumentOutOfRangeException("Tactic counter exceeded tactic body length");
@@ -190,7 +190,7 @@ namespace Tacny
 
         public bool IsResolved()
         {
-            return tacCounter == tac.Body.Body.Count;
+            return tacCounter >= tac.Body.Body.Count;
         }
 
         public void AddUpdated(Statement key, Statement value)

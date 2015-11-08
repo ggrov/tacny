@@ -75,6 +75,10 @@ namespace Tacny
 
                     input = new BinaryExpr(bexp.tok, bexp.Op, e0, e1);
                 }
+                else if (tmp is NameSegment)
+                {
+                    input = tmp as NameSegment;
+                }
             }
             WhileStmt ws = FindWhileStmt(globalContext.tac_call, globalContext.md);
 
@@ -101,6 +105,7 @@ namespace Tacny
 
                 dec_list = target.Decreases.Expressions;
                 // insert new variants at the end of the existing variants list
+                Contract.Assert(input != null);
                 dec_list.Add(input);
 
                 Specification<Expression> decreases = new Specification<Expression>(dec_list, target.Decreases.Attributes);

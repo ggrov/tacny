@@ -39,7 +39,7 @@ namespace Tacny
                 return "ERROR params: unexpected source method type: expected method received " + localContext.md.GetType();
 
             input.AddRange(source.Ins);
-
+            input.AddRange(source.Outs);
             AddLocal(lv, input);
             IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));

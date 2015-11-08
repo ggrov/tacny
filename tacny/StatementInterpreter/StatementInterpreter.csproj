@@ -103,6 +103,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Atomic.cs" />
+    <Compile Include="AtomicStatements\BlockAtomic.cs" />
     <Compile Include="AtomicStatements\FailAtomic.cs" />
     <Compile Include="AtomicStatements\IdAtomic.cs" />
     <Compile Include="AtomicStatements\LemmasAtomic.cs" />

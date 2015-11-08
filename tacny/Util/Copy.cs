@@ -39,7 +39,12 @@ namespace Util
 
             if (item is UpdateStmt)
                 return CopyUpdateStmt(item as UpdateStmt);
-
+            if (item is IfStmt)
+                return CopyIfStmt(item as IfStmt);
+            if (item is BlockStmt)
+                return CopyBlockStmt(item as BlockStmt);
+            if (item is WhileStmt)
+                return CopyWhileStmt(item as WhileStmt);
             return item;
         }
 
@@ -52,11 +57,71 @@ namespace Util
         {
             ExprRhs old_exp = stmt.Rhss[0] as ExprRhs;
             ApplySuffix old_aps = old_exp.Expr as ApplySuffix;
+            Dafny.LiteralExpr literal = old_exp.Expr as Dafny.LiteralExpr;
+            if(old_aps != null) 
+            {
+                ApplySuffix aps = CopyExpression(old_aps) as ApplySuffix;
+                return new UpdateStmt(stmt.Tok, stmt.EndTok, CopyExpressionList(stmt.Lhss), new List<AssignmentRhs>() { new ExprRhs(aps) });
+            }
+            else if (literal != null)
+            {
+                return new UpdateStmt(stmt.Tok, stmt.EndTok, CopyExpressionList(stmt.Lhss), new List<AssignmentRhs>() { new ExprRhs(CopyExpression(literal)) });
+            }
 
-            ApplySuffix aps = new ApplySuffix(old_aps.tok, old_aps.Lhs, CopyExpressionList(old_aps.Args)); // args might require a deep copy
-            return new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
+            return null;
+            
+        }
+        /// <summary>
+        /// Create a deep copy if IfStmt
+        /// </summary>
+        /// <param name="stmt"></param>
+        /// <returns></returns>
+        public static IfStmt CopyIfStmt(IfStmt stmt)
+        {
+            return new IfStmt(stmt.Tok, stmt.EndTok, CopyExpression(stmt.Guard), CopyBlockStmt(stmt.Thn), CopyStatement(stmt.Els));
         }
 
+        /// <summary>
+        /// Create deep copy of BlockStmt
+        /// </summary>
+        /// <param name="stmt"></param>
+        /// <returns></returns>
+        public static BlockStmt CopyBlockStmt(BlockStmt stmt)
+        {
+            return new BlockStmt(stmt.Tok, stmt.EndTok, CopyStatementList(stmt.Body));
+        }
+
+        /// <summary>
+        /// Deep Copy WhileStmt
+        /// @TODO copy mod
+        /// </summary>
+        /// <param name="stmt"></param>
+        /// <returns></returns>
+        public static WhileStmt CopyWhileStmt(WhileStmt stmt)
+        {
+            return new WhileStmt(stmt.Tok, stmt.EndTok, CopyExpression(stmt.Guard), CopyMaybeFreeExpressionList(stmt.Invariants), CopySpecificationExpression(stmt.Decreases), stmt.Mod, CopyBlockStmt(stmt.Body));
+        }
+
+        public static List<MaybeFreeExpression> CopyMaybeFreeExpressionList(List<MaybeFreeExpression> list)
+        {
+            List<MaybeFreeExpression> ret = new List<MaybeFreeExpression>();
+            foreach (var item in list)
+            {
+
+            }
+
+            return ret;
+        }
+
+        public static MaybeFreeExpression CopyMaybeFreeExpression(MaybeFreeExpression mfe)
+        {
+            return new MaybeFreeExpression(CopyExpression(mfe.E));
+        }
+
+        public static Specification<Expression> CopySpecificationExpression(Specification<Expression> item)
+        {
+            return new Specification<Expression>(CopyExpressionList(item.Expressions), item.Attributes);
+        }
         /// <summary>
         /// Deep copy expression list
         /// </summary>
@@ -82,6 +147,8 @@ namespace Util
         {
             if (exp is NameSegment)
                 return CopyNameSegment(exp as NameSegment);
+            if (exp is ApplySuffix)
+                return CopyApplySuffix(exp as ApplySuffix);
             return exp;
         }
 
@@ -94,7 +161,15 @@ namespace Util
         {
             return new NameSegment(old.tok, old.Name, old.OptTypeArguments);
         }
-
+        /// <summary>
+        /// Create a deep copy of ApplySufix
+        /// </summary>
+        /// <param name="oldAps"></param>
+        /// <returns></returns>
+        public static ApplySuffix CopyApplySuffix(ApplySuffix old_aps)
+        {
+            return new ApplySuffix(old_aps.tok, old_aps.Lhs, CopyExpressionList(old_aps.Args));
+        }
 
         public static CoLemma CopyCoLemma(MemberDecl md)
         {
@@ -179,6 +254,6 @@ namespace Util
             Dictionary<Statement, Statement> newDict = us_keys.ToDictionary(x => x, x => us_values[us_keys.IndexOf(x)]);
             return newDict;
         }
-        
+
     }
 }

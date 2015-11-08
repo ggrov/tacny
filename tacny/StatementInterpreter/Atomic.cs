@@ -187,6 +187,7 @@ namespace Tacny
                 if (err != null)
                     return err;
 
+
                 if (solution_list.IndexOf(solution) == solution_list.Count - 1)
                 {
                     foreach (var res in result)
@@ -203,6 +204,12 @@ namespace Tacny
             return err;
         }
 
+        /// <summary>
+        /// Resolves atomic statements inside a block stmt
+        /// </summary>
+        /// <param name="body"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
         protected string ResolveBody(BlockStmt body, out List<Solution> result)
         {
             string err;
@@ -212,7 +219,7 @@ namespace Tacny
             result = new List<Solution>() { new Solution(atomic) };
             while (true)
             {
-    
+
                 List<Solution> res = new List<Solution>();
                 foreach (var solution in result)
                 {
@@ -237,10 +244,10 @@ namespace Tacny
                 // increment program counter
                 foreach (var sol in res)
                 {
-                    if(!sol.isFinal)
+                    if (!sol.isFinal)
                         sol.state.localContext.IncCounter();
                 }
-               
+
                 result.Clear();
                 result.AddRange(res);
             }
@@ -310,7 +317,11 @@ namespace Tacny
                 // register variable to localc with empty value
                 if (vds != null)
                 {
-                    solution_list.Add(RegisterLocalVariable(vds));
+                    Solution sol;
+                    string err = RegisterLocalVariable(vds, out sol);
+                    if (err != null)
+                        return err;
+                    solution_list.Add(sol);
                     return null;
                 }
                 return CallDefaultAction(st, ref solution_list);
@@ -325,26 +336,87 @@ namespace Tacny
             return qq.Resolve(st, ref solution_list);
         }
 
-        private Solution RegisterLocalVariable(VarDeclStmt declaration)
+        private string RegisterLocalVariable(VarDeclStmt declaration, out Solution result)
         {
-            object val = new object();
+            string err = null;
+            result = null;
             // if declaration has rhs
             if (declaration.Update != null)
             {
                 UpdateStmt rhs = declaration.Update as UpdateStmt;
-                // if 
+                // if statement is of type var q;
                 if (rhs == null)
                 { /* leave the statement */ }
                 else
                 {
-                    ExprRhs exprRhs = rhs.Rhss[0] as ExprRhs;
-                    Dafny.LiteralExpr litExpr = exprRhs.Expr as Dafny.LiteralExpr;
-                    if (litExpr != null)
-                        val = litExpr;
+                    foreach (var item in rhs.Rhss)
+                    {
+                        int index = rhs.Rhss.IndexOf(item);
+                        if (declaration.Locals.Count < index)
+                            return String.Format("Not all declared variables have an assigned value");
+                        ExprRhs exprRhs = item as ExprRhs;
+                        // if the declaration is literal expr (e.g. var q := 1)
+                        Dafny.LiteralExpr litExpr = exprRhs.Expr as Dafny.LiteralExpr;
+                        if (litExpr != null)
+                            AddLocal(declaration.Locals[index], litExpr);
+                        else
+                        {
+                            Expression res;
+                            err = ProcessArg(exprRhs.Expr, out res);
+                            if (err != null)
+                                return err;
+                            if (res != null)
+                                AddLocal(declaration.Locals[index], res);
+                        }
+                    }
                 }
             }
-            AddLocal(declaration.Locals[0], val);
-            return new Solution(this.Copy());
+            else
+            {
+                foreach (var item in declaration.Locals)
+                {
+                    AddLocal(item as IVariable, null);
+                }
+            }
+            //AddLocal(declaration.Locals[0], val);
+            result = new Solution(this.Copy());
+            return err;
+        }
+
+        private string RegisterLocalVariable(UpdateStmt updateStmt, out Solution result)
+        {
+            string err = null;
+            result = null;
+            foreach (var item in updateStmt.Rhss)
+            {
+                int index = updateStmt.Rhss.IndexOf(item);
+                if (updateStmt.Lhss.Count < index)
+                    return String.Format("Not all variables have an assigned value");
+                // check if lhs is declared
+                NameSegment lhs = updateStmt.Lhss[index] as NameSegment;
+                if (lhs == null)
+                    return String.Format("Unexpected declaration type, expected NameSegment, received {0}", updateStmt.Lhss[index].GetType());
+                IVariable local = GetLocalKeyByName(lhs);
+                if (local == null)
+                    return String.Format("Local variable {0} is not declared", lhs.Name);
+                ExprRhs exprRhs = item as ExprRhs;
+                // if the declaration is literal expr (e.g. var q := 1)
+                Dafny.LiteralExpr litExpr = exprRhs.Expr as Dafny.LiteralExpr;
+                if (litExpr != null)
+                    AddLocal(local, litExpr);
+                else
+                {
+                    Expression res;
+                    err = ProcessArg(exprRhs.Expr, out res);
+                    if (err != null)
+                        return err;
+                    if (res != null)
+                        AddLocal(local, res);
+                }
+            }
+
+            result = new Solution(this.Copy());
+            return err;
         }
 
         /// <summary>
@@ -455,12 +527,33 @@ namespace Tacny
             return null;
         }
 
+        /// <summary>
+        /// Called when the statement is not atomic to insert the statment as Dafny code
+        /// </summary>
+        /// <param name="st"></param>
+        /// <param name="solution_list"></param>
+        /// <returns></returns>
         private string CallDefaultAction(Statement st, ref List<Solution> solution_list)
         {
+            string err = null;
+            /*
+             * If the statement is updateStmt check for variable assignment 
+             */
+            if (st is UpdateStmt)
+            {
+                UpdateStmt us = st as UpdateStmt;
+                Solution sol;
+                // if localc have been succesffuly registered
+                if (RegisterLocalVariable(us, out sol) == null)
+                {
+                    solution_list.Add(sol);
+                    return err;
+                }
+            }
             Atomic state = this.Copy();
             state.AddUpdated(st, st);
             solution_list.Add(new Solution(state, null));
-            return null;
+            return err;
         }
 
         /// <summary>
@@ -513,6 +606,8 @@ namespace Tacny
 
         protected IVariable GetLocalKeyByName(NameSegment ns)
         {
+            if (ns == null)
+                return null;
             return localContext.GetLocalKeyByName(ns.Name);
         }
 
@@ -606,9 +701,55 @@ namespace Tacny
                     return false;
             }
 
-                return true;
+            return true;
+        }
+
+        /// <summary>
+        /// Creates a new tactic from a given tactic body and updates the context
+        /// </summary>
+        /// <param name="tac"></param>
+        /// <param name="newBody"></param>
+        /// <param name="decCounter"></param>
+        /// <returns></returns>
+        protected Solution CreateSolution(List<Statement> newBody, bool decCounter = true)
+        {
+            Tactic tac = localContext.tac;
+            Tactic newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
+                                        tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
+                                        tac.Decreases, new BlockStmt(tac.Body.Tok, tac.Body.EndTok, newBody),
+                                        tac.Attributes, tac.SignatureEllipsis);
+            Atomic newAtomic = this.Copy();
+            newAtomic.localContext.tac = newTac;
+            newAtomic.localContext.tac_body = newBody;
+            /* HACK */
+            // decrase the tactic body counter
+            // so the interpreter would execute newly inserted atomic
+            if (decCounter)
+                newAtomic.localContext.DecCounter();
+            return new Solution(newAtomic);
+        }
+
+        /// <summary>
+        /// Replaces the statement at current body counter with a new statement
+        /// </summary>
+        /// <param name="oldBody"></param>
+        /// <param name="newStatement"></param>
+        /// <returns></returns>
+        protected List<Statement> ReplaceCurrentAtomic(Statement newStatement)
+        {
+            int index = localContext.GetCounter();
+            List<Statement> newBody = localContext.GetFreshTacticBody();
+            newBody[index] = newStatement;
+            return newBody;
+        }
+
+        protected List<Statement> ReplaceCurrentAtomic(List<Statement> list)
+        {
+            int index = localContext.GetCounter();
+            List<Statement> newBody = localContext.GetFreshTacticBody();
+            newBody.RemoveAt(index);
+            newBody.InsertRange(index, list);
+            return newBody;
         }
     }
 }
-
-

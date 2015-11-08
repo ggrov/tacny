@@ -56,7 +56,9 @@ namespace Tacny
                 if (!(e0 is NameSegment) || !(e1 is NameSegment))
                     return String.Format("Currently nested binary expressions are not supported");
 
-                Dafny.Formal form = localContext.GetLocalValueByName(e0 as NameSegment) as Dafny.Formal;
+                IVariable form = localContext.GetLocalValueByName(e0 as NameSegment) as IVariable;
+                if(form == null)
+                    return String.Format("{0} is not defined in current context", (e0 as NameSegment).Name);
                 NameSegment ns = e1 as NameSegment;
 
                 dynamic_val = value;
@@ -66,7 +68,7 @@ namespace Tacny
                     IncTotalBranchCount(dynamic_val.Count);
                     foreach (var item in dynamic_val)
                     {
-                        if (item.Name != vds.Locals[0].Name)
+                        if (item.Name != form.Name)
                         {
                             AddLocal(vds.Locals[0], item);
                             solution_list.Add(new Solution(this.Copy()));
