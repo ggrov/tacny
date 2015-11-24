@@ -6,11 +6,15 @@ using System.Text;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
 using Microsoft.Boogie;
+using System.Numerics;
+
 
 namespace Tacny
 {
     class BlockAtomic : Atomic
     {
+        protected ExpressionTree guard = null;
+
         protected BlockAtomic(Atomic atomic) : base(atomic) { }
 
         /// <summary>
@@ -21,10 +25,10 @@ namespace Tacny
         protected Expression ExtractGuard(Statement st)
         {
             Contract.Requires(st != null);
+            
             IfStmt ifStmt = null;
             WhileStmt whileStmt = null;
             Expression guard_wrapper = null;
-            Expression guard = null;
             // extract the guard statement
             if ((ifStmt = st as IfStmt) != null)
                 guard_wrapper = ifStmt.Guard;
@@ -32,16 +36,9 @@ namespace Tacny
                 guard_wrapper = whileStmt.Guard;
             else
                 return null;
-            // check if guard is in parenthesis
-            ParensExpression parens = null;
-            if ((parens = guard_wrapper as ParensExpression) != null)
-                // if guard is not binary expr try literal
-                if ((guard = parens.E as BinaryExpr) == null)
-                    guard = parens.E as Dafny.LiteralExpr;
-                else
-                    guard = guard_wrapper as BinaryExpr;
-
-            return guard;
+            this.guard = ExpressionTree.ExpressionToTree(guard_wrapper);
+          
+            return guard_wrapper;
         }
 
         /// <summary>
@@ -50,58 +47,108 @@ namespace Tacny
         /// </summary>
         /// <param name="guard"></param>
         /// <returns></returns>
-        protected bool IsResolvable(Expression expr)
+        protected bool IsResolvable()
         {
-            NameSegment lhsNs = null;
-            NameSegment rhsNs = null;
-            Dafny.LiteralExpr llexp = null;
-            Dafny.LiteralExpr rlexp = null;
-            
-            // check if the expression is a literal expression
-            Dafny.LiteralExpr litGuard = expr as Dafny.LiteralExpr;
-            if (litGuard != null)
-                return true;
-            /**
-             * for simplicity sake assume that binary expression will be in a form of x < y
-             */
-            BinaryExpr guard = expr as BinaryExpr;
-            lhsNs = guard.E0 as NameSegment;
-            if (lhsNs == null)
+            Contract.Requires(this.guard != null);
+            List<Expression> leafs = guard.GetLeafs();
+
+            foreach (var leaf in leafs)
             {
-                // if lhs is not a binary expr try literal
-                llexp = guard.E0 as Dafny.LiteralExpr;
+                if (leaf is NameSegment)
+                {
+                    NameSegment ns = leaf as NameSegment;
+                    object local = GetLocalValueByName(ns);
+                    if (!(local is Dafny.LiteralExpr))
+                        return false;
+                }
+                else if (leaf is Dafny.LiteralExpr|| leaf is ApplySuffix)
+                {
+                    continue;
+                }
+                else
+                {
+                    return false;
+                }
             }
+            return true;
+        }
 
-            rhsNs = guard.E1 as NameSegment;
-            if (rhsNs == null)
-            {//
-                // if lhs is not a binary expr try literal
-                rlexp = guard.E1 as Dafny.LiteralExpr;
-            }
-            if (rlexp != null && llexp != null)
-                return true;
-
-            object val1 = null;
-            object val2 = null;
-            if (lhsNs != null)
-                val1 = GetLocalValueByName(lhsNs);
-            if (rhsNs != null)
-                val2 = GetLocalValueByName(rhsNs);
-            // if there is a local definition for lhs
-            if (val1 != null)
+        /// <summary>
+        /// Resolve an expression guard
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        protected bool EvaluateGuard()
+        {
+            Contract.Requires(guard != null);
+            Contract.Requires(IsResolvable());
+            return EvaluateGuardTree(guard);
+        }
+        /// <summary>
+        /// Evalutate an expression tree
+        /// </summary>
+        /// <param name="expt"></param>
+        /// <returns></returns>
+        protected bool EvaluateGuardTree(ExpressionTree expt)
+        {
+            Contract.Requires(expt != null);
+            // if the node is leaf, cast it to bool and return
+            // TODO: call evaluation
+            if (expt.isLeaf())
             {
-                // if val2 is also defined, check whether both are litterals
-                if (val2 != null)
-                    return val1 is Dafny.LiteralExpr && val2 is Dafny.LiteralExpr;
-                // if val2 not assigned check  type of val1 and if rlexp literal is not null
-                return val1 is Dafny.LiteralExpr && rlexp != null;
-
+                Dafny.LiteralExpr lit = EvaluateLeaf(expt) as Dafny.LiteralExpr;
+                return lit.Value is bool ? (bool)lit.Value : false;
             }
-            else if (val2 != null)
+            // left branch only
+            else if (expt.lChild != null && expt.rChild == null)
+                return EvaluateGuardTree(expt.lChild);
+              // if there is no more nesting resolve the expression
+            else if (expt.lChild.isLeaf() && expt.rChild.isLeaf())
             {
-                return val2 is Dafny.LiteralExpr && llexp != null;
-            }
+                Dafny.LiteralExpr lhs = null;
+                Dafny.LiteralExpr rhs = null;
+                lhs = EvaluateLeaf(expt.lChild) as Dafny.LiteralExpr;
+                rhs = EvaluateLeaf(expt.rChild) as Dafny.LiteralExpr;
+                if (!lhs.GetType().Equals(rhs.GetType()))
+                    return false;
+                BinaryExpr bexp = tcce.NonNull<BinaryExpr>(expt.data as BinaryExpr);
+                int res = -1;
+                if (lhs.Value is BigInteger)
+                {
+                    BigInteger l = (BigInteger)lhs.Value;
+                    BigInteger r = (BigInteger)rhs.Value;
+                    res = l.CompareTo(r);
+                }
+                else if (lhs.Value is string)
+                {
+                    string l = lhs.Value as string;
+                    string r = rhs.Value as string;
+                    res = l.CompareTo(r);
+                }
+                else if (lhs.Value is bool)
+                    res = ((bool)lhs.Value).CompareTo((bool)rhs.Value);
 
+                if (bexp.Op == BinaryExpr.Opcode.Eq)
+                    return res == 0;
+                else if (bexp.Op == BinaryExpr.Opcode.Neq)
+                    return res != 0;
+                else if (bexp.Op == BinaryExpr.Opcode.Ge)
+                    return res >= 0;
+                else if (bexp.Op == BinaryExpr.Opcode.Gt)
+                    return res > 0;
+                else if (bexp.Op == BinaryExpr.Opcode.Le)
+                    return res <= 0;
+                else if (bexp.Op == BinaryExpr.Opcode.Lt)
+                    return res < 0;
+            }
+            else // evaluate a nested expression
+            {
+                BinaryExpr bexp = tcce.NonNull<BinaryExpr>(expt.data as BinaryExpr);
+                if (bexp.Op == BinaryExpr.Opcode.And)
+                    return EvaluateGuardTree(expt.lChild) && EvaluateGuardTree(expt.rChild);
+                else if (bexp.Op == BinaryExpr.Opcode.Or)
+                    return EvaluateGuardTree(expt.lChild) || EvaluateGuardTree(expt.rChild);
+            }
             return false;
         }
     }

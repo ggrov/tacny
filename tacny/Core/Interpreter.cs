@@ -172,9 +172,10 @@ namespace Tacny
             end = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
             if (final.Count > 0)
             {
-                tacnyProgram.PrintDebugMessage("Execution time {0}s\nTotal branch count {1} branches\nInvalid branch count {2} branches",
+                tacnyProgram.PrintDebugMessage("Execution time {0}s\nGenerated: {1} branches\nInvalid: {2} branches\nFailed to verify {3} branches",
                     end - start,
                     final[0].state.GetTotalBranchCount(),
+                    final[0].state.GetInvalidBranchCount(),
                     final[0].state.GetBadBranchCount());
             }
             if (err != null)

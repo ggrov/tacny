@@ -9,7 +9,7 @@ using Bpl = Microsoft.Boogie;
 namespace Tacny
 {
     /// <summary>
-    /// Easy to manage tree representation of the expression.
+    /// Easy to manage tree representation of àn expression.
     /// </summary>
     public class ExpressionTree
     {
@@ -44,6 +44,11 @@ namespace Tacny
         public bool isLeaf()
         {
             return lChild == null && rChild == null;
+        }
+
+        public bool isRoot()
+        {
+            return parent == null;
         }
 
         public int OccurrenceOf(Expression exp)

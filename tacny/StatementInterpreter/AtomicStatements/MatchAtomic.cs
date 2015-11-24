@@ -115,7 +115,7 @@ namespace Tacny
 
             if (datatype_name == "Element")
             {
-                object val = localContext.GetLocalValueByName(formal.Name);
+                object val = GetLocalValueByName(formal.Name);
                 NameSegment decl = val as NameSegment;
                 if (decl == null)
                     return String.Format("cases: Argument {0} is not declared", formal.Name);
@@ -139,9 +139,9 @@ namespace Tacny
 
 
             if (!globalContext.ContainsGlobalKey(datatype_name))
-
                 return String.Format("cases: datatype {0} is undefined", datatype_name);
-            ns = localContext.GetLocalValueByName(formal) as NameSegment;
+
+            ns = GetLocalValueByName(formal) as NameSegment;
 
             datatype = globalContext.GetGlobal(datatype_name);
             InitCtorFlags(datatype, out ctorFlags);
@@ -170,7 +170,7 @@ namespace Tacny
                     // skip the solution if resolution failed    
                     if (err != null)
                     {
-                        IncBadBranchCount();
+                        IncInvalidBranchCount();
                         continue;
                     }
                     //program.MaybePrintProgram(dprog, null);

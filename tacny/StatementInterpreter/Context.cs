@@ -240,8 +240,9 @@ namespace Tacny
         public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
         public List<Statement> resolved = new List<Statement>();
         public Method new_target = null;
-        public int total_branch_count = 0;
-        public int bad_branch_count = 0;
+        public int total_branch_count {get; private set;}
+        public int bad_branch_count { get; private set; }
+        public int invalid_branch_count { get; private set; }
         public Program program;
 
 
@@ -251,6 +252,9 @@ namespace Tacny
             this.program = program;
             foreach (DatatypeDecl tld in program.globals)
                 this.datatypes.Add(tld.Name, tld);
+            total_branch_count = 0;
+            bad_branch_count = 0;
+            invalid_branch_count = 0;
 
         }
 
@@ -306,25 +310,22 @@ namespace Tacny
                 temp_variables.Remove(var.Name);
         }
 
-        public void IncTotalBranchCount(int count)
+        public void IncTotalBranchCount()
         {
-            total_branch_count += count;
+            total_branch_count++;
         }
 
-        public int GetTotalBranchCount()
+        public void IncBadBranchCount()
         {
-            return total_branch_count;
+            bad_branch_count++;
         }
 
-        public void IncBadBranchCount(int count)
+        public void IncInvalidBranchCount()
         {
-            bad_branch_count += count;
+            invalid_branch_count++;
         }
 
-        public int GetBadBranchCount()
-        {
-            return bad_branch_count;
-        }
+    
     }
     #endregion
 }

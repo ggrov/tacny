@@ -5,7 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
-
+using System.Numerics;
 namespace Tacny
 {
     public interface IAtomicStmt
@@ -24,6 +24,8 @@ namespace Tacny
         private Dictionary<Tactic, Atomic> tacticCache = new Dictionary<Tactic, Atomic>();
         protected Atomic(Atomic ac)
         {
+            Contract.Requires(ac != null);
+
             this.localContext = ac.localContext;
             this.globalContext = ac.globalContext;
             this.program = ac.globalContext.program;
@@ -256,6 +258,7 @@ namespace Tacny
 
         protected string CallAction(object call, ref List<Solution> solution_list)
         {
+            string err;
             System.Type type;
             Statement st = call as Statement;
             ApplySuffix aps;
@@ -284,23 +287,29 @@ namespace Tacny
                     {
                         Atomic ac;
                         Tactic tac = program.GetTactic(us);
-                        ac = new Atomic(localContext.tac, tac, us, globalContext);
+                        ac = new Atomic(localContext.md, tac, us, globalContext);
 
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
                         List<Expression> exps = ((ApplySuffix)er.Expr).Args;
                         Contract.Assert(exps.Count == ac.localContext.tac.Ins.Count);
                         for (int i = 0; i < exps.Count; i++)
                         {
-                            ac.AddLocal(ac.localContext.tac.Ins[i], GetLocalValueByName(exps[i] as NameSegment));
+                            Expression result = null;
+                            err = ProcessArg(exps[i], out result);
+
+                            ac.AddLocal(ac.localContext.tac.Ins[i], result);
                         }
                         List<Solution> sol_list = new List<Solution>();
-                        string err = Atomic.ResolveTactic(ac, ref sol_list);
+                       err = Atomic.ResolveTactic(ac, ref sol_list);
                         if (err != null)
                             return err;
-
+                        /**
+                         * Transfer the results from evaluating the nested tactic
+                         */
                         foreach (var solution in sol_list)
                         {
                             Atomic action = this.Copy();
+                            action.SetNewTarget(solution.state.GetNewTarget());
                             foreach (KeyValuePair<Statement, Statement> kvp in solution.state.GetResult())
                             {
                                 action.AddUpdated(kvp.Key, kvp.Value);
@@ -318,7 +327,7 @@ namespace Tacny
                 if (vds != null)
                 {
                     Solution sol;
-                    string err = RegisterLocalVariable(vds, out sol);
+                    err = RegisterLocalVariable(vds, out sol);
                     if (err != null)
                         return err;
                     solution_list.Add(sol);
@@ -521,6 +530,12 @@ namespace Tacny
                 localContext.local_variables.Remove(lv);
 
             }
+            else if (argument is BinaryExpr || argument is ParensExpression)
+            {
+                ExpressionTree expt = ExpressionTree.ExpressionToTree(argument);
+                ResolveExpression(expt);
+                result =  EvaluateExpression(expt);
+            }
             else
                 result = argument;
 
@@ -596,7 +611,13 @@ namespace Tacny
 
         protected object GetLocalValueByName(NameSegment ns)
         {
+            Contract.Requires(ns != null);
             return localContext.GetLocalValueByName(ns.Name);
+        }
+
+        protected object GetLocalValueByName(IVariable variable)
+        {
+            return localContext.GetLocalValueByName(variable);
         }
 
         protected object GetLocalValueByName(string name)
@@ -673,24 +694,34 @@ namespace Tacny
             return localContext.updated_statements;
         }
 
-        public void IncTotalBranchCount(int count = 1)
+        public void IncTotalBranchCount()
         {
-            globalContext.IncTotalBranchCount(count);
+            globalContext.IncTotalBranchCount();
         }
 
         public int GetTotalBranchCount()
         {
-            return globalContext.GetTotalBranchCount();
+            return globalContext.total_branch_count;
         }
 
-        public void IncBadBranchCount(int count = 1)
+        public void IncBadBranchCount()
         {
-            globalContext.IncBadBranchCount(count);
+            globalContext.IncBadBranchCount();
         }
 
         public int GetBadBranchCount()
         {
-            return globalContext.GetBadBranchCount();
+            return globalContext.bad_branch_count;
+        }
+
+        public void IncInvalidBranchCount()
+        {
+            globalContext.IncInvalidBranchCount();
+        }
+
+        public int GetInvalidBranchCount()
+        {
+            return globalContext.invalid_branch_count;
         }
 
         public bool IsFinal(List<Solution> solution_list)
@@ -704,6 +735,15 @@ namespace Tacny
             return true;
         }
 
+        public Method GetNewTarget()
+        {
+            return localContext.new_target;
+        }
+
+        public void SetNewTarget(Method new_target)
+        {
+            localContext.new_target = new_target;
+        }
         /// <summary>
         /// Creates a new tactic from a given tactic body and updates the context
         /// </summary>
@@ -750,6 +790,97 @@ namespace Tacny
             newBody.RemoveAt(index);
             newBody.InsertRange(index, list);
             return newBody;
+        }
+
+        protected Expression EvaluateExpression(ExpressionTree expt)
+        {
+            if (expt.isLeaf())
+            {
+                return EvaluateLeaf(expt) as Dafny.LiteralExpr;
+            }
+            else
+            {
+                Dafny.LiteralExpr lhs = EvaluateExpression(expt.lChild) as Dafny.LiteralExpr;
+                Dafny.LiteralExpr rhs = EvaluateExpression(expt.rChild) as Dafny.LiteralExpr;
+
+                // for now asume lhs and rhs are integers
+                BigInteger l = (BigInteger)lhs.Value;
+                BigInteger r = (BigInteger)rhs.Value;
+
+                BigInteger res = 0;
+                BinaryExpr bexp = tcce.NonNull<BinaryExpr>(expt.data as BinaryExpr);
+
+                switch (bexp.Op)
+                {
+                    case BinaryExpr.Opcode.Sub:
+                        res = BigInteger.Subtract(l, r);
+                        break;
+                    case BinaryExpr.Opcode.Add:
+                        res = BigInteger.Add(l, r);
+                        break;
+                    case BinaryExpr.Opcode.Mul:
+                        res = BigInteger.Multiply(l, r);
+                        break;
+                    case BinaryExpr.Opcode.Div:
+                        res = BigInteger.Divide(l, r);
+                        break;
+                }
+
+                return new Dafny.LiteralExpr(lhs.tok, res);
+
+                
+            }
+        }
+
+        /// <summary>
+        /// Evalue a leaf node
+        /// TODO: support for call evaluation
+        /// </summary>
+        /// <param name="expt"></param>
+        /// <returns></returns>
+        protected Expression EvaluateLeaf(ExpressionTree expt)
+        {
+            Contract.Requires(expt.isLeaf());
+            if (expt.data is NameSegment || expt.data is ApplySuffix)
+            {
+                Expression result = null;
+                string err = ProcessArg(expt.data, out result);
+                return result;
+            }
+            else if (expt.data is Dafny.LiteralExpr)
+            {
+                return expt.data;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Resolve all variables in expression to either literal values
+        /// or to oriignal declared nameSegments
+        /// </summary>
+        /// <param name="guard"></param>
+        /// <returns></returns>
+        protected string ResolveExpression(ExpressionTree guard)
+        {
+            Contract.Requires(guard != null);
+            if (guard.isLeaf())
+            {
+                // we only need to replace nameSegments
+                if (guard.data is NameSegment)
+                {
+                    Expression result;
+                    string err = ProcessArg(guard.data, out result);
+                    if(err != null)
+                        return err;
+                    guard.data = result;
+                }
+
+                return null;
+            }
+            ResolveExpression(guard.lChild);
+            if(guard.rChild != null)
+                ResolveExpression(guard.rChild);
+            return null;
         }
     }
 }

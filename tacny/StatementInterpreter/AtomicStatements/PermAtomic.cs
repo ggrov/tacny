@@ -10,10 +10,9 @@ namespace Tacny
 {
     class PermAtomic : Atomic, IAtomicStmt
     {
-        public PermAtomic(Atomic atomic)
-            : base(atomic)
-        { }
-        // Holds the result of each following perm()
+        public PermAtomic(Atomic atomic) : base(atomic) { }
+
+        // Holds the result of each  perm()
         private List<List<UpdateStmt>> solutions = new List<List<UpdateStmt>>();
 
         public string Resolve(Statement st, ref List<Solution> solution_list)
@@ -68,9 +67,9 @@ namespace Tacny
                 result.Add(new List<UpdateStmt>() { tmp });
             GenerateMethodPremutations(solutions, 0, new List<UpdateStmt>(), ref result);
             // generate the solutions
-            IncTotalBranchCount(result.Count);
             foreach (var item in result)
             {
+                IncTotalBranchCount();
                 Atomic ac = this.Copy();
                 // create a deep copy of each UpdateStmt
                 foreach (var us in item)

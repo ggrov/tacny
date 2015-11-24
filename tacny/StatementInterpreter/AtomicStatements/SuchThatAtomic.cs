@@ -65,9 +65,9 @@ namespace Tacny
                 // sanity check so we wouldn't iterate a non enumerable
                 if (dynamic_val is IEnumerable)
                 {
-                    IncTotalBranchCount(dynamic_val.Count);
                     foreach (var item in dynamic_val)
                     {
+                        IncTotalBranchCount();
                         if (item.Name != form.Name)
                         {
                             AddLocal(vds.Locals[0], item);
@@ -105,9 +105,9 @@ namespace Tacny
             // sanity check so we wouldn't iterate a non enumerable
             if (dynamic_val is IEnumerable)
             {
-                IncTotalBranchCount(dynamic_val.Count);
                 foreach (var item in dynamic_val)
                 {
+                    IncTotalBranchCount();
                     AddLocal(declaration, item);
                     solution_list.Add(new Solution(this.Copy()));
                 }

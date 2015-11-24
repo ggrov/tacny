@@ -17,16 +17,17 @@ namespace Tacny
         public string Resolve(Statement st, ref List<Solution> solution_list)
         {
             Contract.Requires(st != null);
-            Expression guard = ExtractGuard(st);
-            if(guard == null)
+            if(ExtractGuard(st) == null)
                 return "Unable to extract the while statement guard";
+
+            
             /**
              * 
              * Check if the loop guard can be resolved localy
              */
-            if (IsResolvable(guard))
+            if (IsResolvable())
             {
-                return ExecuteLoop(st as WhileStmt, guard, ref solution_list);
+                return ExecuteLoop(st as WhileStmt, ref solution_list);
             }
             else
             {
@@ -35,20 +36,26 @@ namespace Tacny
         }
 
 
-        private string ExecuteLoop(WhileStmt loop, Expression guard, ref List<Solution> solution_list)
+        private string ExecuteLoop(WhileStmt whileStmt, ref List<Solution> solution_list)
         {
-
-
             return null;
         }
 
-        private string InsertLoop(WhileStmt loop, ref List<Solution> solution_list)
+        private string InsertLoop(WhileStmt whileStmt, ref List<Solution> solution_list)
         {
-            IncTotalBranchCount();
-            AddUpdated(loop, loop);
+            Contract.Requires(whileStmt != null);
+            ResolveExpression(this.guard);
+            Expression guard = this.guard.TreeToExpression();
 
+            AddUpdated(whileStmt, Util.Copy.CopyWhileStmt(ReplaceGuard(whileStmt, guard)));
+            IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
             return null;
+        }
+
+        private static WhileStmt ReplaceGuard(WhileStmt stmt, Expression new_guard)
+        {
+            return new WhileStmt(stmt.Tok, stmt.EndTok, new_guard, stmt.Invariants, stmt.Decreases, stmt.Mod, stmt.Body);
         }
     }
 }

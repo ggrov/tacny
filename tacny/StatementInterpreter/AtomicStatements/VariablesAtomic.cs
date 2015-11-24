@@ -45,8 +45,8 @@ namespace Tacny
             }
 
             if (globalContext.temp_variables.Count > 0)
-
                 locals.AddRange(globalContext.temp_variables.Values.ToList());
+        
             IncTotalBranchCount();
             AddLocal(lv, locals);
             solution_list.Add(new Solution(this.Copy()));
