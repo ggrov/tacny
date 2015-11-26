@@ -183,7 +183,10 @@ namespace Tacny
             foreach (var solution in solution_list)
             {
                 if (solution.state.localContext.IsResolved())
+                {
+                    //result.Add(solution); // this might break stuff
                     continue;
+                }
 
                 err = solution.state.CallAction(solution.state.localContext.GetCurrentStatement(), ref result);
                 if (err != null)
@@ -292,6 +295,7 @@ namespace Tacny
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
                         List<Expression> exps = ((ApplySuffix)er.Expr).Args;
                         Contract.Assert(exps.Count == ac.localContext.tac.Ins.Count);
+                        ac.SetNewTarget(GetNewTarget());
                         for (int i = 0; i < exps.Count; i++)
                         {
                             Expression result = null;

@@ -12,7 +12,7 @@ namespace Tacny
 {
     public class Program
     {
-        const bool DEBUG = false;
+        const bool DEBUG = true;
         private IList<string> fileNames;
         private string _programId;
         public string programId
@@ -657,28 +657,20 @@ namespace Tacny
         public void MaybePrintProgram(Dafny.Program prog, string filename)
         {
             // if program is not in debug mode disable console printing
-            if (!DEBUG && filename == "-")
+            if (!DEBUG)
                 return;
             TextWriter tw = null;
-            if (filename == null)
-                tw = System.Console.Out;
-            if (filename != null)
+            if (filename == null || filename == "-")
             {
-                if (filename == "-")
-                    tw = System.Console.Out;
-                else
-                {
-                    try
-                    {
-                        tw = new System.IO.StreamWriter(filename);
-                    }
-                    catch (IOException)
-                    {
-
-                    }
-                }
+                tw = System.Console.Out;
+                PrintProgram(tw, prog, DafnyOptions.O.PrintMode);
             }
-            PrintProgram(tw, prog, DafnyOptions.O.PrintMode);
+            else
+            {
+                printer = new Util.Printer(new System.IO.StreamWriter(filename), DafnyOptions.O.PrintMode);
+                printer.PrintProgram(dafnyProgram);
+            }
+            
         }
 
 

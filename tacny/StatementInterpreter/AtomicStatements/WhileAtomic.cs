@@ -17,10 +17,10 @@ namespace Tacny
         public string Resolve(Statement st, ref List<Solution> solution_list)
         {
             Contract.Requires(st != null);
-            if(ExtractGuard(st) == null)
+            if (ExtractGuard(st) == null)
                 return "Unable to extract the while statement guard";
 
-            
+
             /**
              * 
              * Check if the loop guard can be resolved localy
@@ -38,6 +38,34 @@ namespace Tacny
 
         private string ExecuteLoop(WhileStmt whileStmt, ref List<Solution> solution_list)
         {
+            string err;
+            List<Solution> result = null;
+            bool guard_res = false;
+            guard_res = EvaluateGuard();
+            // if the guard has been resolved to true resolve then body
+            if (guard_res)
+            {
+                err = ResolveBody(whileStmt.Body, out result);
+                if (err != null)
+                    return err;
+                // @HACK update the context of each result
+                foreach (var item in result)
+                {
+                    item.state.IncTotalBranchCount();
+                    item.state.localContext.tac_body = localContext.tac_body; // set the body 
+                    // add a copy of a solution after each iteration
+                    solution_list.Add(new Solution(item.state.Copy()));
+                    item.state.IncTotalBranchCount();
+                    //item.state.localContext.tac_call = localContext.tac_call;
+                    item.state.localContext.SetCounter(localContext.GetCounter() - 1); // roll back the counter
+                }
+
+                solution_list.AddRange(result);
+            }
+            else
+            {
+                // do nothing
+            }
             return null;
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
@@ -36,8 +37,17 @@ namespace Tacny
 
         public void AddRange(List<Solution> solutions)
         {
+            // remove non final solutions
+            List<Solution> tmp = new List<Solution>();
+            foreach (var item in plist)
+            {
+                if (item.state.localContext.IsResolved())
+                    tmp.Add(item);
+            }
             plist.Clear();
-            plist = solutions;
+            plist = tmp;
+            //plist.Clear();
+            plist.AddRange(solutions);
         }
 
         public void AddFinal(List<Solution> solutions)

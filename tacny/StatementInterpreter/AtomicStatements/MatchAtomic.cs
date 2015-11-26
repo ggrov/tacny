@@ -141,7 +141,7 @@ namespace Tacny
             if (!globalContext.ContainsGlobalKey(datatype_name))
                 return String.Format("cases: datatype {0} is undefined", datatype_name);
 
-            ns = GetLocalValueByName(formal) as NameSegment;
+            ns =    GetLocalValueByName(formal) as NameSegment;
 
             datatype = globalContext.GetGlobal(datatype_name);
             InitCtorFlags(datatype, out ctorFlags);

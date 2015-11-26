@@ -99,7 +99,8 @@ namespace Tacny
 
 
                 Method target = Program.FindMember(program.ParseProgram(), localContext.md.Name) as Method;
-
+                if (GetNewTarget() != null && GetNewTarget().Name == target.Name)
+                    target = GetNewTarget();
                 if (target == null)
                     return FormatError("add_variant", "Could not find target method");
 

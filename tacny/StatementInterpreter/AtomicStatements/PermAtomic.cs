@@ -23,7 +23,7 @@ namespace Tacny
                 return err;
             // generate all the possible member combinations
             PermuteResults(ref solution_list);
-            return null;
+                return null;
 
         }
 
@@ -63,8 +63,8 @@ namespace Tacny
         private string PermuteResults(ref List<Solution> solution_list)
         {
             List<List<UpdateStmt>> result = new List<List<UpdateStmt>>();
-            foreach (var tmp in solutions[0])
-                result.Add(new List<UpdateStmt>() { tmp });
+            //foreach (var tmp in solutions[0])
+              //  result.Add(new List<UpdateStmt>() { tmp });
             GenerateMethodPremutations(solutions, 0, new List<UpdateStmt>(), ref result);
             // generate the solutions
             foreach (var item in result)

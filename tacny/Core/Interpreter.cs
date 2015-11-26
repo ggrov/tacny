@@ -147,13 +147,13 @@ namespace Tacny
 
                     program = tacnyProgram.ParseProgram();
                     solution.GenerateProgram(ref program);
-
+                    tacnyProgram.MaybePrintProgram("debug" + i);
                     tacnyProgram.ClearBody(solution.state.globalContext.md);
-
+                    
                     err = tacnyProgram.VerifyProgram();
                     if (err != null)
                         Warning(tacnyProgram.programId, err);
-                    tacnyProgram.MaybePrintProgram(DafnyOptions.O.DafnyPrintResolvedFile);
+                    
                     if (!tacnyProgram.HasError())
                     {
                         final.Add(solution);
