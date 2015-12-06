@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 using Bpl = Microsoft.Boogie;
+using Microsoft.Boogie;
 
 namespace Util
 {
@@ -34,15 +35,6 @@ namespace Util
             }
             filename = prog.Name;
             wr.WriteLine("// {0}", prog.Name);
-            //if (DafnyOptions.O.DafnyPrintResolvedFile != null)
-            //{
-            //    wr.WriteLine();
-            //    wr.WriteLine("/*");
-            //    base.PrintModuleDefinition(prog.BuiltIns.SystemModule, 0, Path.GetFullPath(DafnyOptions.O.DafnyPrintResolvedFile));
-            //    wr.WriteLine("*/");
-            //}
-            //wr.WriteLine();
-            //PrintCallGraph(prog.DefaultModuleDef, 0);
             PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, Path.GetFullPath(prog.FullName));
             wr.Flush();
         }
@@ -53,6 +45,58 @@ namespace Util
             wr.WriteLine("Program: {0}", program_name);
             wr.WriteLine(String.Format(message, args));
             wr.Flush();
+        }
+
+        public static void Error(IToken tok, string msg, params object[] args)
+        {
+            Contract.Requires(tok != null);
+            Contract.Requires(msg != null);
+            ConsoleColor col = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("{0}({1},{2}): Error: {3}",
+                DafnyOptions.Clo.UseBaseNameForFileName ? System.IO.Path.GetFileName(tok.filename) : tok.filename, tok.line, tok.col - 1,
+                string.Format(msg, args));
+            Console.ForegroundColor = col;
+        }
+
+        public static void Error(Dafny.Declaration d, string msg, params object[] args)
+        {
+            Contract.Requires(d != null);
+            Contract.Requires(msg != null);
+            Error(d.tok, msg, args);
+        }
+
+        public static void Error(Statement s, string msg, params object[] args)
+        {
+            Contract.Requires(s != null);
+            Contract.Requires(msg != null);
+            Error(s.Tok, msg, args);
+        }
+
+        public static void Error(NonglobalVariable v, string msg, params object[] args)
+        {
+            Contract.Requires(v != null);
+            Contract.Requires(msg != null);
+            Error(v.tok, msg, args);
+        }
+
+        public static void Error(Expression e, string msg, params object[] args)
+        {
+            Contract.Requires(e != null);
+            Contract.Requires(msg != null);
+            Error(e.tok, msg, args);
+        }
+
+        public static void Warning(IToken tok, string msg, params object[] args)
+        {
+            Contract.Requires(tok != null);
+            Contract.Requires(msg != null);
+            ConsoleColor col = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("{0}({1},{2}): Warning: {3}",
+                DafnyOptions.Clo.UseBaseNameForFileName ? System.IO.Path.GetFileName(tok.filename) : tok.filename, tok.line, tok.col - 1,
+                string.Format(msg, args));
+            Console.ForegroundColor = col;
         }
     }
 }

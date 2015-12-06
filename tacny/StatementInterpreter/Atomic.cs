@@ -9,7 +9,7 @@ using System.Numerics;
 namespace Tacny
 {
     public interface IAtomicStmt
-    {
+    {        
         string Resolve(Statement st, ref List<Solution> solution_list);
     }
 
@@ -183,10 +183,7 @@ namespace Tacny
             foreach (var solution in solution_list)
             {
                 if (solution.state.localContext.IsResolved())
-                {
-                    //result.Add(solution); // this might break stuff
                     continue;
-                }
 
                 err = solution.state.CallAction(solution.state.localContext.GetCurrentStatement(), ref result);
                 if (err != null)
@@ -304,7 +301,7 @@ namespace Tacny
                             ac.AddLocal(ac.localContext.tac.Ins[i], result);
                         }
                         List<Solution> sol_list = new List<Solution>();
-                       err = Atomic.ResolveTactic(ac, ref sol_list);
+                        err = Atomic.ResolveTactic(ac, ref sol_list);
                         if (err != null)
                             return err;
                         /**
@@ -463,7 +460,7 @@ namespace Tacny
             if ((vds = st as VarDeclStmt) != null)
             {
                 if (vds.Locals.Count != 1)
-                    return "Wrong number of method result arguments; Expected 1 got " + vds.Locals.Count;
+                    return string.Format("Wrong number of method result arguments; Expected {0} got {1}", 1, vds.Locals.Count);
                 lv = vds.Locals[0];
                 call_arguments = GetCallArguments(vds.Update as UpdateStmt);
 
@@ -481,7 +478,7 @@ namespace Tacny
                         call_arguments = GetCallArguments(us);
                     }
                     else
-                        return "Local variable " + ns.Name + " not declared";
+                        return string.Format("Local variable {0} is not declared", ns.Name);
                 }
             }
             else if ((tbs = st as TacnyBlockStmt) != null)
@@ -493,7 +490,7 @@ namespace Tacny
                     call_arguments = new List<Expression>() { tbs.Guard };
             }
             else
-                return "Wrong number of method result arguments; Expected 1 got 0";
+                return string.Format("Wrong number of method result arguments; Expected {0} got {1}", 1, 0);
 
             return null;
         }
@@ -538,7 +535,7 @@ namespace Tacny
             {
                 ExpressionTree expt = ExpressionTree.ExpressionToTree(argument);
                 ResolveExpression(expt);
-                result =  EvaluateExpression(expt);
+                result = EvaluateExpression(expt);
             }
             else
                 result = argument;
@@ -832,7 +829,7 @@ namespace Tacny
 
                 return new Dafny.LiteralExpr(lhs.tok, res);
 
-                
+
             }
         }
 
@@ -874,7 +871,7 @@ namespace Tacny
                 {
                     Expression result;
                     string err = ProcessArg(guard.data, out result);
-                    if(err != null)
+                    if (err != null)
                         return err;
                     guard.data = result;
                 }
@@ -882,7 +879,7 @@ namespace Tacny
                 return null;
             }
             ResolveExpression(guard.lChild);
-            if(guard.rChild != null)
+            if (guard.rChild != null)
                 ResolveExpression(guard.rChild);
             return null;
         }

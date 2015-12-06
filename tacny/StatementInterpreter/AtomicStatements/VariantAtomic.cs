@@ -5,16 +5,22 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
-
+using Util;
 namespace Tacny
 {
     class VariantAtomic : Atomic, IAtomicStmt
     {
         public VariantAtomic(Atomic atomic) : base(atomic) { }
 
-        public string FormatError(string method, string error)
+        public static string name
         {
-            return "ERROR " + method + ": " + error;
+            get { return "add_variant"; }
+        }
+
+        string FormatError(string msg, params object[] args)
+        {
+            return string.Format("{0}:{1}", name, string.Format(msg, args));
+
         }
 
         public string Resolve(Statement st, ref List<Solution> solution_list)
@@ -33,14 +39,25 @@ namespace Tacny
             if (st is UpdateStmt)
                 us = st as UpdateStmt;
             else
-                return FormatError("add_variant", "does not have a return value");
+            {
+                Util.Printer.Error(st, "Expression does not return a value");
+                return "qwer";  // temp
+            }
+            //return FormatError("add_variant", "does not have a return value");
 
             err = InitArgs(st, out call_arguments);
             if (err != null)
-                return FormatError("add_variant", err);
+            {
+                Util.Printer.Error(st, err);// FormatError("add_variant", err);
+                return err; // temp
+            }
 
             if (call_arguments.Count != 1)
-                return FormatError("add_variant", "Unexpected number of arguments, expected 1 received " + call_arguments.Count);
+            {
+                Util.Printer.Error(st, "Unexpected number of arguments, expected {0} received {1}", 1, call_arguments.Count);
+                return "asd"; // temp
+            }
+
             StringLiteralExpr wildCard = call_arguments[0] as StringLiteralExpr;
             if (wildCard != null)
             {
@@ -102,7 +119,10 @@ namespace Tacny
                 if (GetNewTarget() != null && GetNewTarget().Name == target.Name)
                     target = GetNewTarget();
                 if (target == null)
-                    return FormatError("add_variant", "Could not find target method");
+                {
+                    Util.Printer.Error(st, "Could not find target method");
+                    return FormatError("add_variant", "Could not find target method"); // temp
+                }
 
                 dec_list = target.Decreases.Expressions;
                 // insert new variants at the end of the existing variants list
@@ -138,7 +158,5 @@ namespace Tacny
             solution_list.Add(new Solution(this.Copy()));
             return null;
         }
-
-
     }
 }

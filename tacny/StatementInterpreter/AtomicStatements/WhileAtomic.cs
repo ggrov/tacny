@@ -6,7 +6,7 @@ using System.Text;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
 using Microsoft.Boogie;
-
+using Util;
 
 namespace Tacny
 {
@@ -18,7 +18,10 @@ namespace Tacny
         {
             Contract.Requires(st != null);
             if (ExtractGuard(st) == null)
+            {
+                Util.Printer.Error(st, "Unable to extract the statement guard");
                 return "Unable to extract the while statement guard";
+            }
 
 
             /**
@@ -47,7 +50,10 @@ namespace Tacny
             {
                 err = ResolveBody(whileStmt.Body, out result);
                 if (err != null)
-                    return err;
+                {
+                    Util.Printer.Error(whileStmt, err);
+                    return err; //temp
+                }
                 // @HACK update the context of each result
                 foreach (var item in result)
                 {
@@ -85,5 +91,6 @@ namespace Tacny
         {
             return new WhileStmt(stmt.Tok, stmt.EndTok, new_guard, stmt.Invariants, stmt.Decreases, stmt.Mod, stmt.Body);
         }
+
     }
 }

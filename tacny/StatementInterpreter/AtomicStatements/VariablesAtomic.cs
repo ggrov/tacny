@@ -5,7 +5,7 @@ using System.Text;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
 using Microsoft.Boogie;
-
+using Util;
 namespace Tacny
 {
     class VariablesAtomic : Atomic, IAtomicStmt
@@ -26,14 +26,23 @@ namespace Tacny
 
             err = InitArgs(st, out lv, out call_arguments);
             if (err != null)
-                return "ERROR variables: " + err;
+            {
+                Util.Printer.Error(st, err);
+                return err;
+            }
 
             if (call_arguments.Count != 0)
-                return "ERROR variables:  the call does not take any arguments";
+            {
+                Util.Printer.Error(st, "Unexpected number of arguments, expected {0} received {1}", 0, call_arguments.Count);
+                return "asdf"; // temp
+            }
 
             Method source = localContext.md as Method;
-            if(source == null)
+            if (source == null)
+            {
+                Util.Printer.Error(st, "Unexpected method type: Expected method received {0}", localContext.md.GetType());
                 return "ERROR variables: unexpected source method type: expected method received " + localContext.md.GetType();
+            }
             foreach (var stmt in source.Body.Body)
             {
                 VarDeclStmt vds = null;
