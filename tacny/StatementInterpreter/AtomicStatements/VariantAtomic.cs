@@ -1,27 +1,11 @@
-﻿using System;
-using Microsoft.Dafny;
+﻿using Microsoft.Dafny;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using Dafny = Microsoft.Dafny;
-using Microsoft.Boogie;
-using Util;
 namespace Tacny
 {
     class VariantAtomic : Atomic, IAtomicStmt
     {
         public VariantAtomic(Atomic atomic) : base(atomic) { }
-
-        public static string name
-        {
-            get { return "add_variant"; }
-        }
-
-        string FormatError(string msg, params object[] args)
-        {
-            return string.Format("{0}:{1}", name, string.Format(msg, args));
-
-        }
 
         public string Resolve(Statement st, ref List<Solution> solution_list)
         {
@@ -34,38 +18,15 @@ namespace Tacny
             List<Expression> call_arguments = null;
             List<Expression> dec_list = null;
             Expression input = null;
-            UpdateStmt us;
-            string err;
-            if (st is UpdateStmt)
-                us = st as UpdateStmt;
-            else
-            {
-                Util.Printer.Error(st, "Expression does not return a value");
-                return "qwer";  // temp
-            }
-            //return FormatError("add_variant", "does not have a return value");
 
-            err = InitArgs(st, out call_arguments);
-            if (err != null)
-            {
-                Util.Printer.Error(st, err);// FormatError("add_variant", err);
-                return err; // temp
-            }
-
-            if (call_arguments.Count != 1)
-            {
-                Util.Printer.Error(st, "Unexpected number of arguments, expected {0} received {1}", 1, call_arguments.Count);
-                return "asd"; // temp
-            }
+            InitArgs(st, out call_arguments);
+            Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
 
             StringLiteralExpr wildCard = call_arguments[0] as StringLiteralExpr;
             if (wildCard != null)
             {
                 if (wildCard.Value.Equals("*"))
-                {
                     input = new WildcardExpr(wildCard.tok);
-
-                }
             }
             else
             {
@@ -75,7 +36,8 @@ namespace Tacny
                  * Implement propper variable replacement
                  */
                 object tmp;
-                err = ProcessArg(call_arguments[0], out tmp);
+                ProcessArg(call_arguments[0], out tmp);
+                Contract.Assert(tmp != null);
 
                 IVariable form = tmp as IVariable;
                 if (form != null)
@@ -118,12 +80,8 @@ namespace Tacny
                 Method target = Program.FindMember(program.ParseProgram(), localContext.md.Name) as Method;
                 if (GetNewTarget() != null && GetNewTarget().Name == target.Name)
                     target = GetNewTarget();
-                if (target == null)
-                {
-                    Util.Printer.Error(st, "Could not find target method");
-                    return FormatError("add_variant", "Could not find target method"); // temp
-                }
-
+                Contract.Assert(target != null, Util.Error.MkErr(st, 3));
+                
                 dec_list = target.Decreases.Expressions;
                 // insert new variants at the end of the existing variants list
                 Contract.Assert(input != null);

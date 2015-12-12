@@ -94,7 +94,7 @@ namespace Tacny
         private Solution _parent = null;
         public Solution parent
         {
-            set { Contract.Requires(_parent == null); _parent = value; }
+            set { _parent = value; }
             get { return _parent; }
         }
 

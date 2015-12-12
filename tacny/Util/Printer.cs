@@ -12,7 +12,6 @@ namespace Util
     {
         TextWriter wr;
         DafnyOptions.PrintModes printMode;
-        TextWriter debug_writer = null;
         const string SUFFIX = "_dbg";
         const string FILENAME = "tacny";
         private string filename = null;
@@ -47,16 +46,22 @@ namespace Util
             wr.Flush();
         }
 
+        public static void Error(string msg, params object[] args)
+        {
+            Contract.Requires(msg != null);
+            ConsoleColor col = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(string.Format(msg, args));
+            Console.ForegroundColor = col;
+        }
+
         public static void Error(IToken tok, string msg, params object[] args)
         {
             Contract.Requires(tok != null);
             Contract.Requires(msg != null);
-            ConsoleColor col = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("{0}({1},{2}): Error: {3}",
+            Error("{0}({1},{2}): Error: {3}",
                 DafnyOptions.Clo.UseBaseNameForFileName ? System.IO.Path.GetFileName(tok.filename) : tok.filename, tok.line, tok.col - 1,
                 string.Format(msg, args));
-            Console.ForegroundColor = col;
         }
 
         public static void Error(Dafny.Declaration d, string msg, params object[] args)
@@ -93,10 +98,20 @@ namespace Util
             Contract.Requires(msg != null);
             ConsoleColor col = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("{0}({1},{2}): Warning: {3}",
+            Warning("{0}({1},{2}): Warning: {3}",
                 DafnyOptions.Clo.UseBaseNameForFileName ? System.IO.Path.GetFileName(tok.filename) : tok.filename, tok.line, tok.col - 1,
                 string.Format(msg, args));
             Console.ForegroundColor = col;
         }
+
+        public static void Warning(string msg, params object[] args)
+        {
+            Contract.Requires(msg != null);
+            ConsoleColor col = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(string.Format(msg, args));
+            Console.ForegroundColor = col;
+        }
+
     }
 }

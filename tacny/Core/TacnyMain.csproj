@@ -132,6 +132,10 @@
       <Project>{d68d70f0-bd07-4176-b3de-0b00612f84f7}</Project>
       <Name>StatementInterpreter</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Util\Util.csproj">
+      <Project>{15d5ae0c-9692-417f-b5c0-ceb12b79e785}</Project>
+      <Name>Util</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

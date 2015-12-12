@@ -40,12 +40,12 @@ namespace Tacny
             this.rChild = rChild;
             this.root = root;
         }
-
+        [Pure]
         public bool isLeaf()
         {
             return lChild == null && rChild == null;
         }
-
+        [Pure]
         public bool isRoot()
         {
             return parent == null;

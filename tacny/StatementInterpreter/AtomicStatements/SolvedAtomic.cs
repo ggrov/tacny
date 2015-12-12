@@ -20,11 +20,9 @@ namespace Tacny
         private string Solved(Statement st, ref List<Solution> solution_list)
         {
             TacnySolvedBlockStmt stmt = st as TacnySolvedBlockStmt;
-            string err = null;
             List<Solution> result = null;
-            err = ResolveBody(stmt.Body, out result);
-            if (err != null)
-                return err;
+            ResolveBody(stmt.Body, out result);
+          
             for (int i = 0; i < result.Count; i++)
             {
                 Solution sol = result[i];
@@ -33,9 +31,9 @@ namespace Tacny
                 sol.GenerateProgram(ref dprog);
                 program.ClearBody(localContext.md);
                 //program.MaybePrintProgram(dprog, null);
-                err = program.ResolveProgram();
+                program.ResolveProgram();
                 // skip the solution if resolution failed    
-                if (err != null)
+                if (!program.resolved)
                 {
                     IncBadBranchCount();
                     continue;

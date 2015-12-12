@@ -23,6 +23,11 @@ namespace Tacny
             return collection != null && Contract.ForAll(collection, c => c != null);
         }
         [Pure]
+        public static bool OfSize<T>(IList<T> collection, int size) where T : class
+        {
+            return collection != null && collection.Count == size;
+        }
+        [Pure]
         public static bool NonEmpty<T>(IList<T> collection) where T : class
         {
             return collection != null && collection.Count != 0;

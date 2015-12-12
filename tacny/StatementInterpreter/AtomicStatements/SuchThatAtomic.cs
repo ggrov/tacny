@@ -7,7 +7,7 @@ using System.Text;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
 using Microsoft.Boogie;
-
+using Util;
 namespace Tacny
 {
     class SuchThatAtomic : Atomic, IAtomicStmt
@@ -27,19 +27,13 @@ namespace Tacny
             object value = null;
             dynamic dynamic_val = null;
             VarDeclStmt vds = st as VarDeclStmt;
-            if (vds == null)
-                return String.Format("Unexpected statement type. Expected {0} Received {1}", typeof(VarDeclStmt), st.GetType());
+            Contract.Assert(vds != null, Util.Error.MkErr(st, 5, typeof(VarDeclStmt), st.GetType()));
 
             AssignSuchThatStmt suchThat = vds.Update as AssignSuchThatStmt;
-
-            if (suchThat == null)
-                return String.Format("Unexpected statement type. Expected {0} Received {1}", typeof(AssignSuchThatStmt), vds.Update.GetType());
-
-
+            Contract.Assert(suchThat != null, Util.Error.MkErr(st, 5, typeof(AssignSuchThatStmt), vds.Update.GetType()));
+            
             BinaryExpr bexp = suchThat.Expr as BinaryExpr;
-
-            if (bexp == null)
-                return String.Format("Unexpected statement type. Expected {0} Received {1}", typeof(BinaryExpr), suchThat.Expr.GetType());
+            Contract.Assert(bexp != null, Util.Error.MkErr(st, 5, typeof(BinaryExpr), suchThat.Expr.GetType()));
 
             Expression lhs = bexp.E0;
             Expression rhs = bexp.E1;
@@ -47,8 +41,8 @@ namespace Tacny
             // big bad hack
             if (lhs is BinaryExpr && rhs is BinaryExpr)
             {
-                string err = ResolveLhs(lhs as BinaryExpr, vds.Locals[0], out value);
-
+                ResolveLhs(lhs as BinaryExpr, vds.Locals[0], out value);
+                Contract.Assert(value != null);
                 BinaryExpr rrhs = rhs as BinaryExpr;
 
                 Expression e0 = rrhs.E0;
@@ -57,8 +51,8 @@ namespace Tacny
                     return String.Format("Currently nested binary expressions are not supported");
 
                 IVariable form = localContext.GetLocalValueByName(e0 as NameSegment) as IVariable;
-                if(form == null)
-                    return String.Format("{0} is not defined in current context", (e0 as NameSegment).Name);
+                Contract.Assert(form != null, Util.Error.MkErr(e0, 6, (e0 as NameSegment).Name));
+                
                 NameSegment ns = e1 as NameSegment;
 
                 dynamic_val = value;
@@ -78,9 +72,7 @@ namespace Tacny
                     return null;
                 }
                 else // An incorrect value has been passed
-                    return String.Format("Unexpected argument. :| expects a collection, received {0}", dynamic_val.GetType());
-
-
+                    Contract.Assert(false, Util.Error.MkErr(st, 1, "collection"));
             }
 
 
@@ -88,12 +80,10 @@ namespace Tacny
             IVariable declaration = vds.Locals[0];
 
             NameSegment lhs_declaration = lhs as NameSegment;
-            if (lhs_declaration == null)
-                return String.Format("Unexpected expression type after :|. Expected {0} Received {1}", typeof(BinaryExpr), suchThat.Expr.GetType());
+            Contract.Assert(lhs_declaration != null, Util.Error.MkErr(st, 1, typeof(Expression)));
 
-            if (!lhs_declaration.Name.Equals(declaration.Name))
-                return String.Format("Declared variable and variable after :| don't match. Expected {0} Received {1}", declaration.Name, lhs_declaration.Name);
-
+            // check that var on lhs is the same as rhs
+            Contract.Assert(lhs_declaration.Name.Equals(declaration.Name), Util.Error.MkErr(st, 7));
             /* HACK
              * object value will be either a list<T> but T is unkown.
              * Or it will be a NameSegment
@@ -113,7 +103,7 @@ namespace Tacny
                 }
             }
             else // An incorrect value has been passed
-                return String.Format("Unexpected argument. :| expects a collection, received {0}", dynamic_val.GetType());
+                Contract.Assert(false, Util.Error.MkErr(st, 1, "collection"));
 
             /* END HACK */
 
@@ -121,8 +111,9 @@ namespace Tacny
         }
 
 
-        private string ResolveLhs(BinaryExpr bexp, IVariable declaration, out object result)
+        private void ResolveLhs(BinaryExpr bexp, IVariable declaration, out object result)
         {
+            Contract.Ensures(Contract.ValueAtReturn(out result) != null);
             result = null;
             Expression lhs = bexp.E0;
             Expression rhs = bexp.E1;
@@ -130,17 +121,22 @@ namespace Tacny
 
             NameSegment lhs_declaration = lhs as NameSegment;
             if (lhs_declaration == null)
-                return String.Format("Unexpected expression type after :|. Expected {0} Received {1}", typeof(BinaryExpr), lhs.GetType());
+            {
+                Util.Printer.Error(bexp, "Unexpected expression type after :|. Expected {0} Received {1}", typeof(BinaryExpr), lhs.GetType());
+                return;
+            }
 
             if (!lhs_declaration.Name.Equals(declaration.Name))
-                return String.Format("Declared variable and variable after :| don't match. Expected {0} Received {1}", declaration.Name, lhs_declaration.Name);
-
+            {
+                Util.Printer.Error(bexp, "Declared variable and variable after :| don't match. Expected {0} Received {1}", declaration.Name, lhs_declaration.Name);
+                return;
+            }
             /* HACK
              * object value will be either a list<T> but T is unkown.
              * Or it will be a NameSegment
              * For now, cast it to dynamic type and pray.
              */
-            return ProcessArg(rhs, out result);
+            ProcessArg(rhs, out result);
         }
     }
 

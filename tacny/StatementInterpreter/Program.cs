@@ -19,7 +19,6 @@ namespace Tacny
         {
             set
             {
-                Contract.Requires(_programId == null);
                 _programId = value;
             }
             get { return _programId; }
@@ -111,15 +110,11 @@ namespace Tacny
             return prog;
         }
 
-        public string VerifyProgram()
+        public void VerifyProgram()
         {
-            string err = null;
             if (!resolved)
-                err = ResolveProgram();
-            if (err != null)
-                return err;
+                ResolveProgram();
             VerifyProgram(dafnyProgram);
-            return null;
         }
 
         public void VerifyProgram(Dafny.Program prog)
@@ -129,21 +124,19 @@ namespace Tacny
             po = BoogiePipeline(boogieProgram, prog, fileNames, programId);
         }
 
-        public string ResolveProgram()
+        public void ResolveProgram()
         {
-            string err = ResolveProgram(dafnyProgram);
-            if (err == null)
+            if (ResolveProgram(dafnyProgram) == 0)
                 resolved = true;
-            return err;
         }
 
-        public string ResolveProgram(Dafny.Program program)
+        public int ResolveProgram(Dafny.Program program)
         {
             Dafny.Resolver r = new Dafny.Resolver(program);
             r.ResolveProgram(program);
             if (r.ErrorCount != 0)
-                return string.Format("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
-            return null;
+                Util.Printer.Error("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
+            return r.ErrorCount;
         }
 
         public static MemberDecl FindMember(Dafny.Program program, string name)
@@ -670,7 +663,7 @@ namespace Tacny
                 printer = new Util.Printer(new System.IO.StreamWriter(filename), DafnyOptions.O.PrintMode);
                 printer.PrintProgram(dafnyProgram);
             }
-            
+
         }
 
 

@@ -47,6 +47,7 @@ namespace Tacny
         /// </summary>
         /// <param name="guard"></param>
         /// <returns></returns>
+        [Pure]
         protected bool IsResolvable()
         {
             Contract.Requires(this.guard != null);

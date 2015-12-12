@@ -6,7 +6,7 @@ namespace Tacny
 {
     class OperatorAtomic : Atomic, IAtomicStmt
     {
-        public override string FormatError(string error)
+        public string FormatError(string error)
         {
             return "ERROR replace_operator: " + error;
         }
@@ -27,21 +27,15 @@ namespace Tacny
             Expression formula = null;
             BinaryExpr.Opcode old_op;
             BinaryExpr.Opcode new_op;
-            string err;
 
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-                return FormatError(err);
-
-            if (call_arguments.Count != 3)
-                return FormatError("replace_operator: Wrong number of method arguments; Expected 3 got " + call_arguments.Count);
-
+            InitArgs(st, out lv, out call_arguments);
+            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
+            Contract.Assert(tcce.OfSize(call_arguments, 3), Util.Error.MkErr(st, 0, 3, call_arguments.Count));
 
             old_operator = (StringLiteralExpr)call_arguments[0];
             new_operator = (StringLiteralExpr)call_arguments[1];
-            err = ProcessArg(call_arguments[2], out formula);
-            if (err != null)
-                return FormatError(err);
+            ProcessArg(call_arguments[2], out formula);
+            Contract.Assert(formula != null, Util.Error.MkErr(st, 10));
             try
             {
                 old_op = ToOpCode((string)old_operator.Value);

@@ -16,11 +16,6 @@ namespace Tacny
 
         private Token oldToken = null;
 
-        public override string FormatError(string error)
-        {
-            return "ERROR cases: " + error;
-        }
-
         public MatchAtomic(Atomic atomic) : base(atomic) { }
 
         public string Resolve(Statement st, ref List<Solution> solution_list)
@@ -89,7 +84,7 @@ namespace Tacny
             ParensExpression guard;
             NameSegment ns;
             string datatype_name;
-            string err;
+            
             bool[] ctorFlags; //localContext.ctorFlags; // used to keep track of which cases statements require a body
             int ctor = 0; // current active match case
             List<Solution> ctor_bodies;
@@ -100,13 +95,11 @@ namespace Tacny
             else
                 ns = guard.E as NameSegment;
 
-            if (ns == null)
-                return FormatError("unexpected cases argument");
+            Contract.Assert(ns != null, Util.Error.MkErr(st, 2));
 
             Dafny.Formal formal = (Dafny.Formal)GetLocalKeyByName(ns);
-            if (formal == null)
-                return FormatError("argument " + ns.Name + " is not declared");
-
+            Contract.Assert(formal != null, Util.Error.MkErr(st, 9, ns.Name));
+            
             datatype_name = formal.Type.ToString();
             /**
              * TODO cleanup
@@ -117,8 +110,8 @@ namespace Tacny
             {
                 object val = GetLocalValueByName(formal.Name);
                 NameSegment decl = val as NameSegment;
-                if (decl == null)
-                    return String.Format("cases: Argument {0} is not declared", formal.Name);
+                Contract.Assert(decl != null, Util.Error.MkErr(st, 9, formal.Name));
+
                 IVariable original_decl = globalContext.GetGlobalVariable(decl.Name);
                 if (original_decl != null)
                 {
@@ -131,17 +124,22 @@ namespace Tacny
                         datatype_name = original_decl.Type.ToString();
                 }
                 else
-                    return String.Format("cases: Argument {0} is not declared", formal.Name);
+                    Contract.Assert(false, Util.Error.MkErr(st, 9, formal.Name));
 
             }
             else
+            {
+                Util.Printer.Error(st, "Argument {0} is undefined", formal.Name);
                 return String.Format("cases: Argument {0} is undefined", formal.Name);
+            }
 
 
             if (!globalContext.ContainsGlobalKey(datatype_name))
+            {
+                Util.Printer.Error(st, "Datatype {0} is undefined", datatype_name);
                 return String.Format("cases: datatype {0} is undefined", datatype_name);
-
-            ns =    GetLocalValueByName(formal) as NameSegment;
+            }
+            ns = GetLocalValueByName(formal) as NameSegment;
 
             datatype = globalContext.GetGlobal(datatype_name);
             InitCtorFlags(datatype, out ctorFlags);
@@ -153,9 +151,8 @@ namespace Tacny
                 if (ctor >= datatype.Ctors.Count || !program.HasError())
                     break;
                 RegisterLocals(datatype, ctor);
-                err = ResolveBody(st.Body, out result);
-                if (err != null)
-                    return err;
+                ResolveBody(st.Body, out result);
+                
                 for (int i = 0; i < result.Count; i++)
                 {
                     ctor_bodies[ctor] = result[i];
@@ -166,9 +163,9 @@ namespace Tacny
                     dprog = program.ParseProgram();
                     solution.GenerateProgram(ref dprog);
                     program.ClearBody(localContext.md);
-                    err = program.ResolveProgram();
+                    program.ResolveProgram();
                     // skip the solution if resolution failed    
-                    if (err != null)
+                    if (!program.resolved)
                     {
                         IncInvalidBranchCount();
                         continue;

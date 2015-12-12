@@ -6,6 +6,7 @@ using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
 using System;
+
 namespace Tacny
 {
     class PermAtomic : Atomic, IAtomicStmt
@@ -20,7 +21,10 @@ namespace Tacny
             // generate all possible member calls
             string err = GenPermutations(st);
             if (err != null)
+            {
+                Util.Printer.Error(st, err);
                 return err;
+            }
             // generate all the possible member combinations
             PermuteResults(ref solution_list);
                 return null;
@@ -42,7 +46,7 @@ namespace Tacny
                 return err;
             solutions.Add(sol);
             Statement nextStatement = localContext.GetNextStatement();
-            if (StatementRegister.GetAtomicType(nextStatement) == StatementRegister.Atomic.PERM)
+            if (nextStatement != null && StatementRegister.GetAtomicType(nextStatement) == StatementRegister.Atomic.PERM)
             {
                 localContext.IncCounter();
                 err = GenPermutations(nextStatement);
@@ -91,39 +95,31 @@ namespace Tacny
         /// <returns></returns>
         private string Perm(Statement st, ref List<UpdateStmt> solution_list)
         {
-
             List<List<NameSegment>> result = new List<List<NameSegment>>(); // a combination of all possible variable combinations
             List<List<IVariable>> args = new List<List<IVariable>>();
             List<Expression> call_arguments = null;
-            MemberDecl md;
-            string err;
-            Method m;
-
-            err = InitArgs(st, out call_arguments);
-            if (err != null) return err;
-            if (call_arguments.Count != 2)
-                return String.Format("Wrong number of method arguments. Expected 2 received {0}", call_arguments.Count);
-
             object member;
-            err = ProcessArg(call_arguments[0], out member);
-            if (err != null)
-                return err;
-            md = member as MemberDecl;
-            if (md == null)
-                return String.Format("Member {0} is not defined", call_arguments[0]);
+            Method md;   
+
+            InitArgs(st, out call_arguments);
+            Contract.Assert(tcce.OfSize(call_arguments, 2), Util.Error.MkErr(st, 0, 2, call_arguments.Count));
+                     
+            ProcessArg(call_arguments[0], out member);
+            Contract.Assert(member != null, Util.Error.MkErr(call_arguments[0], 1, typeof(Method)));
+
+            md = member as Method;
+            Contract.Assert(md != null, Util.Error.MkErr(call_arguments[0], 1, typeof(Method)));
 
             object ovars;
-            err = ProcessArg(call_arguments[1], out ovars);
+            ProcessArg(call_arguments[1], out ovars);
+            Contract.Assert(ovars != null, Util.Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
+
             List<IVariable> vars = ovars as List<IVariable>;
-            if (vars == null)
-                return String.Format("Unexpected list of arguments");
+            Contract.Assert(vars != null, Util.Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
 
-            m = md as Method;
-            if (m == null)
-                return String.Format("Member declaration {0} not found", call_arguments[0]);
-
+            
             int i = 0;
-            foreach (var item in m.Ins)
+            foreach (var item in md.Ins)
             {
                 args.Add(new List<IVariable>());
                 foreach (var arg in vars)
@@ -176,19 +172,6 @@ namespace Tacny
                 }
             }
             return null;
-        }
-
-        private string FindMd(Expression md_signature, out MemberDecl md)
-        {
-            md = null;
-            NameSegment ns = md_signature as NameSegment;
-            if (ns == null) return String.Format("Unsupported argument. Expected NameSegment received {0}", md_signature.GetType());
-            md = program.GetTactic(ns.Name);
-            if (md != null) return null;
-            md = program.GetMember(ns.Name);
-            if (md != null) return null;
-
-            return String.Format("Member {0} is not defined", ns.Name);
         }
 
         private void GenerateMethodPremutations(List<List<UpdateStmt>> methods, int depth, List<UpdateStmt> current, ref List<List<UpdateStmt>> result)

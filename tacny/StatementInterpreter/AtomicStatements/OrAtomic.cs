@@ -68,7 +68,7 @@ namespace Tacny
                 switch (type)
                 {
                     case StatementRegister.Atomic.ID:
-                        return "OR: Id() can only be used on the lhs of the statement";
+                        break;
                     case StatementRegister.Atomic.FAIL:
                         break;
                     case StatementRegister.Atomic.UNDEFINED:

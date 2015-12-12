@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Dafny = Microsoft.Dafny;
+﻿using System.Collections.Generic;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
-
+using System.Diagnostics.Contracts;
 
 namespace Tacny
 {
@@ -23,19 +18,14 @@ namespace Tacny
             WhileStmt ws = null;
             IVariable lv = null;
             Expression guard = null;
-            string err;
             List<Expression> call_arguments; // we don't care about this
 
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-                return "extract_guard: " + err;
-            if (lv == null)
-                return "extract_guard: unexpected number of result arguments";
-
+            InitArgs(st, out lv, out call_arguments);
+            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
+            Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
 
             ws = FindWhileStmt(globalContext.tac_call, globalContext.md);
-            if (ws == null)
-                return "extract_guard: extract_guard can only be called from a while loop";
+            Contract.Assert(ws != null, Util.Error.MkErr(st, 11));
             guard = ws.Guard;
 
             AddLocal(lv, guard);

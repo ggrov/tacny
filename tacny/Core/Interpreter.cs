@@ -9,75 +9,9 @@ using Microsoft.Boogie;
 using Bpl = Microsoft.Boogie;
 using System.Diagnostics.Contracts;
 
-
 namespace Tacny
 {
-
-    public class ResolutionErrorReporter
-    {
-        public int ErrorCount = 0;
-
-        public void Error(IToken tok, string msg, params object[] args)
-        {
-            Contract.Requires(tok != null);
-            Contract.Requires(msg != null);
-            ConsoleColor col = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
-
-            Console.WriteLine("{0}({1},{2}): Error: {3}",
-                DafnyOptions.Clo.UseBaseNameForFileName ? System.IO.Path.GetFileName(tok.filename) : tok.filename, tok.line, tok.col - 1,
-                string.Format(msg));
-            Console.ForegroundColor = col;
-            ErrorCount++;
-        }
-
-        public void Error(Statement s, string msg, params object[] args)
-        {
-            Contract.Requires(s != null);
-            Contract.Requires(msg != null);
-            Error(s.Tok, msg, args);
-        }
-
-        public static void Warning(string programId, string msg)
-        {
-            Contract.Requires(msg != null);
-            ConsoleColor col = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("{0}: Warning: {1}", string.Format(programId), string.Format(msg));
-            Console.ForegroundColor = col;
-        }
-
-        public static void Warning(IToken tok, string msg)
-        {
-            Contract.Requires(msg != null);
-            Contract.Requires(tok != null);
-            ConsoleColor col = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("{0}({1},{2}): Warning: {3}",
-                DafnyOptions.Clo.UseBaseNameForFileName ? System.IO.Path.GetFileName(tok.filename) : tok.filename, tok.line, tok.col - 1,
-                string.Format(msg));
-            Console.ForegroundColor = col;
-        }
-
-        public static void Warning(Statement s, string msg)
-        {
-            Contract.Requires(msg != null);
-            Contract.Requires(s != null);
-            Warning(s.Tok, msg);
-        }
-
-        public static void Message(string msg, IToken tok = null)
-        {
-            Contract.Requires(msg != null);
-            ConsoleColor col = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("DEBUG: {0}",
-                string.Format(msg));
-            Console.ForegroundColor = col;
-        }
-    }
-
-    public class Interpreter : ResolutionErrorReporter
+    public class Interpreter
     {
         private Program tacnyProgram;
         private int start;
@@ -150,9 +84,9 @@ namespace Tacny
                     tacnyProgram.MaybePrintProgram("debug" + i);
                     tacnyProgram.ClearBody(solution.state.globalContext.md);
                     
-                    err = tacnyProgram.VerifyProgram();
+                    tacnyProgram.VerifyProgram();
                     if (err != null)
-                        Warning(tacnyProgram.programId, err);
+                        Util.Printer.Warning(err);
                     
                     if (!tacnyProgram.HasError())
                     {
@@ -209,11 +143,19 @@ namespace Tacny
                 UpdateStmt us = st as UpdateStmt;
                 if (us != null)
                 {
+
                     if (tacnyProgram.IsTacticCall(us))
                     {
-                        string err = Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, ref sol_list);
-                        if (err != null)
-                            return err;
+                        try
+                        {
+                            string err = Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, ref sol_list);
+                            if (err != null)
+                                return err;
+                        }
+                        catch (Exception e)
+                        {
+                            return e.Message;
+                        }
                     }
                 }
             }

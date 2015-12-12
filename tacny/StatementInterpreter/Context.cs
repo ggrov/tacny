@@ -87,8 +87,7 @@ namespace Tacny
 
         public bool HasLocalWithName(NameSegment ns)
         {
-            if (ns == null)
-                return false;
+            Contract.Requires<ArgumentNullException>(ns != null);
             List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
             foreach (Dafny.IVariable lv in ins)
                 if (lv.Name == ns.Name)
@@ -98,19 +97,19 @@ namespace Tacny
 
         public object GetLocalValueByName(NameSegment ns)
         {
-            Contract.Requires(ns != null);
+            Contract.Requires<ArgumentNullException>(ns != null);
             return GetLocalValueByName(ns.Name);
         }
 
         public object GetLocalValueByName(IVariable ns)
         {
-            Contract.Requires(ns != null);
+            Contract.Requires<ArgumentNullException>(ns != null);
             return GetLocalValueByName(ns.Name);
         }
 
         public object GetLocalValueByName(string name)
         {
-            Contract.Requires(name != null || name != "");
+            Contract.Requires<ArgumentNullException>(name != null);
             List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
             foreach (Dafny.IVariable lv in ins)
                 if (lv.Name == name)
@@ -121,13 +120,13 @@ namespace Tacny
 
         public IVariable GetLocalKeyByName(IVariable ns)
         {
-            Contract.Requires(ns != null);
+            Contract.Requires<ArgumentNullException>(ns != null);
             return GetLocalKeyByName(ns.Name);
         }
 
         public IVariable GetLocalKeyByName(string name)
         {
-            Contract.Requires(name != null);
+            Contract.Requires<ArgumentNullException>(name != null);
             List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
             foreach (Dafny.IVariable lv in ins)
                 if (lv.DisplayName == name)
@@ -137,6 +136,7 @@ namespace Tacny
 
         public void AddLocal(IVariable lv, object value)
         {
+            Contract.Requires<ArgumentNullException>(lv != null);
             if (!local_variables.ContainsKey(lv))
                 local_variables.Add(lv, value);
             else
@@ -260,11 +260,13 @@ namespace Tacny
 
         public bool ContainsGlobalKey(string name)
         {
+            Contract.Requires<ArgumentNullException>(name != null);
             return datatypes.ContainsKey(name);
         }
 
         public DatatypeDecl GetGlobal(string name)
         {
+            Contract.Requires<ArgumentNullException>(name != null);
             return datatypes[name];
         }
 

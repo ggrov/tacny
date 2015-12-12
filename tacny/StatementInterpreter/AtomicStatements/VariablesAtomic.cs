@@ -5,7 +5,8 @@ using System.Text;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
 using Microsoft.Boogie;
-using Util;
+using System.Diagnostics.Contracts;
+
 namespace Tacny
 {
     class VariablesAtomic : Atomic, IAtomicStmt
@@ -19,30 +20,17 @@ namespace Tacny
 
         private string GetVariables(Statement st, ref List<Solution> solution_list)
         {
-            string err;
             IVariable lv = null;
             List<Expression> call_arguments; // we don't care about this
             List<IVariable> locals = new List<IVariable>();
 
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-            {
-                Util.Printer.Error(st, err);
-                return err;
-            }
-
-            if (call_arguments.Count != 0)
-            {
-                Util.Printer.Error(st, "Unexpected number of arguments, expected {0} received {1}", 0, call_arguments.Count);
-                return "asdf"; // temp
-            }
+            InitArgs(st, out lv, out call_arguments);
+            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
+            Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
 
             Method source = localContext.md as Method;
-            if (source == null)
-            {
-                Util.Printer.Error(st, "Unexpected method type: Expected method received {0}", localContext.md.GetType());
-                return "ERROR variables: unexpected source method type: expected method received " + localContext.md.GetType();
-            }
+            Contract.Assert(source != null, Util.Error.MkErr(st, 4));
+
             foreach (var stmt in source.Body.Body)
             {
                 VarDeclStmt vds = null;

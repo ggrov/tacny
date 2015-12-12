@@ -7,7 +7,7 @@ namespace Tacny
     class SingletonAtomic : Atomic, IAtomicStmt
     {
 
-        public override string FormatError(string error)
+        public string FormatError(string error)
         {
             return "ERROR replace_singleton: " + error;
         }
@@ -38,25 +38,14 @@ namespace Tacny
             Expression formula = null;
             string err;
 
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-                return FormatError(err);
+            InitArgs(st, out lv, out call_arguments);
+            Contract.Assert(lv != null, Util.Error.MkErr(st,8));
+            Contract.Assert(tcce.OfSize(call_arguments, 3), Util.Error.MkErr(st, 0, 3, call_arguments.Count));
 
-            if (call_arguments.Count != 3)
-                return FormatError("Wrong number of method arguments; Expected 3 got " + call_arguments.Count);
-
-            err = ProcessArg(call_arguments[0], out old_singleton);
-            if (err != null)
-                return FormatError(err);
-
-            err = ProcessArg(call_arguments[1], out new_term);
-            if (err != null)
-                return FormatError(err);
-
-            err = ProcessArg(call_arguments[2], out formula);
-            if (err != null)
-                return FormatError(err);
-
+            ProcessArg(call_arguments[0], out old_singleton);
+            ProcessArg(call_arguments[1], out new_term);
+            ProcessArg(call_arguments[2], out formula);
+            
             ExpressionTree et = ExpressionTree.ExpressionToTree(formula);
 
             List<Expression> exp_list = new List<Expression>();
@@ -105,7 +94,7 @@ namespace Tacny
                         oldNs = (NameSegment)((UnaryOpExpr)old_singleton).E;
                     }
                     else
-                        return "Unsuported data: " + formula.data.GetType();
+                        Contract.Assert(false, Util.Error.MkErr(formula.data, -1));
 
                     if (curNs.Name == oldNs.Name)
                     {

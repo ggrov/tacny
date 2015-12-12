@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Dafny = Microsoft.Dafny;
+﻿using System.Collections.Generic;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
+using System.Diagnostics.Contracts;
+
 namespace Tacny
 {
     class LemmasAtomic : Atomic, IAtomicStmt
@@ -20,17 +17,14 @@ namespace Tacny
 
         private string Lemmas(Statement st, ref List<Solution> solution_list)
         {
-            string err;
             IVariable lv = null;
             List<Expression> call_arguments; // we don't care about this
             List<Method> lemmas = new List<Method>();
 
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-                return "ERROR lemmas: " + err;
+            InitArgs(st, out lv, out call_arguments);
+            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
+            Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
 
-            if (call_arguments.Count != 0)
-                return "ERROR lemmas:  the call does not take any arguments";
 
             foreach (var member in program.members.Values)
             {

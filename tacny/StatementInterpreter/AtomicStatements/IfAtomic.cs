@@ -8,21 +8,14 @@ using Util;
 namespace Tacny
 {
     class IfAtomic : BlockAtomic, IAtomicStmt
-
     {
-        public override string FormatError(string error)
-        {
-            return "ERROR addif: " + error;
-        }
+
 
         public IfAtomic(Atomic atomic) : base(atomic) { }
 
         public string Resolve(Statement st, ref List<Solution> solution_list)
         {
-            Contract.Requires(st != null);
-
-            if (ExtractGuard(st) == null)
-                return "Unable to extract the if statement guard";
+            Contract.Assert(ExtractGuard(st) != null, Util.Error.MkErr(st, 2));
             /**
              * 
              * Check if the loop guard can be resolved localy
@@ -39,23 +32,22 @@ namespace Tacny
 
         private string ExecuteIf(IfStmt loop, ref List<Solution> solution_list)
         {
-            string err;
             List<Solution> result = null;
             bool guard_res = false;
             guard_res = EvaluateGuard();
             // if the guard has been resolved to true resolve then body
             if (guard_res)
-                err = ResolveBody(loop.Thn, out result);
+                ResolveBody(loop.Thn, out result);
             else if (!guard_res && loop.Els != null)
             {
                 // if else is a blockStmt
                 if (loop.Els is BlockStmt)
-                    err = ResolveBody(loop.Els as BlockStmt, out result);
+                    ResolveBody(loop.Els as BlockStmt, out result);
                 else
-                    /**
-                     * the if statement is of the following form: if(){ .. } else if(){ .. }
-                     * replace the top_level if with the bottom if
-                     * */
+                /**
+                 * the if statement is of the following form: if(){ .. } else if(){ .. }
+                 * replace the top_level if with the bottom if
+                 * */
                 {
                     List<Statement> new_body = ReplaceCurrentAtomic(loop.Els);
                     Solution sol = CreateSolution(new_body);

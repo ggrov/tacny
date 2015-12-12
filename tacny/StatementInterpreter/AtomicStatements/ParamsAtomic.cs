@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Dafny = Microsoft.Dafny;
+﻿using System.Collections.Generic;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
+using System.Diagnostics.Contracts;
 
 namespace Tacny
 {
@@ -22,21 +18,16 @@ namespace Tacny
 
         private string Params(Statement st, ref List<Solution> solution_list)
         {
-            string err;
             IVariable lv = null;
             List<Expression> call_arguments; // we don't care about this
             List<IVariable> input = new List<IVariable>();
 
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-                return "ERROR params: " + err;
-
-            if (call_arguments.Count != 0)
-                return "ERROR params: the call does not take any arguments";
+            InitArgs(st, out lv, out call_arguments);
+            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
+            Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
 
             Method source = localContext.md as Method;
-            if (source == null)
-                return "ERROR params: unexpected source method type: expected method received " + localContext.md.GetType();
+            Contract.Assert(source != null, Util.Error.MkErr(st, 4));
 
             input.AddRange(source.Ins);
             input.AddRange(source.Outs);

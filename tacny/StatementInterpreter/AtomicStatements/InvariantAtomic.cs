@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Dafny;
-
+using System.Diagnostics.Contracts;
 namespace Tacny
 {
     class InvariantAtomic : Atomic, IAtomicStmt
@@ -8,7 +8,7 @@ namespace Tacny
 
         public string FormatError(string method, string error)
         {
-            return "ERROR " + method + ": "  + error;
+            return "ERROR " + method + ": " + error;
         }
 
         public InvariantAtomic(Atomic atomic) : base(atomic) { }
@@ -32,18 +32,13 @@ namespace Tacny
             List<Expression> call_arguments = null;
             Expression formula = null;
             MaybeFreeExpression invariant = null;
-            string err;
 
-            err = InitArgs(st, out lv, out call_arguments);
-            if (err != null)
-                return FormatError("create_invariant", err);
+            InitArgs(st, out lv, out call_arguments);
+            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
+            Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
 
-            if (call_arguments.Count != 1)
-                return FormatError("create_invariant", "Wrong number of method arguments; Expected 1 got " + call_arguments.Count);
-
-            err = ProcessArg(call_arguments[0], out formula);
-            if (err != null)
-                return FormatError("create_invariant", err);
+            ProcessArg(call_arguments[0], out formula);
+            Contract.Assert(formula != null);
 
             invariant = new MaybeFreeExpression(formula);
 
@@ -61,38 +56,26 @@ namespace Tacny
             MaybeFreeExpression[] invar_arr = null;
             List<MaybeFreeExpression> invar = null; // HACK
             UpdateStmt us = null;
-            string err;
 
-            if (st is UpdateStmt)
-                us = st as UpdateStmt;
-            else
-                return FormatError("add_invariant", "does not have a return value");
+            us = st as UpdateStmt;
 
-            err = InitArgs(st, out call_arguments);
-            if (err != null)
-                return FormatError("add_invariant", err);
+            InitArgs(st, out call_arguments);
+            Contract.Assert(call_arguments != null);
+            Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
 
-            if (call_arguments.Count != 1)
-                return FormatError("add_invariant", "Wrong number of method arguments; Expected 1 got " + call_arguments.Count);
-
-            object tmp;
-            err = ProcessArg(call_arguments[0], out tmp);
-            if (err != null)
-                return FormatError(err);
-            invariant = tmp as MaybeFreeExpression;
-            if (invariant == null)
-                return FormatError("add_invariant", "Incorrect input type expected Invariant received " + tmp.GetType());
-
+            object invar_obj;
+            ProcessArg(call_arguments[0], out invar_obj);
+            invariant = invar_obj as MaybeFreeExpression;
+            Contract.Assert(invar_obj != null, Util.Error.MkErr(st, 1, typeof(MaybeFreeExpression)));
             WhileStmt nws = null;
 
             WhileStmt ws = FindWhileStmt(globalContext.tac_call, globalContext.md);
-            if (ws == null)
-                return FormatError("add_invariant", "add_invariant can only be called from a while loop");
+            Contract.Assert(ws != null, Util.Error.MkErr(st, 11));
             // if we already added new invariants to the statement, use the updated statement instead
             nws = GetUpdated(ws) as WhileStmt;
-            
+
             if (nws != null)
-                invar_arr = nws.Invariants.ToArray();    
+                invar_arr = nws.Invariants.ToArray();
             else
                 invar_arr = ws.Invariants.ToArray();
 
