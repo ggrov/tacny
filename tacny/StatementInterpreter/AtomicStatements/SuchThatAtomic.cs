@@ -14,14 +14,12 @@ namespace Tacny
     {
         public SuchThatAtomic(Atomic atomic) : base(atomic) { }
 
-
-
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            return SuchThat(st, ref solution_list);
+            SuchThat(st, ref solution_list);
         }
 
-        private string SuchThat(Statement st, ref List<Solution> solution_list)
+        private void SuchThat(Statement st, ref List<Solution> solution_list)
         {
             Contract.Requires(st != null);
             object value = null;
@@ -48,7 +46,7 @@ namespace Tacny
                 Expression e0 = rrhs.E0;
                 Expression e1 = rrhs.E1;
                 if (!(e0 is NameSegment) || !(e1 is NameSegment))
-                    return String.Format("Currently nested binary expressions are not supported");
+                    Contract.Assert(false, String.Format("Currently nested binary expressions are not supported"));
 
                 IVariable form = localContext.GetLocalValueByName(e0 as NameSegment) as IVariable;
                 Contract.Assert(form != null, Util.Error.MkErr(e0, 6, (e0 as NameSegment).Name));
@@ -68,8 +66,6 @@ namespace Tacny
                             solution_list.Add(new Solution(this.Copy()));
                         }
                     }
-
-                    return null;
                 }
                 else // An incorrect value has been passed
                     Contract.Assert(false, Util.Error.MkErr(st, 1, "collection"));
@@ -106,8 +102,6 @@ namespace Tacny
                 Contract.Assert(false, Util.Error.MkErr(st, 1, "collection"));
 
             /* END HACK */
-
-            return null;
         }
 
 

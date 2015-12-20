@@ -10,14 +10,14 @@ namespace Tacny
 {
     class SolvedAtomic : Atomic, IAtomicStmt
     {
-        public string Resolve(Statement st, ref List<Solution> solution_list)
-        {
-            return Solved(st, ref solution_list);
-        }
-
         public SolvedAtomic(Atomic atomic) : base(atomic) { }
 
-        private string Solved(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
+        {
+            Solved(st, ref solution_list);
+        }
+
+        private void Solved(Statement st, ref List<Solution> solution_list)
         {
             TacnySolvedBlockStmt stmt = st as TacnySolvedBlockStmt;
             List<Solution> result = null;
@@ -46,12 +46,11 @@ namespace Tacny
                     sol.state.localContext.tac_body = sol.state.localContext.tac.Body.Body;
                     sol.state.localContext.SetCounter(localContext.GetCounter());
                     solution_list.Add(sol);
-                    return null;
+                    return;
                 }
                 IncBadBranchCount();
             }
 
-            return null;
         }
     }
 }

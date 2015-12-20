@@ -12,13 +12,14 @@ namespace Tacny
     class VariablesAtomic : Atomic, IAtomicStmt
     {
         public VariablesAtomic(Atomic atomic) : base(atomic) { }
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            return GetVariables(st, ref solution_list);
+            GetVariables(st, ref solution_list);
         }
 
 
-        private string GetVariables(Statement st, ref List<Solution> solution_list)
+        private void GetVariables(Statement st, ref List<Solution> solution_list)
         {
             IVariable lv = null;
             List<Expression> call_arguments; // we don't care about this
@@ -47,8 +48,6 @@ namespace Tacny
             IncTotalBranchCount();
             AddLocal(lv, locals);
             solution_list.Add(new Solution(this.Copy()));
-
-            return null;
         }
     }
 }

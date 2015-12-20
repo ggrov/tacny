@@ -8,12 +8,12 @@ namespace Tacny
     {
         public GuardAtomic(Atomic atomic) : base(atomic) { }
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            return ExtractGuard(st, ref solution_list);
+            ExtractGuard(st, ref solution_list);
         }
 
-        public string ExtractGuard(Statement st, ref List<Solution> solution_list)
+        public void ExtractGuard(Statement st, ref List<Solution> solution_list)
         {
             WhileStmt ws = null;
             IVariable lv = null;
@@ -31,7 +31,6 @@ namespace Tacny
             AddLocal(lv, guard);
             IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
-            return null;
         }
 
     }

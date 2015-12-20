@@ -18,10 +18,9 @@ namespace Tacny
 
         public MatchAtomic(Atomic atomic) : base(atomic) { }
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            string err = GenerateMatch(st as TacnyCasesBlockStmt, ref solution_list);
-            return err;
+            GenerateMatch(st as TacnyCasesBlockStmt, ref solution_list);
         }
 
         /*
@@ -74,7 +73,7 @@ namespace Tacny
             return true;
         }
 
-        public string GenerateMatch(TacnyCasesBlockStmt st, ref List<Solution> solution_list)
+        private void GenerateMatch(TacnyCasesBlockStmt st, ref List<Solution> solution_list)
         {
             DatatypeDecl datatype = null;
             Solution solution;
@@ -128,17 +127,14 @@ namespace Tacny
 
             }
             else
-            {
-                Util.Printer.Error(st, "Argument {0} is undefined", formal.Name);
-                return String.Format("cases: Argument {0} is undefined", formal.Name);
-            }
+                Contract.Assert(false, Util.Error.MkErr(st, 1, "Element"));
 
 
             if (!globalContext.ContainsGlobalKey(datatype_name))
             {
-                Util.Printer.Error(st, "Datatype {0} is undefined", datatype_name);
-                return String.Format("cases: datatype {0} is undefined", datatype_name);
+                Contract.Assert(false, Util.Error.MkErr(st, 12, datatype_name));
             }
+
             ns = GetLocalValueByName(formal) as NameSegment;
 
             datatype = globalContext.GetGlobal(datatype_name);
@@ -189,7 +185,6 @@ namespace Tacny
                 ctor++;
                 //err = ResolveBody(st.Body, out result);
 
-
             }
 
             /*
@@ -200,14 +195,13 @@ namespace Tacny
             IncTotalBranchCount();
 
             solution_list.Add(new Solution(this.Copy(), true, null));
-            return null;
         }
 
-        private string GenerateMatchStmt(int index, NameSegment ns, DatatypeDecl datatype, List<Solution> body, out MatchStmt result, bool[] flags)
+        private void GenerateMatchStmt(int index, NameSegment ns, DatatypeDecl datatype, List<Solution> body, out MatchStmt result, bool[] flags)
         {
             Contract.Requires(ns != null);
             Contract.Requires(datatype != null);
-            string err;
+            Contract.Ensures(Contract.ValueAtReturn<MatchStmt>(out result) != null);
             List<MatchCaseStmt> cases = new List<MatchCaseStmt>();
             result = null;
             int line = index + 1;
@@ -215,22 +209,20 @@ namespace Tacny
             foreach (DatatypeCtor dc in datatype.Ctors)
             {
                 MatchCaseStmt mcs;
-                err = GenerateMatchCaseStmt(line, dc, body[i], out  mcs, flags[i]);
-                if (err != null)
-                    return err;
+                GenerateMatchCaseStmt(line, dc, body[i], out  mcs, flags[i]);
+                
                 cases.Add(mcs);
                 line += mcs.Body.Count + 1;
                 i++;
             }
 
             result = new MatchStmt(CreateToken("match", index, 0), CreateToken("=>", index, 0), ns, cases, false);
-
-            return null;
         }
 
-        private string GenerateMatchCaseStmt(int line, DatatypeCtor dtc, Solution solution, out MatchCaseStmt mcs, bool genBody)
+        private void GenerateMatchCaseStmt(int line, DatatypeCtor dtc, Solution solution, out MatchCaseStmt mcs, bool genBody)
         {
             Contract.Requires(dtc != null);
+            Contract.Ensures(Contract.ValueAtReturn<MatchCaseStmt>(out mcs) != null);
             List<CasePattern> casePatterns = new List<CasePattern>();
             mcs = null;
             dtc = new DatatypeCtor(dtc.tok, dtc.Name, dtc.Formals, dtc.Attributes);
@@ -253,8 +245,6 @@ namespace Tacny
             }
             else
                 mcs = new MatchCaseStmt(CreateToken("cases", line, 0), dtc.CompileName, casePatterns, new List<Statement>());
-
-            return null;
         }
 
         private void GenerateCasePattern(int line, Dafny.Formal formal, out CasePattern cp)

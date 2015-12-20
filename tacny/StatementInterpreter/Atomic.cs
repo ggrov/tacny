@@ -12,18 +12,17 @@ namespace Tacny
     [ContractClass(typeof(AtomicContract))]
     public interface IAtomicStmt
     {
-        string Resolve(Statement st, ref List<Solution> solution_list);
+        void Resolve(Statement st, ref List<Solution> solution_list);
     }
 
     [ContractClassFor(typeof(IAtomicStmt))]
     public abstract class AtomicContract : IAtomicStmt
     {
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
             Contract.Requires<ArgumentNullException>(st != null);
             Contract.Requires(tcce.NonNullElements<Solution>(solution_list));
-            return default(string); // dummy return
         }
     }
     public class Atomic
@@ -79,19 +78,22 @@ namespace Tacny
             return new Atomic(localContext, globalContext, tacticCache);
         }
 
-        public static string ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, ref SolutionList result)
+        public static void ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, ref SolutionList result)
         {
             Contract.Requires(tac != null);
             Contract.Requires(tac_call != null);
             Contract.Requires(md != null);
+            Contract.Requires(tacnyProgram != null);
+            Contract.Requires(variables != null && tcce.NonNullElements<IVariable>(variables));
+            Contract.Requires(result != null);
             List<Solution> res = null;
-            string err;
+
             if (result.plist.Count == 0)
             {
                 res = new List<Solution>();
                 Atomic ac = new Atomic(md, tac, tac_call, tacnyProgram);
                 ac.globalContext.RegsiterGlobalVariables(variables);
-                err = ResolveTactic(ac, ref res);
+                ResolveTactic(ac, ref res);
             }
             else
             {
@@ -111,13 +113,11 @@ namespace Tacny
                     Atomic ac = new Atomic(target, tac, tac_call, gc);
                     res.Add(new Solution(ac));
                 }
-                err = ResolveTactic(ref res);
+                ResolveTactic(ref res);
             }
 
 
             result.AddRange(res);
-            return err;
-
         }
 
         /// <summary>
@@ -125,28 +125,24 @@ namespace Tacny
         /// </summary>
         /// <param name="result"></param>
         /// <returns></returns>
-        public static string ResolveTactic(ref List<Solution> result)
+        public static void ResolveTactic(ref List<Solution> result)
         {
+            Contract.Requires(result != null);
             Contract.Requires(tcce.NonEmpty(result));
-            string err = null;
             SolutionList solution_list = new SolutionList();
             solution_list.AddRange(result);
             while (true)
             {
                 List<Solution> res = null;
 
-                err = Atomic.ResolveStatement(ref res, solution_list.plist);
-                if (err != null)
-                    return err;
+                ResolveStatement(ref res, solution_list.plist);
 
                 if (res.Count > 0)
                     solution_list.AddRange(res);
                 else
                     break;
             }
-
             result.AddRange(solution_list.plist);
-            return null;
         }
 
         /// <summary>
@@ -155,20 +151,18 @@ namespace Tacny
         /// <param name="atomic">The base atomic class</param>
         /// <param name="result">Result list</param>
         /// <returns>Error message</returns>
-        public static string ResolveTactic(Atomic atomic, ref List<Solution> result)
+        public static void ResolveTactic(Atomic atomic, ref List<Solution> result)
         {
             Contract.Requires(atomic != null);
+            Contract.Requires(result != null);
             //local solution list
             SolutionList solution_list = new SolutionList(new Solution(atomic));
-            string err = null;
 
             while (true)
             {
                 List<Solution> res = null;
 
-                err = Atomic.ResolveStatement(ref res, solution_list.plist);
-                if (err != null)
-                    return err;
+                ResolveStatement(ref res, solution_list.plist);
 
                 if (res.Count > 0)
                     solution_list.AddRange(res);
@@ -177,13 +171,12 @@ namespace Tacny
             }
 
             result.AddRange(solution_list.plist);
-            return null;
         }
 
 
-        public static string ResolveStatement(ref List<Solution> result, List<Solution> solution_list)
+        public static void ResolveStatement(ref List<Solution> result, List<Solution> solution_list)
         {
-            string err = null;
+            Contract.Requires(solution_list != null);
 
             if (result == null)
                 result = new List<Solution>();
@@ -194,9 +187,6 @@ namespace Tacny
                     continue;
 
                 solution.state.CallAction(solution.state.localContext.GetCurrentStatement(), ref result);
-                //if (err != null)
-                //    return err;
-
 
                 if (solution_list.IndexOf(solution) == solution_list.Count - 1)
                 {
@@ -210,8 +200,6 @@ namespace Tacny
                     }
                 }
             }
-
-            return err;
         }
 
         /// <summary>
@@ -310,7 +298,7 @@ namespace Tacny
                             ac.AddLocal(ac.localContext.tac.Ins[i], result);
                         }
                         List<Solution> sol_list = new List<Solution>();
-                        err = Atomic.ResolveTactic(ac, ref sol_list);
+                        ResolveTactic(ac, ref sol_list);
 
                         /**
                          * Transfer the results from evaluating the nested tactic
@@ -327,16 +315,13 @@ namespace Tacny
                 }
 
 
-                VarDeclStmt vds = st as VarDeclStmt;
+                var vds = st as TacticVarDeclStmt;
                 // if empty variable declaration
                 // register variable to localc with empty value
                 if (vds != null)
                 {
                     Solution sol;
                     RegisterLocalVariable(vds, out sol);
-                    Contract.Assert(sol != null);
-                    //if (err != null)
-                    //    return err;
                     solution_list.Add(sol);
                 }
                 else
@@ -352,9 +337,10 @@ namespace Tacny
             }
         }
 
-        private void RegisterLocalVariable(VarDeclStmt declaration, out Solution result)
+        private void RegisterLocalVariable(TacticVarDeclStmt declaration, out Solution result)
         {
             Contract.Requires(declaration != null);
+            Contract.Ensures(Contract.ValueAtReturn(out result) != null);
             result = null;
             // if declaration has rhs
             if (declaration.Update != null)
@@ -368,6 +354,7 @@ namespace Tacny
                     foreach (var item in rhs.Rhss)
                     {
                         int index = rhs.Rhss.IndexOf(item);
+                        Contract.Assert(index >= 0);
                         if (declaration.Locals.Count < index)
                         {
                             Util.Printer.Error(declaration, "Not all declared variables have an assigned value");
@@ -382,10 +369,6 @@ namespace Tacny
                         {
                             Expression res;
                             ProcessArg(exprRhs.Expr, out res);
-                            Contract.Assert(res != null);
-                            //if (err != null)
-                            //    return err;
-                            //if (res != null)
                             AddLocal(declaration.Locals[index], res);
                         }
                     }
@@ -403,6 +386,7 @@ namespace Tacny
         private void RegisterLocalVariable(UpdateStmt updateStmt, out Solution result)
         {
             Contract.Requires(updateStmt != null);
+            Contract.Ensures(Contract.ValueAtReturn(out result) != null);
             result = null;
             foreach (var item in updateStmt.Rhss)
             {
@@ -455,6 +439,7 @@ namespace Tacny
 
         protected void InitArgs(Statement st, out List<Expression> call_arguments)
         {
+            Contract.Requires(st != null);
             Contract.Ensures(Contract.ValueAtReturn<List<Expression>>(out call_arguments) != null);
             IVariable lv;
             InitArgs(st, out lv, out call_arguments);
@@ -469,13 +454,16 @@ namespace Tacny
         /// <returns>Error message</returns>
         protected void InitArgs(Statement st, out IVariable lv, out List<Expression> call_arguments)
         {
+            Contract.Requires(st != null);
             Contract.Ensures(Contract.ValueAtReturn<List<Expression>>(out call_arguments) != null);
             lv = null;
             call_arguments = null;
-            VarDeclStmt vds = null;
+            TacticVarDeclStmt vds = null;
             UpdateStmt us = null;
             TacnyBlockStmt tbs = null;
-            if ((vds = st as VarDeclStmt) != null)
+            if (st is VarDeclStmt)
+                Contract.Assert(false, Util.Error.MkErr(st, 13));
+            if ((vds = st as TacticVarDeclStmt) != null)
             {
                 lv = vds.Locals[0];
                 call_arguments = GetCallArguments(vds.Update as UpdateStmt);
@@ -507,7 +495,7 @@ namespace Tacny
             }
             else
                 Util.Printer.Error(st, "Wrong number of method result arguments; Expected {0} got {1}", 1, 0);
-            
+
         }
 
         protected void ProcessArg(Expression argument, out Expression result)
@@ -521,7 +509,7 @@ namespace Tacny
 
         protected void ProcessArg(Expression argument, out object result)
         {
-            Contract.Requires <ArgumentNullException>(argument != null);
+            Contract.Requires<ArgumentNullException>(argument != null);
             Contract.Ensures(Contract.ValueAtReturn(out result) != null);
             result = null;
             NameSegment nameSegment = null;
@@ -538,12 +526,11 @@ namespace Tacny
                 // first create an UpdateStmt
                 UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
                 // create a unique local variable
-                Dafny.LocalVariable lv = new Dafny.LocalVariable(aps.tok, aps.tok, aps.Lhs.tok.val, null, false);
+                Dafny.LocalVariable lv = new Dafny.LocalVariable(aps.tok, aps.tok, aps.Lhs.tok.val, new BoolType(), false);
                 VarDeclStmt vds = new VarDeclStmt(us.Tok, us.EndTok, new List<Dafny.LocalVariable>() { lv }, us);
                 List<Solution> sol_list = new List<Solution>();
-                CallAction(vds, ref sol_list);
-                //if (err != null)
-                //    Util.Printer.Error(argument, err);
+                CallAction(us, ref sol_list); // change
+
                 result = localContext.local_variables[lv];
                 localContext.local_variables.Remove(lv);
 
@@ -614,12 +601,14 @@ namespace Tacny
 
         protected static List<Expression> GetCallArguments(UpdateStmt us)
         {
+            Contract.Requires(us != null);
             ExprRhs er = (ExprRhs)us.Rhss[0];
             return ((ApplySuffix)er.Expr).Args;
         }
 
         protected bool HasLocalWithName(NameSegment ns)
         {
+            Contract.Requires(ns != null);
             return localContext.HasLocalWithName(ns);
         }
 
@@ -631,6 +620,7 @@ namespace Tacny
 
         protected object GetLocalValueByName(IVariable variable)
         {
+            Contract.Requires(variable != null);
             return localContext.GetLocalValueByName(variable);
         }
 
@@ -811,6 +801,7 @@ namespace Tacny
 
         protected Expression EvaluateExpression(ExpressionTree expt)
         {
+            Contract.Requires(expt != null);
             if (expt.isLeaf())
             {
                 return EvaluateLeaf(expt) as Dafny.LiteralExpr;
@@ -857,7 +848,7 @@ namespace Tacny
         /// <returns></returns>
         protected Expression EvaluateLeaf(ExpressionTree expt)
         {
-            Contract.Requires(expt.isLeaf());
+            Contract.Requires(expt != null && expt.isLeaf());
             if (expt.data is NameSegment || expt.data is ApplySuffix)
             {
                 Expression result = null;
@@ -866,9 +857,8 @@ namespace Tacny
                 return result;
             }
             else if (expt.data is Dafny.LiteralExpr)
-            {
                 return expt.data;
-            }
+
             return null;
         }
 

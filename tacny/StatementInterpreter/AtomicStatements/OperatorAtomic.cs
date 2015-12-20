@@ -6,19 +6,14 @@ namespace Tacny
 {
     class OperatorAtomic : Atomic, IAtomicStmt
     {
-        public string FormatError(string error)
-        {
-            return "ERROR replace_operator: " + error;
-        }
-
         public OperatorAtomic(Atomic atomic) : base(atomic) { }
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            return ReplaceOperator(st, ref solution_list);
+            ReplaceOperator(st, ref solution_list);
         }
         
-        public string ReplaceOperator(Statement st, ref List<Solution> solution_list)
+        public void ReplaceOperator(Statement st, ref List<Solution> solution_list)
         {
             IVariable lv = null;
             List<Expression> call_arguments = null;
@@ -36,16 +31,10 @@ namespace Tacny
             new_operator = (StringLiteralExpr)call_arguments[1];
             ProcessArg(call_arguments[2], out formula);
             Contract.Assert(formula != null, Util.Error.MkErr(st, 10));
-            try
-            {
-                old_op = ToOpCode((string)old_operator.Value);
-                new_op = ToOpCode((string)new_operator.Value);
-            }
-            catch (ArgumentException e)
-            {
-                return FormatError(e.Message);
-            }
-
+            
+            old_op = ToOpCode((string)old_operator.Value);
+            new_op = ToOpCode((string)new_operator.Value);
+            
             ExpressionTree et = ExpressionTree.ExpressionToTree(formula);
             List<Expression> exp_list = new List<Expression>();
 
@@ -62,8 +51,6 @@ namespace Tacny
                 AddLocal(lv, exp_list[i]);     
                 solution_list.Add(new Solution(this.Copy()));
             }
-
-            return null;
         }
 
         protected Expression ReplaceOp(BinaryExpr.Opcode old_op, BinaryExpr.Opcode new_op, ExpressionTree formula, ref List<Expression> nexp)

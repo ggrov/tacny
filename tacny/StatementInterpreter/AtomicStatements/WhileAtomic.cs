@@ -14,24 +14,20 @@ namespace Tacny
     {
         public WhileAtomic(Atomic atomic) : base(atomic) { }
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
             Contract.Assert(ExtractGuard(st) != null, Util.Error.MkErr(st, 2));
             /**
              * Check if the loop guard can be resolved localy
              */
             if (IsResolvable())
-            {
-                return ExecuteLoop(st as WhileStmt, ref solution_list);
-            }
+                ExecuteLoop(st as WhileStmt, ref solution_list);
             else
-            {
-                return InsertLoop(st as WhileStmt, ref solution_list);
-            }
+                InsertLoop(st as WhileStmt, ref solution_list);
         }
 
 
-        private string ExecuteLoop(WhileStmt whileStmt, ref List<Solution> solution_list)
+        private void ExecuteLoop(WhileStmt whileStmt, ref List<Solution> solution_list)
         {
             List<Solution> result = null;
             bool guard_res = false;
@@ -55,14 +51,9 @@ namespace Tacny
 
                 solution_list.AddRange(result);
             }
-            else
-            {
-                // do nothing
-            }
-            return null;
         }
 
-        private string InsertLoop(WhileStmt whileStmt, ref List<Solution> solution_list)
+        private void InsertLoop(WhileStmt whileStmt, ref List<Solution> solution_list)
         {
             Contract.Requires(whileStmt != null);
             ResolveExpression(this.guard);
@@ -71,7 +62,6 @@ namespace Tacny
             AddUpdated(whileStmt, Util.Copy.CopyWhileStmt(ReplaceGuard(whileStmt, guard)));
             IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
-            return null;
         }
 
         private static WhileStmt ReplaceGuard(WhileStmt stmt, Expression new_guard)

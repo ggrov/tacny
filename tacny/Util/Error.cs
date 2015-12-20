@@ -94,6 +94,8 @@ namespace Util
                 case 9: s = "Variable {0} is not declared"; break;
                 case 10: s = "Cound not process input argument"; break;
                 case 11: s = "Statement called outside while loop"; break;
+                case 12: s = "Datatype {0} is not defined"; break;
+                case 13: s = "Tacny variables must be declared as tvar"; break;
                 default: s = "error" + n; break;
             }
 

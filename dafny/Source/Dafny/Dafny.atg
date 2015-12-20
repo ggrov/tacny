@@ -1481,6 +1481,7 @@ OneStmt<out Statement/*!*/ s>
   | ForallStmt<out s>
   | CalcStmt<out s>
   | ModifyStmt<out s>
+  | TacticVarDeclStmt<out s>
   | "label"                            (. x = t; .)
     NoUSIdent<out id> ":"
     OneStmt<out s>                     (. s.Labels = new LList<Label>(new Label(x, id.val), s.Labels); .)
@@ -1684,6 +1685,67 @@ VarDeclStatement<.out Statement/*!*/ s.>
        update = new UpdateStmt(assignTok, endTok, ies, rhss);
      }
      s = new VarDeclStmt(x, endTok, lhss, update);
+  .)
+  .
+TacticVarDeclStmt<.out Statement/*!*/ s.>
+= (. IToken x = null, assignTok = null;
+      bool isGhost = false;
+     LocalVariable d;
+     AssignmentRhs r;
+     List<LocalVariable> lhss = new List<LocalVariable>();
+     List<AssignmentRhs> rhss = new List<AssignmentRhs>();
+     IToken suchThatAssume = null;
+     Expression suchThat = null;
+     Attributes attrs = null;
+     IToken endTok;
+     Expression or = null;
+  .)
+  (
+  
+  "tactic"
+  "var"                                     (. { x = t; } .)
+  | "tvar"                                  (. { x = t; } .)
+  )
+  
+  { Attribute<ref attrs> }
+  LocalIdentTypeOptional<out d, isGhost>    (. lhss.Add(d); d.Attributes = attrs; attrs = null; .)
+  { ","
+    { Attribute<ref attrs> }
+    LocalIdentTypeOptional<out d, isGhost>  (. lhss.Add(d); d.Attributes = attrs; attrs = null; .)
+  }
+  [ ":="                           (. assignTok = t; .)
+    Rhs<out r>                     (. rhss.Add(r); .)
+    { "," Rhs<out r>               (. rhss.Add(r); .)
+    }
+    [
+      "||"                          (. x = t; .)
+        Expression<out or, false, true>
+    ]
+  | { Attribute<ref attrs> }
+    ":|"                           (. assignTok = t; .)
+    [ IF(la.kind == _assume)       /* an Expression can also begin with an "assume", so this says to resolve it to pick up any "assume" here */
+      "assume"                     (. suchThatAssume = t; .)
+    ]
+    Expression<out suchThat, false, true>
+  ]
+  SYNC ";"                         (. endTok = t; .)
+  (. ConcreteUpdateStatement update;
+     if (suchThat != null) {
+       var ies = new List<Expression>();
+       foreach (var lhs in lhss) {
+         ies.Add(new IdentifierExpr(lhs.Tok, lhs.Name));
+       }
+       update = new AssignSuchThatStmt(assignTok, endTok, ies, suchThat, suchThatAssume, attrs);
+     } else if (rhss.Count == 0) {
+       update = null;
+     } else {
+       var ies = new List<Expression>();
+       foreach (var lhs in lhss) {
+         ies.Add(new AutoGhostIdentifierExpr(lhs.Tok, lhs.Name));
+       }
+       update = new UpdateStmt(assignTok, endTok, ies, rhss);
+     }
+     s = new TacticVarDeclStmt(x, endTok, lhss, update);
   .)
   .
 IfStmt<out Statement/*!*/ ifStmt>

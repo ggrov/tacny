@@ -13,7 +13,7 @@ namespace Tacny
 
         public IfAtomic(Atomic atomic) : base(atomic) { }
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
             Contract.Assert(ExtractGuard(st) != null, Util.Error.MkErr(st, 2));
             /**
@@ -21,16 +21,12 @@ namespace Tacny
              * Check if the loop guard can be resolved localy
              */
             if (IsResolvable())
-            {
-                return ExecuteIf(st as IfStmt, ref solution_list);
-            }
+                ExecuteIf(st as IfStmt, ref solution_list);
             else
-            {
-                return InsertIf(st as IfStmt, ref solution_list);
-            }
+                InsertIf(st as IfStmt, ref solution_list);
         }
 
-        private string ExecuteIf(IfStmt loop, ref List<Solution> solution_list)
+        private void ExecuteIf(IfStmt loop, ref List<Solution> solution_list)
         {
             List<Solution> result = null;
             bool guard_res = false;
@@ -63,7 +59,6 @@ namespace Tacny
                 item.state.localContext.SetCounter(localContext.GetCounter()); // set the counter
             }
             solution_list.InsertRange(0, result);
-            return null;
         }
 
         /// <summary>
@@ -72,7 +67,7 @@ namespace Tacny
         /// <param name="ifStmt"></param>
         /// <param name="solution_list"></param>
         /// <returns></returns>
-        private string InsertIf(IfStmt ifStmt, ref List<Solution> solution_list)
+        private void InsertIf(IfStmt ifStmt, ref List<Solution> solution_list)
         {
             Contract.Requires(ifStmt != null);
             ResolveExpression(this.guard);
@@ -81,7 +76,6 @@ namespace Tacny
             AddUpdated(ifStmt, Util.Copy.CopyIfStmt(ReplaceGuard(ifStmt, guard)));
             IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
-            return null;
         }
 
         private static IfStmt ReplaceGuard(IfStmt stmt, Expression new_guard)

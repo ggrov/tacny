@@ -7,13 +7,12 @@ namespace Tacny
     {
         public VariantAtomic(Atomic atomic) : base(atomic) { }
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            return AddVariant(st, ref solution_list);
+            AddVariant(st, ref solution_list);
         }
 
-
-        public string AddVariant(Statement st, ref List<Solution> solution_list)
+        private void AddVariant(Statement st, ref List<Solution> solution_list)
         {
             List<Expression> call_arguments = null;
             List<Expression> dec_list = null;
@@ -114,7 +113,6 @@ namespace Tacny
 
             IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
-            return null;
         }
     }
 }

@@ -5,28 +5,24 @@ namespace Tacny
 {
     class InvariantAtomic : Atomic, IAtomicStmt
     {
-
-        public string FormatError(string method, string error)
-        {
-            return "ERROR " + method + ": " + error;
-        }
-
         public InvariantAtomic(Atomic atomic) : base(atomic) { }
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
             switch (StatementRegister.GetAtomicType(st))
             {
                 case StatementRegister.Atomic.ADD_INVAR:
-                    return AddInvar(st, ref solution_list);
+                    AddInvar(st, ref solution_list);
+                    break;
                 case StatementRegister.Atomic.CREATE_INVAR:
-                    return CreateInvar(st, ref solution_list);
+                     CreateInvar(st, ref solution_list);
+                     break;
                 default:
                     throw new cce.UnreachableException();
             }
         }
 
-        public string CreateInvar(Statement st, ref List<Solution> solution_list)
+        public void CreateInvar(Statement st, ref List<Solution> solution_list)
         {
             IVariable lv = null;
             List<Expression> call_arguments = null;
@@ -45,10 +41,9 @@ namespace Tacny
             AddLocal(lv, invariant);
             IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
-            return null;
         }
 
-        public string AddInvar(Statement st, ref List<Solution> solution_list)
+        public void AddInvar(Statement st, ref List<Solution> solution_list)
         {
 
             List<Expression> call_arguments = null;
@@ -86,7 +81,6 @@ namespace Tacny
             AddUpdated(ws, nws);
 
             solution_list.Add(new Solution(this.Copy()));
-            return null;
         }
     }
 }

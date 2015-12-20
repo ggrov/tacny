@@ -16,19 +16,13 @@ namespace Tacny
         // Holds the result of each  perm()
         private List<List<UpdateStmt>> solutions = new List<List<UpdateStmt>>();
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
             // generate all possible member calls
-            string err = GenPermutations(st);
-            if (err != null)
-            {
-                Util.Printer.Error(st, err);
-                return err;
-            }
+            GenPermutations(st);
+            
             // generate all the possible member combinations
             PermuteResults(ref solution_list);
-                return null;
-
         }
 
         /// <summary>
@@ -36,27 +30,19 @@ namespace Tacny
         /// </summary>
         /// <param name="st">Statement to analyse</param>
         /// <returns></returns>
-        private string GenPermutations(Statement st)
+        private void GenPermutations(Statement st)
         {
-            string err;
             List<UpdateStmt> sol = new List<UpdateStmt>();
             // generate permutations
-            err = Perm(st, ref sol);
-            if (err != null)
-                return err;
+            Perm(st, ref sol);
+            
             solutions.Add(sol);
             Statement nextStatement = localContext.GetNextStatement();
             if (nextStatement != null && StatementRegister.GetAtomicType(nextStatement) == StatementRegister.Atomic.PERM)
             {
                 localContext.IncCounter();
-                err = GenPermutations(nextStatement);
-                if (err != null)
-                    return err;
-                return null;
-
+                GenPermutations(nextStatement);
             }
-
-            return null;
         }
 
         /// <summary>
@@ -64,7 +50,7 @@ namespace Tacny
         /// </summary>
         /// <param name="solution_list"></param>
         /// <returns></returns>
-        private string PermuteResults(ref List<Solution> solution_list)
+        private void PermuteResults(ref List<Solution> solution_list)
         {
             List<List<UpdateStmt>> result = new List<List<UpdateStmt>>();
             //foreach (var tmp in solutions[0])
@@ -84,7 +70,6 @@ namespace Tacny
 
                 solution_list.Add(new Solution(ac));
             }
-            return null;
         }
 
         /// <summary>
@@ -93,7 +78,7 @@ namespace Tacny
         /// <param name="st"></param>
         /// <param name="solution_list"></param>
         /// <returns></returns>
-        private string Perm(Statement st, ref List<UpdateStmt> solution_list)
+        private void Perm(Statement st, ref List<UpdateStmt> solution_list)
         {
             List<List<NameSegment>> result = new List<List<NameSegment>>(); // a combination of all possible variable combinations
             List<List<IVariable>> args = new List<List<IVariable>>();
@@ -171,7 +156,6 @@ namespace Tacny
                     solution_list.Add(us);
                 }
             }
-            return null;
         }
 
         private void GenerateMethodPremutations(List<List<UpdateStmt>> methods, int depth, List<UpdateStmt> current, ref List<List<UpdateStmt>> result)

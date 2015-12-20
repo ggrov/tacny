@@ -15,12 +15,12 @@ namespace Tacny
         public OrAtomic(Atomic atomic) : base(atomic)
         { }
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            return Branch(st, ref solution_list);
+            Branch(st, ref solution_list);
         }
 
-        private string Branch(Statement st, ref List<Solution> solution_list)
+        private void Branch(Statement st, ref List<Solution> solution_list)
         {
             OrStmt os;
             os = st as OrStmt;
@@ -42,7 +42,7 @@ namespace Tacny
                 {
                     case StatementRegister.Atomic.ID:
                         solution_list.Add(CreateSolution(body_list, false));
-                        return null;
+                        return;
                     case StatementRegister.Atomic.FAIL:
                          break;
                     case StatementRegister.Atomic.UNDEFINED:
@@ -79,7 +79,6 @@ namespace Tacny
                 }
             }
             IncTotalBranchCount();
-            return null;
         }
 
         private UpdateStmt GenUpdateStmt(ApplySuffix aps)

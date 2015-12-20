@@ -10,12 +10,12 @@ namespace Tacny
 
 
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            return Lemmas(st, ref solution_list);
+            Lemmas(st, ref solution_list);
         }
 
-        private string Lemmas(Statement st, ref List<Solution> solution_list)
+        private void Lemmas(Statement st, ref List<Solution> solution_list)
         {
             IVariable lv = null;
             List<Expression> call_arguments; // we don't care about this
@@ -39,7 +39,6 @@ namespace Tacny
             IncTotalBranchCount();
             AddLocal(lv, lemmas);
             solution_list.Add(new Solution(this.Copy()));
-            return null;
         }
     }
 }

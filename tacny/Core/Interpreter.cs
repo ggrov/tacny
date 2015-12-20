@@ -44,9 +44,8 @@ namespace Tacny
 
                 if (solution_list != null)
                 {
-                    err = VerifySolutionList(solution_list);
-
-                    return err;
+                    VerifySolutionList(solution_list);
+                    return null;
                 }
             }
             tacnyProgram.ResolveProgram();
@@ -60,10 +59,8 @@ namespace Tacny
         /// </summary>
         /// <param name="solution_tree"></param>
         /// <returns></returns>
-        private string VerifySolutionList(SolutionList solution_list)
+        private void VerifySolutionList(SolutionList solution_list)
         {
-            string err = null;
-
             List<Solution> final = new List<Solution>(); // list of verified solutions
             Dafny.Program program;
             foreach (var list in solution_list.GetFinal())
@@ -85,8 +82,6 @@ namespace Tacny
                     tacnyProgram.ClearBody(solution.state.globalContext.md);
                     
                     tacnyProgram.VerifyProgram();
-                    if (err != null)
-                        Util.Printer.Warning(err);
                     
                     if (!tacnyProgram.HasError())
                     {
@@ -112,16 +107,11 @@ namespace Tacny
                     final[0].state.GetInvalidBranchCount(),
                     final[0].state.GetBadBranchCount());
             }
-            if (err != null)
-                return err;
-
-
-
-            return null;
         }
 
         private string ScanMemberBody(MemberDecl md)
         {
+            Contract.Requires(md != null);
             solution_list.plist.Clear();
             Method m = md as Method;
             if (m == null)
@@ -148,9 +138,8 @@ namespace Tacny
                     {
                         try
                         {
-                            string err = Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, ref sol_list);
-                            if (err != null)
-                                return err;
+                            Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, ref sol_list);
+                            
                         }
                         catch (Exception e)
                         {

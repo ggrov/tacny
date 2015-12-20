@@ -4483,6 +4483,50 @@ namespace Microsoft.Dafny
         }
     }
 
+
+    public class TacticVarDeclStmt : Statement
+    {
+        public readonly List<LocalVariable> Locals;
+        public readonly ConcreteUpdateStatement Update;
+        [ContractInvariantMethod]
+        void ObjectInvariant()
+        {
+            Contract.Invariant(cce.NonNullElements(Locals));
+            Contract.Invariant(Locals.Count != 0);
+        }
+
+        public TacticVarDeclStmt(IToken tok, IToken endTok, List<LocalVariable> locals, ConcreteUpdateStatement update)
+            : base(tok, endTok)
+        {
+            Contract.Requires(tok != null);
+            Contract.Requires(endTok != null);
+            Contract.Requires(locals != null);
+            Contract.Requires(locals.Count != 0);
+
+            Locals = locals;
+            Update = update;
+        }
+
+        public override IEnumerable<Statement> SubStatements
+        {
+            get { if (Update != null) { yield return Update; } }
+        }
+
+        public override IEnumerable<Expression> SubExpressions
+        {
+            get
+            {
+                foreach (var e in base.SubExpressions) { yield return e; }
+                foreach (var v in Locals)
+                {
+                    foreach (var e in Attributes.SubExpressions(v.Attributes))
+                    {
+                        yield return e;
+                    }
+                }
+            }
+        }
+    }
     /// <summary>
     /// Common superclass of UpdateStmt and AssignSuchThatStmt.
     /// </summary>

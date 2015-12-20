@@ -998,6 +998,30 @@ namespace Microsoft.Dafny {
         }
         wr.Write(";");
 
+      }
+      else if (stmt is TacticVarDeclStmt)
+      {
+          var s = (TacticVarDeclStmt)stmt;
+          wr.Write("tactic ");
+          wr.Write("var");
+          string sep = "";
+          foreach (var local in s.Locals)
+          {
+              wr.Write(sep);
+              if (local.Attributes != null)
+              {
+                  PrintAttributes(local.Attributes);
+              }
+              wr.Write(" {0}", local.DisplayName);
+              PrintType(": ", local.OptionalType);
+              sep = ",";
+          }
+          if (s.Update != null)
+          {
+              PrintUpdateRHS(s.Update);
+          }
+          wr.Write(";");
+
       } else if (stmt is SkeletonStatement) {
         var s = (SkeletonStatement)stmt;
         if (s.S == null) {

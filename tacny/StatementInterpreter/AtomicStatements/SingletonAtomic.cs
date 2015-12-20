@@ -7,20 +7,12 @@ namespace Tacny
     class SingletonAtomic : Atomic, IAtomicStmt
     {
 
-        public string FormatError(string error)
+        public SingletonAtomic(Atomic atomic) : base(atomic) { }
+
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            return "ERROR replace_singleton: " + error;
+            Replace(st, ref solution_list);
         }
-
-        public SingletonAtomic(Atomic atomic)
-            : base(atomic)
-        { }
-
-        public string Resolve(Statement st, ref List<Solution> solution_list)
-        {
-            return Replace(st, ref solution_list);
-        }
-
 
         /// <summary>
         /// Replace a singleton with a new term
@@ -28,7 +20,7 @@ namespace Tacny
         /// <param name="st">replace_singleton(); Statement</param>
         /// <param name="solution_list">Reference to the solution tree</param>
         /// <returns> null if success; error message otherwise</returns>
-        public string Replace(Statement st, ref List<Solution> solution_list)
+        private void Replace(Statement st, ref List<Solution> solution_list)
         {
             IVariable lv = null;
             List<Expression> call_arguments = null;
@@ -36,7 +28,6 @@ namespace Tacny
             Expression old_singleton = null;
             Expression new_term = null;
             Expression formula = null;
-            string err;
 
             InitArgs(st, out lv, out call_arguments);
             Contract.Assert(lv != null, Util.Error.MkErr(st,8));
@@ -50,9 +41,7 @@ namespace Tacny
 
             List<Expression> exp_list = new List<Expression>();
 
-            err = ReplaceTerm(old_singleton, new_term, et, ref exp_list);
-            if (err != null)
-                return err;
+            ReplaceTerm(old_singleton, new_term, et, ref exp_list);
             // branch
             if (exp_list.Count > 0)
             {
@@ -63,11 +52,10 @@ namespace Tacny
                     solution_list.Add(new Solution(this.Copy()));
                 }
             }
-            return null;
         }
 
 
-        private string ReplaceTerm(Expression old_singleton, Expression new_term, ExpressionTree formula, ref List<Expression> nexp)
+        private void ReplaceTerm(Expression old_singleton, Expression new_term, ExpressionTree formula, ref List<Expression> nexp)
         {
             Contract.Requires(nexp != null);
             Contract.Requires(old_singleton != null);
@@ -76,7 +64,7 @@ namespace Tacny
             NameSegment oldNs = null;
 
             if (formula == null)
-                return null;
+                return;
 
             if (formula.isLeaf())
             {
@@ -109,11 +97,10 @@ namespace Tacny
                         nexp.Add(nt.root.TreeToExpression());
                     }
                 }
-                return null;
+                return;
             }
             ReplaceTerm(old_singleton, new_term, formula.lChild, ref nexp);
             ReplaceTerm(old_singleton, new_term, formula.rChild, ref nexp);
-            return null;
         }
 
     }

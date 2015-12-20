@@ -8,24 +8,20 @@ namespace Tacny
 {
     class MergeAtomic : Atomic, IAtomicStmt
     {
-        public MergeAtomic(Atomic atomic)
-            : base(atomic)
-        {
-
-        }
+        public MergeAtomic(Atomic atomic) : base(atomic) { }
         /// <summary>
         /// Merge two lists together
         /// </summary>
         /// <param name="st"></param>
         /// <param name="solution_list"></param>
         /// <returns></returns>
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            return Merge(st, ref solution_list);
+            Merge(st, ref solution_list);
         }
 
 
-        private string Merge(Statement st, ref List<Solution> solution_list)
+        private void Merge(Statement st, ref List<Solution> solution_list)
         {
             IVariable lv = null;
             List<Expression> call_arguments; // we don't care about this
@@ -42,9 +38,7 @@ namespace Tacny
             dynamic darg2 = arg2;
 
             if (!darg1.GetType().Equals(darg2.GetType()) && !(darg1 is IEnumerable))
-            {
                 Contract.Assert(false, Util.Error.MkErr(st, 1, typeof(List<IVariable>)));
-            }
             
 
             darg1.AddRange(darg2);
@@ -52,7 +46,6 @@ namespace Tacny
             AddLocal(lv, darg1);
 
             solution_list.Add(new Solution(this.Copy()));
-            return null;
         }
     }
 }

@@ -96,6 +96,7 @@ namespace Tacny
             ExprRhs er;
             UpdateStmt us = null;
             TacnyBlockStmt tbs;
+            TacticVarDeclStmt tvds;
             VarDeclStmt vds;
             OrStmt os;
             string name;
@@ -131,6 +132,14 @@ namespace Tacny
                 if (suchThat != null)
                     return atomic_signature[suchThat.Tok.val];
                 us = vds.Update as UpdateStmt;
+            }
+            else if ((tvds = st as TacticVarDeclStmt) != null)
+            {
+                AssignSuchThatStmt suchThat = tvds.Update as AssignSuchThatStmt;
+                // check if declaration is such that
+                if (suchThat != null)
+                    return atomic_signature[suchThat.Tok.val];
+                us = tvds.Update as UpdateStmt;
             }
             
             if (us == null)

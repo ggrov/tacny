@@ -13,7 +13,7 @@ namespace Tacny
     {
         public FailAtomic(Atomic atomic) : base(atomic) { }
 
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
             Contract.Assert(st is VarDeclStmt);
             List<Expression> args = null;
@@ -21,7 +21,6 @@ namespace Tacny
             InitArgs(st, out lv, out args);
             Dafny.LiteralExpr lit = new Dafny.LiteralExpr(st.Tok, false);
             localContext.AddLocal(lv, lit);
-            return null;
         }
     }
 }

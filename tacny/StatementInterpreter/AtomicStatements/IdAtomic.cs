@@ -20,7 +20,7 @@ namespace Tacny
         /// <param name="st"></param>
         /// <param name="solution_list"></param>
         /// <returns></returns>
-        public string Resolve(Statement st, ref List<Solution> solution_list)
+        public void Resolve(Statement st, ref List<Solution> solution_list)
         {
             Contract.Assert(st is VarDeclStmt);
             List<Expression> args = null;
@@ -28,7 +28,6 @@ namespace Tacny
             InitArgs(st, out lv, out args);
             Dafny.LiteralExpr lit = new Dafny.LiteralExpr(st.Tok, true);
             localContext.AddLocal(lv, lit);
-            return null;
         }
 
 
