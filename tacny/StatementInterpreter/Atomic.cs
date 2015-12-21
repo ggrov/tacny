@@ -75,6 +75,7 @@ namespace Tacny
         /// <returns>Action</returns>
         public Atomic Copy()
         {
+            Contract.Ensures(Contract.Result<Atomic>() != null);
             return new Atomic(localContext, globalContext, tacticCache);
         }
 
@@ -252,7 +253,6 @@ namespace Tacny
 
         protected void CallAction(object call, ref List<Solution> solution_list)
         {
-            string err;
             System.Type type = null;
             Statement st = call as Statement;
             ApplySuffix aps;
@@ -553,6 +553,9 @@ namespace Tacny
         /// <returns></returns>
         private void CallDefaultAction(Statement st, ref List<Solution> solution_list)
         {
+            Contract.Requires(st != null);
+            Contract.Requires(solution_list != null);
+            
             /*
              * If the statement is updateStmt check for variable assignment 
              */
@@ -580,6 +583,9 @@ namespace Tacny
         /// <returns>WhileStmt</returns>
         protected static WhileStmt FindWhileStmt(Statement tac_stmt, MemberDecl member)
         {
+            Contract.Requires(tac_stmt != null);
+            Contract.Requires(member != null);
+
             Method m = (Method)member;
 
             int index = m.Body.Body.IndexOf(tac_stmt);
@@ -626,6 +632,7 @@ namespace Tacny
 
         protected object GetLocalValueByName(string name)
         {
+            Contract.Requires<ArgumentNullException>(name != null);
             return localContext.GetLocalValueByName(name);
         }
 
@@ -692,6 +699,7 @@ namespace Tacny
 
         public List<Statement> GetAllUpdated()
         {
+            Contract.Ensures(Contract.Result<List<Statement>>() != null);
             return localContext.GetAllUpdated();
         }
 
@@ -760,6 +768,7 @@ namespace Tacny
         /// <returns></returns>
         protected Solution CreateSolution(List<Statement> newBody, bool decCounter = true)
         {
+            Contract.Ensures(Contract.Result<Solution>() != null);
             Tactic tac = localContext.tac;
             Tactic newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
                                         tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
@@ -784,6 +793,8 @@ namespace Tacny
         /// <returns></returns>
         protected List<Statement> ReplaceCurrentAtomic(Statement newStatement)
         {
+            Contract.Requires(newStatement != null);
+            Contract.Ensures(Contract.Result<List<Statement>>() != null);
             int index = localContext.GetCounter();
             List<Statement> newBody = localContext.GetFreshTacticBody();
             newBody[index] = newStatement;
@@ -792,6 +803,8 @@ namespace Tacny
 
         protected List<Statement> ReplaceCurrentAtomic(List<Statement> list)
         {
+            Contract.Requires(list != null);
+            Contract.Ensures(Contract.Result<List<Statement>>() != null);
             int index = localContext.GetCounter();
             List<Statement> newBody = localContext.GetFreshTacticBody();
             newBody.RemoveAt(index);

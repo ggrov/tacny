@@ -195,6 +195,7 @@ namespace Tacny
 
         public void AddUpdated(Statement key, Statement value)
         {
+            Contract.Requires(key != null && value != null);
             if (!updated_statements.ContainsKey(key))
                 updated_statements.Add(key, value);
             else
@@ -203,12 +204,14 @@ namespace Tacny
 
         public void RemoveUpdated(Statement key)
         {
+            Contract.Requires(key != null);
             if (updated_statements.ContainsKey(key))
                 updated_statements.Remove(key);
         }
 
         public Statement GetUpdated(Statement key)
         {
+            Contract.Ensures(Contract.Result<Statement>() != null);
             if (updated_statements.ContainsKey(key))
                 return updated_statements[key];
             return null;
@@ -216,11 +219,13 @@ namespace Tacny
 
         public List<Statement> GetAllUpdated()
         {
+            Contract.Ensures(Contract.Result<List<Statement>>() != null);
             return new List<Statement>(updated_statements.Values.ToArray());
         }
 
         public List<Statement> GetFreshTacticBody()
         {
+            Contract.Ensures(Contract.Result<List<Statement>>() != null);
             return new List<Statement>(tac_body.ToArray());
         }
 
@@ -272,6 +277,7 @@ namespace Tacny
 
         public void RegsiterGlobalVariables(List<IVariable> globals)
         {
+            Contract.Requires(globals != null);
             foreach (var item in globals)
             {
                 if (!global_variables.ContainsKey(item.Name))
@@ -288,11 +294,13 @@ namespace Tacny
 
         public bool HasGlobalVariable(string name)
         {
+            Contract.Requires(name != null);
             return global_variables.ContainsKey(name);
         }
 
         public IVariable GetGlobalVariable(string name)
         {
+            Contract.Requires(name != null);
             if (HasGlobalVariable(name))
                 return global_variables[name];
             return null;
@@ -300,6 +308,7 @@ namespace Tacny
 
         public void RegisterTempVariable(IVariable var)
         {
+            Contract.Requires(var != null);
             if (!temp_variables.ContainsKey(var.Name))
                 temp_variables.Add(var.Name, var);
             else
@@ -308,6 +317,7 @@ namespace Tacny
 
         public void RemoveTempVariable(IVariable var)
         {
+            Contract.Requires(var != null);
             if (temp_variables.ContainsKey(var.Name))
                 temp_variables.Remove(var.Name);
         }
