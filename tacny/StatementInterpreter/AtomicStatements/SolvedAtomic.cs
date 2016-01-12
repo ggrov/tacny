@@ -22,11 +22,9 @@ namespace Tacny
             TacnySolvedBlockStmt stmt = st as TacnySolvedBlockStmt;
             List<Solution> result = null;
             ResolveBody(stmt.Body, out result);
-          
-            for (int i = 0; i < result.Count; i++)
+            foreach (var sol in result)
             {
-                Solution sol = result[i];
-                Atomic ac = this.Copy();
+                //Atomic ac = this.Copy();
                 Dafny.Program dprog = program.ParseProgram();
                 sol.GenerateProgram(ref dprog);
                 program.ClearBody(localContext.md);
@@ -43,7 +41,8 @@ namespace Tacny
                 if (!program.HasError())
                 {
                     // change back the context of the state
-                    sol.state.localContext.tac_body = sol.state.localContext.tac.Body.Body;
+                    sol.state.localContext.tac_body = localContext.tac.Body.Body;// sol.state.localContext.tac.Body.Body;
+                    sol.state.localContext.tac = localContext.tac;
                     sol.state.localContext.SetCounter(localContext.GetCounter());
                     solution_list.Add(sol);
                     return;

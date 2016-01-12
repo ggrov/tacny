@@ -16,6 +16,7 @@ namespace Tacny
     }
 
     [ContractClassFor(typeof(IAtomicStmt))]
+    // Validate the input before execution
     public abstract class AtomicContract : IAtomicStmt
     {
 
@@ -25,6 +26,7 @@ namespace Tacny
             Contract.Requires(tcce.NonNullElements<Solution>(solution_list));
         }
     }
+
     public class Atomic
     {
 
@@ -293,7 +295,6 @@ namespace Tacny
                         {
                             Expression result = null;
                             ProcessArg(exps[i], out result);
-                            Contract.Assert(result != null);
 
                             ac.AddLocal(ac.localContext.tac.Ins[i], result);
                         }
@@ -418,10 +419,6 @@ namespace Tacny
                 {
                     Expression res;
                     ProcessArg(exprRhs.Expr, out res);
-                    Contract.Assert(res != null);
-                    //if (err != null)
-                    //    return err;
-                    //if (res != null)
                     AddLocal(local, res);
                 }
             }
@@ -458,15 +455,17 @@ namespace Tacny
             Contract.Ensures(Contract.ValueAtReturn<List<Expression>>(out call_arguments) != null);
             lv = null;
             call_arguments = null;
-            TacticVarDeclStmt vds = null;
+            TacticVarDeclStmt tvds = null;
             UpdateStmt us = null;
             TacnyBlockStmt tbs = null;
+            // tacny variables should be declared as tvar or tactic var
             if (st is VarDeclStmt)
                 Contract.Assert(false, Util.Error.MkErr(st, 13));
-            if ((vds = st as TacticVarDeclStmt) != null)
+
+            if ((tvds = st as TacticVarDeclStmt) != null)
             {
-                lv = vds.Locals[0];
-                call_arguments = GetCallArguments(vds.Update as UpdateStmt);
+                lv = tvds.Locals[0];
+                call_arguments = GetCallArguments(tvds.Update as UpdateStmt);
 
             }
             else if ((us = st as UpdateStmt) != null)
@@ -527,9 +526,9 @@ namespace Tacny
                 UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
                 // create a unique local variable
                 Dafny.LocalVariable lv = new Dafny.LocalVariable(aps.tok, aps.tok, aps.Lhs.tok.val, new BoolType(), false);
-                VarDeclStmt vds = new VarDeclStmt(us.Tok, us.EndTok, new List<Dafny.LocalVariable>() { lv }, us);
+                TacticVarDeclStmt tvds = new TacticVarDeclStmt(us.Tok, us.EndTok, new List<Dafny.LocalVariable>() { lv }, us);
                 List<Solution> sol_list = new List<Solution>();
-                CallAction(us, ref sol_list); // change
+                CallAction(tvds, ref sol_list); // change
 
                 result = localContext.local_variables[lv];
                 localContext.local_variables.Remove(lv);
@@ -539,7 +538,10 @@ namespace Tacny
             {
                 ExpressionTree expt = ExpressionTree.ExpressionToTree(argument);
                 ResolveExpression(expt);
-                result = EvaluateExpression(expt);
+                if (IsResolvable(expt))
+                    result = EvaluateExpression(expt);
+                else
+                    result = expt.TreeToExpression();
             }
             else
                 result = argument;
@@ -854,7 +856,7 @@ namespace Tacny
         }
 
         /// <summary>
-        /// Evalue a leaf node
+        /// Evaluate a leaf node
         /// TODO: support for call evaluation
         /// </summary>
         /// <param name="expt"></param>
@@ -877,7 +879,7 @@ namespace Tacny
 
         /// <summary>
         /// Resolve all variables in expression to either literal values
-        /// or to oriignal declared nameSegments
+        /// or to orignal declared nameSegments
         /// </summary>
         /// <param name="guard"></param>
         /// <returns></returns>
@@ -889,10 +891,24 @@ namespace Tacny
                 // we only need to replace nameSegments
                 if (guard.data is NameSegment)
                 {
-                    Expression result;
+                    NameSegment newNs;
+                    object result;
                     ProcessArg(guard.data, out result);
                     Contract.Assert(result != null);
-                    guard.data = result;
+                    if (result is Dafny.Formal)
+                    {
+                        var tmp = result as Dafny.Formal;
+                        newNs = new NameSegment(tmp.tok, tmp.Name, null);
+                    }
+                    else if (result is NameSegment)
+                    {
+                        newNs = result as NameSegment;
+                    }
+                    else
+                    {
+                        throw new tcce.UnreachableException();
+                    }
+                    guard.data = newNs;
                 }
 
             }
@@ -902,6 +918,38 @@ namespace Tacny
                 if (guard.rChild != null)
                     ResolveExpression(guard.rChild);
             }
+        }
+        /// <summary>
+        /// Determine whehter the given expression tree can be evaluated.
+        /// THe value is true if all leaf nodes have literal values
+        /// </summary>
+        /// <param name="expt"></param>
+        /// <returns></returns>
+        [Pure]
+        protected bool IsResolvable(ExpressionTree expt)
+        {
+            Contract.Requires(expt.isRoot());
+            List<Expression> leafs = expt.GetLeafs();
+
+            foreach (var leaf in leafs)
+            {
+                if (leaf is NameSegment)
+                {
+                    NameSegment ns = leaf as NameSegment;
+                    object local = GetLocalValueByName(ns);
+                    if (!(local is Dafny.LiteralExpr))
+                        return false;
+                }
+                else if (leaf is Dafny.LiteralExpr || leaf is ApplySuffix)
+                {
+                    continue;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

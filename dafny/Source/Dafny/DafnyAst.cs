@@ -4614,7 +4614,7 @@ namespace Microsoft.Dafny
 
         // {stmt;[stmt]} || expression
         public OrStmt(IToken tok, IToken endTok, List<Statement> blhs, Expression rhs)
-            : base(tok, endTok, null)
+            : base(tok, endTok, blhs)
         {
             Contract.Requires(tok != null);
             Contract.Requires(endTok != null);
@@ -4627,7 +4627,7 @@ namespace Microsoft.Dafny
 
         // {stmt;[stmt;]} || {stmt;[stmt;]}
         public OrStmt(IToken tok, IToken endTok, List<Statement> blhs, List<Statement> brhs)
-            : base(tok, endTok, null)
+            : base(tok, endTok, blhs)
         {
             Contract.Requires(tok != null);
             Contract.Requires(endTok != null);
@@ -4641,7 +4641,7 @@ namespace Microsoft.Dafny
 
         // expression || {stmt;[stmt;]}
         public OrStmt(IToken tok, IToken endTok, List<Expression> lhss, List<Statement> brhs)
-            : base(tok, endTok, null)
+            : base(tok, endTok, brhs)
         {
             Contract.Requires(tok != null);
             Contract.Requires(endTok != null);

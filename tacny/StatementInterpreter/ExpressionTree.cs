@@ -98,6 +98,8 @@ namespace Tacny
 
         public ExpressionTree FindNode(ExpressionTree node)
         {
+            Contract.Requires(node != null);
+            Contract.Ensures(Contract.Result<ExpressionTree>() != null);
             if (data.Equals(node.data))
                 return this;
             if (lChild != null)
@@ -141,6 +143,7 @@ namespace Tacny
          * */
         public ExpressionTree Copy()
         {
+            Contract.Ensures(Contract.Result<ExpressionTree>() != null);
             if (root == null)
                 this.SetRoot();
             ExpressionTree et = root._CopyTree();
@@ -153,6 +156,7 @@ namespace Tacny
 
         public List<Expression> GetLeafs()
         {
+            Contract.Ensures(Contract.Result<List<Expression>>() != null);
             List<Expression> leafs = new List<Expression>();
 
             if (isLeaf())
@@ -169,6 +173,7 @@ namespace Tacny
 
         public Expression TreeToExpression()
         {
+            Contract.Ensures(Contract.Result<Expression>() != null);
             if (isLeaf())
                 return data;
             else
@@ -235,6 +240,8 @@ namespace Tacny
 
         public static ExpressionTree ExpressionToTree(Expression exp)
         {
+            Contract.Requires(exp != null);
+            Contract.Ensures(Contract.Result<ExpressionTree>() != null);
             ExpressionTree node;
             if (exp is BinaryExpr)
             {

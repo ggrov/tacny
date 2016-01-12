@@ -37,21 +37,12 @@ namespace Tacny
                 object tmp;
                 ProcessArg(call_arguments[0], out tmp);
                 Contract.Assert(tmp != null);
-
                 IVariable form = tmp as IVariable;
                 if (form != null)
                     input = new NameSegment(form.Tok, form.Name, null);
                 else if (tmp is BinaryExpr)
                 {
-                    BinaryExpr bexp = tmp as BinaryExpr;
-                    ProcessArg(bexp.E0, out tmp);
-                    form = tmp as IVariable;
-                    NameSegment e0 = new NameSegment(form.Tok, form.Name, null);
-                    ProcessArg(bexp.E1, out tmp);
-                    form = tmp as IVariable;
-                    NameSegment e1 = new NameSegment(form.Tok, form.Name, null);
-
-                    input = new BinaryExpr(bexp.tok, bexp.Op, e0, e1);
+                    input = tmp as BinaryExpr;
                 }
                 else if (tmp is NameSegment)
                 {
@@ -74,8 +65,6 @@ namespace Tacny
             }
             else
             {
-
-
                 Method target = Program.FindMember(program.ParseProgram(), localContext.md.Name) as Method;
                 if (GetNewTarget() != null && GetNewTarget().Name == target.Name)
                     target = GetNewTarget();

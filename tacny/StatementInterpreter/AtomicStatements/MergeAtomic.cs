@@ -24,7 +24,7 @@ namespace Tacny
         private void Merge(Statement st, ref List<Solution> solution_list)
         {
             IVariable lv = null;
-            List<Expression> call_arguments; // we don't care about this
+            List<Expression> call_arguments;
 
             InitArgs(st, out lv, out call_arguments);
             Contract.Assert(lv != null, Util.Error.MkErr(st, 8));

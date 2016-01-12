@@ -168,7 +168,7 @@ namespace Util
         /// <returns></returns>
         public static ApplySuffix CopyApplySuffix(ApplySuffix old_aps)
         {
-            return new ApplySuffix(old_aps.tok, old_aps.Lhs, CopyExpressionList(old_aps.Args));
+            return new ApplySuffix(old_aps.tok, CopyExpression(old_aps.Lhs), CopyExpressionList(old_aps.Args));
         }
 
         public static CoLemma CopyCoLemma(MemberDecl md)

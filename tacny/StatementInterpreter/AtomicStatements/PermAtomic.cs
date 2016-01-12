@@ -141,6 +141,10 @@ namespace Tacny
             if (result.Count == 0)
             {
                 ApplySuffix aps = new ApplySuffix(call_arguments[0].tok, new NameSegment(call_arguments[0].tok, md.Name, null), new List<Expression>());
+                if (aps.Lhs.Type != null)
+                {
+                    string asd = ":as";
+                }
                 UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
                 solution_list.Add(us);
             }
@@ -152,6 +156,10 @@ namespace Tacny
                     // create new fresh list of items to remove multiple references to the same object
                     List<Expression> new_list = GenerateNew(item);
                     ApplySuffix aps = new ApplySuffix(call_arguments[0].tok, new NameSegment(call_arguments[0].tok, md.Name, null), new_list);
+                    if (aps.Lhs.Type != null)
+                    {
+                        string asd = ":as";
+                    }
                     UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
                     solution_list.Add(us);
                 }
@@ -203,7 +211,7 @@ namespace Tacny
 
             foreach (var item in old_list)
             {
-                new_list.Add(new NameSegment(item.tok, item.Name, item.OptTypeArguments));
+                new_list.Add(new NameSegment(item.tok, item.Name, null));
             }
 
             return new_list;

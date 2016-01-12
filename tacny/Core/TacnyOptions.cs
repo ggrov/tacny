@@ -31,6 +31,7 @@ namespace Tacny
 
         public bool ResolveTactics = true;
         public bool Debug = false;
+       
         protected override bool ParseOption(string name, Bpl.CommandLineOptionEngine.CommandLineParseState ps)
         {
             var args = ps.args;

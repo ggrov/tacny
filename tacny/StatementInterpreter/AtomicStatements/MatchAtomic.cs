@@ -158,6 +158,7 @@ namespace Tacny
                     solution = new Solution(ac, true, null);
                     dprog = program.ParseProgram();
                     solution.GenerateProgram(ref dprog);
+                    //program.MaybePrintProgram(dprog, null);
                     program.ClearBody(localContext.md);
                     program.ResolveProgram();
                     // skip the solution if resolution failed    

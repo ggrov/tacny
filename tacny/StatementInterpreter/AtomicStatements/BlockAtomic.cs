@@ -50,28 +50,7 @@ namespace Tacny
         [Pure]
         protected bool IsResolvable()
         {
-            Contract.Requires(this.guard != null);
-            List<Expression> leafs = guard.GetLeafs();
-
-            foreach (var leaf in leafs)
-            {
-                if (leaf is NameSegment)
-                {
-                    NameSegment ns = leaf as NameSegment;
-                    object local = GetLocalValueByName(ns);
-                    if (!(local is Dafny.LiteralExpr))
-                        return false;
-                }
-                else if (leaf is Dafny.LiteralExpr|| leaf is ApplySuffix)
-                {
-                    continue;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            return true;
+            return IsResolvable(this.guard);
         }
 
         /// <summary>

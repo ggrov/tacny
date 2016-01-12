@@ -669,7 +669,7 @@ namespace Tacny
 
         private void PrintProgram(TextWriter tw, Dafny.Program prog, DafnyOptions.PrintModes printMode = DafnyOptions.PrintModes.Everything)
         {
-            if (printer == null)
+            //if (printer == null)
                 printer = new Util.Printer(tw, DafnyOptions.O.PrintMode);
             printer.PrintProgram(prog);
         }

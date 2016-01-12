@@ -21,14 +21,13 @@ namespace Tacny
 
         private void SuchThat(Statement st, ref List<Solution> solution_list)
         {
-            Contract.Requires(st != null);
             object value = null;
             dynamic dynamic_val = null;
-            VarDeclStmt vds = st as VarDeclStmt;
-            Contract.Assert(vds != null, Util.Error.MkErr(st, 5, typeof(VarDeclStmt), st.GetType()));
+            TacticVarDeclStmt tvds = st as TacticVarDeclStmt;
+            Contract.Assert(tvds != null, Util.Error.MkErr(st, 5, typeof(TacticVarDeclStmt), st.GetType()));
 
-            AssignSuchThatStmt suchThat = vds.Update as AssignSuchThatStmt;
-            Contract.Assert(suchThat != null, Util.Error.MkErr(st, 5, typeof(AssignSuchThatStmt), vds.Update.GetType()));
+            AssignSuchThatStmt suchThat = tvds.Update as AssignSuchThatStmt;
+            Contract.Assert(suchThat != null, Util.Error.MkErr(st, 5, typeof(AssignSuchThatStmt), tvds.Update.GetType()));
             
             BinaryExpr bexp = suchThat.Expr as BinaryExpr;
             Contract.Assert(bexp != null, Util.Error.MkErr(st, 5, typeof(BinaryExpr), suchThat.Expr.GetType()));
@@ -39,7 +38,7 @@ namespace Tacny
             // big bad hack
             if (lhs is BinaryExpr && rhs is BinaryExpr)
             {
-                ResolveLhs(lhs as BinaryExpr, vds.Locals[0], out value);
+                ResolveLhs(lhs as BinaryExpr, tvds.Locals[0], out value);
                 Contract.Assert(value != null);
                 BinaryExpr rrhs = rhs as BinaryExpr;
 
@@ -62,10 +61,11 @@ namespace Tacny
                         IncTotalBranchCount();
                         if (item.Name != form.Name)
                         {
-                            AddLocal(vds.Locals[0], item);
+                            AddLocal(tvds.Locals[0], item);
                             solution_list.Add(new Solution(this.Copy()));
                         }
                     }
+                    return;
                 }
                 else // An incorrect value has been passed
                     Contract.Assert(false, Util.Error.MkErr(st, 1, "collection"));
@@ -73,7 +73,7 @@ namespace Tacny
 
 
 
-            IVariable declaration = vds.Locals[0];
+            IVariable declaration = tvds.Locals[0];
 
             NameSegment lhs_declaration = lhs as NameSegment;
             Contract.Assert(lhs_declaration != null, Util.Error.MkErr(st, 1, typeof(Expression)));
@@ -107,6 +107,7 @@ namespace Tacny
 
         private void ResolveLhs(BinaryExpr bexp, IVariable declaration, out object result)
         {
+            Contract.Requires(bexp != null && declaration != null);
             Contract.Ensures(Contract.ValueAtReturn(out result) != null);
             result = null;
             Expression lhs = bexp.E0;
