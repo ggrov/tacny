@@ -318,7 +318,7 @@ namespace Tacny
 
                 var vds = st as TacticVarDeclStmt;
                 // if empty variable declaration
-                // register variable to localc with empty value
+                // register variable to local with empty value
                 if (vds != null)
                 {
                     Solution sol;
