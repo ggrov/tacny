@@ -7,7 +7,7 @@ using Dafny = Microsoft.Dafny;
 using System.Diagnostics.Contracts;
 using Bpl = Microsoft.Boogie;
 
-namespace Tacny
+namespace Util
 {
     public class TacnyOptions : DafnyOptions
     {
@@ -31,7 +31,8 @@ namespace Tacny
 
         public bool ResolveTactics = true;
         public bool Debug = false;
-       
+        public bool Contracts = true;
+
         protected override bool ParseOption(string name, Bpl.CommandLineOptionEngine.CommandLineParseState ps)
         {
             var args = ps.args;
@@ -44,7 +45,13 @@ namespace Tacny
                 case "debug":
                     this.Debug = true;
                     return true;
-                default: 
+                case "contracts":
+                    int contracts = 0;
+                    if (ps.GetNumericArgument(ref contracts, 1))
+                        this.Contracts = contracts == 1;
+                    return true;
+                    break;
+                default:
                     break;
             }
 
@@ -55,8 +62,9 @@ namespace Tacny
         {
             base.Usage();
             Console.WriteLine(@"--- Tacny options ---------------------------------------------------
-                    /restactics
-                                Disable tactic resolution");
+                    /contracts:<n>
+                            0 - disable Tacny code contracts
+                            1 - (default) enable Tacny code contracts");
         }
     }
 }

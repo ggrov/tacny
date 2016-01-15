@@ -81,7 +81,7 @@ namespace Tacny
             List<Solution> result = null;
             MatchStmt ms = null;
             ParensExpression guard;
-            NameSegment ns;
+            NameSegment guard_arg;
             string datatype_name;
             
             bool[] ctorFlags; //localContext.ctorFlags; // used to keep track of which cases statements require a body
@@ -90,16 +90,16 @@ namespace Tacny
             guard = st.Guard as ParensExpression;
 
             if (guard == null)
-                ns = st.Guard as NameSegment;
+                guard_arg = st.Guard as NameSegment;
             else
-                ns = guard.E as NameSegment;
+                guard_arg = guard.E as NameSegment;
 
-            Contract.Assert(ns != null, Util.Error.MkErr(st, 2));
+            Contract.Assert(guard_arg != null, Util.Error.MkErr(st, 2));
 
-            Dafny.Formal formal = (Dafny.Formal)GetLocalKeyByName(ns);
-            Contract.Assert(formal != null, Util.Error.MkErr(st, 9, ns.Name));
+            Dafny.Formal tac_input = (Dafny.Formal)GetLocalKeyByName(guard_arg);
+            Contract.Assert(tac_input != null, Util.Error.MkErr(st, 9, guard_arg.Name));
             
-            datatype_name = formal.Type.ToString();
+            datatype_name = tac_input.Type.ToString();
             /**
              * TODO cleanup
              * if datatype is Element lookup the formal in global variable registry
@@ -107,23 +107,21 @@ namespace Tacny
 
             if (datatype_name == "Element")
             {
-                object val = GetLocalValueByName(formal.Name);
+                object val = GetLocalValueByName(tac_input.Name);
                 NameSegment decl = val as NameSegment;
-                Contract.Assert(decl != null, Util.Error.MkErr(st, 9, formal.Name));
+                Contract.Assert(decl != null, Util.Error.MkErr(st, 9, tac_input.Name));
 
                 IVariable original_decl = globalContext.GetGlobalVariable(decl.Name);
                 if (original_decl != null)
                 {
                     UserDefinedType udt = original_decl.Type as UserDefinedType;
                     if (udt != null)
-                    {
                         datatype_name = udt.Name;
-                    }
                     else
                         datatype_name = original_decl.Type.ToString();
                 }
                 else
-                    Contract.Assert(false, Util.Error.MkErr(st, 9, formal.Name));
+                    Contract.Assert(false, Util.Error.MkErr(st, 9, tac_input.Name));
 
             }
             else
@@ -135,7 +133,7 @@ namespace Tacny
                 Contract.Assert(false, Util.Error.MkErr(st, 12, datatype_name));
             }
 
-            ns = GetLocalValueByName(formal) as NameSegment;
+            guard_arg = GetLocalValueByName(tac_input) as NameSegment;
 
             datatype = globalContext.GetGlobal(datatype_name);
             InitCtorFlags(datatype, out ctorFlags);
@@ -152,7 +150,7 @@ namespace Tacny
                 for (int i = 0; i < result.Count; i++)
                 {
                     ctor_bodies[ctor] = result[i];
-                    GenerateMatchStmt(st.Tok.line, new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, ctor_bodies, out ms, ctorFlags);
+                    GenerateMatchStmt(st.Tok.line, new NameSegment(guard_arg.tok, guard_arg.Name, guard_arg.OptTypeArguments), datatype, ctor_bodies, out ms, ctorFlags);
                     Atomic ac = this.Copy();
                     ac.AddUpdated(ms, ms);
                     solution = new Solution(ac, true, null);
@@ -191,7 +189,7 @@ namespace Tacny
             /*
              * HACK Recreate the match block as the old one was modified by the resolver
              */
-            GenerateMatchStmt(st.Tok.line, new NameSegment(ns.tok, ns.Name, ns.OptTypeArguments), datatype, ctor_bodies, out ms, ctorFlags);
+            GenerateMatchStmt(st.Tok.line, new NameSegment(guard_arg.tok, guard_arg.Name, guard_arg.OptTypeArguments), datatype, ctor_bodies, out ms, ctorFlags);
             AddUpdated(ms, ms);
             IncTotalBranchCount();
 

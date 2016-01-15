@@ -150,11 +150,14 @@
     <Compile Include="Atomic.cs" />
     <Compile Include="AtomicStatements\BlockAtomic.cs" />
     <Compile Include="AtomicStatements\FailAtomic.cs" />
+    <Compile Include="AtomicStatements\FunctionsAtomic.cs" />
     <Compile Include="AtomicStatements\IdAtomic.cs" />
     <Compile Include="AtomicStatements\LemmasAtomic.cs" />
     <Compile Include="AtomicStatements\MergeAtomic.cs" />
     <Compile Include="AtomicStatements\OrAtomic.cs" />
     <Compile Include="AtomicStatements\ParamsAtomic.cs" />
+    <Compile Include="AtomicStatements\PostcondAtomic.cs" />
+    <Compile Include="AtomicStatements\PrecondAtomic.cs" />
     <Compile Include="AtomicStatements\SolvedAtomic.cs" />
     <Compile Include="AtomicStatements\SuchThatAtomic.cs" />
     <Compile Include="AtomicStatements\VariablesAtomic.cs" />

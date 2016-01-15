@@ -56,8 +56,7 @@ namespace Tacny
 
             ExitValue exitValue = ExitValue.VERIFIED;
 
-            TacnyOptions.Install(new TacnyOptions()); // prep Dafny/Boogie
-
+            Util.TacnyOptions.Install(new Util.TacnyOptions()); // prep Dafny/Boogie
             CommandLineOptions.Clo.RunningBoogieFromCommandLine = true;
             #if DEBUG
             CommandLineOptions.Clo.Wait = true;

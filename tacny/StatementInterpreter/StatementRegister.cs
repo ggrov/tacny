@@ -41,6 +41,7 @@ namespace Tacny
             FUNCTIONS,
             PRE_COND,
             POST_COND,
+            IS_INDUCTIVE,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -65,7 +66,8 @@ namespace Tacny
             {"solved", Atomic.SOLVED},
             {"functions", Atomic.FUNCTIONS},
             {"preconditions", Atomic.PRE_COND},
-            {"postconditions", Atomic.POST_COND}
+            {"postconditions", Atomic.POST_COND},
+            {"is_inductive", Atomic.IS_INDUCTIVE},
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -92,6 +94,7 @@ namespace Tacny
             {Atomic.FUNCTIONS, typeof(FunctionsAtomic)},
             {Atomic.PRE_COND, typeof(PrecondAtomic)},
             {Atomic.POST_COND, typeof(PostcondAtomic)},
+            {Atomic.IS_INDUCTIVE, typeof(IsInductiveAtomic)},
         };
 
         /// <summary>

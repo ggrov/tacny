@@ -35,7 +35,6 @@ namespace Tacny
         public readonly GlobalContext globalContext;
         public LocalContext localContext;
 
-        private Dictionary<Tactic, Atomic> tacticCache = new Dictionary<Tactic, Atomic>();
         protected Atomic(Atomic ac)
         {
             Contract.Requires(ac != null);
@@ -63,12 +62,11 @@ namespace Tacny
 
         }
 
-        public Atomic(LocalContext localContext, GlobalContext globalContext, Dictionary<Tactic, Atomic> tacticCache)
+        public Atomic(LocalContext localContext, GlobalContext globalContext)
         {
             this.program = globalContext.program.NewProgram();
             this.globalContext = globalContext;
             this.localContext = localContext.Copy();
-            this.tacticCache = tacticCache;
         }
 
         /// <summary>
@@ -78,7 +76,7 @@ namespace Tacny
         public Atomic Copy()
         {
             Contract.Ensures(Contract.Result<Atomic>() != null);
-            return new Atomic(localContext, globalContext, tacticCache);
+            return new Atomic(localContext, globalContext);
         }
 
         public static void ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, ref SolutionList result)
@@ -96,7 +94,7 @@ namespace Tacny
                 res = new List<Solution>();
                 Atomic ac = new Atomic(md, tac, tac_call, tacnyProgram);
                 ac.globalContext.RegsiterGlobalVariables(variables);
-                ResolveTactic(ac, ref res);
+                ResolveTactic(ref res, ac);
             }
             else
             {
@@ -128,25 +126,24 @@ namespace Tacny
         /// </summary>
         /// <param name="result"></param>
         /// <returns></returns>
-        public static void ResolveTactic(ref List<Solution> result)
-        {
-            Contract.Requires(result != null);
-            Contract.Requires(tcce.NonEmpty(result));
-            SolutionList solution_list = new SolutionList();
-            solution_list.AddRange(result);
-            while (true)
-            {
-                List<Solution> res = null;
+        //public static void ResolveTactic(ref List<Solution> result)
+        //{
+        //    Contract.Requires(tcce.NonEmpty(result));
+        //    SolutionList solution_list = new SolutionList();
+        //    solution_list.AddRange(result);
+        //    while (true)
+        //    {
+        //        List<Solution> res = null;
 
-                ResolveStatement(ref res, solution_list.plist);
+        //        ResolveStatement(ref res, solution_list.plist);
 
-                if (res.Count > 0)
-                    solution_list.AddRange(res);
-                else
-                    break;
-            }
-            result.AddRange(solution_list.plist);
-        }
+        //        if (res.Count > 0)
+        //            solution_list.AddRange(res);
+        //        else
+        //            break;
+        //    }
+        //    result.AddRange(solution_list.plist);
+        //}
 
         /// <summary>
         /// Resolve tactic body, given that no tactic calls have been made before
@@ -154,12 +151,14 @@ namespace Tacny
         /// <param name="atomic">The base atomic class</param>
         /// <param name="result">Result list</param>
         /// <returns>Error message</returns>
-        public static void ResolveTactic(Atomic atomic, ref List<Solution> result)
+        public static void ResolveTactic(ref List<Solution> result, Atomic atomic = null)
         {
-            Contract.Requires(atomic != null);
             Contract.Requires(result != null);
             //local solution list
-            SolutionList solution_list = new SolutionList(new Solution(atomic));
+            SolutionList solution_list = atomic == null ? new SolutionList() : new SolutionList(new Solution(atomic));
+            // if previous solutions exist, add them 
+            if (result.Count > 0)
+                solution_list.AddRange(result);
 
             while (true)
             {
@@ -188,7 +187,9 @@ namespace Tacny
             {
                 if (solution.state.localContext.IsResolved())
                     continue;
-
+                // if no statements have been resolved, check the preconditions
+                if (solution.state.localContext.IsFirstStatment())
+                    TacnyContract.ValidateRequires(solution);
                 solution.state.CallAction(solution.state.localContext.GetCurrentStatement(), ref result);
 
                 if (solution_list.IndexOf(solution) == solution_list.Count - 1)
@@ -299,7 +300,7 @@ namespace Tacny
                             ac.AddLocal(ac.localContext.tac.Ins[i], result);
                         }
                         List<Solution> sol_list = new List<Solution>();
-                        ResolveTactic(ac, ref sol_list);
+                        ResolveTactic(ref sol_list, ac);
 
                         /**
                          * Transfer the results from evaluating the nested tactic
@@ -497,7 +498,7 @@ namespace Tacny
 
         }
 
-        protected void ProcessArg(Expression argument, out Expression result)
+        public void ProcessArg(Expression argument, out Expression result)
         {
             Contract.Requires<ArgumentNullException>(argument != null);
             Contract.Ensures(Contract.ValueAtReturn<Expression>(out result) != null);
@@ -557,7 +558,7 @@ namespace Tacny
         {
             Contract.Requires(st != null);
             Contract.Requires(solution_list != null);
-            
+
             /*
              * If the statement is updateStmt check for variable assignment 
              */
@@ -640,8 +641,7 @@ namespace Tacny
 
         protected IVariable GetLocalKeyByName(NameSegment ns)
         {
-            if (ns == null)
-                return null;
+            Contract.Requires<ArgumentNullException>(ns != null);
             return localContext.GetLocalKeyByName(ns.Name);
         }
 

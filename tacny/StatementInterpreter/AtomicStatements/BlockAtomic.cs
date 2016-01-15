@@ -73,7 +73,6 @@ namespace Tacny
         {
             Contract.Requires(expt != null);
             // if the node is leaf, cast it to bool and return
-            // TODO: call evaluation
             if (expt.isLeaf())
             {
                 Dafny.LiteralExpr lit = EvaluateLeaf(expt) as Dafny.LiteralExpr;
