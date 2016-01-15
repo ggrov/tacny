@@ -26,7 +26,7 @@ namespace Tacny
     /// Local context for the tactic currently being resolved
     /// </summary>
     #region LocalContext
-        public class LocalContext : Context
+    public class LocalContext : Context
     {
         public Tactic tac = null;  // The called tactic
         public List<Statement> tac_body = new List<Statement>(); // body of the currently worked tactic
@@ -177,6 +177,7 @@ namespace Tacny
         {
             if (tacCounter >= tac_body.Count)
                 return null;
+
             return tac_body[tacCounter];
         }
 
@@ -187,6 +188,10 @@ namespace Tacny
             return tac_body[tacCounter + 1];
         }
 
+        public bool IsFirstStatment()
+        {
+            return tacCounter == 0;
+        }
 
         public bool IsResolved()
         {
@@ -245,7 +250,7 @@ namespace Tacny
         public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
         public List<Statement> resolved = new List<Statement>();
         public Method new_target = null;
-        public int total_branch_count {get; private set;}
+        public int total_branch_count { get; private set; }
         public int bad_branch_count { get; private set; }
         public int invalid_branch_count { get; private set; }
         public Program program;
@@ -337,7 +342,7 @@ namespace Tacny
             invalid_branch_count++;
         }
 
-    
+
     }
     #endregion
 }

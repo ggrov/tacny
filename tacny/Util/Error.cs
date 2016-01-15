@@ -96,6 +96,7 @@ namespace Util
                 case 11: s = "Statement called outside while loop"; break;
                 case 12: s = "Datatype {0} is not defined"; break;
                 case 13: s = "Tacny variables must be declared as tvar"; break;
+                case 14: s = "The precondition failed"; break;
                 default: s = "error" + n; break;
             }
 

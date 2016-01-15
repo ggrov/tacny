@@ -38,6 +38,7 @@ namespace Tacny
             WHILE,
             IF,
             SOLVED,
+            IS_INDUCTIVE,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -59,7 +60,8 @@ namespace Tacny
             {":|", Atomic.SUCH_THAT},
             {"lemmas", Atomic.LEMMAS},
             {"merge", Atomic.MERGE_LISTS},
-            {"solved", Atomic.SOLVED}
+            {"solved", Atomic.SOLVED},
+            {"is_inductive", Atomic.IS_INDUCTIVE}
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -83,6 +85,7 @@ namespace Tacny
             {Atomic.IF, typeof(IfAtomic)},
             {Atomic.WHILE, typeof(WhileAtomic)},
             {Atomic.SOLVED, typeof(SolvedAtomic)},
+            {Atomic.IS_INDUCTIVE, typeof(IsInductiveAtomic)},
         };
 
         /// <summary>
