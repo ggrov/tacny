@@ -91,7 +91,7 @@
       <HintPath>..\..\..\boogie\Binaries\Boogie.exe</HintPath>
     </Reference>
     <Reference Include="Concurrency">
-      <HintPath>..\..\..\boogie\Binaries\Concurrency.dll</HintPath>
+      <HintPath>..\..\boogie\Binaries\Concurrency.dll</HintPath>
     </Reference>
     <Reference Include="Core">
       <HintPath>..\..\..\boogie\Binaries\Core.dll</HintPath>
@@ -152,6 +152,7 @@
     <Compile Include="AtomicStatements\FailAtomic.cs" />
     <Compile Include="AtomicStatements\FunctionsAtomic.cs" />
     <Compile Include="AtomicStatements\IdAtomic.cs" />
+    <Compile Include="AtomicStatements\IsInductiveAtomic.cs" />
     <Compile Include="AtomicStatements\LemmasAtomic.cs" />
     <Compile Include="AtomicStatements\MergeAtomic.cs" />
     <Compile Include="AtomicStatements\OrAtomic.cs" />
@@ -166,6 +167,7 @@
     <Compile Include="Context.cs" />
     <Compile Include="AtomicStatements\GuardAtomic.cs" />
     <Compile Include="AtomicStatements\IfAtomic.cs" />
+    <Compile Include="Contract.cs" />
     <Compile Include="StatementRegister.cs" />
     <Compile Include="AtomicStatements\InvariantAtomic.cs" />
     <Compile Include="AtomicStatements\MatchAtomic.cs" />
