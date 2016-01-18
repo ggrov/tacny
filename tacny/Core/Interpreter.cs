@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using System.Linq;
 using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
-using Microsoft.Boogie;
-using Bpl = Microsoft.Boogie;
 using System.Diagnostics.Contracts;
 
 namespace Tacny

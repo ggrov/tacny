@@ -49,6 +49,20 @@ namespace Tacny
         public readonly List<DatatypeDecl> globals;
         private Util.Printer printer;
 
+
+        private class DebugData
+        {
+            public int BadBranchCount;      // number of branches where resolution failed
+            public int GoodBranchCount;     // number of branches where resolution succeeded
+            public int VerificationFailure; // number of times verification failed
+            public int VerificationSucc;    // number of times verificaiton succeeded
+            public int TotalBranchCount;    // total number of branches
+            public int CallsToBoogie;       // number of calls made to Boogie during tactic resolution
+            public int CallsToDafny;        // number of calls to Dafny resolver
+            public int StartTime;           // Unix timestamp when the tactic resolution begins
+            public int EndTime;             // Unix timestamp when the tactic resolution finishes
+        }   
+
         public Program(IList<string> fileNames, string programId, string programName = null)
         {
             this.fileNames = fileNames;

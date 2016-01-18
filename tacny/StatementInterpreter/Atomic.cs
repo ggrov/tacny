@@ -52,7 +52,7 @@ namespace Tacny
             this.program = program;
             this.localContext = new LocalContext(md, tac, tac_call);
             this.globalContext = new GlobalContext(md, tac_call, program);
-        }
+        }   
 
         public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, GlobalContext globalContext)
         {
