@@ -1,0 +1,150 @@
+:Generated: 2010/04/14
+:Revision: 50437
+
+C:\Temp\aste\SpecSharp\Microsoft.SpecSharp\Checkin Tests>Runtests.bat > output.txt
+
+
+passed (7)
+======================
+
+Bug.suite
+Generics.suite
+GetRuntimeAttribute.suite
+Multithreading.suite
+SpecSharpCollectionsConformance.suite
+SpecSharpConformanceInheritance.suite
+ZConformanceWithContracts.suite
+
+
+failed (4)
+=========================
+
+
+files
+-------------
+
+CSharpConformance.suite
+SpecSharpConformance.suite
+SpecSharpConformanceDefiniteAssignment.suite
+SpecSharpConformanceNonNull.suite
+
+
+error codes (39)
+------------------------------
+
+CS0536: 18		Class does not implement interface member
+CS2681: 9			Method is not pure enough
+CS0539: 8			Explicit interface declaration does not match interface member
+CS0508: 2			Cannot change return type when overriding inherited member
+CS0535: 1			Class does not implement interface member
+CS2688: 1			Peer and rep fields cannot be of immutable type
+
+
+error sources
+-------------------------------
+
+CS0536:
+	-	12 	System.Collections.IEnumerable
+	- 5 	System.Collections.Generic.IEnumerable<?>
+	- 1 	System.Collections.ICollection.SyncRoot
+	
+CS2681:
+	- 5		object.ToString()
+	- 2		object.Equals(object)
+	- 2		object.GetHashCode()
+	
+CS0539:
+	- 6		System.Collections.IEnumerable
+	- 1		System.Collections.ICollection
+	- 1		System.Collections.Generic.IEnumerable
+	
+CS0508:
+	- 2		object.ToString()
+	
+CS0535:
+	- 1		System.Collections.ICollection
+
+
+all errors (67)
+-----------------
+
+**I tried to remove all expected errors from the output, but some might have
+gotten away.**
+
+error CS0536: 'MyCollection' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'MyCollection.System.Collections.IEnumerable.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0539: 'MyCollection.System.Collections.IEnumerable.GetEnumerator()' in explicit interface declaration does not match a member of interface 'System.Collections.IEnumerable'
+
+error CS2681: 'C.Equals(object)' is not pure enough. It either overrides or implements 'object.Equals(object)' which is marked as '[Pure][Reads(ReadsAttribute.Reads.Nothing)]'
+
+error CS2681: 'C.GetHashCode()' is not pure enough. It either overrides or implements 'object.GetHashCode()' which is marked as '[Pure]'
+
+error CS0535: 'S' does not implement interface member 'System.Collections.ICollection.CopyTo(System.Array!, int)'
+
+error CS0536: 'S' does not implement interface member 'System.Collections.ICollection.SyncRoot.get'. 'S.SyncRoot.get' is either static, not public, or has the wrong return type.
+
+error CS0536: 'S' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'S.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0539: 'S.System.Collections.ICollection.CopyTo(System.Array, int)' in explicit interface declaration does not match a member of interface 'System.Collections.ICollection'
+
+error CS0536: 'Gen<T>' does not implement interface member 'System.Collections.Generic.IEnumerable<T>.GetEnumerator()'. 'Gen<T>.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0536: 'Gen<T>' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'Gen<T>.System.Collections.IEnumerable.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0539: 'Gen<T>.System.Collections.IEnumerable.GetEnumerator()' in explicit interface declaration does not match a member of interface 'System.Collections.IEnumerable'
+
+error CS2681: 'GC1<T>.Equals(object)' is not pure enough. It either overrides or implements 'object.Equals(object)' which is marked as '[Pure][Reads(ReadsAttribute.Reads.Nothing)]'
+
+error CS2681: 'GC1<T>.GetHashCode()' is not pure enough. It either overrides or implements 'object.GetHashCode()' which is marked as '[Pure]'
+
+error CS0536: 'Outer<T>' does not implement interface member 'System.Collections.Generic.IEnumerable<Outer<T>.Inner>.GetEnumerator()'. 'Outer<T>.System.Collections.Generic.IEnumerable<Outer<T>.Inner>.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0536: 'Outer<T>' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'Outer<T>.System.Collections.IEnumerable.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0539: 'Outer<T>.System.Collections.Generic.IEnumerable<Outer<T>.Inner>.GetEnumerator()' in explicit interface declaration does not match a member of interface 'System.Collections.Generic.IEnumerable<Outer<T>.Inner>'
+
+error CS0539: 'Outer<T>.System.Collections.IEnumerable.GetEnumerator()' in explicit interface declaration does not match a member of interface 'System.Collections.IEnumerable'
+
+error CS0508: 'Gen<T>.ToString()': cannot change return type when overriding inherited member 'object.ToString()'
+
+error CS2681: 'Gen<T>.ToString()' is not pure enough. It either overrides or implements 'object.ToString()' which is marked as '[Pure]'
+
+error CS0536: 'MyEnumerable' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'MyEnumerable.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0536: 'C' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'C.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0536: 'Seq<Node>' does not implement interface member 'System.Collections.Generic.IEnumerable<Node>.GetEnumerator()'. 'Seq<Node>.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0536: 'Seq<Node>' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'Seq<Node>.System.Collections.IEnumerable.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0539: 'Seq<Node>.System.Collections.IEnumerable.GetEnumerator()' in explicit interface declaration does not match a member of interface 'System.Collections.IEnumerable'
+
+error CS0536: 'N.Map' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'N.Map.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0536: 'N.List' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'N.List.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0508: 'N.Pair.ToString()': cannot change return type when overriding inherited member 'object.ToString()'
+
+error CS2681: 'N.Pair.ToString()' is not pure enough. It either overrides or implements 'object.ToString()' which is marked as '[Pure]'
+
+error CS2681: 'A.ToString()' is not pure enough. It either overrides or implements 'object.ToString()' which is marked as '[Pure]'
+
+error CS2681: 'A.ToString()' is not pure enough. It either overrides or implements 'object.ToString()' which is marked as '[Pure]'
+
+error CS2688: Peer and rep fields cannot be of immutable type.
+
+error CS0536: 'N.Map' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'N.Map.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS2681: 'MyPrinter.ToString()' is not pure enough. It either overrides or implements 'object.ToString()' which is marked as '[Pure]'
+
+error CS0536: 'D<T>' does not implement interface member 'System.Collections.Generic.IEnumerable<T>.GetEnumerator()'. 'D<T>.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0536: 'D<T>' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'D<T>.System.Collections.IEnumerable.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0539: 'D<T>.System.Collections.IEnumerable.GetEnumerator()' in explicit interface declaration does not match a member of interface 'System.Collections.IEnumerable'
+
+error CS0536: 'C<T>' does not implement interface member 'System.Collections.Generic.IEnumerable<T>.GetEnumerator()'. 'C<T>.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0536: 'C<T>' does not implement interface member 'System.Collections.IEnumerable.GetEnumerator()'. 'C<T>.System.Collections.IEnumerable.GetEnumerator()' is either static, not public, or has the wrong return type.
+
+error CS0539: 'C<T>.System.Collections.IEnumerable.GetEnumerator()' in explicit interface declaration does not match a member of interface 'System.Collections.IEnumerable'

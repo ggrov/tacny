@@ -1,0 +1,431 @@
+8 File(s) copied
+2 File(s) copied
+.\Bug.suite passed
+.\CSharpConformance.suite failed
+source(21937):
+using System;
+
+public unsafe class TestClass
+{
+    public int PerformTest()
+    {
+        long num;
+        int* ptr;
+
+        num = 100;
+        ptr = (int*)num;
+        if ((long)ptr != 100)
+            return 1;
+
+        num = long.MaxValue;            
+        ptr = (int*)num;
+        if ((long)ptr != (long.MaxValue & 0xFFFFFFFF))
+            return 2;
+
+        num = long.MinValue;            
+        ptr = (int*)num;
+        if ((long)ptr != (long.MinValue & 0xFFFFFFFF))
+            return 3;
+        
+        return 0;
+    }
+}
+
+public class TestDriver
+{
+  unsafe static int Main() 
+    {
+        return new TestClass().PerformTest();
+    }
+}
+
+actual output:
+Non zero return code: 2
+expected output:
+
+source(30892):
+// Test indirection when ref UIntPtr* is used.
+using System;
+
+unsafe class Test {
+
+    public static void Main() {
+        UIntPtr*[] ptrarr = new UIntPtr*[2];
+
+        ptrarr[0] = (UIntPtr*)0xfc;
+        ptrarr[1] = (UIntPtr*)0xff00ff00ff00;
+
+        UIntPtr* ptr = Simple(ref ptrarr[0]);
+
+        Console.WriteLine("ptr = {0:X}", (ulong)ptr);
+    }
+
+
+    static UIntPtr* Simple(ref UIntPtr *framePointer)
+    {
+        return framePointer + 1;
+    }
+}
+
+actual output:
+ptr = 104
+expected output:
+ptr = 100
+source(30948):
+using System;
+
+unsafe class Test {
+
+    public static void Main() {
+        int[] arr = new int[2];
+        arr[0] = 55;
+        arr[1] = 77;
+
+        fixed (int* ptr = &arr[0]) {
+            TestIncPtr(ptr);
+        }
+
+        fixed (int* ptr = &arr[1]) {
+            TestDecPtr(ptr);
+        }
+
+    }
+
+    public static void TestIncPtr(int* ptr) {
+        int* tmp1 = ptr;
+        PrePtrInc(ref tmp1);
+        Console.WriteLine("{0}", *tmp1);
+
+        int* tmp2 = ptr;
+        PostPtrInc(ref tmp2);
+        Console.WriteLine("{0}", *tmp2);
+    }
+
+    public static void TestDecPtr(int* ptr) {
+        int* tmp1 = ptr;
+        PrePtrDec(ref tmp1);
+        Console.WriteLine("{0}", *tmp1);
+
+        int* tmp2 = ptr;
+        PostPtrDec(ref tmp2);
+        Console.WriteLine("{0}", *tmp2);
+    }
+
+    public static void PostPtrDec(ref int* ptr) {
+        ptr--;
+    }
+    public static void PrePtrDec(ref int* ptr) {
+        --ptr;
+    }
+    public static void PostPtrInc(ref int* ptr) {
+        ptr++;
+    }
+    public static void PrePtrInc(ref int* ptr) {
+        ++ptr;
+    }
+}
+
+actual output:
+Common Language Runtime detected an invalid program.
+expected output:
+77
+77
+55
+55
+.\CSharpConformance.suite had 3 failures
+.\Generics.suite passed
+.\GetRuntimeAttribute.suite passed
+.\Multithreading.suite passed
+.\SpecSharpCollectionsConformance.suite passed
+.\SpecSharpConformance.suite failed
+source(3133):
+// If the body of an expose block terminates with a checked exception, then an attempt is made to pack the object; if successful, the checked exception propagates unchanged
+using System;
+using Microsoft.Contracts;
+class TooBigException : CheckedException{}
+class FooBar{
+  int x;
+  int y;
+  invariant 2 * x == y;
+  public FooBar(int x)
+    requires int.MinValue / 2 <= x && x <= int.MaxValue / 2;
+  {
+    this.x = x;
+    this.y = 2 * x;
+  }
+  public void IncrementX() throws TooBigException; {
+    additive expose (this){
+      x++;
+      if (int.MaxValue - 2 < y){
+        x--;
+        throw new TooBigException();
+      }
+      y += 2;
+    }
+  }
+  static void Main(){
+	FooBar fb = new FooBar(int.MaxValue / 2);
+    try{
+      fb.IncrementX();
+	}catch(TooBigException){
+      if (!((!)Guard.GetFrameGuard(fb, typeof(FooBar))).CanStartWriting)
+         Console.WriteLine("FAIL");
+      Console.WriteLine("PASS");
+      return;
+	}
+    Console.WriteLine("FAIL");
+  }
+}
+
+actual output:
+Common Language Runtime detected an invalid program.
+expected output:
+PASS
+source(3171):
+// If the body of an expose block terminates with a checked exception, then an attempt is made to pack the object; if unsuccessful, the checked exception is dropped and a GuardException is thrown
+using System;
+using Microsoft.Contracts;
+class TooBigException : CheckedException{}
+class FooBar{
+  int x;
+  int y;
+  invariant 2 * x == y;
+  public FooBar(int x)
+    requires int.MinValue / 2 <= x && x <= int.MaxValue / 2;
+  {
+    this.x = x;
+    this.y = 2 * x;
+  }
+  public void IncrementX() throws TooBigException; {
+    additive expose (this){
+      x++;
+      if (int.MaxValue - 2 < y){
+        throw new TooBigException();
+      }
+      y += 2;
+    }
+  }
+  static void Main() throws TooBigException; {
+	FooBar fb = new FooBar(int.MaxValue / 2);
+    try{
+      fb.IncrementX();
+	}catch(GuardException){
+      Console.WriteLine("PASS");
+      return;
+	}
+    Console.WriteLine("FAIL");
+  }
+}
+
+actual output:
+Common Language Runtime detected an invalid program.
+expected output:
+PASS
+source(3209):
+// If the body of an expose block terminates with an unchecked exception, then no attempt is made to pack the object; the unchecked exception is always propagated unchanged
+using System;
+using Microsoft.Contracts;
+class TooBigException : Exception {}
+class FooBar{
+  int x;
+  int y;
+  invariant 2 * x == y;
+  public FooBar(int x)
+    requires int.MinValue / 2 <= x && x <= int.MaxValue / 2;
+  {
+    this.x = x;
+    this.y = 2 * x;
+  }
+  public void IncrementX() {
+    additive expose (this){
+      x++;
+      if (int.MaxValue - 2 < y){
+        throw new TooBigException();
+      }
+      y += 2;
+    }
+  }
+  static void Main(){
+	FooBar fb = new FooBar(int.MaxValue / 2);
+    try{
+      fb.IncrementX();
+	}catch(TooBigException){
+      Console.WriteLine("PASS");
+      return;
+	}
+    Console.WriteLine("FAIL");
+  }
+}
+
+actual output:
+Common Language Runtime detected an invalid program.
+expected output:
+PASS
+.\SpecSharpConformance.suite had 3 failures
+.\SpecSharpConformanceDefiniteAssignment.suite failed
+source(1303):
+using System;
+using Microsoft.Contracts;
+
+class Node {
+   public NodePool! graph;
+   string! info;
+   [Delayed] public Node([Delayed] NodePool! g, string! i){
+     this.graph = g;
+     if (this.graph == null) // this is not allowed in earlier version but is ok now. 
+      	System.Console.WriteLine("this.graph is null");
+     else 
+      	System.Console.WriteLine("this.graph is not null");
+     info = i;
+   }
+}
+
+class NodePool { 
+   // a pool of nodes
+   Node! head; 
+   public Node! sen;
+   
+   public NodePool() {
+     head = new Node(this, "head");
+     sen = new Node(this, "sentinel");
+   }   
+}
+
+public class Program
+{
+  static void Main(string[]! args)
+    requires forall{string s in args; s != null};
+  {
+    // how about this version, which should be similar 
+    NodePool pool = new NodePool() ; // new Node(pool, "head"), new Node(pool, "sentinel"));
+    System.Console.WriteLine("{0}", pool); 
+  }
+}
+
+actual output:
+Common Language Runtime detected an invalid program.
+expected output:
+this.graph is not null
+this.graph is not null
+NodePool
+.\SpecSharpConformanceDefiniteAssignment.suite had 1 failure
+.\SpecSharpConformanceInheritance.suite passed
+.\SpecSharpConformanceNonNull.suite failed
+source(1581):
+public class Class1{
+  public Class1(bool b, string x, string! y)
+  {
+			string s = b ? x : y;
+			System.Console.WriteLine(s);
+  }
+  public static void Main(){
+    new Class1(true, "foo", "bar");
+    new Class1(false, "foo", "bar");
+  }
+}
+
+actual output:
+Common Language Runtime detected an invalid program.
+expected output:
+foo
+bar
+source(3043):
+//
+//  Test that non-null type of this is captured in closure
+//
+namespace Microsoft.MidoriTest
+{
+    using System;
+    using System.Collections;
+
+    public class Chore
+    {
+        public delegate void Thunk();
+        public Chore(Thunk/*!*/ f) {
+        }
+    }
+
+    internal class IntMap
+    {
+        private readonly IntMap/*!*/ _function;
+        private readonly Queue/*!*/ /*<Chore>*/ _queue;
+
+        public IntMap() {
+           _function = this;
+           _queue = new Queue();
+        }
+
+        public IntMap(IntMap/*!*/ f) {
+            _function = f;
+            _queue = new Queue();
+        }
+
+        public void Get(int n, int f) {
+            _queue.Enqueue(new Chore(delegate() {
+                _function.Get(n, f);
+            }));
+            Console.WriteLine("Get called");
+        }
+
+        public static void Main() {
+
+            IntMap m = new IntMap();
+            IntMap n = new IntMap(m);
+            
+            n.Get(1,2);       
+        }
+
+    }
+}
+
+actual output:
+Common Language Runtime detected an invalid program.
+expected output:
+Get called
+source(3134):
+using System;
+using Microsoft.Contracts;
+
+class Node {
+   public NodePool! graph;
+   string! info;
+   [Delayed] public Node([Delayed] NodePool! g, string! i){
+     this.graph = g;
+     if (this.graph == null) // this is not allowed in earlier version but is ok now. 
+      	System.Console.WriteLine("this.graph is null");
+     else 
+      	System.Console.WriteLine("this.graph is not null");
+     info = i;
+   }
+}
+
+class NodePool { 
+   // a pool of nodes
+   Node! head; 
+   public Node! sen;
+   
+   public NodePool() {
+     head = new Node(this, "head");
+     sen = new Node(this, "sentinel");
+   }   
+}
+
+public class Program
+{
+  static void Main(string[]! args)
+    requires forall{string s in args; s != null};
+  {
+    // how about this version, which should be similar 
+    NodePool pool = new NodePool() ; // new Node(pool, "head"), new Node(pool, "sentinel"));
+    System.Console.WriteLine("{0}", pool); 
+  }
+}
+
+actual output:
+Common Language Runtime detected an invalid program.
+expected output:
+this.graph is not null
+this.graph is not null
+NodePool
+.\SpecSharpConformanceNonNull.suite had 3 failures
+.\ZConformanceWithContracts.suite passed

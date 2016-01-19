@@ -1,0 +1,56 @@
+# --------------------------------- LICENSE: ----------------------------------
+# The file is part of Aste (pronounced "S-T"), an automatic build tool
+# originally tailored towards Spec# and Boogie.
+#
+# Copyright (C) 2010  Malte Schwerhoff
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+# USA.
+# --------------------------------- :LICENSE ----------------------------------
+
+#
+# Template for a authentication-related config file containing information that
+# should not be included in the main config file, since the latter will be under
+# version control.
+#
+
+# Passwords are obscured using rot47 [1] encoding in order to hinder someone
+# from accidentally reading a password while passing by a monitor.
+#
+# Use the 'rot47' action offered by run.py to encode a password with rot47.
+#
+# ROT47 IS NOT A SECURE ENCRYPTION SCHEME!
+# [1] http://de.wikipedia.org/wiki/ROT13
+
+Mail: {
+    Default: {
+        User: 'USER'
+        Password: 'PASSWORD'
+    }
+}
+
+SVN: {
+    CommitSummary: {
+        User: 'USER'
+        Password: 'PASSWORD'
+    }
+}
+
+CodePlex: {
+    Default: {
+        User: $Mail.Default.User
+        Password: $Mail.Default.Password
+    }
+}
