@@ -204,6 +204,7 @@ namespace Tacny
                     {
                         tacnyProgram.Print();
                     }
+                    tacnyProgram.PrintDebugData(false);
                 }
             }
             return exitValue;

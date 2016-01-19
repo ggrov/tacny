@@ -59,7 +59,6 @@ namespace Tacny
                 dec_list.Add(input);
                 Specification<Expression> decreases = new Specification<Expression>(dec_list, ws.Attributes);
                 nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, ws.Invariants, decreases, ws.Mod, ws.Body);
-                IncTotalBranchCount();
                 AddUpdated(ws, nws);
 
             }
@@ -98,9 +97,9 @@ namespace Tacny
                 }
                 // register new method
                 this.localContext.new_target = result;
+                globalContext.program.IncTotalBranchCount();
             }
 
-            IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
         }
     }

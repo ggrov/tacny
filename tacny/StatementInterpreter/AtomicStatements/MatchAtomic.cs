@@ -158,13 +158,10 @@ namespace Tacny
                     solution.GenerateProgram(ref dprog);
                     //program.MaybePrintProgram(dprog, null);
                     program.ClearBody(localContext.md);
-                    program.ResolveProgram();
-                    // skip the solution if resolution failed    
-                    if (!program.resolved)
-                    {
-                        IncInvalidBranchCount();
+                    // if program resolution failed, skip to the next solution
+                    if(!program.ResolveProgram())
                         continue;
-                    }
+
                     //program.MaybePrintProgram(dprog, null);
                     program.VerifyProgram();
                     if (!program.HasError())
@@ -178,7 +175,6 @@ namespace Tacny
                             ctor_bodies[ctor] = null;
                         break;
                     }
-                    IncBadBranchCount();
                 }
                 RemoveLocals(datatype, ctor);
                 ctor++;
@@ -191,7 +187,6 @@ namespace Tacny
              */
             GenerateMatchStmt(st.Tok.line, new NameSegment(guard_arg.tok, guard_arg.Name, guard_arg.OptTypeArguments), datatype, ctor_bodies, out ms, ctorFlags);
             AddUpdated(ms, ms);
-            IncTotalBranchCount();
 
             solution_list.Add(new Solution(this.Copy(), true, null));
         }

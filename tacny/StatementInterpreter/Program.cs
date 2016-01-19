@@ -18,9 +18,7 @@ namespace Tacny
         public string programId
         {
             set
-            {
-                _programId = value;
-            }
+            { _programId = value; }
             get { return _programId; }
         }
         private Dafny.Program _program;
@@ -48,20 +46,101 @@ namespace Tacny
         public readonly Dictionary<string, MemberDecl> members;
         public readonly List<DatatypeDecl> globals;
         private Util.Printer printer;
-
+        private DebugData debugData;
 
         private class DebugData
         {
-            public int BadBranchCount;      // number of branches where resolution failed
-            public int GoodBranchCount;     // number of branches where resolution succeeded
-            public int VerificationFailure; // number of times verification failed
-            public int VerificationSucc;    // number of times verificaiton succeeded
-            public int TotalBranchCount;    // total number of branches
-            public int CallsToBoogie;       // number of calls made to Boogie during tactic resolution
-            public int CallsToDafny;        // number of calls to Dafny resolver
-            public int StartTime;           // Unix timestamp when the tactic resolution begins
-            public int EndTime;             // Unix timestamp when the tactic resolution finishes
-        }   
+            public int BadBranchCount = 0;      // number of branches where resolution failed
+            public int GoodBranchCount = 0;     // number of branches where resolution succeeded
+            public int VerificationFailure = 0; // number of times verification failed
+            public int VerificationSucc = 0;    // number of times verificaiton succeeded
+            public int TotalBranchCount = 0;    // total number of branches
+            public int CallsToBoogie = 0;       // number of calls made to Boogie during tactic resolution
+            public int CallsToDafny = 0;        // number of calls to Dafny resolver
+            public int StartTime = 0;           // Unix timestamp when the tactic resolution begins
+            public int EndTime = 0;             // Unix timestamp when the tactic resolution finishes
+
+            public DebugData()
+            {
+                StartTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            }
+
+            private void Fin()
+            {
+                if (EndTime == 0)
+                    EndTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            }
+            public void PrintDebugData(Program program)
+            {
+                Fin();
+                TextWriter tw = new System.IO.StreamWriter(program.fileNames[0] + "_debug.dat");
+                program.PrintDebugMessage("Execution time: {0} seconds", tw, EndTime - StartTime);
+                program.PrintDebugMessage("Generated branches: {0}", tw, TotalBranchCount);
+                program.PrintDebugMessage("Generated invalid branches: {0}", tw, BadBranchCount);
+                program.PrintDebugMessage("Generated valid branches: {0}", tw, GoodBranchCount);
+                program.PrintDebugMessage("Verification failed {0} times", tw, VerificationFailure);
+                program.PrintDebugMessage("Verification succeeded {0} times", tw, VerificationSucc);
+                program.PrintDebugMessage("Times Boogie was called: {0}", tw, CallsToBoogie);
+                program.PrintDebugMessage("Times Dafny was called: {0}", tw, CallsToDafny);
+            }
+
+            public void PrintCsvDebugData(Program program)
+            {
+                Fin();
+                TextWriter tw = new System.IO.StreamWriter(program.fileNames[0] + "_debug.csv");
+                program.PrintDebugMessage("exec_time, branch_count, inv_branch_count, vld_branch_count, verif_fail, verif_succ, boogie_calls, dafny_calls\n", tw);
+                program.PrintDebugMessage("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}", tw,
+                    EndTime - StartTime, TotalBranchCount,
+                    BadBranchCount, GoodBranchCount,
+                    VerificationFailure, VerificationSucc,
+                    CallsToBoogie, CallsToDafny);
+            }
+        }
+
+
+        public void PrintDebugData(bool isCsv = false)
+        {
+            if (isCsv)
+                debugData.PrintCsvDebugData(this);
+            else
+                debugData.PrintDebugData(this);
+        }
+
+
+        private void IncBadBranchCount()
+        {
+            debugData.BadBranchCount++;
+        }
+
+        private void IncGoodBranchCount()
+        {
+            debugData.GoodBranchCount++;
+        }
+
+        public void IncTotalBranchCount()
+        {
+            debugData.TotalBranchCount++;
+        }
+
+        private void IncVerificationFailure()
+        {
+            debugData.VerificationFailure++;
+        }
+
+        private void IncVerificationSuccess()
+        {
+            debugData.VerificationSucc++;
+        }
+
+        private void IncCallsToBoogie()
+        {
+            debugData.CallsToBoogie++;
+        }
+
+        private void IncCallsToDafny()
+        {
+            debugData.CallsToDafny++;
+        }
 
         public Program(IList<string> fileNames, string programId, string programName = null)
         {
@@ -78,13 +157,13 @@ namespace Tacny
             tactics = new Dictionary<string, Tactic>();
             members = new Dictionary<string, MemberDecl>();
             globals = new List<DatatypeDecl>();
+            debugData = new DebugData();
             foreach (var item in dafnyProgram.DefaultModuleDef.TopLevelDecls)
             {
                 ClassDecl curDecl = item as ClassDecl;
                 if (curDecl != null)
                 {
                     // scan each member for tactic calls and resolve if found
-
                     foreach (var member in curDecl.Members)
                     {
                         Tactic tac = member as Tactic;
@@ -134,22 +213,38 @@ namespace Tacny
         public void VerifyProgram(Dafny.Program prog)
         {
             Bpl.Program boogieProgram;
+            IncCallsToBoogie();
             Translate(prog, fileNames, programId, out boogieProgram);
             po = BoogiePipeline(boogieProgram, prog, fileNames, programId);
+            if (stats.ErrorCount == 0)
+                IncVerificationSuccess();
+            else
+                IncVerificationFailure();
+
         }
 
-        public void ResolveProgram()
+        public bool ResolveProgram()
         {
             if (ResolveProgram(dafnyProgram) == 0)
                 resolved = true;
+
+            return resolved;
         }
 
         public int ResolveProgram(Dafny.Program program)
         {
+            IncCallsToDafny();
             Dafny.Resolver r = new Dafny.Resolver(program);
             r.ResolveProgram(program);
             if (r.ErrorCount != 0)
+            {
                 Util.Printer.Error("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
+                IncBadBranchCount();
+            }
+            else
+            {
+                IncGoodBranchCount();
+            }
             return r.ErrorCount;
         }
 
@@ -175,7 +270,6 @@ namespace Tacny
                 DatatypeDecl dd = d as DatatypeDecl;
                 if (dd != null)
                     data.Add(dd);
-
             }
 
             return data;
@@ -220,31 +314,6 @@ namespace Tacny
                         {
                             m.Body = null;
                         }
-                        /*
-                          if (m != null && m.Name != md.Name)
-                        {
-                            if (m.Body != null)
-                            {
-                                foreach (Statement st in m.Body.Body)
-                                {
-                                    if (st is UpdateStmt)
-                                    {
-                                        UpdateStmt us = (UpdateStmt)st;
-                                        ExprRhs er = us.Rhss[0] as ExprRhs;
-
-                                        ApplySuffix asx = er.Expr as ApplySuffix;
-                                        string name = asx.Lhs.tok.val;
-
-                                        if (tactics.ContainsKey(name))
-                                        {
-                                            m.Body = null;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                         */
                     }
                 }
             }
@@ -684,15 +753,14 @@ namespace Tacny
         private void PrintProgram(TextWriter tw, Dafny.Program prog, DafnyOptions.PrintModes printMode = DafnyOptions.PrintModes.Everything)
         {
             //if (printer == null)
-                printer = new Util.Printer(tw, DafnyOptions.O.PrintMode);
+            printer = new Util.Printer(tw, DafnyOptions.O.PrintMode);
             printer.PrintProgram(prog);
         }
 
-        public void PrintDebugMessage(string message, params object[] args)
+        public void PrintDebugMessage(string message, TextWriter tw, params object[] args)
         {
-            printer = new Util.Printer(new System.IO.StreamWriter(fileNames[0] + "_debug.dat"), DafnyOptions.O.PrintMode);
-
-            printer.PrintDebugMessage(message, fileNames[0], args);
+            Util.Printer prt = new Util.Printer(tw, DafnyOptions.O.PrintMode);
+            prt.PrintDebugMessage(message, fileNames[0], args);
         }
     }
 }

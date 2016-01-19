@@ -59,7 +59,6 @@ namespace Tacny
             // generate the solutions
             foreach (var item in result)
             {
-                IncTotalBranchCount();
                 Atomic ac = this.Copy();
                 // create a deep copy of each UpdateStmt
                 foreach (var us in item)

@@ -250,9 +250,6 @@ namespace Tacny
         public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
         public List<Statement> resolved = new List<Statement>();
         public Method new_target = null;
-        public int total_branch_count { get; private set; }
-        public int bad_branch_count { get; private set; }
-        public int invalid_branch_count { get; private set; }
         public Program program;
 
 
@@ -262,10 +259,6 @@ namespace Tacny
             this.program = program;
             foreach (DatatypeDecl tld in program.globals)
                 this.datatypes.Add(tld.Name, tld);
-            total_branch_count = 0;
-            bad_branch_count = 0;
-            invalid_branch_count = 0;
-
         }
 
         public bool ContainsGlobalKey(string name)
@@ -326,23 +319,6 @@ namespace Tacny
             if (temp_variables.ContainsKey(var.Name))
                 temp_variables.Remove(var.Name);
         }
-
-        public void IncTotalBranchCount()
-        {
-            total_branch_count++;
-        }
-
-        public void IncBadBranchCount()
-        {
-            bad_branch_count++;
-        }
-
-        public void IncInvalidBranchCount()
-        {
-            invalid_branch_count++;
-        }
-
-
     }
     #endregion
 }
