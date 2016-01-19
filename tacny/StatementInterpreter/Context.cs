@@ -247,6 +247,7 @@ namespace Tacny
     {
         protected readonly Dictionary<string, DatatypeDecl> datatypes = new Dictionary<string, DatatypeDecl>();
         public Dictionary<string, IVariable> global_variables = new Dictionary<string, IVariable>();
+        public Dictionary<IVariable, Dafny.Type> variable_types = new Dictionary<IVariable, Dafny.Type>();
         public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
         public List<Statement> resolved = new List<Statement>();
         public Method new_target = null;
@@ -273,7 +274,7 @@ namespace Tacny
             return datatypes[name];
         }
 
-        public void RegsiterGlobalVariables(List<IVariable> globals)
+        public void RegsiterGlobalVariables(List<IVariable> globals, List<IVariable> resolved = null)
         {
             Contract.Requires(globals != null);
             foreach (var item in globals)
@@ -282,6 +283,14 @@ namespace Tacny
                     global_variables.Add(item.Name, item);
                 else
                     global_variables[item.Name] = item;
+
+                if (resolved != null)
+                {
+                    var tmp = resolved.FirstOrDefault(i => i.Name == item.Name);
+                    if (tmp != null)
+                        variable_types.Add(item, tmp.Type);
+                              
+                }
             }
         }
 

@@ -79,13 +79,14 @@ namespace Tacny
             return new Atomic(localContext, globalContext);
         }
 
-        public static void ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, ref SolutionList result)
+        public static void ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables,List<IVariable> resolved, ref SolutionList result)
         {
             Contract.Requires(tac != null);
             Contract.Requires(tac_call != null);
             Contract.Requires(md != null);
             Contract.Requires(tacnyProgram != null);
-            Contract.Requires(variables != null && tcce.NonNullElements<IVariable>(variables));
+            Contract.Requires(tcce.NonNullElements<IVariable>(variables));
+            Contract.Requires(tcce.NonNullElements<IVariable>(resolved));
             Contract.Requires(result != null);
             List<Solution> res = null;
 
@@ -93,7 +94,7 @@ namespace Tacny
             {
                 res = new List<Solution>();
                 Atomic ac = new Atomic(md, tac, tac_call, tacnyProgram);
-                ac.globalContext.RegsiterGlobalVariables(variables);
+                ac.globalContext.RegsiterGlobalVariables(variables, resolved);
                 ResolveTactic(ref res, ac);
             }
             else

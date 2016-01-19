@@ -99,12 +99,14 @@ namespace Tacny
                 return null;
             if (m.Body == null)
                 return null;
+            
             List<IVariable> variables = new List<IVariable>();
+            List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
             variables.AddRange(m.Ins);
             variables.AddRange(m.Outs);
             SolutionList sol_list = new SolutionList();
             sol_list.AddRange(solution_list.plist);
-            foreach (Statement st in m.Body.Body)
+            foreach (var st in m.Body.Body)
             {
                 // register local variables
                 VarDeclStmt vds = st as VarDeclStmt;
@@ -114,13 +116,11 @@ namespace Tacny
                 UpdateStmt us = st as UpdateStmt;
                 if (us != null)
                 {
-
                     if (tacnyProgram.IsTacticCall(us))
                     {
                         try
                         {
-                            Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, ref sol_list);
-                            
+                            Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, resolved, ref sol_list);
                         }
                         catch (Exception e)
                         {
@@ -130,9 +130,7 @@ namespace Tacny
                 }
             }
 
-
             solution_list.AddRange(sol_list.plist);
-
             return null;
         }
     }

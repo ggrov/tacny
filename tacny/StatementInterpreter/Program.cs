@@ -227,7 +227,6 @@ namespace Tacny
         {
             if (ResolveProgram(dafnyProgram) == 0)
                 resolved = true;
-
             return resolved;
         }
 
@@ -319,6 +318,42 @@ namespace Tacny
             }
         }
 
+        public List<IVariable> GetResolvedVariables(MemberDecl md)
+        {
+            ParseProgram();
+            ClearBody(md);
+            ResolveProgram();
+            List<IVariable> result = null;
+            foreach (var item in dafnyProgram.DefaultModuleDef.TopLevelDecls)
+            {
+                ClassDecl cd = item as ClassDecl;
+                if (cd != null)
+                {
+                    foreach (var member in cd.Members)
+                    {
+                        Method m = member as Method;
+                        if (m.Name == md.Name)
+                        {
+                            result = new List<IVariable>();
+                            foreach (var stmt in m.Body.Body)
+                            {
+                                VarDeclStmt vds = stmt as VarDeclStmt;
+                                if (vds != null)
+                                {
+                                    foreach(var local in vds.Locals)
+                                    {
+                                        if (local.Type != null)
+                                            result.Add(local);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+        
         private string GetSignature(UpdateStmt us)
         {
             ExprRhs er = us.Rhss[0] as ExprRhs;
