@@ -31,11 +31,7 @@ namespace Tacny
                 //program.MaybePrintProgram(dprog, null);
                 program.ResolveProgram();
                 // skip the solution if resolution failed    
-                if (!program.resolved)
-                {
-                    IncBadBranchCount();
-                    continue;
-                }
+                
                 //program.MaybePrintProgram(dprog, null);
                 program.VerifyProgram();
                 if (!program.HasError())
@@ -47,7 +43,6 @@ namespace Tacny
                     solution_list.Add(sol);
                     return;
                 }
-                IncBadBranchCount();
             }
 
         }

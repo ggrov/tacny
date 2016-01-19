@@ -52,7 +52,7 @@ namespace Tacny
             this.program = program;
             this.localContext = new LocalContext(md, tac, tac_call);
             this.globalContext = new GlobalContext(md, tac_call, program);
-        }
+        }   
 
         public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, GlobalContext globalContext)
         {
@@ -661,6 +661,7 @@ namespace Tacny
         protected void AddLocal(IVariable lv, object value)
         {
             Contract.Requires<ArgumentNullException>(lv != null);
+            globalContext.program.IncTotalBranchCount();
             localContext.AddLocal(lv, value);
         }
 
@@ -684,6 +685,7 @@ namespace Tacny
         public void AddUpdated(Statement key, Statement value)
         {
             Contract.Requires(key != null && value != null);
+            globalContext.program.IncTotalBranchCount();
             localContext.AddUpdated(key, value);
         }
 
@@ -708,36 +710,6 @@ namespace Tacny
         public Dictionary<Statement, Statement> GetResult()
         {
             return localContext.updated_statements;
-        }
-
-        public void IncTotalBranchCount()
-        {
-            globalContext.IncTotalBranchCount();
-        }
-
-        public int GetTotalBranchCount()
-        {
-            return globalContext.total_branch_count;
-        }
-
-        public void IncBadBranchCount()
-        {
-            globalContext.IncBadBranchCount();
-        }
-
-        public int GetBadBranchCount()
-        {
-            return globalContext.bad_branch_count;
-        }
-
-        public void IncInvalidBranchCount()
-        {
-            globalContext.IncInvalidBranchCount();
-        }
-
-        public int GetInvalidBranchCount()
-        {
-            return globalContext.invalid_branch_count;
         }
 
         public bool IsFinal(List<Solution> solution_list)

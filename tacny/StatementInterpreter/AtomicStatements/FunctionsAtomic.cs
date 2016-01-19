@@ -31,7 +31,6 @@ namespace Tacny
                 if (fun != null)
                     functions.Add(fun);
             }
-            IncTotalBranchCount();
             AddLocal(lv, functions);
             solution_list.Add(new Solution(this.Copy()));
         }

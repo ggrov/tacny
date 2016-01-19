@@ -42,7 +42,6 @@ namespace Tacny
             
 
             darg1.AddRange(darg2);
-            IncTotalBranchCount();
             AddLocal(lv, darg1);
 
             solution_list.Add(new Solution(this.Copy()));

@@ -58,7 +58,6 @@ namespace Tacny
                 {
                     foreach (var item in dynamic_val)
                     {
-                        IncTotalBranchCount();
                         if (item.Name != form.Name)
                         {
                             AddLocal(tvds.Locals[0], item);
@@ -93,7 +92,6 @@ namespace Tacny
             {
                 foreach (var item in dynamic_val)
                 {
-                    IncTotalBranchCount();
                     AddLocal(declaration, item);
                     solution_list.Add(new Solution(this.Copy()));
                 }

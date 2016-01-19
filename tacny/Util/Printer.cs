@@ -40,8 +40,8 @@ namespace Util
 
         public void PrintDebugMessage(string message, string program_name, params object[] args)
         {
-            wr.WriteLine("*DEBUG DATA*");
-            wr.WriteLine("Program: {0}", program_name);
+            //wr.WriteLine("*DEBUG DATA*");
+            //wr.WriteLine("Program: {0}", program_name);
             wr.WriteLine(String.Format(message, args));
             wr.Flush();
         }

@@ -32,7 +32,6 @@ namespace Tacny
                 post_conditions.Add(Util.Copy.CopyMaybeFreeExpression(post));
 
             }
-            IncTotalBranchCount();
             AddLocal(lv, post_conditions);
             solution_list.Add(new Solution(this.Copy()));
         }

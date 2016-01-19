@@ -74,7 +74,6 @@ namespace Tacny
             Expression guard = this.guard.TreeToExpression();
 
             AddUpdated(ifStmt, Util.Copy.CopyIfStmt(ReplaceGuard(ifStmt, guard)));
-            IncTotalBranchCount();
             solution_list.Add(new Solution(this.Copy()));
         }
 

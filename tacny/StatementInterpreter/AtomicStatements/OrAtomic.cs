@@ -78,7 +78,6 @@ namespace Tacny
                         break;
                 }
             }
-            IncTotalBranchCount();
         }
 
         private UpdateStmt GenUpdateStmt(ApplySuffix aps)
