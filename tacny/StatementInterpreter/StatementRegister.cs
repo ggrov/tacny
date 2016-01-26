@@ -38,10 +38,12 @@ namespace Tacny
             WHILE,
             IF,
             SOLVED,
+            CHANGED,
             FUNCTIONS,
             PRE_COND,
             POST_COND,
             IS_INDUCTIVE,
+            TRY_CATCH,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -64,10 +66,12 @@ namespace Tacny
             {"lemmas", Atomic.LEMMAS},
             {"merge", Atomic.MERGE_LISTS},
             {"solved", Atomic.SOLVED},
+            {"changed", Atomic.CHANGED},
             {"functions", Atomic.FUNCTIONS},
             {"preconditions", Atomic.PRE_COND},
             {"postconditions", Atomic.POST_COND},
             {"is_inductive", Atomic.IS_INDUCTIVE},
+            {"tryCatch", Atomic.TRY_CATCH},
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -91,10 +95,12 @@ namespace Tacny
             {Atomic.IF, typeof(IfAtomic)},
             {Atomic.WHILE, typeof(WhileAtomic)},
             {Atomic.SOLVED, typeof(SolvedAtomic)},
+            {Atomic.CHANGED, typeof(ChangedAtomic)},
             {Atomic.FUNCTIONS, typeof(FunctionsAtomic)},
             {Atomic.PRE_COND, typeof(PrecondAtomic)},
             {Atomic.POST_COND, typeof(PostcondAtomic)},
             {Atomic.IS_INDUCTIVE, typeof(IsInductiveAtomic)},
+            {Atomic.TRY_CATCH, typeof(TryCatchAtomic)},
         };
 
         /// <summary>
@@ -115,14 +121,17 @@ namespace Tacny
             if ((tbs = st as TacnyBlockStmt) != null)
             {
                 TacnyCasesBlockStmt tcbs;
-                TacnyIfBlockStmt tibs;
                 TacnySolvedBlockStmt tsbs;
+                TacnyChangedBlockStmt tchbs;
+                TacnyTryCatchBlockStmt ttcbs;
                 if((tcbs = tbs as TacnyCasesBlockStmt) != null)
                     return atomic_signature[tcbs.WhatKind];
-                else if ((tibs = tbs as TacnyIfBlockStmt) != null)
-                    return atomic_signature[tibs.WhatKind];
                 else if ((tsbs = tbs as TacnySolvedBlockStmt) != null)
                     return atomic_signature[tsbs.WhatKind];
+                else if ((tchbs = tbs as TacnyChangedBlockStmt) != null)
+                    return atomic_signature[tchbs.WhatKind];
+                else if ((ttcbs = tbs as TacnyTryCatchBlockStmt) != null)
+                    return atomic_signature[ttcbs.WhatKind];
             }
             else if (((os = st as OrStmt) != null))
             {

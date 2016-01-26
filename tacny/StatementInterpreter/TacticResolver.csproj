@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>StatementInterpreter</RootNamespace>
-    <AssemblyName>m</AssemblyName>
+    <AssemblyName>StatementInterpreter</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -18,7 +18,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -149,6 +149,7 @@
   <ItemGroup>
     <Compile Include="Atomic.cs" />
     <Compile Include="AtomicStatements\BlockAtomic.cs" />
+    <Compile Include="AtomicStatements\ChangedAtomic.cs" />
     <Compile Include="AtomicStatements\FailAtomic.cs" />
     <Compile Include="AtomicStatements\FunctionsAtomic.cs" />
     <Compile Include="AtomicStatements\IdAtomic.cs" />
@@ -161,6 +162,7 @@
     <Compile Include="AtomicStatements\PrecondAtomic.cs" />
     <Compile Include="AtomicStatements\SolvedAtomic.cs" />
     <Compile Include="AtomicStatements\SuchThatAtomic.cs" />
+    <Compile Include="AtomicStatements\TryCatchAtomic.cs" />
     <Compile Include="AtomicStatements\VariablesAtomic.cs" />
     <Compile Include="AtomicStatements\VariantAtomic.cs" />
     <Compile Include="AtomicStatements\WhileAtomic.cs" />
@@ -168,6 +170,11 @@
     <Compile Include="AtomicStatements\GuardAtomic.cs" />
     <Compile Include="AtomicStatements\IfAtomic.cs" />
     <Compile Include="Contract.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
     <Compile Include="StatementRegister.cs" />
     <Compile Include="AtomicStatements\InvariantAtomic.cs" />
     <Compile Include="AtomicStatements\MatchAtomic.cs" />
@@ -182,6 +189,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
