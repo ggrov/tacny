@@ -5060,20 +5060,6 @@ namespace Microsoft.Dafny
         }
     }
 
-    public class TacnyIfBlockStmt : TacnyBlockStmt
-    {
-        public virtual string WhatKind { get { return "addif"; } }
-        public TacnyIfBlockStmt(IToken tok, IToken endTok, Expression guard, BlockStmt body)
-            : base(tok, endTok, guard, body)
-        {
-            Contract.Requires(tok != null);
-            Contract.Requires(endTok != null);
-            Contract.Requires(guard != null);
-            Contract.Requires(body != null);
-
-        }
-    }
-
     public class TacnyCasesBlockStmt : TacnyBlockStmt
     {
         public virtual string WhatKind { get { return "cases"; } }
@@ -5100,6 +5086,34 @@ namespace Microsoft.Dafny
 
         }
     }
+
+    public class TacnyChangedBlockStmt : TacnyBlockStmt
+    {
+        public string WhatKind { get { return "changed"; } }
+        public TacnyChangedBlockStmt(IToken tok, IToken endTok, BlockStmt body)
+            : base(tok, endTok, null, body)
+        {
+            Contract.Requires(tok != null);
+            Contract.Requires(endTok != null);
+            Contract.Requires(body != null);
+
+        }
+    }
+
+    public class TacnyTryCatchBlockStmt : TacnyBlockStmt
+    {
+        public string WhatKind { get { return "tryCatch"; } }
+        public BlockStmt Ctch = null;
+        public TacnyTryCatchBlockStmt(IToken tok, IToken endTok, BlockStmt body, BlockStmt ctch = null)
+            : base(tok, endTok, null, body)
+        {
+            Contract.Requires(tok != null);
+            Contract.Requires(endTok != null);
+            Contract.Requires(body != null);
+            Ctch = ctch;
+
+        }
+    }
     
     public class GuardedAlternative
     {
@@ -5123,6 +5137,8 @@ namespace Microsoft.Dafny
             this.Body = body;
         }
     }
+
+
 
     public class AlternativeStmt : Statement
     {

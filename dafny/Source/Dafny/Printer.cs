@@ -797,6 +797,22 @@ namespace Microsoft.Dafny {
           TacnySolvedBlockStmt tcbs = stmt as TacnySolvedBlockStmt;
           wr.Write("solved ");
           PrintStatement(tcbs.Body, indent);
+      } else if (stmt is TacnyChangedBlockStmt)
+      {
+          TacnyChangedBlockStmt tchbs = stmt as TacnyChangedBlockStmt;
+          wr.Write("changed ");
+          PrintStatement(tchbs.Body, indent);
+      }
+      else if (stmt is TacnyTryCatchBlockStmt)
+      {
+          TacnyTryCatchBlockStmt tchbs = stmt as TacnyTryCatchBlockStmt;
+          wr.Write("try ");
+          PrintStatement(tchbs.Body, indent);
+          if (tchbs.Ctch != null)
+          {
+              PrintStatement(tchbs.Ctch, indent);
+          }
+
       }
       else if (stmt is OrStmt)
       {

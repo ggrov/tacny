@@ -1473,9 +1473,10 @@ OneStmt<out Statement/*!*/ s>
   | UpdateStmt<out s>
   | VarDeclStatement<out s>
   | IfStmt<out s>
-  | TacnyIfBlockStmt<out s>
   | TacnyCasesBlockStmt<out s>
   | TacnySolvedBlockStmt<out s>
+  | TacnyChangedBlockStmt<out s>
+  | TacnyTryCatchBlockStmt<out s>
   | WhileStmt<out s>
   | MatchStmt<out s>
   | ForallStmt<out s>
@@ -1787,7 +1788,6 @@ TacnySolvedBlockStmt<out Statement/*!*/ tacnySolvedStatement>
 = (. Contract.Ensures(Contract.ValueAtReturn(out tacnySolvedStatement) != null); IToken/*!*/ x;
      BlockStmt/*!*/ body;
      IToken bodyStart, bodyEnd, endTok;
-     List<GuardedAlternative> alternatives;
      tacnySolvedStatement = dummyStmt;  // to please the compiler
   .)
   "solved"                       (. x = t; .)
@@ -1796,34 +1796,38 @@ TacnySolvedBlockStmt<out Statement/*!*/ tacnySolvedStatement>
     (. tacnySolvedStatement = new TacnySolvedBlockStmt(x, endTok, body); .)
   )
   .
- 
-TacnyIfBlockStmt<out Statement/*!*/ tacnyIfStmt>
-= (. Contract.Ensures(Contract.ValueAtReturn(out tacnyIfStmt) != null); IToken/*!*/ x;
-     Expression guard = null;  IToken guardEllipsis = null;
-     BlockStmt/*!*/ thn;
+
+TacnyChangedBlockStmt<out Statement/*!*/ tacnyChangedStatement>
+= (. Contract.Ensures(Contract.ValueAtReturn(out tacnyChangedStatement) != null); IToken/*!*/ x;
+     BlockStmt/*!*/ body;
      IToken bodyStart, bodyEnd, endTok;
-     List<GuardedAlternative> alternatives;
-     tacnyIfStmt = dummyStmt;  // to please the compiler
+     tacnyChangedStatement = dummyStmt;  // to please the compiler
   .)
-  "add_if"                       (. x = t; .)
+  "changed"                       (. x = t; .)
   (
-    IF(IsAlternative())
-    AlternativeBlock<out alternatives, out endTok>
-    (. tacnyIfStmt = new AlternativeStmt(x, endTok, alternatives); .)
-  |
-    ( Guard<out guard>
-    | "..."                  (. guardEllipsis = t; .)
-    )
-    BlockStmt<out thn, out bodyStart, out bodyEnd>    (. endTok = thn.EndTok; .)
-    (. if (guardEllipsis != null) {
-         tacnyIfStmt = new SkeletonStatement(new TacnyIfBlockStmt(x, endTok, guard, thn), guardEllipsis, null);
-       } else {
-         tacnyIfStmt = new TacnyIfBlockStmt(x, endTok, guard, thn);
-       }
-    .)
+    BlockStmt<out body, out bodyStart, out bodyEnd>    (. endTok = body.EndTok; .)
+    (. tacnyChangedStatement = new TacnyChangedBlockStmt(x, endTok, body); .)
   )
   .
-  
+
+TacnyTryCatchBlockStmt<out Statement/*!*/ tacnyTryCatchStatement>
+= (. Contract.Ensures(Contract.ValueAtReturn(out tacnyTryCatchStatement) != null); IToken/*!*/ x;
+     BlockStmt/*!*/ body;
+     BlockStmt/*!*/ ctch = null;
+     IToken bodyStart, bodyEnd, endTok;
+     tacnyTryCatchStatement = dummyStmt;  // to please the compiler
+  .)
+  "try"                       (. x = t; .)
+  (
+    BlockStmt<out body, out bodyStart, out bodyEnd>    (. endTok = body.EndTok; .)
+    [ "catch"
+      BlockStmt<out ctch, out bodyStart, out bodyEnd> (. endTok = ctch.EndTok; .)
+    ]
+    (. tacnyTryCatchStatement = new TacnyTryCatchBlockStmt(x, endTok, body, ctch); .)
+  )
+  .
+
+
 TacnyCasesBlockStmt<out Statement/*!*/ tacnyCasesStmt>
 = (. Contract.Ensures(Contract.ValueAtReturn(out tacnyCasesStmt) != null); IToken/*!*/ x;
      Expression guard = null;  IToken guardEllipsis = null;
