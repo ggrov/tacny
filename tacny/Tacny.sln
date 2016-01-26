@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TacnyMain", "Core\TacnyMain
 		{D68D70F0-BD07-4176-B3DE-0B00612F84F7} = {D68D70F0-BD07-4176-B3DE-0B00612F84F7}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatementInterpreter", "StatementInterpreter\StatementInterpreter.csproj", "{D68D70F0-BD07-4176-B3DE-0B00612F84F7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TacticResolver", "StatementInterpreter\TacticResolver.csproj", "{D68D70F0-BD07-4176-B3DE-0B00612F84F7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Util", "Util\Util.csproj", "{15D5AE0C-9692-417F-B5C0-CEB12B79E785}"
 EndProject

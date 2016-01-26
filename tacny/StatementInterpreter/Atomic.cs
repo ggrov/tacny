@@ -29,8 +29,6 @@ namespace Tacny
 
     public class Atomic
     {
-
-        //public Solution solution;
         public Program program;
         public readonly GlobalContext globalContext;
         public LocalContext localContext;
