@@ -339,9 +339,10 @@ namespace Tacny
         public Dafny.Type GetVariableType(string name)
         {
             Contract.Requires(name != null);
-            var tmp = variable_types.FirstOrDefault(i => i.Key.Name == name).Value;
+            if(Util.TacnyOptions.O.EvalAnalysis)
+                return variable_types.FirstOrDefault(i => i.Key.Name == name).Value;
 
-            return tmp;
+            return null;
         }
     }
     #endregion

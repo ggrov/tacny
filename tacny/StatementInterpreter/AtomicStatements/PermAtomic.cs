@@ -108,33 +108,15 @@ namespace Tacny
                 args.Add(new List<IVariable>());
                 foreach (var arg in vars)
                 {
-                    Dafny.LocalVariable lv;
+                    // get variable type
                     Dafny.Type type = globalContext.GetVariableType(arg.Name);
-                    
-                    if (item.Type.ToString() == type.ToString())
+                    if (type != null)
+                    {
+                        // if variable type and current argument types match
+                        if (item.Type.ToString() == type.ToString())
+                            args[i].Add(arg);
+                    } else
                         args[i].Add(arg);
-                    //if (arg is dafny.localvariable)
-                    //{
-                    //    lv = arg as dafny.localvariable;
-                    //    dafny.type type = globalcontext.getvariabletype(lv.name);
-                    //    //dafny.inferredtypeproxy itp = lv.optionaltype as inferredtypeproxy;
-                    //    //if (itp != null)
-                    //    //{
-                    //    //    if (itp.t == null)
-                    //    //        args[i].add(arg);
-                    //    //}
-                    //    //else
-                    //    //{
-                    //    //    if (item.type.equals(lv.optionaltype))
-                    //    //    {
-                    //    //        args[i].add(arg);
-                    //    //    }
-                    //    //}
-
-                    //}
-
-                    //else if (item.type.equals(arg.type))
-                    //    args[i].add(arg);
                 }
                 /**
                  * if no type correct variables have been added we can safely return

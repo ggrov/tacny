@@ -32,6 +32,7 @@ namespace Util
         public bool ResolveTactics = true;
         public bool Debug = false;
         public bool Contracts = true;
+        public bool EvalAnalysis = true;
 
         protected override bool ParseOption(string name, Bpl.CommandLineOptionEngine.CommandLineParseState ps)
         {
@@ -50,7 +51,11 @@ namespace Util
                     if (ps.GetNumericArgument(ref contracts, 1))
                         this.Contracts = contracts == 1;
                     return true;
-                    break;
+                case "evalAnalysis":
+                    int evalAnalysis = 0;
+                    if (ps.GetNumericArgument(ref evalAnalysis, 1))
+                        this.EvalAnalysis = evalAnalysis == 1;
+                    return true;
                 default:
                     break;
             }
