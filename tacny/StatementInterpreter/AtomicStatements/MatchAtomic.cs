@@ -169,7 +169,6 @@ namespace Tacny
                     // check if error index has changed
                     if (CheckError(ms, ref ctorFlags, ctor))
                     {
-
                         // if the ctor does not require a body null the value
                         if (!ctorFlags[ctor])
                             ctor_bodies[ctor] = null;
@@ -292,7 +291,7 @@ namespace Tacny
                     foreach (var formal in ctor.Formals)
                     {
                         // register globals as name segments
-                        globalContext.RegisterTempVariable(new Dafny.LocalVariable(formal.tok, formal.tok, formal.Name, new InferredTypeProxy(), formal.IsGhost));
+                        globalContext.RegisterTempVariable(formal);
                     }
                 }
                 i++;

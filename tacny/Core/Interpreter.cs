@@ -102,6 +102,7 @@ namespace Tacny
             
             List<IVariable> variables = new List<IVariable>();
             List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
+            resolved.AddRange(m.Ins);
             variables.AddRange(m.Ins);
             variables.AddRange(m.Outs);
             SolutionList sol_list = new SolutionList();

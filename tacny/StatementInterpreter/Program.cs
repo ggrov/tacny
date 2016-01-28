@@ -332,6 +332,8 @@ namespace Tacny
                     foreach (var member in cd.Members)
                     {
                         Method m = member as Method;
+                        if (m == null)
+                            continue;
                         if (m.Name == md.Name)
                         {
                             result = new List<IVariable>();

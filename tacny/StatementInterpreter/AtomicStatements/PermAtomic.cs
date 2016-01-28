@@ -109,28 +109,39 @@ namespace Tacny
                 foreach (var arg in vars)
                 {
                     Dafny.LocalVariable lv;
-                    if (arg is Dafny.LocalVariable)
-                    {
-                        lv = arg as Dafny.LocalVariable;
-                        Dafny.InferredTypeProxy itp = lv.OptionalType as InferredTypeProxy;
-                        if (itp != null)
-                        {
-                            if (itp.T == null)
-                                args[i].Add(arg);
-                        }
-                        else
-                        {
-                            if (item.Type.Equals(lv.OptionalType))
-                            {
-                                args[i].Add(arg);
-                            }
-                        }
-
-                    }
-
-                    else if (item.Type.Equals(arg.Type))
+                    Dafny.Type type = globalContext.GetVariableType(arg.Name);
+                    
+                    if (item.Type.ToString() == type.ToString())
                         args[i].Add(arg);
+                    //if (arg is dafny.localvariable)
+                    //{
+                    //    lv = arg as dafny.localvariable;
+                    //    dafny.type type = globalcontext.getvariabletype(lv.name);
+                    //    //dafny.inferredtypeproxy itp = lv.optionaltype as inferredtypeproxy;
+                    //    //if (itp != null)
+                    //    //{
+                    //    //    if (itp.t == null)
+                    //    //        args[i].add(arg);
+                    //    //}
+                    //    //else
+                    //    //{
+                    //    //    if (item.type.equals(lv.optionaltype))
+                    //    //    {
+                    //    //        args[i].add(arg);
+                    //    //    }
+                    //    //}
+
+                    //}
+
+                    //else if (item.type.equals(arg.type))
+                    //    args[i].add(arg);
                 }
+                /**
+                 * if no type correct variables have been added we can safely return
+                 * because we won't be able to generate valid calls
+                 */
+                if (args[i].Count == 0)
+                    return;
 
                 i++;
             }
@@ -140,10 +151,6 @@ namespace Tacny
             if (result.Count == 0)
             {
                 ApplySuffix aps = new ApplySuffix(call_arguments[0].tok, new NameSegment(call_arguments[0].tok, md.Name, null), new List<Expression>());
-                if (aps.Lhs.Type != null)
-                {
-                    string asd = ":as";
-                }
                 UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
                 solution_list.Add(us);
             }
@@ -155,10 +162,6 @@ namespace Tacny
                     // create new fresh list of items to remove multiple references to the same object
                     List<Expression> new_list = GenerateNew(item);
                     ApplySuffix aps = new ApplySuffix(call_arguments[0].tok, new NameSegment(call_arguments[0].tok, md.Name, null), new_list);
-                    if (aps.Lhs.Type != null)
-                    {
-                        string asd = ":as";
-                    }
                     UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
                     solution_list.Add(us);
                 }

@@ -320,6 +320,10 @@ namespace Tacny
                 temp_variables.Add(var.Name, var);
             else
                 temp_variables[var.Name] = var;
+            if (var.Type != null)
+            {
+                variable_types.Add(var, var.Type);
+            }
         }
 
         public void RemoveTempVariable(IVariable var)
@@ -327,6 +331,17 @@ namespace Tacny
             Contract.Requires(var != null);
             if (temp_variables.ContainsKey(var.Name))
                 temp_variables.Remove(var.Name);
+
+            if (var.Type != null)
+                variable_types.Remove(var);
+        }
+
+        public Dafny.Type GetVariableType(string name)
+        {
+            Contract.Requires(name != null);
+            var tmp = variable_types.FirstOrDefault(i => i.Key.Name == name).Value;
+
+            return tmp;
         }
     }
     #endregion
