@@ -285,6 +285,7 @@ namespace Tacny
                     {
                         Atomic ac;
                         Tactic tac = program.GetTactic(us);
+                        program.SetCurrent(tac, localContext.md);
                         ac = new Atomic(localContext.md, tac, us, globalContext);
 
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
@@ -312,6 +313,9 @@ namespace Tacny
                                 action.AddUpdated(kvp.Key, kvp.Value);
                             solution_list.Add(new Solution(action));
                         }
+
+                        program.PrintDebugData(program.currentDebug);// print data
+                        program.SetCurrent(localContext.tac, localContext.md);
                     }
                 }
 
@@ -660,7 +664,7 @@ namespace Tacny
         protected void AddLocal(IVariable lv, object value)
         {
             Contract.Requires<ArgumentNullException>(lv != null);
-            globalContext.program.IncTotalBranchCount();
+            globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
             localContext.AddLocal(lv, value);
         }
 
@@ -684,7 +688,7 @@ namespace Tacny
         public void AddUpdated(Statement key, Statement value)
         {
             Contract.Requires(key != null && value != null);
-            globalContext.program.IncTotalBranchCount();
+            globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
             localContext.AddUpdated(key, value);
         }
 

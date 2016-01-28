@@ -97,7 +97,7 @@ namespace Tacny
                 }
                 // register new method
                 this.localContext.new_target = result;
-                globalContext.program.IncTotalBranchCount();
+                globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
             }
 
             solution_list.Add(new Solution(this.Copy()));

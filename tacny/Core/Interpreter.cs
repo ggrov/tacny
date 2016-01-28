@@ -101,8 +101,6 @@ namespace Tacny
                 return null;
             
             List<IVariable> variables = new List<IVariable>();
-            List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
-            resolved.AddRange(m.Ins);
             variables.AddRange(m.Ins);
             variables.AddRange(m.Outs);
             SolutionList sol_list = new SolutionList();
@@ -121,7 +119,12 @@ namespace Tacny
                     {
                         try
                         {
+                            tacnyProgram.SetCurrent(tacnyProgram.GetTactic(us), md);
+                            // get the resolved variables
+                            List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
+                            resolved.AddRange(m.Ins); // add input arguments as resolved variables
                             Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, resolved, ref sol_list);
+                            tacnyProgram.PrintDebugData(tacnyProgram.currentDebug);
                         }
                         catch (Exception e)
                         {
