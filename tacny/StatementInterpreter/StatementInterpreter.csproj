@@ -160,6 +160,7 @@
     <Compile Include="AtomicStatements\ParamsAtomic.cs" />
     <Compile Include="AtomicStatements\PostcondAtomic.cs" />
     <Compile Include="AtomicStatements\PrecondAtomic.cs" />
+    <Compile Include="AtomicStatements\ReturnAtomic.cs" />
     <Compile Include="AtomicStatements\SolvedAtomic.cs" />
     <Compile Include="AtomicStatements\SuchThatAtomic.cs" />
     <Compile Include="AtomicStatements\TryCatchAtomic.cs" />
