@@ -96,7 +96,7 @@ namespace Tacny
                 TextWriter tw = new System.IO.StreamWriter(program.fileNames[0] + "_debug.csv");
                 program.PrintDebugMessage("tacitic, method, exec_time, branch_count, inv_branch_count, vld_branch_count, verif_fail, verif_succ, boogie_calls, dafny_calls\n", tw);
                 program.PrintDebugMessage("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}", tw,
-                    tactic, method,
+                    tactic, method, 
                     EndTime - StartTime, TotalBranchCount,
                     BadBranchCount, GoodBranchCount,
                     VerificationFailure, VerificationSucc,
