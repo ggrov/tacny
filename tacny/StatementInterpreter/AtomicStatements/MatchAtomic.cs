@@ -138,7 +138,6 @@ namespace Tacny
             InitCtorFlags(datatype, out ctorFlags);
             ctor_bodies = RepeatedDefault<Solution>(4);
             dprog = tacnyProgram.ParseProgram();
-            Solution oldSol = null;
             while (true)
             {
                 if (ctor >= datatype.Ctors.Count || !tacnyProgram.HasError())
@@ -157,7 +156,7 @@ namespace Tacny
                     solution = new Solution(ac, true, null);
                     dprog = tacnyProgram.ParseProgram();
                     solution.GenerateProgram(ref dprog);
-                    //tacnyProgram.MaybePrintProgram(dprog, String.Format("debug_{0}", i));
+                    tacnyProgram.MaybePrintProgram(dprog, String.Format("{1} debug_{0}", i, localContext.md.Name));
                     tacnyProgram.ClearBody(localContext.md);
                     // if program resolution failed, skip to the next solution
                     if(!tacnyProgram.ResolveProgram())

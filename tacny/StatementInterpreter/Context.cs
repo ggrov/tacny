@@ -288,7 +288,12 @@ namespace Tacny
                 {
                     var tmp = resolved.FirstOrDefault(i => i.Name == item.Name);
                     if (tmp != null)
+                    {
+                        if(!variable_types.ContainsKey(item))
                         variable_types.Add(item, tmp.Type);
+                        else
+                            variable_types[item] = item.Type;
+                    }
                               
                 }
             }
@@ -322,7 +327,10 @@ namespace Tacny
                 temp_variables[var.Name] = var;
             if (var.Type != null)
             {
-                variable_types.Add(var, var.Type);
+                if (!variable_types.ContainsKey(var))
+                    variable_types.Add(var, var.Type);
+                else
+                    variable_types[var] = var.Type;
             }
         }
 
