@@ -800,6 +800,7 @@ namespace Tacny
             {
                 printer = new Util.Printer(new System.IO.StreamWriter(filename), DafnyOptions.O.PrintMode);
                 printer.PrintProgram(dafnyProgram);
+                
             }
 
         }

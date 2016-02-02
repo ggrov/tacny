@@ -35,7 +35,7 @@ namespace Tacny
 
                 if (solution_list != null)
                 {
-                    VerifySolutionList(solution_list);
+                    VerifySolutionList();
                     return null;
                 }
             }
@@ -50,7 +50,7 @@ namespace Tacny
         /// </summary>
         /// <param name="solution_tree"></param>
         /// <returns></returns>
-        private void VerifySolutionList(SolutionList solution_list)
+        private void VerifySolutionList()
         {
             List<Solution> final = new List<Solution>(); // list of verified solutions
             Dafny.Program program;

@@ -44,6 +44,7 @@ namespace Tacny
             POST_COND,
             IS_INDUCTIVE,
             TRY_CATCH,
+            RETURNS,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -72,6 +73,7 @@ namespace Tacny
             {"postconditions", Atomic.POST_COND},
             {"is_inductive", Atomic.IS_INDUCTIVE},
             {"tryCatch", Atomic.TRY_CATCH},
+            {"get_returns", Atomic.RETURNS},
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -101,6 +103,7 @@ namespace Tacny
             {Atomic.POST_COND, typeof(PostcondAtomic)},
             {Atomic.IS_INDUCTIVE, typeof(IsInductiveAtomic)},
             {Atomic.TRY_CATCH, typeof(TryCatchAtomic)},
+            {Atomic.RETURNS, typeof(ReturnAtomic)},
         };
 
         /// <summary>

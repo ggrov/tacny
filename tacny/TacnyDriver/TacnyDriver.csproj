@@ -130,14 +130,14 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core\TacnyMain.csproj">
+    <ProjectReference Include="..\Core\ProgramInterpreter.csproj">
       <Project>{5c725137-5006-44d6-aee3-7e11aa446897}</Project>
-      <Name>TacnyMain</Name>
+      <Name>ProgramInterpreter</Name>
       <Aliases>global</Aliases>
     </ProjectReference>
-    <ProjectReference Include="..\StatementInterpreter\TacticResolver.csproj">
+    <ProjectReference Include="..\StatementInterpreter\TacticInterpreter.csproj">
       <Project>{d68d70f0-bd07-4176-b3de-0b00612f84f7}</Project>
-      <Name>TacticResolver</Name>
+      <Name>TacticInterpreter</Name>
     </ProjectReference>
     <ProjectReference Include="..\Util\Util.csproj">
       <Project>{15d5ae0c-9692-417f-b5c0-ceb12b79e785}</Project>

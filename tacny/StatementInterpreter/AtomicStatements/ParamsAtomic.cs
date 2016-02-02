@@ -30,7 +30,7 @@ namespace Tacny
             Contract.Assert(source != null, Util.Error.MkErr(st, 4));
 
             input.AddRange(source.Ins);
-            input.AddRange(source.Outs);
+            //input.AddRange(source.Outs);
             AddLocal(lv, input);
             solution_list.Add(new Solution(this.Copy()));
         }
