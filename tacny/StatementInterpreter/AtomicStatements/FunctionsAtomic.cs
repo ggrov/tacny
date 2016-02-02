@@ -25,7 +25,7 @@ namespace Tacny
             Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
             Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
 
-            foreach (var member in program.members.Values)
+            foreach (var member in tacnyProgram.members.Values)
             {
                 Function fun = member as Function;
                 if (fun != null)

@@ -122,7 +122,6 @@ namespace Tacny
                 }
                 else
                     Contract.Assert(false, Util.Error.MkErr(st, 9, tac_input.Name));
-
             }
             else
                 Contract.Assert(false, Util.Error.MkErr(st, 1, "Element"));
@@ -138,12 +137,14 @@ namespace Tacny
             datatype = globalContext.GetGlobal(datatype_name);
             InitCtorFlags(datatype, out ctorFlags);
             ctor_bodies = RepeatedDefault<Solution>(4);
-
-            dprog = program.ParseProgram();
+            dprog = tacnyProgram.ParseProgram();
+            Solution oldSol = null;
             while (true)
             {
-                if (ctor >= datatype.Ctors.Count || !program.HasError())
+                if (ctor >= datatype.Ctors.Count || !tacnyProgram.HasError())
                     break;
+                
+                // hack
                 RegisterLocals(datatype, ctor);
                 ResolveBody(st.Body, out result);
                 
@@ -154,32 +155,29 @@ namespace Tacny
                     Atomic ac = this.Copy();
                     ac.AddUpdated(ms, ms);
                     solution = new Solution(ac, true, null);
-                    dprog = program.ParseProgram();
+                    dprog = tacnyProgram.ParseProgram();
                     solution.GenerateProgram(ref dprog);
-                    //program.MaybePrintProgram(dprog, null);
-                    program.ClearBody(localContext.md);
+                    //tacnyProgram.MaybePrintProgram(dprog, String.Format("debug_{0}", i));
+                    tacnyProgram.ClearBody(localContext.md);
                     // if program resolution failed, skip to the next solution
-                    if(!program.ResolveProgram())
+                    if(!tacnyProgram.ResolveProgram())
                         continue;
-
-                    //program.MaybePrintProgram(dprog, null);
-                    program.VerifyProgram();
-                    if (!program.HasError())
+                    tacnyProgram.VerifyProgram();
+                    if (!tacnyProgram.HasError())
                         break;
+
                     // check if error index has changed
                     if (CheckError(ms, ref ctorFlags, ctor))
                     {
-
+                        result = new List<Solution>();
                         // if the ctor does not require a body null the value
                         if (!ctorFlags[ctor])
                             ctor_bodies[ctor] = null;
+                        RemoveLocals(datatype, ctor);
+                        ctor++;
                         break;
                     }
                 }
-                RemoveLocals(datatype, ctor);
-                ctor++;
-                //err = ResolveBody(st.Body, out result);
-
             }
 
             /*
@@ -322,10 +320,10 @@ namespace Tacny
         private bool CheckError(MatchStmt ms, ref bool[] ctorFlags, int ctor)
         {
             // if the error token has not changed since last iteration
-            if (!ErrorChanged(program.GetErrorToken(), ms, ctor))
+            if (!ErrorChanged(tacnyProgram.GetErrorToken(), ms, ctor))
                 return false;
 
-            this.oldToken = program.GetErrorToken();
+            this.oldToken = tacnyProgram.GetErrorToken();
             if (oldToken != null)
             {
                 int index = GetErrorIndex(oldToken, ms);

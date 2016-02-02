@@ -36,17 +36,17 @@ namespace Tacny
             if (guard_res)
             {
                 ResolveBody(whileStmt.Body, out result);
-                
+
                 // @HACK update the context of each result
                 foreach (var item in result)
                 {
                     //item.state.IncTotalBranchCount();
                     item.state.localContext.tac_body = localContext.tac_body; // set the body 
                     // add a copy of a solution after each iteration
-                    solution_list.Add(new Solution(item.state.Copy()));
-                    //item.state.IncTotalBranchCount();
-                    //item.state.localContext.tac_call = localContext.tac_call;
-                    item.state.localContext.SetCounter(localContext.GetCounter() - 1); // roll back the counter
+                    item.state.localContext.tac_call = localContext.tac_call;
+                    item.state.localContext.SetCounter(localContext.GetCounter());
+                    //solution_list.Add(new Solution(item.state.Copy()));
+                    //item.state.localContext.SetCounter(localContext.GetCounter() - 1); // roll back the counter
                 }
 
                 solution_list.AddRange(result);

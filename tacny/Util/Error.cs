@@ -98,6 +98,7 @@ namespace Util
                 case 13: s = "Tacny variables must be declared as tvar"; break;
                 case 14: s = "The precondition failed"; break;
                 case 15: s = "{0} can only be called from a (ghost) method"; break;
+                case 16: s = "Solution does not exist"; break;
                 default: s = "error" + n; break;
             }
 

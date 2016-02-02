@@ -26,7 +26,7 @@ namespace Tacny
             Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
 
 
-            foreach (var member in program.members.Values)
+            foreach (var member in tacnyProgram.members.Values)
             {
                 Lemma lem = member as Lemma;
                 FixpointLemma fl = member as FixpointLemma;

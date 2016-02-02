@@ -31,7 +31,7 @@ namespace Tacny
     {
 
         //public Solution solution;
-        public Program program;
+        public Program tacnyProgram;
         public readonly GlobalContext globalContext;
         public LocalContext localContext;
 
@@ -41,7 +41,7 @@ namespace Tacny
 
             this.localContext = ac.localContext;
             this.globalContext = ac.globalContext;
-            this.program = ac.globalContext.program;
+            this.tacnyProgram = ac.globalContext.program;
         }
 
         public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, Program program)
@@ -49,7 +49,7 @@ namespace Tacny
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
 
-            this.program = program;
+            this.tacnyProgram = program;
             this.localContext = new LocalContext(md, tac, tac_call);
             this.globalContext = new GlobalContext(md, tac_call, program);
         }   
@@ -58,13 +58,13 @@ namespace Tacny
         {
             this.localContext = new LocalContext(md, tac, tac_call);
             this.globalContext = globalContext;
-            this.program = globalContext.program;
+            this.tacnyProgram = globalContext.program;
 
         }
 
         public Atomic(LocalContext localContext, GlobalContext globalContext)
         {
-            this.program = globalContext.program.NewProgram();
+            this.tacnyProgram = globalContext.program.NewProgram();
             this.globalContext = globalContext;
             this.localContext = localContext.Copy();
         }
@@ -220,7 +220,8 @@ namespace Tacny
             Atomic atomic = this.Copy();
             atomic.localContext.tac_body = body.Body;
             atomic.localContext.ResetCounter();
-            result = new List<Solution>() { new Solution(atomic) };
+            if(result == null || result.Count == 0)
+                result = new List<Solution>() { new Solution(atomic) };
             while (true)
             {
 
@@ -240,7 +241,11 @@ namespace Tacny
 
                 // check if all solutions are final
                 if (IsFinal(res))
+                {
+                    result.Clear();
+                    result.AddRange(res);
                     break;
+                }
 
                 // increment program counter
                 foreach (var sol in res)
@@ -252,6 +257,7 @@ namespace Tacny
                 result.Clear();
                 result.AddRange(res);
             }
+
         }
 
         protected void CallAction(object call, ref List<Solution> solution_list)
@@ -282,10 +288,10 @@ namespace Tacny
                 if (us != null)
                 {
                     // if the statement is nested tactic call
-                    if (program.IsTacticCall(us))
+                    if (tacnyProgram.IsTacticCall(us))
                     {
                         Atomic ac;
-                        Tactic tac = program.GetTactic(us);
+                        Tactic tac = tacnyProgram.GetTactic(us);
                         ac = new Atomic(localContext.md, tac, us, globalContext);
 
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
@@ -863,7 +869,7 @@ namespace Tacny
                 // we only need to replace nameSegments
                 if (guard.data is NameSegment)
                 {
-                    NameSegment newNs;
+                    Expression newNs; // potential encapsulation problems
                     object result;
                     ProcessArg(guard.data, out result);
                     Contract.Assert(result != null);
@@ -875,10 +881,10 @@ namespace Tacny
                     else if (result is NameSegment)
                     {
                         newNs = result as NameSegment;
-                    }
+                    } 
                     else
                     {
-                        throw new tcce.UnreachableException();
+                        newNs = result as Dafny.LiteralExpr;
                     }
                     guard.data = newNs;
                 }

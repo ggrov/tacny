@@ -36,6 +36,7 @@ namespace Util
             wr.WriteLine("// {0}", prog.Name);
             PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, Path.GetFullPath(prog.FullName));
             wr.Flush();
+            wr.Close();
         }
 
         public void PrintDebugMessage(string message, string program_name, params object[] args)

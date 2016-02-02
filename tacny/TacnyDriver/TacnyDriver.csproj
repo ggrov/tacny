@@ -86,9 +86,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core\TacnyMain.csproj">
+    <ProjectReference Include="..\Core\ProgramInterpreter.csproj">
       <Project>{5c725137-5006-44d6-aee3-7e11aa446897}</Project>
-      <Name>TacnyMain</Name>
+      <Name>ProgramInterpreter</Name>
       <Aliases>global</Aliases>
     </ProjectReference>
     <ProjectReference Include="..\StatementInterpreter\StatementInterpreter.csproj">
