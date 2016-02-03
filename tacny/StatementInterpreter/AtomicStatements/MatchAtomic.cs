@@ -157,9 +157,10 @@ namespace Tacny
                     solution = new Solution(ac, true, null);
                     dprog = tacnyProgram.ParseProgram();
                     solution.GenerateProgram(ref dprog);
-                    //tacnyProgram.MaybePrintProgram(dprog, String.Format("debug_{0}", i));
+                    //
                     tacnyProgram.ClearBody(localContext.md);
                     // if program resolution failed, skip to the next solution
+                    tacnyProgram.MaybePrintProgram(dprog, String.Format("debug", i));
                     if(!tacnyProgram.ResolveProgram())
                         continue;
                     tacnyProgram.VerifyProgram();
