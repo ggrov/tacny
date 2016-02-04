@@ -49,7 +49,6 @@ namespace Tacny
                 return true;
 
             /**
-             * 
              * Check if the error originates in the current cases statement
              */
             if (oldToken.line <= ms.Cases[ctor].tok.line + ms.Cases[ctor].Body.Count || errorToken.line == ms.Cases[ctor].tok.line)
@@ -146,17 +145,20 @@ namespace Tacny
                 // hack
                 RegisterLocals(datatype, ctor);
                 ResolveBody(st.Body, out result);
-                
+                // if nothing was generated for the cases body move on to the next one
+                if (result.Count == 0)
+                    ctor++;
+
                 for (int i = 0; i < result.Count; i++)
                 {
                     ctor_bodies[ctor] = result[i];
-                    GenerateMatchStmt(st.Tok.line, new NameSegment(guard_arg.tok, guard_arg.Name, guard_arg.OptTypeArguments), datatype, ctor_bodies, out ms, ctorFlags);
+                    GenerateMatchStmt(localContext.tac_call.Tok.line, new NameSegment(guard_arg.tok, guard_arg.Name, guard_arg.OptTypeArguments), datatype, ctor_bodies, out ms, ctorFlags);
                     Atomic ac = this.Copy();
                     ac.AddUpdated(ms, ms);
                     solution = new Solution(ac, true, null);
                     dprog = tacnyProgram.ParseProgram();
                     solution.GenerateProgram(ref dprog);
-                    tacnyProgram.MaybePrintProgram(dprog, String.Format("{1} debug_{0}", i, localContext.md.Name));
+                    //tacnyProgram.MaybePrintProgram(dprog, String.Format("{1} debug_{0}", i, localContext.md.Name));
                     tacnyProgram.ClearBody(localContext.md);
                     // if program resolution failed, skip to the next solution
                     if(!tacnyProgram.ResolveProgram())
@@ -166,6 +168,7 @@ namespace Tacny
                         break;
 
                     // check if error index has changed
+                    // TODO: if error is: could not prove termination, skip solution
                     if (CheckError(ms, ref ctorFlags, ctor))
                     {
 
@@ -183,7 +186,7 @@ namespace Tacny
             /*
              * HACK Recreate the match block as the old one was modified by the resolver
              */
-            GenerateMatchStmt(st.Tok.line, new NameSegment(guard_arg.tok, guard_arg.Name, guard_arg.OptTypeArguments), datatype, ctor_bodies, out ms, ctorFlags);
+            GenerateMatchStmt(localContext.tac_call.Tok.line, new NameSegment(guard_arg.tok, guard_arg.Name, guard_arg.OptTypeArguments), datatype, ctor_bodies, out ms, ctorFlags);
             AddUpdated(ms, ms);
 
             solution_list.Add(new Solution(this.Copy(), true, null));
@@ -319,6 +322,9 @@ namespace Tacny
         /// <returns></returns>
         private bool CheckError(MatchStmt ms, ref bool[] ctorFlags, int ctor)
         {
+            // hack for termination
+            if (tacnyProgram.errorInfo.Msg == "cannot prove termination; try supplying a decreases clause")
+                return false;
             // if the error token has not changed since last iteration
             if (!ErrorChanged(tacnyProgram.GetErrorToken(), ms, ctor))
                 return false;

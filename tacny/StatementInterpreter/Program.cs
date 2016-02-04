@@ -38,6 +38,7 @@ namespace Tacny
 
         }
         public Bpl.ErrorInformation errorInfo;
+        public List<Bpl.ErrorInformation> errList;
         public PipelineOutcome po;
         public Bpl.PipelineStatistics stats;
         public bool resolved = false;
@@ -619,12 +620,14 @@ namespace Tacny
                     ExecutionEngine.CollectModSets(program);
                     ExecutionEngine.CoalesceBlocks(program);
                     ExecutionEngine.Inline(program);
+                    errList = new List<ErrorInformation>();
                     //return ExecutionEngine.InferAndVerify(program, stats, programId);
                     return ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo =>
                     {
                         //errorInfo.BoogieErrorCode = null;
                         if (this.errorInfo == null)
                             this.errorInfo = errorInfo;
+                        errList.Add(errorInfo);
                         //Console.WriteLine(errorInfo.FullMsg);
                         //errorListHolder.AddError(new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1, ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(), System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename), errorInfo.ImplementationName, requestId);
                         //foreach (var aux in errorInfo.Aux)
