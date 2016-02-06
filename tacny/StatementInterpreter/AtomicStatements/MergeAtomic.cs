@@ -37,8 +37,12 @@ namespace Tacny
             dynamic darg1 = arg1;
             dynamic darg2 = arg2;
 
-            if (!darg1.GetType().Equals(darg2.GetType()) && !(darg1 is IEnumerable))
-                Contract.Assert(false, Util.Error.MkErr(st, 1, typeof(List<IVariable>)));
+
+            if (!darg1.GetType().Equals(darg2.GetType()))
+            {
+                System.Type type = darg1.GetType();
+                Contract.Assert(false, Util.Error.MkErr(st, 1, type));
+            }
             
 
             darg1.AddRange(darg2);

@@ -19,7 +19,7 @@ namespace Tacny
         {
             IVariable lv = null;
             List<Expression> call_arguments; // we don't care about this
-            List<Function> functions = new List<Function>();
+            List<MemberDecl> functions = new List<MemberDecl>();
 
             InitArgs(st, out lv, out call_arguments);
             Contract.Assert(lv != null, Util.Error.MkErr(st, 8));

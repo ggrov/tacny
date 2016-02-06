@@ -513,7 +513,7 @@ namespace Tacny
             result = (Expression)tmp;
         }
 
-        protected void ProcessArg(Expression argument, out object result)
+        public void ProcessArg(Expression argument, out object result)
         {
             Contract.Requires<ArgumentNullException>(argument != null);
             Contract.Ensures(Contract.ValueAtReturn(out result) != null);
@@ -664,7 +664,7 @@ namespace Tacny
             globalContext.new_target = localContext.new_target;
         }
 
-        protected void AddLocal(IVariable lv, object value)
+        public void AddLocal(IVariable lv, object value)
         {
             Contract.Requires<ArgumentNullException>(lv != null);
             globalContext.program.IncTotalBranchCount();

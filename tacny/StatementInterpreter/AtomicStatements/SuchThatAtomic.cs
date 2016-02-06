@@ -31,78 +31,124 @@ namespace Tacny
             
             BinaryExpr bexp = suchThat.Expr as BinaryExpr;
             Contract.Assert(bexp != null, Util.Error.MkErr(st, 5, typeof(BinaryExpr), suchThat.Expr.GetType()));
+            ResolveExpression(bexp, tvds.Locals[0], out value);
+            //Expression lhs = bexp.E0;
+            //Expression rhs = bexp.E1;
 
-            Expression lhs = bexp.E0;
-            Expression rhs = bexp.E1;
+            //// big bad hack
+            //if (lhs is BinaryExpr && rhs is BinaryExpr)
+            //{
+            //    ResolveLhs(lhs as BinaryExpr, tvds.Locals[0], out value);
+            //    Contract.Assert(value != null);
+            //    BinaryExpr rrhs = rhs as BinaryExpr;
 
-            // big bad hack
-            if (lhs is BinaryExpr && rhs is BinaryExpr)
-            {
-                ResolveLhs(lhs as BinaryExpr, tvds.Locals[0], out value);
-                Contract.Assert(value != null);
-                BinaryExpr rrhs = rhs as BinaryExpr;
+            //    Expression e0 = rrhs.E0;
+            //    Expression e1 = rrhs.E1;
+            //    if (!(e0 is NameSegment) || !(e1 is NameSegment))
+            //        Contract.Assert(false, String.Format("Currently nested binary expressions are not supported"));
 
-                Expression e0 = rrhs.E0;
-                Expression e1 = rrhs.E1;
-                if (!(e0 is NameSegment) || !(e1 is NameSegment))
-                    Contract.Assert(false, String.Format("Currently nested binary expressions are not supported"));
-
-                IVariable form = localContext.GetLocalValueByName(e0 as NameSegment) as IVariable;
-                Contract.Assert(form != null, Util.Error.MkErr(e0, 6, (e0 as NameSegment).Name));
+            //    IVariable form = localContext.GetLocalValueByName(e0 as NameSegment) as IVariable;
+            //    Contract.Assert(form != null, Util.Error.MkErr(e0, 6, (e0 as NameSegment).Name));
                 
-                NameSegment ns = e1 as NameSegment;
+            //    NameSegment ns = e1 as NameSegment;
 
-                dynamic_val = value;
-                // sanity check so we wouldn't iterate a non enumerable
-                if (dynamic_val is IEnumerable)
-                {
-                    foreach (var item in dynamic_val)
-                    {
-                        if (item.Name != form.Name)
-                        {
-                            AddLocal(tvds.Locals[0], item);
-                            solution_list.Add(new Solution(this.Copy()));
-                        }
-                    }
-                    return;
-                }
-                else // An incorrect value has been passed
-                    Contract.Assert(false, Util.Error.MkErr(st, 1, "collection"));
-            }
+            //    dynamic_val = value;
+            //    // sanity check so we wouldn't iterate a non enumerable
+            //    if (dynamic_val is IEnumerable)
+            //    {
+            //        foreach (var item in dynamic_val)
+            //        {
+            //            if (item.Name != form.Name)
+            //            {
+            //                AddLocal(tvds.Locals[0], item);
+            //                solution_list.Add(new Solution(this.Copy()));
+            //            }
+            //        }
+            //        return;
+            //    }
+            //    else // An incorrect value has been passed
+            //        Contract.Assert(false, Util.Error.MkErr(st, 1, "collection"));
+            //}
 
 
 
-            IVariable declaration = tvds.Locals[0];
+            
 
-            NameSegment lhs_declaration = lhs as NameSegment;
-            Contract.Assert(lhs_declaration != null, Util.Error.MkErr(st, 1, typeof(Expression)));
+            //NameSegment lhs_declaration = lhs as NameSegment;
+            //Contract.Assert(lhs_declaration != null, Util.Error.MkErr(st, 1, typeof(Expression)));
 
-            // check that var on lhs is the same as rhs
-            Contract.Assert(lhs_declaration.Name.Equals(declaration.Name), Util.Error.MkErr(st, 7));
-            /* HACK
-             * object value will be either a list<T> but T is unkown.
-             * Or it will be a NameSegment
-             * For now, cast it to dynamic type and pray.
-             */
-            ProcessArg(rhs, out value);
+            //// check that var on lhs is the same as rhs
+            //Contract.Assert(lhs_declaration.Name.Equals(declaration.Name), Util.Error.MkErr(st, 7));
+            ///* HACK
+            // * object value will be either a list<T> but T is unkown.
+            // * Or it will be a NameSegment
+            // * For now, cast it to dynamic type and pray.
+            // */
+            //ProcessArg(rhs, out value);
 
-            dynamic_val = value;
-            // sanity check so we wouldn't iterate a non enumerable
-            if (dynamic_val is IEnumerable)
-            {
-                foreach (var item in dynamic_val)
-                {
-                    AddLocal(declaration, item);
-                    solution_list.Add(new Solution(this.Copy()));
-                }
-            }
-            else // An incorrect value has been passed
-                Contract.Assert(false, Util.Error.MkErr(st, 1, "collection"));
+            //dynamic_val = value;
+            //// sanity check so we wouldn't iterate a non enumerable
+            //if (dynamic_val is IEnumerable)
+            //{
+            //    foreach (var item in dynamic_val)
+            //    {
+            //        AddLocal(declaration, item);
+            //        solution_list.Add(new Solution(this.Copy()));
+            //    }
+            //}
+            //else // An incorrect value has been passed
+            //    Contract.Assert(false, Util.Error.MkErr(st, 1, "collection"));
 
             /* END HACK */
         }
 
+        private void ResolveExpression(Expression expr, IVariable declaration, out object result)
+        {
+            Contract.Requires(expr != null);
+            Contract.Ensures(Contract.ValueAtReturn(out result) != null);
 
+            if (expr is BinaryExpr)
+            {
+
+                BinaryExpr bexp = expr as BinaryExpr;                
+                switch (bexp.Op)
+                {
+                    case BinaryExpr.Opcode.In:
+                        NameSegment var = bexp.E0 as NameSegment;
+                        Contract.Assert(var != null, Util.Error.MkErr(bexp, 6, declaration.Name));
+                        Contract.Assert(var.Name == declaration.Name, Util.Error.MkErr(bexp, 6, var.Name));
+                        ProcessArg(bexp.E1, out result);
+                        return;
+
+                    case BinaryExpr.Opcode.And:
+                        object lhs_res;
+                        // resolve lhs of the expression
+                        ResolveExpression(bexp.E0, declaration, out lhs_res);
+                        dynamic lhs_dres = lhs_res;
+                        if (lhs_dres is IEnumerable)
+                        {
+                            foreach (var item in lhs_dres)
+                            {
+                                Atomic copy = this.Copy();
+                                copy.AddLocal(declaration, item);
+                                object res;
+                                copy.ProcessArg(bexp.E1, out res);
+                            }
+                        }
+                        // apply the constraints to the results
+                //ResolveExpression(bexp.E1, declaration, out res_2);
+                        break;
+                }
+                
+                
+
+            }
+            else
+            {
+                ProcessArg(expr, out result);
+            }
+
+        }
         private void ResolveLhs(BinaryExpr bexp, IVariable declaration, out object result)
         {
             Contract.Requires(bexp != null && declaration != null);
