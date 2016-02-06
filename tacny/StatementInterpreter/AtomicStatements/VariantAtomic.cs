@@ -64,7 +64,7 @@ namespace Tacny
             }
             else
             {
-                Method target = Program.FindMember(tacnyProgram.ParseProgram(), localContext.md.Name) as Method;
+                Method target = Program.FindMember(globalContext.program.ParseProgram(), localContext.md.Name) as Method;
                 if (GetNewTarget() != null && GetNewTarget().Name == target.Name)
                     target = GetNewTarget();
                 Contract.Assert(target != null, Util.Error.MkErr(st, 3));

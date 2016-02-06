@@ -136,10 +136,10 @@ namespace Tacny
             datatype = globalContext.GetGlobal(datatype_name);
             InitCtorFlags(datatype, out ctorFlags);
             ctor_bodies = RepeatedDefault<Solution>(4);
-            dprog = tacnyProgram.ParseProgram();
+            dprog = globalContext.program.ParseProgram();
             while (true)
             {
-                if (ctor >= datatype.Ctors.Count || !tacnyProgram.HasError())
+                if (ctor >= datatype.Ctors.Count || !globalContext.program.HasError())
                     break;
 
                 // hack
@@ -156,15 +156,15 @@ namespace Tacny
                     Atomic ac = this.Copy();
                     ac.AddUpdated(ms, ms);
                     solution = new Solution(ac, true, null);
-                    dprog = tacnyProgram.ParseProgram();
+                    dprog = globalContext.program.ParseProgram();
                     solution.GenerateProgram(ref dprog);
                     //tacnyProgram.MaybePrintProgram(dprog, String.Format("{1} debug_{0}", i, localContext.md.Name));
-                    tacnyProgram.ClearBody(localContext.md);
+                    globalContext.program.ClearBody(localContext.md);
                     // if program resolution failed, skip to the next solution
-                    if (!tacnyProgram.ResolveProgram())
+                    if (!globalContext.program.ResolveProgram())
                         continue;
-                    tacnyProgram.VerifyProgram();
-                    if (!tacnyProgram.HasError())
+                    globalContext.program.VerifyProgram();
+                    if (!globalContext.program.HasError())
                         break;
 
                     // check if error index has changed
@@ -323,13 +323,13 @@ namespace Tacny
         private bool CheckError(MatchStmt ms, ref bool[] ctorFlags, int ctor)
         {
             // hack for termination
-            if (tacnyProgram.errorInfo.Msg == "cannot prove termination; try supplying a decreases clause")
+            if (globalContext.program.errorInfo.Msg == "cannot prove termination; try supplying a decreases clause")
                 return false;
             // if the error token has not changed since last iteration
-            if (!ErrorChanged(tacnyProgram.GetErrorToken(), ms, ctor))
+            if (!ErrorChanged(globalContext.program.GetErrorToken(), ms, ctor))
                 return false;
 
-            this.oldToken = tacnyProgram.GetErrorToken();
+            this.oldToken = globalContext.program.GetErrorToken();
             if (oldToken != null)
             {
                 int index = GetErrorIndex(oldToken, ms);
@@ -356,4 +356,3 @@ namespace Tacny
         }
     }
 }
->>>>>>> master

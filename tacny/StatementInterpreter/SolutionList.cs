@@ -131,7 +131,7 @@ namespace Tacny
                 {
                     if (body[i] is UpdateStmt)
                     {
-                        if (state.tacnyProgram.IsTacticCall(body[i] as UpdateStmt))
+                        if (state.globalContext.program.IsTacticCall(body[i] as UpdateStmt))
                             body.RemoveAt(i);
                     }
                 }

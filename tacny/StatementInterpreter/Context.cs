@@ -243,9 +243,9 @@ namespace Tacny
 
     #region GlobalContext
 
-    public class GlobalContext : Context
+    public class    GlobalContext : Context
     {
-        protected readonly Dictionary<string, DatatypeDecl> datatypes = new Dictionary<string, DatatypeDecl>();
+        public readonly Dictionary<string, DatatypeDecl> datatypes = new Dictionary<string, DatatypeDecl>();
         public Dictionary<string, IVariable> global_variables = new Dictionary<string, IVariable>();
         public Dictionary<IVariable, Dafny.Type> variable_types = new Dictionary<IVariable, Dafny.Type>();
         public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
