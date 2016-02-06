@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
@@ -82,7 +82,7 @@ namespace Tacny
             ParensExpression guard;
             NameSegment guard_arg;
             string datatype_name;
-            
+
             bool[] ctorFlags; //localContext.ctorFlags; // used to keep track of which cases statements require a body
             int ctor = 0; // current active match case
             List<Solution> ctor_bodies;
@@ -97,7 +97,7 @@ namespace Tacny
 
             Dafny.Formal tac_input = (Dafny.Formal)GetLocalKeyByName(guard_arg);
             Contract.Assert(tac_input != null, Util.Error.MkErr(st, 9, guard_arg.Name));
-            
+
             datatype_name = tac_input.Type.ToString();
             /**
              * TODO cleanup
@@ -141,7 +141,7 @@ namespace Tacny
             {
                 if (ctor >= datatype.Ctors.Count || !tacnyProgram.HasError())
                     break;
-                
+
                 // hack
                 RegisterLocals(datatype, ctor);
                 ResolveBody(st.Body, out result);
@@ -161,7 +161,7 @@ namespace Tacny
                     //tacnyProgram.MaybePrintProgram(dprog, String.Format("{1} debug_{0}", i, localContext.md.Name));
                     tacnyProgram.ClearBody(localContext.md);
                     // if program resolution failed, skip to the next solution
-                    if(!tacnyProgram.ResolveProgram())
+                    if (!tacnyProgram.ResolveProgram())
                         continue;
                     tacnyProgram.VerifyProgram();
                     if (!tacnyProgram.HasError())
@@ -205,7 +205,7 @@ namespace Tacny
             {
                 MatchCaseStmt mcs;
                 GenerateMatchCaseStmt(line, dc, body[i], out  mcs, flags[i]);
-                
+
                 cases.Add(mcs);
                 line += mcs.Body.Count + 1;
                 i++;
@@ -356,3 +356,4 @@ namespace Tacny
         }
     }
 }
+>>>>>>> master

@@ -42,13 +42,13 @@ function ToSeq<X>(list: List<X>): seq<X>
     case Nary(nn) => ToSeq(nn) + ToSeq(rest)
 }
 
-ghost method Theorem<X>(list: List<X>)
+lemma Theorem<X>(list: List<X>)
   ensures ToSeq(list) == ToSeq(FlattenMain(list));
 {
   Lemma(list, Nil);
 }
 
-ghost method Lemma<X>(list: List<X>, ext: List<X>)
+lemma Lemma<X>(list: List<X>, ext: List<X>)
   requires IsFlat(ext);
   ensures ToSeq(list) + ToSeq(ext) == ToSeq(Flatten(list, ext));
 {

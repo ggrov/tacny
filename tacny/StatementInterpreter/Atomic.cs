@@ -1,4 +1,4 @@
-﻿using Microsoft.Dafny;
+using Microsoft.Dafny;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -29,6 +29,8 @@ namespace Tacny
 
     public class Atomic
     {
+
+        //public Solution solution;
         public Program tacnyProgram;
         public readonly GlobalContext globalContext;
         public LocalContext localContext;
@@ -77,14 +79,13 @@ namespace Tacny
             return new Atomic(localContext, globalContext);
         }
 
-        public static void ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables,List<IVariable> resolved, ref SolutionList result)
+        public static void ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, ref SolutionList result)
         {
             Contract.Requires(tac != null);
             Contract.Requires(tac_call != null);
             Contract.Requires(md != null);
             Contract.Requires(tacnyProgram != null);
-            Contract.Requires(tcce.NonNullElements<IVariable>(variables));
-            Contract.Requires(tcce.NonNullElements<IVariable>(resolved));
+            Contract.Requires(variables != null && tcce.NonNullElements<IVariable>(variables));
             Contract.Requires(result != null);
             List<Solution> res = null;
 
@@ -92,7 +93,7 @@ namespace Tacny
             {
                 res = new List<Solution>();
                 Atomic ac = new Atomic(md, tac, tac_call, tacnyProgram);
-                ac.globalContext.RegsiterGlobalVariables(variables, resolved);
+                ac.globalContext.RegsiterGlobalVariables(variables);
                 ResolveTactic(ref res, ac);
             }
             else
@@ -289,10 +290,9 @@ namespace Tacny
                     // if the statement is nested tactic call
                     if (tacnyProgram.IsTacticCall(us))
                     {
+                        Atomic ac;
                         Tactic tac = tacnyProgram.GetTactic(us);
-                        tacnyProgram.SetCurrent(tac, localContext.md);
-
-                        Atomic ac = new Atomic(localContext.md, tac, us, globalContext);
+                        ac = new Atomic(localContext.md, tac, us, globalContext);
 
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
                         List<Expression> exps = ((ApplySuffix)er.Expr).Args;
@@ -319,9 +319,6 @@ namespace Tacny
                                 action.AddUpdated(kvp.Key, kvp.Value);
                             solution_list.Add(new Solution(action));
                         }
-
-                        tacnyProgram.PrintDebugData(tacnyProgram.currentDebug);// print data
-                        tacnyProgram.SetCurrent(localContext.tac, localContext.md);
                     }
                 }
 
@@ -516,7 +513,7 @@ namespace Tacny
             result = (Expression)tmp;
         }
 
-        protected void ProcessArg(Expression argument, out object result)
+        public void ProcessArg(Expression argument, out object result)
         {
             Contract.Requires<ArgumentNullException>(argument != null);
             Contract.Ensures(Contract.ValueAtReturn(out result) != null);
@@ -667,10 +664,10 @@ namespace Tacny
             globalContext.new_target = localContext.new_target;
         }
 
-        protected void AddLocal(IVariable lv, object value)
+        public void AddLocal(IVariable lv, object value)
         {
             Contract.Requires<ArgumentNullException>(lv != null);
-            globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
+            globalContext.program.IncTotalBranchCount();
             localContext.AddLocal(lv, value);
         }
 
@@ -694,7 +691,7 @@ namespace Tacny
         public void AddUpdated(Statement key, Statement value)
         {
             Contract.Requires(key != null && value != null);
-            globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
+            globalContext.program.IncTotalBranchCount();
             localContext.AddUpdated(key, value);
         }
 
@@ -933,4 +930,5 @@ namespace Tacny
             return true;
         }
     }
+>>>>>>> master
 }

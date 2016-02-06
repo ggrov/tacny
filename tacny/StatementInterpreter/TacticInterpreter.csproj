@@ -153,6 +153,7 @@
     <Compile Include="AtomicStatements\FailAtomic.cs" />
     <Compile Include="AtomicStatements\FunctionsAtomic.cs" />
     <Compile Include="AtomicStatements\IdAtomic.cs" />
+    <Compile Include="AtomicStatements\IsDatatypeAtomic.cs" />
     <Compile Include="AtomicStatements\IsInductiveAtomic.cs" />
     <Compile Include="AtomicStatements\LemmasAtomic.cs" />
     <Compile Include="AtomicStatements\MergeAtomic.cs" />

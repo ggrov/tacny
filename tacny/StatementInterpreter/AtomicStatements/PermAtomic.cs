@@ -35,14 +35,7 @@ namespace Tacny
             List<UpdateStmt> sol = new List<UpdateStmt>();
             // generate permutations
             Perm(st, ref sol);
-            
             solutions.Add(sol);
-            Statement nextStatement = localContext.GetNextStatement();
-            if (nextStatement != null && StatementRegister.GetAtomicType(nextStatement) == StatementRegister.Atomic.PERM)
-            {
-                localContext.IncCounter();
-                GenPermutations(nextStatement);
-            }
         }
 
         /// <summary>
@@ -53,8 +46,6 @@ namespace Tacny
         private void PermuteResults(ref List<Solution> solution_list)
         {
             List<List<UpdateStmt>> result = new List<List<UpdateStmt>>();
-            //foreach (var tmp in solutions[0])
-              //  result.Add(new List<UpdateStmt>() { tmp });
             GenerateMethodPremutations(solutions, 0, new List<UpdateStmt>(), ref result);
             // generate the solutions
             foreach (var item in result)
@@ -81,18 +72,26 @@ namespace Tacny
         {
             List<List<NameSegment>> result = new List<List<NameSegment>>(); // a combination of all possible variable combinations
             List<List<IVariable>> args = new List<List<IVariable>>();
+            List<IVariable> md_ins = new List<IVariable>();
             List<Expression> call_arguments = null;
             object member;
-            Method md;   
-
+            MemberDecl md;
             InitArgs(st, out call_arguments);
             Contract.Assert(tcce.OfSize(call_arguments, 2), Util.Error.MkErr(st, 0, 2, call_arguments.Count));
                      
             ProcessArg(call_arguments[0], out member);
             Contract.Assert(member != null, Util.Error.MkErr(call_arguments[0], 1, typeof(Method)));
+            md = member as MemberDecl;
 
-            md = member as Method;
-            Contract.Assert(md != null, Util.Error.MkErr(call_arguments[0], 1, typeof(Method)));
+            Contract.Assert(md != null, Util.Error.MkErr(call_arguments[0], 1, typeof(MemberDecl)));
+
+            // take the membed decl parameters
+            if (member is Method)
+                md_ins.AddRange(((Method)member).Ins);
+            else if (member is Dafny.Function)
+                md_ins.AddRange(((Dafny.Function)member).Formals);
+            else
+                Contract.Assert(false, Util.Error.MkErr(call_arguments[0], 1, String.Format("{0} or {1}", typeof(Method), typeof(Dafny.Function))));
 
             object ovars;
             ProcessArg(call_arguments[1], out ovars);
@@ -102,9 +101,10 @@ namespace Tacny
             Contract.Assert(vars != null, Util.Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
 
             
-            int i = 0;
-            foreach (var item in md.Ins)
+            
+            for (int i = 0; i < md_ins.Count; i++)
             {
+                var item = md_ins[i];
                 args.Add(new List<IVariable>());
                 foreach (var arg in vars)
                 {
@@ -142,7 +142,7 @@ namespace Tacny
                 {
 
                     // create new fresh list of items to remove multiple references to the same object
-                    List<Expression> new_list = GenerateNew(item);
+                    List<Expression> new_list = Util.Copy.CopyExpressionList(item.Cast<Expression>().ToList());
                     ApplySuffix aps = new ApplySuffix(call_arguments[0].tok, new NameSegment(call_arguments[0].tok, md.Name, null), new_list);
                     UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
                     solution_list.Add(us);
@@ -186,19 +186,6 @@ namespace Tacny
                 tmp.Add(ns);
                 GeneratePremutations(args, depth + 1, tmp, ref result);
             }
-        }
-
-
-        private List<Expression> GenerateNew(List<NameSegment> old_list)
-        {
-            List<Expression> new_list = new List<Expression>();
-
-            foreach (var item in old_list)
-            {
-                new_list.Add(new NameSegment(item.tok, item.Name, null));
-            }
-
-            return new_list;
         }
     }
 }
