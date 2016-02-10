@@ -72,14 +72,53 @@ namespace Tacny
             Contract.Requires(ifStmt != null);
             ResolveExpression(this.guard);
             Expression guard = this.guard.TreeToExpression();
+            // resolve the if statement body
+            List<Solution> resultThn = null;
+            ResolveBody(ifStmt.Thn, out resultThn);
+            List<Solution> resultEls = new List<Solution>();
+            if (ifStmt.Els != null)
+            {
+                if (ifStmt.Els is BlockStmt)
+                    ResolveBody(ifStmt.Els as BlockStmt, out resultEls);
+                else
+                    CallAction(ifStmt.Els, ref resultEls);
+            }
+            List<IfStmt> result = new List<IfStmt>();
+            GenerateIfStmt(ifStmt, guard, resultThn, resultEls, ref result);
 
-            AddUpdated(ifStmt, Util.Copy.CopyIfStmt(ReplaceGuard(ifStmt, guard)));
-            solution_list.Add(new Solution(this.Copy()));
+            foreach (var item in result)
+            {
+                Atomic ac = this.Copy();
+                ac.AddUpdated(item, item);
+                solution_list.Add(new Solution(ac));
+            }
+
         }
 
-        private static IfStmt ReplaceGuard(IfStmt stmt, Expression new_guard)
+        private static void GenerateIfStmt(IfStmt original, Expression guard, List<Solution> thn, List<Solution> els, ref List<IfStmt> result)
         {
-            return new IfStmt(stmt.Tok, stmt.EndTok, new_guard, stmt.Thn, stmt.Els);
+            for (int i = 0; i < thn.Count; i++)
+            {
+                List<Statement> bodyList = thn[i].state.GetAllUpdated();
+                BlockStmt thenBody = new BlockStmt(original.Thn.Tok, original.Thn.EndTok, bodyList);
+                if (els != null)
+                {
+                    for (int j = 0; j < els.Count; j++)
+                    {
+                        List<Statement> elseList = els[i].state.GetAllUpdated();
+                        Statement elseBody = null;
+                        if (original.Els is BlockStmt)
+                            elseBody = new BlockStmt(original.Els.Tok, original.Thn.EndTok, elseList);
+                        else
+                            elseBody = elseList[0];
+                        result.Add(new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(thenBody), elseBody));
+                    }
+                }
+                else
+                {
+                    result.Add(new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(thenBody), null));
+                }
+            }
         }
     }
 }
