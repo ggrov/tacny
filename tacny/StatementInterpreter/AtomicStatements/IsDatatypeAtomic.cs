@@ -53,11 +53,14 @@ namespace Tacny
                 {
                     if(globalContext.datatypes.ContainsKey(udt.Name))
                         lit = new Dafny.LiteralExpr(st.Tok, true);
+                    else
+                        lit = new Dafny.LiteralExpr(st.Tok, false);
                 }
                 else
                     lit = new Dafny.LiteralExpr(st.Tok, false);
             }
 
+            Contract.Assert(lit != null);
             localContext.AddLocal(lv, lit);
         }
     }

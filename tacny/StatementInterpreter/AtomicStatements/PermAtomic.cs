@@ -176,7 +176,6 @@ namespace Tacny
                 result.Add(current);
                 return;
             }
-
             for (int i = 0; i < args[depth].Count; ++i)
             {
                 List<NameSegment> tmp = new List<NameSegment>();

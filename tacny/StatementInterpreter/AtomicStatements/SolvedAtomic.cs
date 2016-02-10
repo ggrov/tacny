@@ -28,7 +28,7 @@ namespace Tacny
                 Dafny.Program dprog = globalContext.program.ParseProgram();
                 sol.GenerateProgram(ref dprog);
                 globalContext.program.ClearBody(localContext.md);
-                //program.MaybePrintProgram(dprog, null);
+                globalContext.program.MaybePrintProgram(dprog, String.Format("{0} debug_", localContext.md.Name));
                 globalContext.program.ResolveProgram();
                 // skip the solution if resolution failed    
                 
