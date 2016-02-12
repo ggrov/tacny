@@ -1,4 +1,4 @@
-﻿using Microsoft.Dafny;
+using Microsoft.Dafny;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -29,9 +29,6 @@ namespace Tacny
 
     public class Atomic
     {
-
-        //public Solution solution;
-        public Program tacnyProgram;
         public readonly GlobalContext globalContext;
         public LocalContext localContext;
 
@@ -41,7 +38,6 @@ namespace Tacny
 
             this.localContext = ac.localContext;
             this.globalContext = ac.globalContext;
-            this.tacnyProgram = ac.globalContext.program;
         }
 
         public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, Program program)
@@ -49,7 +45,6 @@ namespace Tacny
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
 
-            this.tacnyProgram = program;
             this.localContext = new LocalContext(md, tac, tac_call);
             this.globalContext = new GlobalContext(md, tac_call, program);
         }   
@@ -58,13 +53,11 @@ namespace Tacny
         {
             this.localContext = new LocalContext(md, tac, tac_call);
             this.globalContext = globalContext;
-            this.tacnyProgram = globalContext.program;
 
         }
 
         public Atomic(LocalContext localContext, GlobalContext globalContext)
         {
-            this.tacnyProgram = globalContext.program.NewProgram();
             this.globalContext = globalContext;
             this.localContext = localContext.Copy();
         }
@@ -79,13 +72,15 @@ namespace Tacny
             return new Atomic(localContext, globalContext);
         }
 
-        public static void ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, ref SolutionList result)
+
+        public static void ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, List<IVariable> resolved, ref SolutionList result)
         {
             Contract.Requires(tac != null);
             Contract.Requires(tac_call != null);
             Contract.Requires(md != null);
             Contract.Requires(tacnyProgram != null);
-            Contract.Requires(variables != null && tcce.NonNullElements<IVariable>(variables));
+            Contract.Requires(tcce.NonNullElements<IVariable>(variables));
+            Contract.Requires(tcce.NonNullElements<IVariable>(resolved));
             Contract.Requires(result != null);
             List<Solution> res = null;
 
@@ -93,7 +88,7 @@ namespace Tacny
             {
                 res = new List<Solution>();
                 Atomic ac = new Atomic(md, tac, tac_call, tacnyProgram);
-                ac.globalContext.RegsiterGlobalVariables(variables);
+                ac.globalContext.RegsiterGlobalVariables(variables, resolved);
                 ResolveTactic(ref res, ac);
             }
             else
@@ -120,30 +115,6 @@ namespace Tacny
 
             result.AddRange(res);
         }
-
-        /// <summary>
-        /// Resovle tactic body, given that previous tactic calls have been made
-        /// </summary>
-        /// <param name="result"></param>
-        /// <returns></returns>
-        //public static void ResolveTactic(ref List<Solution> result)
-        //{
-        //    Contract.Requires(tcce.NonEmpty(result));
-        //    SolutionList solution_list = new SolutionList();
-        //    solution_list.AddRange(result);
-        //    while (true)
-        //    {
-        //        List<Solution> res = null;
-
-        //        ResolveStatement(ref res, solution_list.plist);
-
-        //        if (res.Count > 0)
-        //            solution_list.AddRange(res);
-        //        else
-        //            break;
-        //    }
-        //    result.AddRange(solution_list.plist);
-        //}
 
         /// <summary>
         /// Resolve tactic body, given that no tactic calls have been made before
@@ -288,10 +259,10 @@ namespace Tacny
                 if (us != null)
                 {
                     // if the statement is nested tactic call
-                    if (tacnyProgram.IsTacticCall(us))
+                    if (globalContext.program.IsTacticCall(us))
                     {
                         Atomic ac;
-                        Tactic tac = tacnyProgram.GetTactic(us);
+                        Tactic tac = globalContext.program.GetTactic(us);
                         ac = new Atomic(localContext.md, tac, us, globalContext);
 
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
@@ -667,7 +638,7 @@ namespace Tacny
         public void AddLocal(IVariable lv, object value)
         {
             Contract.Requires<ArgumentNullException>(lv != null);
-            globalContext.program.IncTotalBranchCount();
+            globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
             localContext.AddLocal(lv, value);
         }
 
@@ -691,7 +662,7 @@ namespace Tacny
         public void AddUpdated(Statement key, Statement value)
         {
             Contract.Requires(key != null && value != null);
-            globalContext.program.IncTotalBranchCount();
+            globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
             localContext.AddUpdated(key, value);
         }
 

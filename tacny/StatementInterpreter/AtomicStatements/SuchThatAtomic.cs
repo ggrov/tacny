@@ -28,10 +28,22 @@ namespace Tacny
 
             AssignSuchThatStmt suchThat = tvds.Update as AssignSuchThatStmt;
             Contract.Assert(suchThat != null, Util.Error.MkErr(st, 5, typeof(AssignSuchThatStmt), tvds.Update.GetType()));
-            
+
             BinaryExpr bexp = suchThat.Expr as BinaryExpr;
             Contract.Assert(bexp != null, Util.Error.MkErr(st, 5, typeof(BinaryExpr), suchThat.Expr.GetType()));
             ResolveExpression(bexp, tvds.Locals[0], out value);
+            dynamic_val = value;
+            if (dynamic_val is IEnumerable)
+            {
+                foreach (var item in dynamic_val)
+                {
+                    AddLocal(tvds.Locals[0], item);
+                    solution_list.Add(new Solution(this.Copy()));
+                }
+            }
+            else // An incorrect value has been passed
+                Contract.Assert(false, Util.Error.MkErr(st, 1, "collection"));
+
             //Expression lhs = bexp.E0;
             //Expression rhs = bexp.E1;
 
@@ -49,7 +61,7 @@ namespace Tacny
 
             //    IVariable form = localContext.GetLocalValueByName(e0 as NameSegment) as IVariable;
             //    Contract.Assert(form != null, Util.Error.MkErr(e0, 6, (e0 as NameSegment).Name));
-                
+
             //    NameSegment ns = e1 as NameSegment;
 
             //    dynamic_val = value;
@@ -72,7 +84,7 @@ namespace Tacny
 
 
 
-            
+
 
             //NameSegment lhs_declaration = lhs as NameSegment;
             //Contract.Assert(lhs_declaration != null, Util.Error.MkErr(st, 1, typeof(Expression)));
@@ -110,7 +122,7 @@ namespace Tacny
             if (expr is BinaryExpr)
             {
 
-                BinaryExpr bexp = expr as BinaryExpr;                
+                BinaryExpr bexp = expr as BinaryExpr;
                 switch (bexp.Op)
                 {
                     case BinaryExpr.Opcode.In:
@@ -127,27 +139,30 @@ namespace Tacny
                         dynamic lhs_dres = lhs_res;
                         if (lhs_dres is IEnumerable)
                         {
+                            List<dynamic> tmp = new List<dynamic>();
                             foreach (var item in lhs_dres)
                             {
                                 Atomic copy = this.Copy();
                                 copy.AddLocal(declaration, item);
                                 object res;
                                 copy.ProcessArg(bexp.E1, out res);
+                                Dafny.LiteralExpr lit = res as Dafny.LiteralExpr;
+                                Contract.Assert(lit != null, Util.Error.MkErr(expr, 17));
+                                if (lit.Value is bool)
+                                {
+                                    if ((bool)lit.Value)
+                                    {
+                                        tmp.Add(item);
+                                    }
+                                }
                             }
+                            result = tmp;
                         }
                         // apply the constraints to the results
-                //ResolveExpression(bexp.E1, declaration, out res_2);
+                        //ResolveExpression(bexp.E1, declaration, out res_2);
                         break;
                 }
-                
-                
-
             }
-            else
-            {
-                ProcessArg(expr, out result);
-            }
-
         }
         private void ResolveLhs(BinaryExpr bexp, IVariable declaration, out object result)
         {

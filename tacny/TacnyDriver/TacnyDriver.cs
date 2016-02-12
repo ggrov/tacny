@@ -30,14 +30,14 @@ namespace Tacny
             int ret = 0;
             var thread = new System.Threading.Thread(
                 new System.Threading.ThreadStart(() =>  
-                { ret = ThreadMain(args); }),
+                { ret = ExecuteTacny(args); }),
             
                 0x10000000); // 256MB stack size to prevent stack
             
             thread.Start();
             thread.Join();
             
-            return ret;
+                return ret;
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Tacny
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        public static int ThreadMain(string[] args)
+        public static int ExecuteTacny(string[] args)
         {
             // measure execution time
            
@@ -204,7 +204,7 @@ namespace Tacny
                     {
                         tacnyProgram.Print();
                     }
-                    tacnyProgram.PrintDebugData(false);
+                   // tacnyProgram.PrintDebugData(false);
                 }
             }
             return exitValue;

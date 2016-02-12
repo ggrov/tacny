@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
 using Dafny = Microsoft.Dafny;
+
 namespace Tacny
 {
     class IsDatatypeAtomic : Atomic, IAtomicStmt
@@ -24,37 +25,42 @@ namespace Tacny
         {
             List<Expression> call_arguments = null;
             IVariable lv = null;
-            string datatype_name = null;
-            DatatypeDecl datatype = null;
             IVariable declaration = null;
+            Dafny.LiteralExpr lit =null;
+            Dafny.Type type = null;
+
             InitArgs(st, out lv, out call_arguments);
             Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
-
+            
             NameSegment argument = call_arguments[0] as NameSegment;
             Contract.Assert(argument != null, Util.Error.MkErr(st, 1, typeof(NameSegment)));
-            object val = GetLocalValueByName(argument);
-            if (val is IVariable)
+
+            declaration = GetLocalValueByName(argument) as IVariable;
+            Contract.Assert(declaration != null, Util.Error.MkErr(st, 1, typeof(IVariable)));
+
+            if (declaration.Type == null)
+                type = globalContext.GetVariableType(declaration.Name);
+            else
+                type = declaration.Type;
+            // type of the argument is unknown thus it's not a datatype
+            if (type != null && type.IsDatatype)
+                lit = new Dafny.LiteralExpr(st.Tok, true);
+            else
             {
-                declaration = val as IVariable;
-            }
-            if (val != null)
-            {
-                string asd = null;
-            }
-            // get the formal tactic input to determine the type
-            Dafny.LiteralExpr lit = new Dafny.LiteralExpr(st.Tok, false);
-            foreach (var ctor in datatype.Ctors)
-            {
-                foreach (var formal in ctor.Formals)
+                // check if the argument is a nested data type
+                Dafny.UserDefinedType udt = type as Dafny.UserDefinedType;
+                if (udt != null)
                 {
-                    if (formal.Type.ToString() == datatype_name)
-                    {
+                    if(globalContext.datatypes.ContainsKey(udt.Name))
                         lit = new Dafny.LiteralExpr(st.Tok, true);
-                        break;
-                    }
+                    else
+                        lit = new Dafny.LiteralExpr(st.Tok, false);
                 }
+                else
+                    lit = new Dafny.LiteralExpr(st.Tok, false);
             }
 
+            Contract.Assert(lit != null);
             localContext.AddLocal(lv, lit);
         }
     }

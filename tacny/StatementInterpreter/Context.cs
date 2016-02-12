@@ -243,10 +243,11 @@ namespace Tacny
 
     #region GlobalContext
 
-    public class GlobalContext : Context
+    public class    GlobalContext : Context
     {
-        protected readonly Dictionary<string, DatatypeDecl> datatypes = new Dictionary<string, DatatypeDecl>();
+        public readonly Dictionary<string, DatatypeDecl> datatypes = new Dictionary<string, DatatypeDecl>();
         public Dictionary<string, IVariable> global_variables = new Dictionary<string, IVariable>();
+        public Dictionary<IVariable, Dafny.Type> variable_types = new Dictionary<IVariable, Dafny.Type>();
         public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
         public List<Statement> resolved = new List<Statement>();
         public Method new_target = null;
@@ -273,7 +274,7 @@ namespace Tacny
             return datatypes[name];
         }
 
-        public void RegsiterGlobalVariables(List<IVariable> globals)
+        public void RegsiterGlobalVariables(List<IVariable> globals, List<IVariable> resolved = null)
         {
             Contract.Requires(globals != null);
             foreach (var item in globals)
@@ -282,6 +283,19 @@ namespace Tacny
                     global_variables.Add(item.Name, item);
                 else
                     global_variables[item.Name] = item;
+
+                if (resolved != null)
+                {
+                    var tmp = resolved.FirstOrDefault(i => i.Name == item.Name);
+                    if (tmp != null)
+                    {
+                        if(!variable_types.ContainsKey(item))
+                        variable_types.Add(item, tmp.Type);
+                        else
+                            variable_types[item] = item.Type;
+                    }
+                              
+                }
             }
         }
 
@@ -311,6 +325,13 @@ namespace Tacny
                 temp_variables.Add(var.Name, var);
             else
                 temp_variables[var.Name] = var;
+            if (var.Type != null)
+            {
+                if (!variable_types.ContainsKey(var))
+                    variable_types.Add(var, var.Type);
+                else
+                    variable_types[var] = var.Type;
+            }
         }
 
         public void RemoveTempVariable(IVariable var)
@@ -318,6 +339,18 @@ namespace Tacny
             Contract.Requires(var != null);
             if (temp_variables.ContainsKey(var.Name))
                 temp_variables.Remove(var.Name);
+
+            if (var.Type != null)
+                variable_types.Remove(var);
+        }
+
+        public Dafny.Type GetVariableType(string name)
+        {
+            Contract.Requires(name != null);
+            if(Util.TacnyOptions.O.EvalAnalysis)
+                return variable_types.FirstOrDefault(i => i.Key.Name == name).Value;
+
+            return null;
         }
     }
     #endregion

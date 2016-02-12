@@ -108,27 +108,24 @@ namespace Tacny
                 args.Add(new List<IVariable>());
                 foreach (var arg in vars)
                 {
-                    Dafny.LocalVariable lv;
-                    if (arg is Dafny.LocalVariable)
+                    // get variable type
+                    Dafny.Type type = globalContext.GetVariableType(arg.Name);
+                    if (type != null)
                     {
-                        lv = arg as Dafny.LocalVariable;
-                        Dafny.InferredTypeProxy itp = lv.OptionalType as InferredTypeProxy;
-                        if (itp != null)
-                        {
-                            if (itp.T == null)
-                                args[i].Add(arg);
-                        }
-                        else
-                        {
-                            if (item.Type.Equals(lv.OptionalType))
-                                args[i].Add(arg);
-                        }
-
-                    }
-
-                    else if (item.Type.Equals(arg.Type))
+                        // if variable type and current argument types match
+                        if (item.Type.ToString() == type.ToString())
+                            args[i].Add(arg);
+                    } else
                         args[i].Add(arg);
                 }
+                /**
+                 * if no type correct variables have been added we can safely return
+                 * because we won't be able to generate valid calls
+                 */
+                if (args[i].Count == 0)
+                    return;
+
+                i++;
             }
 
             GeneratePremutations(args, 0, new List<NameSegment>(), ref result);
@@ -179,7 +176,6 @@ namespace Tacny
                 result.Add(current);
                 return;
             }
-
             for (int i = 0; i < args[depth].Count; ++i)
             {
                 List<NameSegment> tmp = new List<NameSegment>();

@@ -27,16 +27,16 @@ namespace Tacny
             foreach (var sol in result)
             {
                 //Atomic ac = this.Copy();
-                Dafny.Program dprog = tacnyProgram.ParseProgram();
+                Dafny.Program dprog = globalContext.program.ParseProgram();
                 sol.GenerateProgram(ref dprog);
-                tacnyProgram.ClearBody(localContext.md);
+                globalContext.program.ClearBody(localContext.md);
                 //program.MaybePrintProgram(dprog, null);
-                tacnyProgram.ResolveProgram();
+                globalContext.program.ResolveProgram();
                 // skip the solution if resolution failed    
 
                 //program.MaybePrintProgram(dprog, null);
-                tacnyProgram.VerifyProgram();
-                if (!tacnyProgram.HasError())
+                globalContext.program.VerifyProgram();
+                if (!globalContext.program.HasError())
                 {
                     // change back the context of the state
                     sol.state.localContext.tac_body = localContext.tac.Body.Body;// sol.state.localContext.tac.Body.Body;

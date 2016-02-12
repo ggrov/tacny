@@ -52,6 +52,7 @@ colemma Theorem0(M: Stream<X>)
       Theorem0(N);
   }
 }
+
 colemma Theorem0_Alt(M: Stream<X>)
   ensures map_fg(M) == map_f(map_g(M));
 {
