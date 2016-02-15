@@ -89,10 +89,8 @@ namespace Tacny
         {
             Contract.Requires<ArgumentNullException>(ns != null);
             List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
-            foreach (Dafny.IVariable lv in ins)
-                if (lv.Name == ns.Name)
-                    return true;
-            return false;
+            var key = ins.FirstOrDefault(i => i.Name == ns.Name);
+            return key != null;
         }
 
         public object GetLocalValueByName(NameSegment ns)
@@ -111,9 +109,9 @@ namespace Tacny
         {
             Contract.Requires<ArgumentNullException>(name != null);
             List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
-            foreach (Dafny.IVariable lv in ins)
-                if (lv.Name == name)
-                    return local_variables[lv];
+            var key = ins.FirstOrDefault(i => i.Name == name);
+            if (key != null)
+                return local_variables[key];
 
             return null;
         }
@@ -128,10 +126,7 @@ namespace Tacny
         {
             Contract.Requires<ArgumentNullException>(name != null);
             List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
-            foreach (Dafny.IVariable lv in ins)
-                if (lv.DisplayName == name)
-                    return lv;
-            return null;
+            return ins.FirstOrDefault(i => i.Name == name);
         }
 
         public void AddLocal(IVariable lv, object value)
@@ -274,6 +269,7 @@ namespace Tacny
             return datatypes[name];
         }
 
+        // register global variables and their asociated types
         public void RegsiterGlobalVariables(List<IVariable> globals, List<IVariable> resolved = null)
         {
             Contract.Requires(globals != null);
@@ -290,13 +286,40 @@ namespace Tacny
                     if (tmp != null)
                     {
                         if(!variable_types.ContainsKey(item))
-                        variable_types.Add(item, tmp.Type);
+                            variable_types.Add(item, tmp.Type);
                         else
                             variable_types[item] = item.Type;
-                    }
-                              
+                    }          
                 }
             }
+        }
+
+        // register one global variable and asociated type
+        public void RegsiterGlobalVariable(IVariable variable)
+        {
+            Contract.Requires<ArgumentNullException>(variable != null);
+
+            if (!global_variables.ContainsKey(variable.Name))
+                global_variables.Add(variable.Name, variable);
+            else
+                global_variables[variable.Name] = variable;
+
+            if (variable.Type != null)
+            {
+                if (!variable_types.ContainsKey(variable))
+                    variable_types.Add(variable, variable.Type);
+                else
+                    variable_types[variable] = variable.Type;
+            }
+        }
+        
+        public void RemoveGlobalVariable(IVariable variable)
+        {
+            Contract.Requires<ArgumentNullException>(variable != null);
+            global_variables.Remove(variable.Name);
+
+            if (variable.Type != null)
+                variable_types.Remove(variable);
         }
 
         public void ClearGlobalVariables()
@@ -316,32 +339,6 @@ namespace Tacny
             if (HasGlobalVariable(name))
                 return global_variables[name];
             return null;
-        }
-
-        public void RegisterTempVariable(IVariable var)
-        {
-            Contract.Requires(var != null);
-            if (!temp_variables.ContainsKey(var.Name))
-                temp_variables.Add(var.Name, var);
-            else
-                temp_variables[var.Name] = var;
-            if (var.Type != null)
-            {
-                if (!variable_types.ContainsKey(var))
-                    variable_types.Add(var, var.Type);
-                else
-                    variable_types[var] = var.Type;
-            }
-        }
-
-        public void RemoveTempVariable(IVariable var)
-        {
-            Contract.Requires(var != null);
-            if (temp_variables.ContainsKey(var.Name))
-                temp_variables.Remove(var.Name);
-
-            if (var.Type != null)
-                variable_types.Remove(var);
         }
 
         public Dafny.Type GetVariableType(string name)

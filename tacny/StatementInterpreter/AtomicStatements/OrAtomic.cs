@@ -30,7 +30,7 @@ namespace Tacny
             if (os.Blhs != null)
             {
                 body_list = ReplaceCurrentAtomic(os.Blhs);
-                solution_list.Add(CreateSolution(body_list));
+                solution_list.Add(CreateTactic(body_list));
             }
             else // generate new updatestmt and insert it to body list
             {
@@ -41,14 +41,14 @@ namespace Tacny
                 switch(type)
                 {
                     case StatementRegister.Atomic.ID:
-                        solution_list.Add(CreateSolution(body_list, false));
+                        solution_list.Add(CreateTactic(body_list, false));
                         return;
                     case StatementRegister.Atomic.FAIL:
                          break;
                     case StatementRegister.Atomic.UNDEFINED:
                          //return "OR: undefined lhs statement";
                     default:
-                        solution_list.Add(CreateSolution(body_list));
+                        solution_list.Add(CreateTactic(body_list));
                         break;
                 }   
                 
@@ -57,7 +57,7 @@ namespace Tacny
             if (os.Brhs != null)
             {
                 body_list = ReplaceCurrentAtomic(os.Brhs);
-                solution_list.Add(CreateSolution(body_list));
+                solution_list.Add(CreateTactic(body_list));
             }
             else
             {
@@ -74,7 +74,7 @@ namespace Tacny
                     case StatementRegister.Atomic.UNDEFINED:
                         //return "OR: undefined rhs statement";
                     default:
-                        solution_list.Add(CreateSolution(body_list));
+                        solution_list.Add(CreateTactic(body_list));
                         break;
                 }
             }

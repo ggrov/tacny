@@ -47,7 +47,7 @@ namespace Tacny
 
             this.localContext = new LocalContext(md, tac, tac_call);
             this.globalContext = new GlobalContext(md, tac_call, program);
-        }   
+        }
 
         public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, GlobalContext globalContext)
         {
@@ -191,7 +191,7 @@ namespace Tacny
             Atomic atomic = this.Copy();
             atomic.localContext.tac_body = body.Body;
             atomic.localContext.ResetCounter();
-            if(result == null || result.Count == 0)
+            if (result == null || result.Count == 0)
                 result = new List<Solution>() { new Solution(atomic) };
             while (true)
             {
@@ -594,19 +594,19 @@ namespace Tacny
 
         protected bool HasLocalWithName(NameSegment ns)
         {
-            Contract.Requires(ns != null);
+            Contract.Requires<ArgumentNullException>(ns != null);
             return localContext.HasLocalWithName(ns);
         }
 
         protected object GetLocalValueByName(NameSegment ns)
         {
-            Contract.Requires(ns != null);
+            Contract.Requires<ArgumentNullException>(ns != null);
             return localContext.GetLocalValueByName(ns.Name);
         }
 
         protected object GetLocalValueByName(IVariable variable)
         {
-            Contract.Requires(variable != null);
+            Contract.Requires<ArgumentNullException>(variable != null);
             return localContext.GetLocalValueByName(variable);
         }
 
@@ -717,7 +717,7 @@ namespace Tacny
         /// <param name="newBody"></param>
         /// <param name="decCounter"></param>
         /// <returns></returns>
-        protected Solution CreateSolution(List<Statement> newBody, bool decCounter = true)
+        protected Solution CreateTactic(List<Statement> newBody, bool decCounter = true)
         {
             Contract.Ensures(Contract.Result<Solution>() != null);
             Tactic tac = localContext.tac;
@@ -852,7 +852,7 @@ namespace Tacny
                     else if (result is NameSegment)
                     {
                         newNs = result as NameSegment;
-                    } 
+                    }
                     else
                     {
                         newNs = result as Dafny.LiteralExpr;
@@ -898,6 +898,22 @@ namespace Tacny
                     return false;
                 }
             }
+            return true;
+        }
+
+        /// <summary>
+        /// Generate a Dafny program and verify it
+        /// </summary>
+        protected bool GenerateAndVerify(Solution solution)
+        {
+            Contract.Requires<ArgumentNullException>(solution != null);
+            Dafny.Program prog = globalContext.program.ParseProgram();
+            solution.GenerateProgram(ref prog);
+            globalContext.program.ClearBody(localContext.md);
+            globalContext.program.MaybePrintProgram(prog, null);
+            if (!globalContext.program.ResolveProgram())
+                return false;
+            globalContext.program.VerifyProgram();
             return true;
         }
     }

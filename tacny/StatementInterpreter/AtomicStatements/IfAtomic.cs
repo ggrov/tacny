@@ -46,7 +46,7 @@ namespace Tacny
                  * */
                 {
                     List<Statement> new_body = ReplaceCurrentAtomic(loop.Els);
-                    Solution sol = CreateSolution(new_body);
+                    Solution sol = CreateTactic(new_body);
                     solution_list.Add(sol);
                 }
 

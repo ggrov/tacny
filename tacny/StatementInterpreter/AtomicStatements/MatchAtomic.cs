@@ -76,7 +76,6 @@ namespace Tacny
         {
             DatatypeDecl datatype = null;
             Solution solution = null;
-            Dafny.Program dprog = null;
             List<Solution> result = null;
             MatchStmt ms = null;
             ParensExpression guard = null;
@@ -87,7 +86,7 @@ namespace Tacny
 
             bool[] ctorFlags = null; //localContext.ctorFlags; // used to keep track of which cases statements require a body
             int ctor = 0; // current active match case
-            List<Solution> ctor_bodies = null;
+            List<Solution> ctorBodies = null;
             guard = st.Guard as ParensExpression;
 
             if (guard == null)
@@ -151,19 +150,31 @@ namespace Tacny
             if (isElement)
             {
                 InitCtorFlags(datatype, out ctorFlags);
-                ctor_bodies = RepeatedDefault<Solution>(datatype.Ctors.Count);
+                ctorBodies = RepeatedDefault<Solution>(datatype.Ctors.Count);
+                // find the first failing case 
+                GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(guard_arg), datatype, ctorBodies, out ms, ctorFlags);
+                Atomic ac = this.Copy();
+                ac.AddUpdated(ms, ms);
+                solution = new Solution(ac, true, null);
+                if (!GenerateAndVerify(solution))
+                    ctor = 0;
+                else
+                {
+                    ctor = GetErrorIndex(globalContext.program.GetErrorToken(), ms);
+                    ctorFlags[ctor] = true;
+                    this.oldToken = globalContext.program.GetErrorToken();
+                }
             }
             else
             {
                 allCtorBodies = new List<List<Solution>>();
+                ctor = 0;
             }
-            dprog = globalContext.program.ParseProgram();
             while (true)
             {
                 if (ctor >= datatype.Ctors.Count || !globalContext.program.HasError())
                     break;
 
-                // hack
                 RegisterLocals(datatype, ctor);
                 ResolveBody(st.Body, out result);
                 // if nothing was generated for the cases body move on to the next one
@@ -180,30 +191,23 @@ namespace Tacny
                 else {
                     for (int i = 0; i < result.Count; i++)
                     {
-                        ctor_bodies[ctor] = result[i];
-                        GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(guard_arg), datatype, ctor_bodies, out ms, ctorFlags);
+                        ctorBodies[ctor] = result[i];
+                        GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(guard_arg), datatype, ctorBodies, out ms, ctorFlags);
                         Atomic ac = this.Copy();
                         ac.AddUpdated(ms, ms);
                         solution = new Solution(ac, true, null);
-                        dprog = globalContext.program.ParseProgram();
-                        solution.GenerateProgram(ref dprog);
-                        //tacnyProgram.MaybePrintProgram(dprog, String.Format("{1} debug_{0}", i, localContext.md.Name));
-                        globalContext.program.ClearBody(localContext.md);
-                        // if program resolution failed, skip to the next solution
-                        if (!globalContext.program.ResolveProgram())
+                        if (!GenerateAndVerify(solution))
                             continue;
-                        globalContext.program.VerifyProgram();
                         if (!globalContext.program.HasError())
                             break;
-
-                        // check if error index has changed
                         // TODO: if error is: "could not prove termination", skip solution
                         if (CheckError(ms, ref ctorFlags, ctor))
                         {
+                            int index = GetErrorIndex(oldToken, ms);
                             result = new List<Solution>();
                             // if the ctor does not require a body null the value
                             if (!ctorFlags[ctor])
-                                ctor_bodies[ctor] = null;
+                                ctorBodies[ctor] = null;
                             RemoveLocals(datatype, ctor);
                             ctor++;
                             break;
@@ -217,7 +221,7 @@ namespace Tacny
              */
             if (isElement)
             {
-                GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(guard_arg), datatype, ctor_bodies, out ms, ctorFlags);
+                GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(guard_arg), datatype, ctorBodies, out ms, ctorFlags);
                 AddUpdated(ms, ms);
                 solution_list.Add(new Solution(this.Copy(), true, null));
             }
@@ -247,7 +251,7 @@ namespace Tacny
             foreach (DatatypeCtor dc in datatype.Ctors)
             {
                 MatchCaseStmt mcs;
-                GenerateMatchCaseStmt(line, dc, body[i], out  mcs, flags[i]);
+                GenerateMatchCaseStmt(line, dc, body[i], out  mcs);
 
                 cases.Add(mcs);
                 line += mcs.Body.Count + 1;
@@ -278,7 +282,7 @@ namespace Tacny
             }
         }
 
-        private void GenerateMatchCaseStmt(int line, DatatypeCtor dtc, Solution solution, out MatchCaseStmt mcs, bool genBody)
+        private void GenerateMatchCaseStmt(int line, DatatypeCtor dtc, Solution solution, out MatchCaseStmt mcs)
         {
             Contract.Requires(dtc != null);
             Contract.Ensures(Contract.ValueAtReturn<MatchCaseStmt>(out mcs) != null);
@@ -292,18 +296,13 @@ namespace Tacny
                 casePatterns.Add(cp);
             }
 
-            if (genBody)
+            List<Statement> body = new List<Statement>();
+            if (solution != null)
             {
-                List<Statement> body = new List<Statement>();
-                if (solution != null)
-                {
-                    Atomic ac = solution.state.Copy();
-                    body = ac.GetAllUpdated();
-                }
-                mcs = new MatchCaseStmt(CreateToken("cases", line, 0), dtc.CompileName, casePatterns, body);
+                Atomic ac = solution.state.Copy();
+                body = ac.GetAllUpdated();
             }
-            else
-                mcs = new MatchCaseStmt(CreateToken("cases", line, 0), dtc.CompileName, casePatterns, new List<Statement>());
+            mcs = new MatchCaseStmt(CreateToken("cases", line, 0), dtc.CompileName, casePatterns, body);
         }
 
         private void GenerateCasePattern(int line, Dafny.Formal formal, out CasePattern cp)
@@ -340,43 +339,21 @@ namespace Tacny
             return false;
         }
 
-        private void RegisterLocals(List<Dafny.Formal> formals)
-        {
-            foreach (var formal in formals)
-                globalContext.RegisterTempVariable(formal);
-        }
-
         private void RegisterLocals(DatatypeDecl datatype, int index)
         {
-            int i = 0;
-            foreach (var ctor in datatype.Ctors)
+            foreach (var formal in datatype.Ctors[index].Formals)
             {
-                if (i == index)
-                {
-
-                    foreach (var formal in ctor.Formals)
-                    {
-                        // register globals as name segments
-                        globalContext.RegisterTempVariable(formal);
-                    }
-                }
-                i++;
+                // register globals as name segments
+                globalContext.RegsiterGlobalVariable(formal);
             }
         }
 
         private void RemoveLocals(DatatypeDecl datatype, int index)
         {
-            int i = 0;
-            foreach (var ctor in datatype.Ctors)
+            foreach (var formal in datatype.Ctors[index].Formals)
             {
-                if (i == index)
-                {
-                    foreach (var formal in ctor.Formals)
-                    {
-                        globalContext.RemoveTempVariable(formal);
-                    }
-                }
-                i++;
+                // register globals as name segments
+                globalContext.RemoveGlobalVariable(formal);
             }
         }
 

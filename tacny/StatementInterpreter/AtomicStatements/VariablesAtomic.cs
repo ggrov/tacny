@@ -32,15 +32,7 @@ namespace Tacny
             Method source = localContext.md as Method;
             Contract.Assert(source != null, Util.Error.MkErr(st, 4));
 
-            foreach (var stmt in source.Body.Body)
-            {
-                VarDeclStmt vds = null;
-                if((vds = stmt as VarDeclStmt) != null)
-                    locals.AddRange(vds.Locals);
-
-                if (stmt.Equals(localContext.tac_call))
-                    break;
-            }
+            locals.AddRange(globalContext.global_variables.Values.ToList());
 
             if (globalContext.temp_variables.Count > 0)
                 locals.AddRange(globalContext.temp_variables.Values.ToList());

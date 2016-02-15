@@ -17,7 +17,7 @@ namespace Tacny
 
         enum ExitValue { VERIFIED = 0, PREPROCESSING_ERROR, DAFNY_ERROR, NOT_VERIFIED }
         static OutputPrinter printer; // console 
-            const string PROG_ID = "main_program_id";
+        const string PROG_ID = "main_program_id";
 
         /// <summary>
         /// Main method
@@ -37,7 +37,7 @@ namespace Tacny
             thread.Start();
             thread.Join();
             
-                return ret;
+                    return ret;
         }
 
         /// <summary>

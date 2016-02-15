@@ -14,7 +14,7 @@ namespace Tacny
         public PermAtomic(Atomic atomic) : base(atomic) { }
 
         // Holds the result of each  perm()
-        private List<List<UpdateStmt>> solutions = new List<List<UpdateStmt>>();
+        private List<UpdateStmt> solutions = new List<UpdateStmt>();
 
         public void Resolve(Statement st, ref List<Solution> solution_list)
         {
@@ -35,7 +35,7 @@ namespace Tacny
             List<UpdateStmt> sol = new List<UpdateStmt>();
             // generate permutations
             Perm(st, ref sol);
-            solutions.Add(sol);
+            solutions.AddRange(sol);
         }
 
         /// <summary>
@@ -45,19 +45,13 @@ namespace Tacny
         /// <returns></returns>
         private void PermuteResults(ref List<Solution> solution_list)
         {
-            List<List<UpdateStmt>> result = new List<List<UpdateStmt>>();
-            GenerateMethodPremutations(solutions, 0, new List<UpdateStmt>(), ref result);
             // generate the solutions
-            foreach (var item in result)
+            foreach (var item in solutions)
             {
                 Atomic ac = this.Copy();
                 // create a deep copy of each UpdateStmt
-                foreach (var us in item)
-                {
-                    UpdateStmt nus = Util.Copy.CopyUpdateStmt(us);
-                    ac.AddUpdated(nus, nus);
-                }
-
+                UpdateStmt nus = Util.Copy.CopyUpdateStmt(item);
+                ac.AddUpdated(nus, nus);
                 solution_list.Add(new Solution(ac));
             }
         }
@@ -124,16 +118,15 @@ namespace Tacny
                  */
                 if (args[i].Count == 0)
                     return;
-
-                i++;
             }
 
-            GeneratePremutations(args, 0, new List<NameSegment>(), ref result);
+            PermuteArguments(args, 0, new List<NameSegment>(), ref result);
 
             if (result.Count == 0)
             {
                 ApplySuffix aps = new ApplySuffix(call_arguments[0].tok, new NameSegment(call_arguments[0].tok, md.Name, null), new List<Expression>());
                 UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
+                Console.WriteLine(Dafny.Printer.StatementToString(us));
                 solution_list.Add(us);
             }
             else
@@ -150,25 +143,7 @@ namespace Tacny
             }
         }
 
-        private void GenerateMethodPremutations(List<List<UpdateStmt>> methods, int depth, List<UpdateStmt> current, ref List<List<UpdateStmt>> result)
-        {
-            if (methods.Count == 0) return;
-            if (depth == methods.Count)
-            {
-                result.Add(current);
-                return;
-            }
-
-            for (int i = 0; i < methods[depth].Count; ++i)
-            {
-                List<UpdateStmt> tmp = new List<UpdateStmt>();
-                tmp.AddRange(current);
-                tmp.Add(methods[depth][i]);
-                GenerateMethodPremutations(methods, depth + 1, tmp, ref result);
-            }
-        }
-
-        private void GeneratePremutations(List<List<IVariable>> args, int depth, List<NameSegment> current, ref List<List<NameSegment>> result)
+        private void PermuteArguments(List<List<IVariable>> args, int depth, List<NameSegment> current, ref List<List<NameSegment>> result)
         {
             if (args.Count == 0) return;
             if (depth == args.Count)
@@ -183,7 +158,7 @@ namespace Tacny
                 IVariable iv = args[depth][i];
                 NameSegment ns = new NameSegment(iv.Tok, iv.Name, null);
                 tmp.Add(ns);
-                GeneratePremutations(args, depth + 1, tmp, ref result);
+                PermuteArguments(args, depth + 1, tmp, ref result);
             }
         }
     }

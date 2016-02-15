@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Collections;
 using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
-
+using System.Linq;
+using System.Reflection;
 namespace Tacny
 {
     class MergeAtomic : Atomic, IAtomicStmt
@@ -34,19 +35,31 @@ namespace Tacny
             ProcessArg(call_arguments[0], out arg1);
             object arg2;
             ProcessArg(call_arguments[1], out arg2);
+            // valdiate the argument types
+            System.Type type1 = arg1.GetType().GetGenericArguments().Single();
+            System.Type type2 = arg2.GetType().GetGenericArguments().Single();
+            Contract.Assert(type1.Equals(type2), Util.Error.MkErr(st, 1, type1));
+            
+            if(!(arg1 is IEnumerable) || !(arg2 is IEnumerable))
+                Contract.Assert(false, Util.Error.MkErr(st, 1, typeof(IEnumerable)));
+
             dynamic darg1 = arg1;
             dynamic darg2 = arg2;
 
 
-            if (!darg1.GetType().Equals(darg2.GetType()))
-            {
-                System.Type type = darg1.GetType();
-                Contract.Assert(false, Util.Error.MkErr(st, 1, type));
-            }
-            
 
+
+            System.Type listType = typeof(List<>).MakeGenericType(new[] { type1 });
+            IList result = (IList)Activator.CreateInstance(listType);
             darg1.AddRange(darg2);
-            AddLocal(lv, darg1);
+            // skip duplicates
+            foreach (var t in darg1)
+            {
+                if (!result.Contains(t))
+                    result.Add(t);
+                
+            }
+            AddLocal(lv, result);
 
             solution_list.Add(new Solution(this.Copy()));
         }
