@@ -21,6 +21,7 @@ namespace Tacny
             { _programId = value; }
             get { return _programId; }
         }
+        private readonly Dafny.Program _original;
         private Dafny.Program _program;
         public Dafny.Program dafnyProgram
         {
@@ -165,7 +166,10 @@ namespace Tacny
         {
             this.fileNames = fileNames;
             this.programId = programId;
-            string err = ParseCheck(fileNames, programId, out _program);
+            string err = ParseCheck(fileNames, programId, out _original);
+            dafnyProgram = ParseProgram();
+            
+            
             if (err != null)
                 throw new ArgumentException(err);
             Init(out tactics, out members, out globals);
@@ -217,10 +221,13 @@ namespace Tacny
         /// <returns>Instance of dafny.Program</returns>
         public Dafny.Program ParseProgram()
         {
-            Dafny.Program prog;
-            ParseCheck(fileNames, programId, out prog);
-            this.dafnyProgram = prog;
-            return prog;
+            //Dafny.Program prog;
+            //ParseCheck(fileNames, programId, out prog);
+            Cloner cl = new Cloner();
+            ModuleDecl module = new Dafny.LiteralModuleDecl(cl.CloneModuleDefinition(_original.DefaultModuleDef, _original.Name), null);
+
+            this.dafnyProgram = new Dafny.Program(_original.Name, module, _original.BuiltIns);
+            return dafnyProgram;
         }
 
         public void VerifyProgram()
@@ -517,6 +524,7 @@ namespace Tacny
             var fn = DafnyOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(dafnyFileName) : dafnyFileName;
             try
             {
+                
                 int errorCount = Dafny.Parser.Parse(dafnyFileName, module, builtIns, errs, verifyThisFile);
                 if (errorCount != 0)
                 {

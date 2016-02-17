@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 using System.Diagnostics.Contracts;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Tacny
 {
@@ -16,6 +18,7 @@ namespace Tacny
             Contract.Requires(tacnyProgram != null);
             this.tacnyProgram = tacnyProgram;
             this.solution_list = new SolutionList();
+            //Console.SetOut(System.IO.TextWriter.Null);
         }
 
         public string ResolveProgram()
@@ -105,35 +108,68 @@ namespace Tacny
             variables.AddRange(m.Outs);
             SolutionList sol_list = new SolutionList();
             sol_list.AddRange(solution_list.plist);
-            foreach (var st in m.Body.Body)
+            if (Util.TacnyOptions.O.ParallelExecution)
             {
-                // register local variables
-                VarDeclStmt vds = st as VarDeclStmt;
-                if (vds != null)
-                    variables.AddRange(vds.Locals);
-
-                UpdateStmt us = st as UpdateStmt;
-                if (us != null)
-                {
-                    if (tacnyProgram.IsTacticCall(us))
+                Parallel.ForEach(m.Body.Body, (st) =>
                     {
-                        try
+                        // register local variables
+                        VarDeclStmt vds = st as VarDeclStmt;
+                        if (vds != null)
+                            variables.AddRange(vds.Locals);
+
+                        UpdateStmt us = st as UpdateStmt;
+                        if (us != null)
                         {
-                            tacnyProgram.SetCurrent(tacnyProgram.GetTactic(us), md);
-                            // get the resolved variables
-                            List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
-                            resolved.AddRange(m.Ins); // add input arguments as resolved variables
-                            Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, resolved, ref sol_list);
-                            tacnyProgram.PrintDebugData(tacnyProgram.currentDebug);
+                            if (tacnyProgram.IsTacticCall(us))
+                            {
+                                try
+                                {
+                                    tacnyProgram.SetCurrent(tacnyProgram.GetTactic(us), md);
+                                    // get the resolved variables
+                                    List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
+                                    resolved.AddRange(m.Ins); // add input arguments as resolved variables
+                                    Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, resolved, ref sol_list);
+                                    tacnyProgram.PrintDebugData(tacnyProgram.currentDebug);
+                                }
+                                catch (Exception e)
+                                {
+                                    Util.Printer.Error(e.Message);
+                                }
+                            }
                         }
-                        catch (Exception e)
+                    });
+            }
+            else
+            {
+                foreach (var st in m.Body.Body)
+                {
+                    // register local variables
+                    VarDeclStmt vds = st as VarDeclStmt;
+                    if (vds != null)
+                        variables.AddRange(vds.Locals);
+
+                    UpdateStmt us = st as UpdateStmt;
+                    if (us != null)
+                    {
+                        if (tacnyProgram.IsTacticCall(us))
                         {
-                            return e.Message;
+                            try
+                            {
+                                tacnyProgram.SetCurrent(tacnyProgram.GetTactic(us), md);
+                                // get the resolved variables
+                                List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
+                                resolved.AddRange(m.Ins); // add input arguments as resolved variables
+                                Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, resolved, ref sol_list);
+                                tacnyProgram.PrintDebugData(tacnyProgram.currentDebug);
+                            }
+                            catch (Exception e)
+                            {
+                                return e.Message;
+                            }
                         }
                     }
                 }
             }
-
             solution_list.AddRange(sol_list.plist);
             return null;
         }

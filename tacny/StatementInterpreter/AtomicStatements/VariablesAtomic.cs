@@ -32,10 +32,7 @@ namespace Tacny
             Method source = localContext.md as Method;
             Contract.Assert(source != null, Util.Error.MkErr(st, 4));
 
-            locals.AddRange(globalContext.global_variables.Values.ToList());
-
-            if (globalContext.temp_variables.Count > 0)
-                locals.AddRange(globalContext.temp_variables.Values.ToList());
+            locals.AddRange(globalContext.staticVariables.Values.ToList());
         
             AddLocal(lv, locals);
             solution_list.Add(new Solution(this.Copy()));

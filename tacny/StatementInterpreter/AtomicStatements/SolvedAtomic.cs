@@ -25,15 +25,8 @@ namespace Tacny
             foreach (var sol in result)
             {
                 //Atomic ac = this.Copy();
-                Dafny.Program dprog = globalContext.program.ParseProgram();
-                sol.GenerateProgram(ref dprog);
-                globalContext.program.ClearBody(localContext.md);
-                globalContext.program.MaybePrintProgram(dprog, String.Format("{0} debug_", localContext.md.Name));
-                globalContext.program.ResolveProgram();
-                // skip the solution if resolution failed    
-                
-                //program.MaybePrintProgram(dprog, null);
-                globalContext.program.VerifyProgram();
+                if (!GenerateAndVerify(sol))
+                    continue;
                 if (!globalContext.program.HasError())
                 {
                     // change back the context of the state

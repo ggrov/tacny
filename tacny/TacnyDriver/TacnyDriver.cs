@@ -228,17 +228,36 @@ namespace Tacny
         }
 
 
-        class TacnyConsolePrinter : ConsolePrinter
+        class TacnyConsolePrinter : OutputPrinter
         {
-            public override void ReportBplError(IToken tok, string message, bool error, TextWriter tw, string category = null)
-            {
-                base.ReportBplError(tok, message, error, tw, category);
 
-                if (tok is Dafny.NestedToken)
-                {
-                    var nt = (Dafny.NestedToken)tok;
-                    ReportBplError(nt.Inner, "Related location", false, tw);
-                }
+            public void AdvisoryWriteLine(string format, params object[] args)
+            {
+            }
+
+            public void ErrorWriteLine(TextWriter tw, string format, params object[] args)
+            {
+            }
+
+            public void ErrorWriteLine(TextWriter tw, string s)
+            {
+            }
+
+            public void Inform(string s, TextWriter tw)
+            {
+            }
+
+            public void ReportBplError(IToken tok, string message, bool error, TextWriter tw, string category = null)
+            {
+            }
+
+            public void WriteErrorInformation(ErrorInformation errorInfo, TextWriter tw, bool skipExecutionTrace = true)
+            {
+            }
+
+            public void WriteTrailer(PipelineStatistics stats)
+            {
+               
             }
         }
     }

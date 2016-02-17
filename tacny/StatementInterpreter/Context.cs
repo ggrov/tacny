@@ -238,18 +238,18 @@ namespace Tacny
 
     #region GlobalContext
 
-    public class    GlobalContext : Context
+    public class StaticContext : Context
     {
         public readonly Dictionary<string, DatatypeDecl> datatypes = new Dictionary<string, DatatypeDecl>();
-        public Dictionary<string, IVariable> global_variables = new Dictionary<string, IVariable>();
+        public Dictionary<string, IVariable> staticVariables = new Dictionary<string, IVariable>();
         public Dictionary<IVariable, Dafny.Type> variable_types = new Dictionary<IVariable, Dafny.Type>();
-        public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
+        //public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
         public List<Statement> resolved = new List<Statement>();
         public Method new_target = null;
         public Program program;
 
 
-        public GlobalContext(MemberDecl md, UpdateStmt tac_call, Program program)
+        public StaticContext(MemberDecl md, UpdateStmt tac_call, Program program)
             : base(md, tac_call)
         {
             this.program = program;
@@ -275,10 +275,10 @@ namespace Tacny
             Contract.Requires(globals != null);
             foreach (var item in globals)
             {
-                if (!global_variables.ContainsKey(item.Name))
-                    global_variables.Add(item.Name, item);
+                if (!staticVariables.ContainsKey(item.Name))
+                    staticVariables.Add(item.Name, item);
                 else
-                    global_variables[item.Name] = item;
+                    staticVariables[item.Name] = item;
 
                 if (resolved != null)
                 {
@@ -299,10 +299,10 @@ namespace Tacny
         {
             Contract.Requires<ArgumentNullException>(variable != null);
 
-            if (!global_variables.ContainsKey(variable.Name))
-                global_variables.Add(variable.Name, variable);
+            if (!staticVariables.ContainsKey(variable.Name))
+                staticVariables.Add(variable.Name, variable);
             else
-                global_variables[variable.Name] = variable;
+                staticVariables[variable.Name] = variable;
 
             if (variable.Type != null)
             {
@@ -316,7 +316,7 @@ namespace Tacny
         public void RemoveGlobalVariable(IVariable variable)
         {
             Contract.Requires<ArgumentNullException>(variable != null);
-            global_variables.Remove(variable.Name);
+            staticVariables.Remove(variable.Name);
 
             if (variable.Type != null)
                 variable_types.Remove(variable);
@@ -324,20 +324,20 @@ namespace Tacny
 
         public void ClearGlobalVariables()
         {
-            global_variables.Clear();
+            staticVariables.Clear();
         }
 
         public bool HasGlobalVariable(string name)
         {
             Contract.Requires(name != null);
-            return global_variables.ContainsKey(name);
+            return staticVariables.ContainsKey(name);
         }
 
         public IVariable GetGlobalVariable(string name)
         {
             Contract.Requires(name != null);
             if (HasGlobalVariable(name))
-                return global_variables[name];
+                return staticVariables[name];
             return null;
         }
 

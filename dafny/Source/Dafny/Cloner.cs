@@ -7,7 +7,7 @@ using IToken = Microsoft.Boogie.IToken;
 
 namespace Microsoft.Dafny
 {
-  class Cloner
+  public class Cloner
   {
     public Cloner() {
     }
@@ -566,8 +566,42 @@ namespace Microsoft.Dafny
         var body = s.Body == null ? null : CloneBlockStmt(s.Body);
         r = new ModifyStmt(Tok(s.Tok), Tok(s.EndTok), mod.Expressions, mod.Attributes, body);
 
-      } else {
-        Contract.Assert(false); throw new cce.UnreachableException();  // unexpected statement
+      }
+      else if (stmt is TacnyCasesBlockStmt) {
+          var s = (TacnyCasesBlockStmt)stmt;
+          var guard = CloneExpr(s.Guard);
+          var body = s.Body == null ? null : CloneBlockStmt(s.Body);
+          r = new TacnyCasesBlockStmt(Tok(s.Tok), Tok(s.EndTok), guard, body);
+      }
+      else if (stmt is TacnyChangedBlockStmt) {
+          var s = (TacnyChangedBlockStmt)stmt;
+          var body = s.Body == null ? null : CloneBlockStmt(s.Body);
+          r = new TacnyChangedBlockStmt(Tok(s.Tok), Tok(s.EndTok), body);
+      }
+      else if (stmt is TacnySolvedBlockStmt) {
+          var s = (TacnySolvedBlockStmt)stmt;
+          var body = s.Body == null ? null : CloneBlockStmt(s.Body);
+          r = new TacnySolvedBlockStmt(Tok(s.Tok), Tok(s.EndTok), body);
+      }
+      else if (stmt is TacnyTryCatchBlockStmt) { 
+          var s = (TacnyTryCatchBlockStmt)stmt;
+          var body = s.Body == null ? null : CloneBlockStmt(s.Body);
+          var c = s.Ctch == null ? null : CloneBlockStmt(s.Ctch);
+          r = new TacnyTryCatchBlockStmt(Tok(s.Tok), Tok(s.EndTok), body, c); 
+      }
+      else if (stmt is TacticVarDeclStmt) {
+          var s = (TacticVarDeclStmt)stmt;
+          var lhss = s.Locals.ConvertAll(c => new LocalVariable(Tok(c.Tok), Tok(c.EndTok), c.Name, CloneType(c.OptionalType), c.IsGhost));
+          r = new TacticVarDeclStmt(Tok(s.Tok), Tok(s.EndTok), lhss, (ConcreteUpdateStatement)CloneStmt(s.Update));
+      }
+      else if (stmt is OrStmt)
+      {
+          // OrStmt requires a rework, don't copy
+          r = (OrStmt)stmt;
+      }
+      else
+      {
+          Contract.Assert(false); throw new cce.UnreachableException();  // unexpected statement
       }
 
       // add labels to the cloned statement
@@ -667,9 +701,15 @@ namespace Microsoft.Dafny
       } else if (m is Lemma) {
         return new Lemma(Tok(m.tok), m.Name, m.HasStaticKeyword, tps, ins, m.Outs.ConvertAll(CloneFormal),
           req, mod, ens, decreases, body, CloneAttributes(m.Attributes), null);
-      } else {
-        return new Method(Tok(m.tok), m.Name, m.HasStaticKeyword, m.IsGhost, tps, ins, m.Outs.ConvertAll(CloneFormal),
-          req, mod, ens, decreases, body, CloneAttributes(m.Attributes), null);
+      }
+      else if (m is Tactic) {
+          return new Tactic(Tok(m.tok), m.Name, m.HasStaticKeyword, tps, ins, m.Outs.ConvertAll(CloneFormal),
+              req, mod, ens, decreases, body, CloneAttributes(m.Attributes), null);
+      }
+      else
+      {
+          return new Method(Tok(m.tok), m.Name, m.HasStaticKeyword, m.IsGhost, tps, ins, m.Outs.ConvertAll(CloneFormal),
+            req, mod, ens, decreases, body, CloneAttributes(m.Attributes), null);
       }
     }
     public virtual IToken Tok(IToken tok) {

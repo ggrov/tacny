@@ -2,6 +2,8 @@ using Microsoft.Dafny;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Linq;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
@@ -29,7 +31,7 @@ namespace Tacny
 
     public class Atomic
     {
-        public readonly GlobalContext globalContext;
+        public readonly StaticContext globalContext;
         public LocalContext localContext;
 
         protected Atomic(Atomic ac)
@@ -46,17 +48,17 @@ namespace Tacny
             Contract.Requires(tac != null);
 
             this.localContext = new LocalContext(md, tac, tac_call);
-            this.globalContext = new GlobalContext(md, tac_call, program);
+            this.globalContext = new StaticContext(md, tac_call, program);
         }
 
-        public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, GlobalContext globalContext)
+        public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, StaticContext globalContext)
         {
             this.localContext = new LocalContext(md, tac, tac_call);
             this.globalContext = globalContext;
 
         }
 
-        public Atomic(LocalContext localContext, GlobalContext globalContext)
+        public Atomic(LocalContext localContext, StaticContext globalContext)
         {
             this.globalContext = globalContext;
             this.localContext = localContext.Copy();
@@ -98,7 +100,7 @@ namespace Tacny
                 foreach (var sol in result.plist)
                 {
                     MemberDecl target = sol.state.localContext.new_target == null ? md : sol.state.localContext.new_target;
-                    GlobalContext gc = sol.state.globalContext;
+                    StaticContext gc = sol.state.globalContext;
                     gc.tac_call = tac_call;
                     gc.md = target;
                     // clean up old globals
@@ -153,24 +155,52 @@ namespace Tacny
 
             if (result == null)
                 result = new List<Solution>();
-
-            foreach (var solution in solution_list)
+            if (Util.TacnyOptions.O.ParallelExecution)
             {
-                if (solution.state.localContext.IsResolved())
-                    continue;
-                // if no statements have been resolved, check the preconditions
-                if (solution.state.localContext.IsFirstStatment())
-                    TacnyContract.ValidateRequires(solution);
-                solution.state.CallAction(solution.state.localContext.GetCurrentStatement(), ref result);
-
-                if (solution_list.IndexOf(solution) == solution_list.Count - 1)
+                List<Solution> temp = result;
+                Parallel.ForEach(solution_list, (solution =>
                 {
-                    foreach (var res in result)
+                    if (solution.state.localContext.IsResolved())
+                        return;
+                    // if no statements have been resolved, check the preconditions
+                    if (solution.state.localContext.IsFirstStatment())
+                        TacnyContract.ValidateRequires(solution);
+                    solution.state.CallAction(solution.state.localContext.GetCurrentStatement(), ref temp);
+
+                    if (solution_list.IndexOf(solution) == solution_list.Count - 1)
                     {
-                        if (res.parent == null)
+                        foreach (var res in temp)
                         {
-                            res.parent = solution;
-                            res.state.localContext.IncCounter();
+                            if (res.parent == null)
+                            {
+                                res.parent = solution;
+                                res.state.localContext.IncCounter();
+                            }
+                        }
+                    }
+                }));
+                result = temp;
+            }
+            else
+            {
+                foreach (var solution in solution_list)
+                {
+                    if (solution.state.localContext.IsResolved())
+                        continue;
+                    // if no statements have been resolved, check the preconditions
+                    if (solution.state.localContext.IsFirstStatment())
+                        TacnyContract.ValidateRequires(solution);
+                    solution.state.CallAction(solution.state.localContext.GetCurrentStatement(), ref result);
+
+                    if (solution_list.IndexOf(solution) == solution_list.Count - 1)
+                    {
+                        foreach (var res in result)
+                        {
+                            if (res.parent == null)
+                            {
+                                res.parent = solution;
+                                res.state.localContext.IncCounter();
+                            }
                         }
                     }
                 }
@@ -246,11 +276,6 @@ namespace Tacny
                     type = StatementRegister.GetStatementType(StatementRegister.GetAtomicType(aps.Lhs.tok.val));
                     st = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
                 }
-                //else
-                //{
-                //    Util.Printer.Error(st, "unexpected call argument: expected Statement or ApplySuffix; Received {0}", call.GetType());
-                //    return;
-                //}
             }
             if (type == null)
             {
@@ -910,7 +935,7 @@ namespace Tacny
             Dafny.Program prog = globalContext.program.ParseProgram();
             solution.GenerateProgram(ref prog);
             globalContext.program.ClearBody(localContext.md);
-            globalContext.program.MaybePrintProgram(prog, null);
+            //globalContext.program.MaybePrintProgram(prog, null);
             if (!globalContext.program.ResolveProgram())
                 return false;
             globalContext.program.VerifyProgram();

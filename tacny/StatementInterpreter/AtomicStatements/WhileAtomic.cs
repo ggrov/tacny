@@ -40,13 +40,9 @@ namespace Tacny
                 // @HACK update the context of each result
                 foreach (var item in result)
                 {
-                    //item.state.IncTotalBranchCount();
                     item.state.localContext.tac_body = localContext.tac_body; // set the body 
-                    // add a copy of a solution after each iteration
                     item.state.localContext.tac_call = localContext.tac_call;
                     item.state.localContext.SetCounter(localContext.GetCounter());
-                    //solution_list.Add(new Solution(item.state.Copy()));
-                    //item.state.localContext.SetCounter(localContext.GetCounter() - 1); // roll back the counter
                 }
 
                 solution_list.AddRange(result);
@@ -58,9 +54,17 @@ namespace Tacny
             Contract.Requires(whileStmt != null);
             ResolveExpression(this.guard);
             Expression guard = this.guard.TreeToExpression();
+            List<Solution> solList;
+            ResolveBody(whileStmt.Body, out solList);
+            List<WhileStmt> result = new List<WhileStmt>();
+            GenerateWhileStmt(whileStmt, guard, solList, ref result);
 
-            AddUpdated(whileStmt, Util.Copy.CopyWhileStmt(ReplaceGuard(whileStmt, guard)));
-            solution_list.Add(new Solution(this.Copy()));
+            foreach (var item in result)
+            {
+                Atomic ac = this.Copy();
+                ac.AddUpdated(item, item);
+                solution_list.Add(new Solution(ac));
+            }
         }
 
         private static WhileStmt ReplaceGuard(WhileStmt stmt, Expression new_guard)
@@ -68,5 +72,14 @@ namespace Tacny
             return new WhileStmt(stmt.Tok, stmt.EndTok, new_guard, stmt.Invariants, stmt.Decreases, stmt.Mod, stmt.Body);
         }
 
+        private static void GenerateWhileStmt(WhileStmt original, Expression guard, List<Solution> body, ref List<WhileStmt> result)
+        {
+            for (int i = 0; i < body.Count; i++)
+            {
+                List<Statement> bodyList = body[i].state.GetAllUpdated();
+                BlockStmt thenBody = new BlockStmt(original.Body.Tok, original.Body.EndTok, bodyList);
+                result.Add(new WhileStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), original.Invariants, original.Decreases, original.Mod, Util.Copy.CopyBlockStmt(thenBody)));
+            }
+        }
     }
 }

@@ -33,6 +33,7 @@ namespace Util
         public bool Debug = false;
         public bool Contracts = true;
         public bool EvalAnalysis = true;
+        public bool ParallelExecution = true;
 
         protected override bool ParseOption(string name, Bpl.CommandLineOptionEngine.CommandLineParseState ps)
         {
@@ -55,6 +56,11 @@ namespace Util
                     int evalAnalysis = 0;
                     if (ps.GetNumericArgument(ref evalAnalysis, 1))
                         this.EvalAnalysis = evalAnalysis == 1;
+                    return true;
+                case "parallel":
+                    int parallel = 0;
+                    if (ps.GetNumericArgument(ref parallel, 1))
+                        this.ParallelExecution = parallel == 1;
                     return true;
                 default:
                     break;
