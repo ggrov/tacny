@@ -29,6 +29,24 @@ namespace Tacny
         }
     }
 
+    [ContractClass(typeof(AtomicLazyContract))]
+    public interface IAtomicLazyStmt
+    {
+        IEnumerable<Solution> Resolve(Statement st, Solution solution);
+    }
+
+    [ContractClassFor(typeof(IAtomicLazyStmt))]
+    // Validate the input before execution
+    public abstract class AtomicLazyContract : IAtomicLazyStmt
+    {
+
+        public IEnumerable<Solution> Resolve(Statement st, Solution solution)
+        {
+            Contract.Requires<ArgumentNullException>(st != null && solution != null);
+            yield return null; // is null a valid default yield return val?
+        }
+    }
+    
     public class Atomic
     {
         public readonly StaticContext globalContext;
@@ -148,6 +166,176 @@ namespace Tacny
             result.AddRange(solution_list.plist);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="atomic"></param>
+        /// <returns></returns>
+        /*
+            !!!Search strategies will go in here!!!
+            !!! Validation of the results should also go here!!!
+         */
+        public static IEnumerable<Solution> ResolveTactic(List<Solution> input, Atomic atomic = null, bool verify = true)
+        {
+            Contract.Requires(input != null);
+            //local solution list
+            SolutionList solutionList = atomic == null ? new SolutionList() : new SolutionList(new Solution(atomic));
+            // if previous solutions exist, add them 
+            if (input.Count > 0)
+                solutionList.AddRange(input);
+            // BFS startegy
+            while (true)
+            {
+                List<Solution> temp = new List<Solution>();
+                // iterate every solution
+                foreach (var item in solutionList.plist)
+                {
+                    var solEnum = ResolveStatement(item);
+                    // lazily resolve a statement in the solution
+                    foreach (var solution in solEnum)
+                    {
+                        // validate result
+                        if (solution.IsResolved())
+                        {
+                            if (verify)
+                            {
+                                // if verifies break else continue
+                                if (solution.state.GenerateAndVerify(solution))
+                                {
+                                    yield return solution;
+                                }
+                            }
+                            else
+                            {
+                                yield return solution;
+                            }
+                            
+                        }
+                        else
+                        {
+                            temp.Add(solution);
+                        }
+                    }
+                    // if no branches were generated break
+                    if (temp.Count == 0)
+                        yield break;
+                    solutionList.AddRange(temp);
+                }
+            }
+            yield break;
+        }
+
+        public static IEnumerable<Solution> ResolveStatement(Solution solution)
+        {
+            List<Solution> result = new List<Solution>();
+
+
+            if (solution.state.localContext.IsResolved())
+                yield break;
+            // if no statements have been resolved, check the preconditions
+            if (solution.state.localContext.IsFirstStatment())
+                TacnyContract.ValidateRequires(solution);
+            // foreach result yield
+            solution.state.CallAction(solution.state.localContext.GetCurrentStatement(), ref result);
+
+            foreach (var res in result)
+            {
+                if (res.parent == null)
+                {
+                    res.parent = solution;
+                    res.state.localContext.IncCounter();
+                }
+            }
+
+
+            yield break;
+        }
+
+        protected IEnumerable<Solution> CallAction(object call, Solution solution)
+        {
+            System.Type type = null;
+            Statement st;
+            ApplySuffix aps;
+            UpdateStmt us;
+
+            if ((st = call as Statement) != null)
+                type = StatementRegister.GetStatementType(st);
+            else
+            {
+                if ((aps = call as ApplySuffix) != null)
+                {
+                    type = StatementRegister.GetStatementType(aps);
+                    st = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
+                }
+            }
+            /**
+             * Unrecognized statement type, check if it's a nested tactic call
+             */
+            if (type == null)
+            {
+                if ((us = st as UpdateStmt) != null)
+                {
+                    // if the statement is nested tactic call
+                    if (globalContext.program.IsTacticCall(us))
+                    {
+                        Atomic ac = new Atomic(localContext.md, globalContext.program.GetTactic(us), us, globalContext);
+
+                        ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
+                        List<Expression> exps = ((ApplySuffix)er.Expr).Args;
+                        Contract.Assert(exps.Count == ac.localContext.tac.Ins.Count);
+                        ac.SetNewTarget(GetNewTarget());
+                        for (int i = 0; i < exps.Count; i++)
+                        {
+                            Expression result = null;
+                            ProcessArg(exps[i], out result);
+
+                            ac.AddLocal(ac.localContext.tac.Ins[i], result);
+                        }
+                        List<Solution> sol_list = new List<Solution>();
+                        /**
+                         * Transfer the results from evaluating the nested tactic
+                         */
+                        foreach (var item in ResolveTactic(sol_list, ac, false))
+                        {
+                            Atomic action = this.Copy();
+                            action.SetNewTarget(solution.state.GetNewTarget());
+                            foreach (KeyValuePair<Statement, Statement> kvp in solution.state.GetResult())
+                                action.AddUpdated(kvp.Key, kvp.Value);
+                            yield return item;
+                        }
+                    }
+                    else
+                    {
+                        yield return CallDefaultAction(st);
+                    }
+                }
+
+
+                var vds = st as TacticVarDeclStmt;
+                // if empty variable declaration
+                // register variable to local with empty value
+                if (vds != null)
+                {
+                    Solution sol;
+                    RegisterLocalVariable(vds, out sol);
+                    yield return sol;
+                }
+                else
+                    yield return CallDefaultAction(st);
+            }
+            else
+            {
+                var qq = Activator.CreateInstance(type, new object[] { this }) as IAtomicLazyStmt;
+                if (qq == null)
+                    yield return CallDefaultAction(st);
+                else
+                    foreach (var res in qq.Resolve(st, solution))
+                    {
+                        yield return res;
+                    }
+            }
+        }
 
         public static void ResolveStatement(ref List<Solution> result, List<Solution> solution_list)
         {
@@ -207,6 +395,7 @@ namespace Tacny
             }
         }
 
+    
         /// <summary>
         /// Resolves atomic statements inside a block stmt
         /// </summary>
@@ -387,6 +576,11 @@ namespace Tacny
             result = new Solution(this.Copy());
         }
 
+        /**
+         * !!!TODO: HOW AM I REQUIRED!!!
+         * 
+         * 
+         */
         private void RegisterLocalVariable(UpdateStmt updateStmt, out Solution result)
         {
             Contract.Requires(updateStmt != null);
@@ -550,6 +744,24 @@ namespace Tacny
                 result = argument;
         }
 
+
+        private Solution CallDefaultAction(Statement st)
+        {
+            Contract.Requires(st != null);
+            if (st is UpdateStmt)
+            {
+                UpdateStmt us = st as UpdateStmt;
+                Solution sol;
+                // if localc have been succesffuly registered
+                RegisterLocalVariable(us, out sol);
+                Contract.Assert(sol != null);
+                return sol;
+
+            }
+            Atomic state = this.Copy();
+            state.AddUpdated(st, st);
+            return new Solution(state, null);
+        }
         /// <summary>
         /// Called when the statement is not atomic to insert the statment as Dafny code
         /// </summary>

@@ -114,23 +114,36 @@ namespace Tacny
         /// </summary>
         /// <param name="st">Statement to analyse</param>
         /// <returns>statement atomic type</returns>
+        public static Atomic GetAtomicType(object call)
+        {
+            Contract.Requires(call != null);
+            Statement st;
+            ApplySuffix aps;
+            if ((st = call as Statement) != null)
+                return GetAtomicType(st);
+            else if((aps = call as ApplySuffix) != null)
+                return GetAtomicType(aps);
+            
+            return Atomic.UNDEFINED;
+        }
+        
+
         public static Atomic GetAtomicType(Statement st)
         {
-            Contract.Requires(st != null);
             ExprRhs er;
             UpdateStmt us = null;
             TacnyBlockStmt tbs;
             TacticVarDeclStmt tvds;
             VarDeclStmt vds;
             OrStmt os;
-            string name;
+            IToken tok = null;
             if ((tbs = st as TacnyBlockStmt) != null)
             {
                 TacnyCasesBlockStmt tcbs;
                 TacnySolvedBlockStmt tsbs;
                 TacnyChangedBlockStmt tchbs;
                 TacnyTryCatchBlockStmt ttcbs;
-                if((tcbs = tbs as TacnyCasesBlockStmt) != null)
+                if ((tcbs = tbs as TacnyCasesBlockStmt) != null)
                     return atomic_signature[tcbs.WhatKind];
                 else if ((tsbs = tbs as TacnySolvedBlockStmt) != null)
                     return atomic_signature[tsbs.WhatKind];
@@ -141,7 +154,7 @@ namespace Tacny
             }
             else if (((os = st as OrStmt) != null))
             {
-                return atomic_signature[os.Tok.val];
+                tok = os.Tok;
             }
             else if (st is IfStmt)
                 return Atomic.IF;
@@ -153,43 +166,44 @@ namespace Tacny
                 AssignSuchThatStmt suchThat = vds.Update as AssignSuchThatStmt;
                 // check if declaration is such that
                 if (suchThat != null)
-                    return atomic_signature[suchThat.Tok.val];
-                us = vds.Update as UpdateStmt;
+                    tok = suchThat.Tok;
+                else
+                    us = vds.Update as UpdateStmt;
             }
             else if ((tvds = st as TacticVarDeclStmt) != null)
             {
                 AssignSuchThatStmt suchThat = tvds.Update as AssignSuchThatStmt;
                 // check if declaration is such that
                 if (suchThat != null)
-                    return atomic_signature[suchThat.Tok.val];
-                us = tvds.Update as UpdateStmt;
+                    tok = suchThat.Tok;
+                else
+                    us = tvds.Update as UpdateStmt;
             }
-            
+            if (tok != null)
+                return GetAtomicType(tok);
+
             if (us == null)
                 return Atomic.UNDEFINED;
 
             er = (ExprRhs)us.Rhss[0];
-
-            ApplySuffix aps = er.Expr as ApplySuffix;
-            if(aps == null)
-                return Atomic.UNDEFINED;
-
-            name = aps.Lhs.tok.val;
-            if (!atomic_signature.ContainsKey(name))
-                return Atomic.UNDEFINED;
-
-            return atomic_signature[name];
+            return GetAtomicType(er.Expr as ApplySuffix);
         }
-        
+        public static Atomic GetAtomicType(ApplySuffix aps)
+        {
+            if (aps == null)
+                return Atomic.UNDEFINED;
+            return GetAtomicType(aps.Lhs.tok);
+        }
+
         /// <summary>
         /// Return atomic type from string signature
         /// </summary>
         /// <param name="name">string signature</param>
         /// <returns>Atomic type</returns>
-        public static Atomic GetAtomicType(string name)
+        public static Atomic GetAtomicType(IToken tok) 
         {
-            Contract.Requires(name != null);
-
+            Contract.Requires<ArgumentNullException>(tok != null);
+            string name = tok.val;
             if (!atomic_signature.ContainsKey(name))
                 return Atomic.UNDEFINED;
 
@@ -201,6 +215,12 @@ namespace Tacny
         {
             Contract.Requires(st != null);
             return GetStatementType(GetAtomicType(st));
+        }
+
+        public static System.Type GetStatementType(ApplySuffix aps)
+        {
+            Contract.Requires(aps != null);
+            return GetStatementType(GetAtomicType(aps));
         }
 
         public static System.Type GetStatementType(Atomic atomic)

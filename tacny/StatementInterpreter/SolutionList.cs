@@ -110,6 +110,11 @@ namespace Tacny
             this.isFinal = isFinal;
             this.parent = parent;
         }
+        [Pure]
+        public bool IsResolved()
+        {
+            return state.localContext.IsResolved();
+        }
 
         public string GenerateProgram(ref Dafny.Program prog, bool isFinal = false)
         {
