@@ -1,0 +1,534 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" xmlns:dm1="http://schemas.microsoft.com/dsltools/Kernel" xmlns:dm2="http://schemas.microsoft.com/dsltools/Component" xmlns:dm3="http://schemas.microsoft.com/dsltools/Activity" xmlns:dm4="http://schemas.microsoft.com/dsltools/Interaction" xmlns:dm5="http://schemas.microsoft.com/dsltools/UseCase" xmlns:dm6="http://schemas.microsoft.com/dsltools/UmlModelLibrary" xmlns:dm7="http://schemas.microsoft.com/dsltools/UmlDiagrams" xmlns:dm8="http://schemas.microsoft.com/dsltools/LogicalClassDesigner"
+  dslVersion="1.0.0.0"
+  Id="6bb78e31-5104-4b56-b795-878f06a78881"
+  name="Boogie"
+  visibility="Private" xmlns="http://schemas.microsoft.com/dsltools/ModelStore">
+  <referencesInternal>
+    <reference
+      Id="a1a50680-6440-4588-9427-fcb36bc9b565"
+      handle="viewcode://./CodeSchema_Namespace?Namespace%3DMicrosoft.Boogie"
+      tag="ViewCode" />
+  </referencesInternal>
+  <profileInstances>
+    <packageHasProfileInstances
+      Id="50d97c3d-d34a-4c7c-af0c-5911a239cf26">
+      <profileInstance
+        Id="2ab59159-aaf0-497c-9db9-4aa92f76c1c3"
+        name="CSharpProfile" />
+    </packageHasProfileInstances>
+  </profileInstances>
+  <packagedElements>
+    <packageHasNamedElement>
+      <Interface
+        Id="cf90ecc9-8fb3-4155-99b6-b715e4acaf03"
+        name="OutputPrinter"
+        isAbstract="false"
+        isLeaf="false">
+        <referencesInternal>
+          <reference
+            Id="e54c873b-6ee1-4d3a-a85f-4048eaf16c97"
+            handle="viewcode://./CodeSchema_Interface?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fboogie%2FBinaries%2FExecutionEngine.dll Namespace%3DMicrosoft.Boogie Type%3DOutputPrinter"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="01ed95eb-dbcc-4a2e-8c73-fa6d1ed4c111"
+            name="interface"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c0b7bc9e-5cfb-4dc3-975c-10d564d38f7f">
+                <propertyInstance
+                  Id="9e7330dd-96c1-4868-b16a-a9f71049d4e7"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="3cdfdcb9-a0af-46c8-9867-3aaa02c0ac0b">
+                <propertyInstance
+                  Id="dbec1cda-c21a-4504-b2f5-5932e1e63533"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="9f55c186-cafa-4111-b995-54f0086800a2">
+                <propertyInstance
+                  Id="e9836f26-c918-4b28-aa34-d6f398ce1ffc"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8b3124d0-fe06-43ee-940b-20efc4fd5e3a">
+                <propertyInstance
+                  Id="eb84919d-2ae5-460c-9a11-ddf1285ac5fa"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </Interface>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <Interface
+        Id="f7a5eed8-fed7-4049-a56a-afb9ad4f59c8"
+        name="IToken"
+        isAbstract="false"
+        isLeaf="false">
+        <referencesInternal>
+          <reference
+            Id="5864ea69-7cbd-4693-9276-9d46ab503121"
+            handle="viewcode://./CodeSchema_Interface?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fboogie%2FBinaries%2FParserHelper.dll Namespace%3DMicrosoft.Boogie Type%3DIToken"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="f8c5a0ec-af7a-44b9-9985-44644f27dade"
+            name="interface"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="92d1993e-f6b1-4a72-b22f-1ba26d1afddb">
+                <propertyInstance
+                  Id="cb89734a-7083-46e8-a627-cd1a2c6691a3"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="28cf7148-4ed7-49c5-857a-c2e53c790efd">
+                <propertyInstance
+                  Id="123eb09c-b4ce-455b-907b-e4f6fafd082b"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="9e89efa5-1bf5-47a8-a1c3-f3d7c2e90eb2">
+                <propertyInstance
+                  Id="74021a2c-b611-4719-a22d-e13ab802dee5"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e3db1250-2bf6-4599-bfa1-8386ee5b6248">
+                <propertyInstance
+                  Id="c6a54f5e-4b3a-410b-9b64-e34a2a522f54"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </Interface>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="51ab4f4d-2f92-43ae-8f8b-0260f3e261c2"
+        name="ConsolePrinter"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="d4934e4c-0684-4d12-8023-c1fe5f652ca4"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fboogie%2FBinaries%2FExecutionEngine.dll Namespace%3DMicrosoft.Boogie Type%3DConsolePrinter"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="506a83a5-e838-439b-9bb1-75ac885cc25f"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="fa249582-491e-433b-9c1d-9210b9754dac">
+                <propertyInstance
+                  Id="fe8c31ea-5f14-46c7-b1d6-709f526104e8"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="fc743364-d360-4afe-af97-a3cd8fbffc4c">
+                <propertyInstance
+                  Id="b49bf48a-9afa-4900-be32-021cfd9109ae"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="fc8401ed-33fb-4f7c-9027-212cb10759da">
+                <propertyInstance
+                  Id="622b3885-26c9-44ce-8d82-557ebbe99083"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="80c9afd7-e84b-42dc-bf2e-9533949cdfc2">
+                <propertyInstance
+                  Id="5dd9606d-82b9-4375-9720-fac5a0382e68"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e2fcd3ae-4210-44af-b4ba-dac4cc034546">
+                <propertyInstance
+                  Id="f3bdc0e5-cc56-457b-a7dd-8a118bb35f89"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <suppliersInternal>
+          <interfaceRealization
+            Id="6b31a0f3-2168-4eab-8e04-a1b962c55c8d">
+            <interfaceMoniker
+              Id="cf90ecc9-8fb3-4155-99b6-b715e4acaf03"
+              LastKnownName="OutputPrinter"
+              LastKnownLocation="Package5_1348.uml" />
+          </interfaceRealization>
+        </suppliersInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="3a6583be-93ab-48ed-9d90-3e4458f8e746"
+        name="Token"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="d08a22f3-9ac2-406e-a499-51bcb11133e6"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fboogie%2FBinaries%2FParserHelper.dll Namespace%3DMicrosoft.Boogie Type%3DToken"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="e19a49c0-be4e-4c7b-87d4-459a9ab38d1c"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e071ed1c-bd4a-44ad-9440-571cf999a78c">
+                <propertyInstance
+                  Id="26e23247-e5fa-4aa5-a181-890681a14ab9"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="cd2821a4-8863-4b82-8c3c-a8ed1b802560">
+                <propertyInstance
+                  Id="43f50a96-5bc3-4983-92d1-9df94d62a63d"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6528be94-4b52-45dc-90c3-713e9a5f5931">
+                <propertyInstance
+                  Id="73f59571-2595-40c0-bd49-29078f16f189"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="f7f4850b-3529-4c16-9c87-3ab813e15693">
+                <propertyInstance
+                  Id="912c638f-a97e-44fb-a716-1c6dcc46f512"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="abcc6294-acfc-462e-8901-1d28e93a4ab2">
+                <propertyInstance
+                  Id="8a0f28f0-8c9d-4d45-8236-3d38c384399b"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <suppliersInternal>
+          <interfaceRealization
+            Id="60643d84-2d4f-4720-9511-2b9c13952583">
+            <interfaceMoniker
+              Id="f7a5eed8-fed7-4049-a56a-afb9ad4f59c8"
+              LastKnownName="IToken"
+              LastKnownLocation="Package5_1348.uml" />
+          </interfaceRealization>
+        </suppliersInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="07fef4d0-4fad-498b-bce3-62f892c7b535"
+        name="Program"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="f27e90d0-e890-4d02-9670-d9012bde7fd2"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fboogie%2FBinaries%2FCore.dll Namespace%3DMicrosoft.Boogie Type%3DProgram"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="ebcbdab5-39c7-4725-9ffa-18915347ca1e"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c60a1948-4526-465c-96a2-64ad849503bb">
+                <propertyInstance
+                  Id="86a2de0f-e706-47fb-84bb-c47675b475f5"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="463818f0-a6ec-463b-b8b2-dc18e5eb0b0f">
+                <propertyInstance
+                  Id="4ff85b52-ef4d-4e92-ab25-8fe363ad840e"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="2ba67c85-a4f0-488c-9391-16c1870de73a">
+                <propertyInstance
+                  Id="d08946e8-345a-4aa1-ba9e-6281e5fac220"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="7b1e247b-522f-4ee1-9cc1-0af2ef44ab08">
+                <propertyInstance
+                  Id="3ab6e5bd-1252-430b-9b59-4b302898631f"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="ada99bae-4ae3-4f09-a26d-37691d376e84">
+                <propertyInstance
+                  Id="611eac48-e8c3-4f6f-81e4-c16f986eea80"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <enumeration
+        Id="eba262af-5e0a-4f3d-b2cc-101b6cb8c37e"
+        name="PipelineOutcome"
+        visibility="Private"
+        isAbstract="false"
+        isLeaf="false">
+        <referencesInternal>
+          <reference
+            Id="c0f0f2ec-0735-4da5-8668-2e6b27f1119b"
+            handle="viewcode://./CodeSchema_Enum?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fboogie%2FBinaries%2FExecutionEngine.dll Namespace%3DMicrosoft.Boogie Type%3DPipelineOutcome"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="97fe8843-ffed-45ea-a400-16dd9397387d"
+            name="enum"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="4bc4aabc-d0b9-446c-8ef6-4775f0beed41">
+                <propertyInstance
+                  Id="3bebb291-8ec4-4d80-bd87-319d674dd7e2"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8f4e6cd5-e3f3-4da0-bc75-b77cc4b7d15d">
+                <propertyInstance
+                  Id="17ab0cd0-dda8-4835-ae5c-d65c94938dd3"
+                  name="BaseType"
+                  value="int" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c337e539-530e-4b82-8ea5-2c60c86b78b6">
+                <propertyInstance
+                  Id="11b262cf-ca1f-4b8f-87b5-82e6d47f2212"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </enumeration>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="4ef5e93b-f9c4-4ef5-a7e7-c03642aadc56"
+        name="PipelineStatistics"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="06d5ef26-fbe9-4584-8b2c-5303b5a17d97"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fboogie%2FBinaries%2FExecutionEngine.dll Namespace%3DMicrosoft.Boogie Type%3DPipelineStatistics"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="cc71f3a3-63f1-4f68-b014-1509e922bec0"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="00771b74-6107-4ee1-80a8-7fd7a5623c36">
+                <propertyInstance
+                  Id="b36b877d-da4b-4f15-a08e-68bd3e0940b7"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="09865cf8-c990-482a-b2db-c5b6efb99754">
+                <propertyInstance
+                  Id="0f4a2a43-2e0c-4a3c-b59d-1c43e7ff927f"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6d167480-63d1-45bc-9ce2-725b1dd2331f">
+                <propertyInstance
+                  Id="f9eb3316-474b-434b-af9d-8e9fce08346b"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="9b8a85ea-e137-45cc-a48f-8d78795900db">
+                <propertyInstance
+                  Id="0a387d1a-5a25-4d49-9681-84b724aea9c5"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="f94de92c-78aa-46ec-b874-47dfb60f625b">
+                <propertyInstance
+                  Id="7d610125-2fa4-47c3-bd13-fa7703452ec1"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="ae0dc924-edea-4080-9af3-30ef8fb6d52d"
+        name="ErrorInformation"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="f2a20ad7-2e3d-443d-9eb8-535ef2b55a3a"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fboogie%2FBinaries%2FExecutionEngine.dll Namespace%3DMicrosoft.Boogie Type%3DErrorInformation"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="65ac94eb-3743-4230-8f44-ce0a115d7289"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="d2cca5f0-8d65-4c77-b31e-ab80e33783ec">
+                <propertyInstance
+                  Id="8a0375b6-04c8-49fd-96f1-4468e34dcb68"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="37a2defc-53fe-4ae4-abf4-9d7756f12b75">
+                <propertyInstance
+                  Id="0b8189a3-5aad-4042-ba4b-82539e0b6ac2"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="a6d019c1-5fd4-4321-8167-4a882d14df82">
+                <propertyInstance
+                  Id="89bba492-4958-4720-9c70-55fe0d251d70"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="66897daf-df15-4f04-8e00-f498a908de4f">
+                <propertyInstance
+                  Id="ad15489f-01ff-49e4-9249-368fcd078a2a"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="98b5c2ec-7b2d-43ed-968b-9aa1a221661d">
+                <propertyInstance
+                  Id="6bf7fb22-5c5e-4089-b216-07c61f9ad875"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="43f26961-c8eb-4882-a9fc-d36066b68be3"
+        name="CommandLineParseState"
+        visibility="Protected"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="05ba663d-4421-47ae-b812-87a95dfb8595"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fboogie%2FBinaries%2FCore.dll Namespace%3DMicrosoft.Boogie Type%3D(Name%3DCommandLineParseState ParentType%3DCommandLineOptionEngine)"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="b8d644ab-00dc-49f4-8e62-bbb5fa481704"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="3fe23a6f-f916-4d2f-a444-d5e41d96ec89">
+                <propertyInstance
+                  Id="ccce8ba1-0c58-41b7-90b0-93100eef1377"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="5d1b5b18-108f-4ac7-ad3b-17bd855714ee">
+                <propertyInstance
+                  Id="298e4e8a-bbb3-4b77-abdd-2b3fbea9a51f"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="a87e0c8e-5c63-4963-b783-4469bca433d0">
+                <propertyInstance
+                  Id="95ad6de9-1713-47e6-95e8-af1bba2122be"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="1c9afe54-7521-4f33-9c8b-e2274e9cdd57">
+                <propertyInstance
+                  Id="50df0c8d-0b70-4793-8942-198b51d14790"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="72956911-393d-48c9-ba4b-3c3d416477ce">
+                <propertyInstance
+                  Id="cd9e9b40-531d-459b-a1d6-a41f1e062536"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+  </packagedElements>
+</package>

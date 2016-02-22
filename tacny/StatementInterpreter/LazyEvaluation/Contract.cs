@@ -6,7 +6,7 @@ using System.Text;
 using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 
-namespace Tacny
+namespace LazyTacny
 {
     class TacnyContract
     {
@@ -41,10 +41,12 @@ namespace Tacny
             Expression expr = mfe.E;
             Expression res = null;
 
-            atomic.ProcessArg(expr, out res);
-            Dafny.LiteralExpr result = res as Dafny.LiteralExpr;
-            Contract.Assert(result != null, Util.Error.MkErr(expr, 1, "Boolean Expression"));
-            Contract.Assert((bool)result.Value, Util.Error.MkErr(expr, 14));
+            foreach (var item in atomic.ProcessStmtArgument(expr))
+            {
+                Dafny.LiteralExpr result = item as Dafny.LiteralExpr;
+                Contract.Assert(result != null, Util.Error.MkErr(expr, 1, "Boolean Expression"));
+                Contract.Assert((bool)result.Value, Util.Error.MkErr(expr, 14));
+            }
         }
     }
 }

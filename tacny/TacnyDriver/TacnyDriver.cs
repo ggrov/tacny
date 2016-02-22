@@ -9,8 +9,10 @@ using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
 using Bpl = Microsoft.Boogie;
+using Tacny;
+using LazyTacny;
 
-namespace Tacny
+namespace Main
 {
     class TacnyDriver
     {
@@ -192,19 +194,28 @@ namespace Tacny
                 
                 if (!CommandLineOptions.Clo.NoResolve && !CommandLineOptions.Clo.NoTypecheck && DafnyOptions.O.DafnyVerify)
                 {
-                    Interpreter r = new Interpreter(tacnyProgram);
 
-                    err = r.ResolveProgram();
-                    if (err != null)
+                    if (!Util.TacnyOptions.O.LazyEval)
                     {
-                        exitValue = ExitValue.DAFNY_ERROR;
-                        printer.ErrorWriteLine(Console.Out, err);
+                        Tacny.Interpreter r = new Tacny.Interpreter(tacnyProgram);
+
+                        err = r.ResolveProgram();
+                        if (err != null)
+                        {
+                            exitValue = ExitValue.DAFNY_ERROR;
+                            printer.ErrorWriteLine(Console.Out, err);
+                        }
+                        else
+                        {
+                            tacnyProgram.Print();
+                        }
                     }
                     else
                     {
+                        LazyTacny.Interpreter r = new LazyTacny.Interpreter(tacnyProgram);
+                        r.ResolveProgram();
                         tacnyProgram.Print();
                     }
-                   // tacnyProgram.PrintDebugData(false);
                 }
             }
             return exitValue;

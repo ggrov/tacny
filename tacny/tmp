@@ -1,0 +1,21 @@
+take an existing match as see how to generate it
+generate as big of a search space as possible to get 
+look into parallel forall to paralelize execution
+finish analysis
+look into richer perm 
+lazy eval
+heuristic search, tactic line count and possible branching factor as heuristics
+
+identify the problem
+look for similar work to compare with
+
+meat: design, how it was evaluated, experiments
+
+existing work: compare with existing work on lazy eval, tactics in theorem provers, meta level programming
+
+--------------------------------------------------------------------------------
+tactic level expressions
+
+add returns()
+
+ensure when tactic is called from method the added variables are ghost

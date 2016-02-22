@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<modelStoreModel xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" xmlns:dm1="http://schemas.microsoft.com/dsltools/Kernel" xmlns:dm2="http://schemas.microsoft.com/dsltools/Component" xmlns:dm3="http://schemas.microsoft.com/dsltools/UseCase" xmlns:dm4="http://schemas.microsoft.com/dsltools/Activity" xmlns:dm5="http://schemas.microsoft.com/dsltools/Interaction" xmlns:dm6="http://schemas.microsoft.com/dsltools/UmlModelLibrary" xmlns:dm7="http://schemas.microsoft.com/dsltools/UmlDiagrams" xmlns:dm8="http://schemas.microsoft.com/dsltools/LogicalClassDesigner"
+  dslVersion="1.0.0.0"
+  Id="e5eea4aa-4316-439d-b5e8-283f7ca9c122"
+  name="Diagrams" xmlns="http://schemas.microsoft.com/dsltools/ModelStore">
+  <ownedCommentsInternal>
+    <comment
+      Id="e3111da6-6b74-4066-8df6-6dc1806b90d0">
+      <body>Return the type of the atomic statement</body>
+      <annotatedElements>
+        <classMoniker
+          Id="75dc734c-f863-4d55-b24f-6e4408dd3796"
+          LastKnownName="StatementRegister"
+          LastKnownLocation="Package_1348.uml" />
+      </annotatedElements>
+    </comment>
+    <comment
+      Id="a9cfcfaa-3a0f-4a9a-a297-6993daefb584">
+      <body>Resovle one tactic</body>
+      <annotatedElements>
+        <classMoniker
+          Id="26a17acd-3883-4952-acd4-b7be116b71fe"
+          LastKnownName="Atomic"
+          LastKnownLocation="Package_1348.uml" />
+      </annotatedElements>
+    </comment>
+    <comment
+      Id="8de6be0f-1775-4204-a75d-8eafbc9f29a9">
+      <body>Resolve the program</body>
+      <annotatedElements>
+        <classMoniker
+          Id="ac62335d-a16f-4f23-b1ea-eb948c21be6b"
+          LastKnownName="Interpreter"
+          LastKnownLocation="Package_1348.uml" />
+      </annotatedElements>
+    </comment>
+    <comment
+      Id="58b494c5-aa4e-420a-9e68-a3e021bd80f5">
+      <body>Resolve one atomic statement</body>
+      <annotatedElements>
+        <classMoniker
+          Id="c6c1d086-2a2e-4f37-953e-b406db5e82f0"
+          LastKnownName="Tacny::AtomicStmt"
+          LastKnownLocation="Diagrams.uml" />
+      </annotatedElements>
+    </comment>
+  </ownedCommentsInternal>
+  <profileInstances>
+    <packageHasProfileInstances
+      Id="0caec977-1f8c-4ba3-a7db-8cc9ad9cc73b">
+      <profileInstance
+        Id="e34d544e-0fea-4ed6-ac5e-1b74119ac791"
+        name="StandardProfileL2" />
+    </packageHasProfileInstances>
+    <packageHasProfileInstances
+      Id="29349502-908c-4fda-9054-c48619c59ed0">
+      <profileInstance
+        Id="532ea607-fb19-44b8-8502-3351b05452be"
+        name="StandardProfileL3" />
+    </packageHasProfileInstances>
+    <packageHasProfileInstances
+      Id="4ca069fb-7179-48e5-9b2b-b2d3d0a2862d">
+      <profileInstance
+        Id="6ebc89d1-6f30-44e7-ac1f-5448e2057c07"
+        name="CSharpProfile" />
+    </packageHasProfileInstances>
+  </profileInstances>
+  <packagedElements>
+    <packageHasNamedElement>
+      <packageMoniker
+        Id="5536e277-fd44-4e12-9a6d-b664cdc2657b"
+        LastKnownName="Tacny"
+        LastKnownLocation="Package_1348.uml" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <packageMoniker
+        Id="3f2aa5a5-7771-4401-921f-4abf5bbac850"
+        LastKnownName="System"
+        LastKnownLocation="Package1_1348.uml" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <packageMoniker
+        Id="797d71e1-0112-4f7a-b7ec-12248156f875"
+        LastKnownName="Microsoft"
+        LastKnownLocation="Package4_1348.uml" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <packageMoniker
+        Id="272ba191-2d09-4243-a7c8-a4c4f35dcf56"
+        LastKnownName="Util"
+        LastKnownLocation="Package8_1348.uml" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <Interface
+        Id="d4f794d7-62db-43ef-8634-5e61bd686105"
+        name="Tacny::IAtomicStmt"
+        isAbstract="false"
+        isLeaf="false">
+        <ownedOperations>
+          <operation
+            Id="d7a7f431-c635-46fe-973f-ee0ad049e52f"
+            name="Resolve"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="true"
+            concurrency="Sequential"
+            isQuery="false">
+            <ownedParameters>
+              <operationHasOwnedParameters>
+                <parameter
+                  Id="6df6aff3-8c66-4de6-98e6-dd6f0b9d8bec"
+                  name="Statement st"
+                  direction="In"
+                  isUnique="false" />
+              </operationHasOwnedParameters>
+              <operationHasOwnedParameters>
+                <parameter
+                  Id="83c3c526-a237-4683-b464-d80bf21e7cce"
+                  name="ref List&lt;Solution&gt; solution_list"
+                  direction="In"
+                  isUnique="false" />
+              </operationHasOwnedParameters>
+            </ownedParameters>
+          </operation>
+        </ownedOperations>
+      </Interface>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="c6c1d086-2a2e-4f37-953e-b406db5e82f0"
+        name="Tacny::AtomicStmt"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <suppliersInternal>
+          <interfaceRealization
+            Id="aecb9399-7775-45d4-b7ab-ec4648c886ba">
+            <interfaceMoniker
+              Id="d4f794d7-62db-43ef-8634-5e61bd686105"
+              LastKnownName="Tacny::IAtomicStmt"
+              LastKnownLocation="Diagrams.uml" />
+          </interfaceRealization>
+        </suppliersInternal>
+        <ownedOperationsInternal>
+          <operation
+            Id="fdcbb5d3-ad70-495c-bb7c-7b0b7263b154"
+            name="Resolve"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false">
+            <ownedParameters>
+              <operationHasOwnedParameters>
+                <parameter
+                  Id="1e380e52-09fc-45ef-b391-6235de0346be"
+                  name="Statement st"
+                  direction="In"
+                  isUnique="false" />
+              </operationHasOwnedParameters>
+              <operationHasOwnedParameters>
+                <parameter
+                  Id="79c824fa-40be-4cc7-8936-cacbdfadd48e"
+                  name="ref List&lt;Solution&gt; solution_list"
+                  direction="In"
+                  isUnique="false" />
+              </operationHasOwnedParameters>
+            </ownedParameters>
+          </operation>
+        </ownedOperationsInternal>
+      </class>
+    </packageHasNamedElement>
+  </packagedElements>
+  <primitiveType
+    Id="220a3521-e091-4221-bae9-3ef9018e845c"
+    name="Integer"
+    isAbstract="false"
+    isLeaf="false" />
+  <primitiveType
+    Id="8943dc84-709e-4f62-b15a-a3273aa6f165"
+    name="Boolean"
+    isAbstract="false"
+    isLeaf="false" />
+  <primitiveType
+    Id="59259974-6d55-42c6-b7bd-763d77ac8ef9"
+    name="String"
+    isAbstract="false"
+    isLeaf="false" />
+  <primitiveType
+    Id="3ab42e7d-4969-445a-b209-471f5cb8209c"
+    name="UnlimitedNatural"
+    isAbstract="false"
+    isLeaf="false" />
+</modelStoreModel>
