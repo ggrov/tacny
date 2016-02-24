@@ -153,6 +153,8 @@ namespace Tacny
 
         public void SetCurrent(Tactic tac, MemberDecl md)
         {
+            Contract.Requires(tac != null);
+            Contract.Requires(md != null);
             DebugData dd = debugDataList.Where(i => i.tactic == tac.Name && i.method == md.Name).LastOrDefault();
             if (dd == null)
             {
@@ -162,16 +164,18 @@ namespace Tacny
             currentDebug = dd;
         }
 
-        public Program(IList<string> fileNames, string programId, string programName = null)
+        public Program(IList<string> fileNames, string programId)
         {
+            Contract.Requires(fileNames != null);
+            Contract.Requires(programId != null);
+
             this.fileNames = fileNames;
             this.programId = programId;
             string err = ParseCheck(fileNames, programId, out _original);
-            dafnyProgram = ParseProgram();
-            
-            
             if (err != null)
                 throw new ArgumentException(err);
+            dafnyProgram = ParseProgram();
+
             Init(out tactics, out members, out globals);
         }
 
@@ -400,6 +404,14 @@ namespace Tacny
             if (name == null)
                 return false;
             return tactics.ContainsKey(name);
+        }
+
+        public bool IsTacticFuntionCall(UpdateStmt us)
+        {
+            string name = GetSignature(us);
+            if (name == null)
+                return false;
+            return !tactics.ContainsKey(name) ? false : tactics[name] is TacticFunction;
         }
 
         public Tactic GetTactic(string name)

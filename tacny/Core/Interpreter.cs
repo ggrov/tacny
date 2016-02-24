@@ -131,9 +131,12 @@ namespace Tacny
                                     Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, resolved, ref sol_list);
                                     tacnyProgram.PrintDebugData(tacnyProgram.currentDebug);
                                 }
-                                catch (Exception e)
+                                catch (AggregateException e)
                                 {
-                                    Util.Printer.Error(e.Message);
+                                    foreach (var err in e.Data)
+                                    {
+                                        Util.Printer.Error(err.ToString());
+                                    }
                                 }
                             }
                         }

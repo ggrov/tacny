@@ -702,7 +702,9 @@ namespace Microsoft.Dafny
         return new Lemma(Tok(m.tok), m.Name, m.HasStaticKeyword, tps, ins, m.Outs.ConvertAll(CloneFormal),
           req, mod, ens, decreases, body, CloneAttributes(m.Attributes), null);
       }
-      else if (m is Tactic) {
+      else if(m is TacticFunction) {
+          return new TacticFunction(Tok(m.tok), m.Name, m.HasStaticKeyword, tps, ins, body, CloneAttributes(m.Attributes), null);
+      } else if (m is Tactic) {
           return new Tactic(Tok(m.tok), m.Name, m.HasStaticKeyword, tps, ins, m.Outs.ConvertAll(CloneFormal),
               req, mod, ens, decreases, body, CloneAttributes(m.Attributes), null);
       }

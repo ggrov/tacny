@@ -3785,18 +3785,34 @@ namespace Microsoft.Dafny
     public class Tactic : Method
     {
         public override string WhatKind { get { return "tactic"; } }
-        public Tactic(IToken tok, string name,
+        public Tactic(IToken tok, 
+                     string name,
                      bool hasStaticKeyword,
                      [Captured] List<TypeParameter> typeArgs,
-                     [Captured] List<Formal> ins, [Captured] List<Formal> outs,
-                     [Captured] List<MaybeFreeExpression> req, [Captured] Specification<FrameExpression> mod,
+                     [Captured] List<Formal> ins,
+                     [Captured] List<Formal> outs,
+                     [Captured] List<MaybeFreeExpression> req,
+                     [Captured] Specification<FrameExpression> mod,
                      [Captured] List<MaybeFreeExpression> ens,
                      [Captured] Specification<Expression> decreases,
                      [Captured] BlockStmt body,
-                     Attributes attributes, IToken signatureEllipsis)
+                     Attributes attributes,
+                    IToken signatureEllipsis)
             : base(tok, name, hasStaticKeyword, true, typeArgs, ins, outs, req, mod, ens, decreases, body, attributes, signatureEllipsis)
         {
         }
+    }
+
+    public class TacticFunction : Tactic
+    {
+        public override string WhatKind { get { return "tactic function"; } }
+        public TacticFunction(IToken tok, string name,
+                     bool hasStaticKeyword,
+                     [Captured] List<TypeParameter> typeArgs,
+                     [Captured] List<Formal> ins,
+                     [Captured] BlockStmt body,
+                     Attributes attributes, IToken signatureEllipsis)
+            : base(tok, name, hasStaticKeyword, typeArgs, ins, new List<Formal>(), new List<MaybeFreeExpression>(), new Specification<FrameExpression>(new List<FrameExpression>(), null), new List<MaybeFreeExpression>(), new Specification<Expression>(new List<Expression>(), null), body, attributes, signatureEllipsis) { }
     }
 
     public class Constructor : Method

@@ -551,6 +551,7 @@ namespace Microsoft.Dafny {
         method is CoLemma ? "colemma" :
         method is Lemma ? "lemma" :
         method is Tactic ? "tactic" :
+        method is TacticFunction ? "tactic function" : 
         "method";
       if (method.HasStaticKeyword) { k = "static " + k; }
       if (method.IsGhost && !(method is Lemma || method is Tactic) && !(method is FixpointLemma)) { k = "ghost " + k; }

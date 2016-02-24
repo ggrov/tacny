@@ -283,8 +283,12 @@ namespace Tacny
 
                 if (us != null)
                 {
+                    if (globalContext.program.IsTacticFuntionCall(us))
+                    {
+
+                    }
                     // if the statement is nested tactic call
-                    if (globalContext.program.IsTacticCall(us))
+                    else if (globalContext.program.IsTacticCall(us))
                     {
                         Atomic ac;
                         Tactic tac = globalContext.program.GetTactic(us);
@@ -296,10 +300,11 @@ namespace Tacny
                         ac.SetNewTarget(GetNewTarget());
                         for (int i = 0; i < exps.Count; i++)
                         {
-                            Expression result = null;
+                            object result = null;
                             ProcessArg(exps[i], out result);
-
-                            ac.AddLocal(ac.localContext.tac.Ins[i], result);
+                            Dafny.Formal input = ac.localContext.tac.Ins[i];
+                            ac.localContext.AddLocal(input, result);
+                             
                         }
                         List<Solution> sol_list = new List<Solution>();
                         ResolveTactic(ref sol_list, ac);
@@ -315,7 +320,8 @@ namespace Tacny
                                 action.AddUpdated(kvp.Key, kvp.Value);
                             solution_list.Add(new Solution(action));
                         }
-                    }
+                        return;
+                    } 
                 }
 
 
@@ -518,8 +524,7 @@ namespace Tacny
             ApplySuffix aps = null;
             if ((nameSegment = argument as NameSegment) != null)
             {
-                if (!HasLocalWithName(nameSegment))
-                    Util.Printer.Error(argument, "Argument {0} not passed", nameSegment.Name);
+                Contract.Assert(HasLocalWithName(nameSegment), Util.Error.MkErr(argument, 6, nameSegment.Name));
                 result = GetLocalValueByName(nameSegment.Name);
             }
             else if ((aps = argument as ApplySuffix) != null)

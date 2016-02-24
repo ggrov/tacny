@@ -1280,6 +1280,7 @@ bool IsType(ref IToken pt) {
 		bool isIndLemma = false;
 		bool isCoLemma = false;
 		bool isTactic = false;
+		bool isTFunction = false;
 		IToken signatureEllipsis = null;
 		IToken bodyStart = Token.NoToken;
 		IToken bodyEnd = Token.NoToken;
@@ -1293,6 +1294,10 @@ bool IsType(ref IToken pt) {
 		case 58: {
 			Get();
 			isTactic = true; 
+			if (la.kind == 36) {
+				Get();
+				isTFunction = true; 
+			}
 			break;
 		}
 		case 39: {
@@ -1408,8 +1413,12 @@ bool IsType(ref IToken pt) {
 		 m = new Lemma(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
 		               req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
 		}else if(isTactic) {
+		if(isTFunction) {
+		 m = new TacticFunction(tok, id.val, mmod.IsStatic, typeArgs, ins, body, attrs, signatureEllipsis);;
+		} else {
 		m = new Tactic(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
 		               req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
+		}
 		} else {
 		 m = new Method(tok, id.val, mmod.IsStatic, mmod.IsGhost, typeArgs, ins, outs,
 		                req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);

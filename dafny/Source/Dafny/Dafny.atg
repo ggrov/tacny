@@ -951,14 +951,18 @@ MethodDecl<MemberModifiers mmod, bool allowConstructor, out Method/*!*/ m>
      bool isConstructor = false;
      bool isIndLemma = false;
      bool isCoLemma = false;
-	 bool isTactic = false;
+	   bool isTactic = false;
+     bool isTFunction = false;
      IToken signatureEllipsis = null;
      IToken bodyStart = Token.NoToken;
      IToken bodyEnd = Token.NoToken;
   .)
   SYNC
   ( "method"						
-  | "tactic"						(. isTactic = true; .)
+  | ("tactic"						            (. isTactic = true; .)
+    [
+      "function"                      (. isTFunction = true; .)
+    ])
   | "lemma"                         (. isLemma = true; .)
   | "colemma"                       (. isCoLemma = true; .)
   | "comethod"                      (. isCoLemma = true;
@@ -1037,8 +1041,12 @@ MethodDecl<MemberModifiers mmod, bool allowConstructor, out Method/*!*/ m>
        m = new Lemma(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
                      req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
      }else if(isTactic) {
-	   m = new Tactic(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
+     if(isTFunction) {
+       m = new TacticFunction(tok, id.val, mmod.IsStatic, typeArgs, ins, body, attrs, signatureEllipsis);;
+     } else {
+	     m = new Tactic(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
                      req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
+      }
 	 } else {
        m = new Method(tok, id.val, mmod.IsStatic, mmod.IsGhost, typeArgs, ins, outs,
                       req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
