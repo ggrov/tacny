@@ -1,21 +1,25 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
+using System;
+using Tacny;
+using System.Diagnostics;
 
-namespace Tacny
+namespace LazyTacny
 {
-    class LemmasAtomic : Atomic, IAtomicStmt
+    class LemmasAtomic : Atomic, IAtomicLazyStmt
     {
         public LemmasAtomic(Atomic atomic) : base(atomic) { }
 
-
-
-        public void Resolve(Statement st, ref List<Solution> solution_list)
+        public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
-            Lemmas(st, ref solution_list);
+            Debug.Indent();
+            yield return Lemmas(st, solution);
+            Debug.Unindent();
+            yield break;
         }
 
-        private void Lemmas(Statement st, ref List<Solution> solution_list)
+        private Solution Lemmas(Statement st, Solution solution)
         {
             IVariable lv = null;
             List<Expression> call_arguments; // we don't care about this
@@ -37,7 +41,7 @@ namespace Tacny
                 
             }
             AddLocal(lv, lemmas);
-            solution_list.Add(new Solution(this.Copy()));
+            return new Solution(this.Copy());
         }
     }
 }

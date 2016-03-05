@@ -7,6 +7,7 @@ using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
 using Bpl = Microsoft.Boogie;
 using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 namespace Tacny
 {
@@ -90,6 +91,7 @@ namespace Tacny
                 program.PrintDebugMessage("Verification succeeded {0} times", tw, VerificationSucc);
                 program.PrintDebugMessage("Times Boogie was called: {0}", tw, CallsToBoogie);
                 program.PrintDebugMessage("Times Dafny was called: {0}", tw, CallsToDafny);
+                tw.Close();
             }
 
             public void PrintCsvDebugData(Program program)
@@ -164,10 +166,12 @@ namespace Tacny
 
         public Program(IList<string> fileNames, string programId, string programName = null)
         {
+            Debug.Indent();
             this.fileNames = fileNames;
             this.programId = programId;
             string err = ParseCheck(fileNames, programId, out _original);
             dafnyProgram = ParseProgram();
+            Debug.Unindent();
             
             
             if (err != null)
@@ -239,15 +243,23 @@ namespace Tacny
 
         public void VerifyProgram(Dafny.Program prog)
         {
+            Debug.WriteLine("Verifying Dafny program");
+            Debug.Indent();
             Bpl.Program boogieProgram;
             IncCallsToBoogie(currentDebug);
             Translate(prog, fileNames, programId, out boogieProgram);
             po = BoogiePipeline(boogieProgram, prog, fileNames, programId);
             if (stats.ErrorCount == 0)
+            {
+                Debug.WriteLine("Dafny program VERIFIED");
                 IncVerificationSuccess(currentDebug);
+            }
             else
+            {
+                Debug.WriteLine("Dafny program NOT VERIFIED");
                 IncVerificationFailure(currentDebug);
-
+            }
+            Debug.Unindent();
         }
 
         public bool ResolveProgram()
@@ -259,18 +271,23 @@ namespace Tacny
 
         public int ResolveProgram(Dafny.Program program)
         {
+            Debug.WriteLine("Resolving Dafny program");
+            Debug.Indent();
             IncCallsToDafny(currentDebug);
             Dafny.Resolver r = new Dafny.Resolver(program);
             r.ResolveProgram(program);
             if (r.ErrorCount != 0)
             {
+                Debug.WriteLine("Resolution FAILED");
                 Util.Printer.Error("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
                 IncBadBranchCount(currentDebug);
             }
             else
             {
+                Debug.WriteLine("Resolution SUCCESSFUL");
                 IncGoodBranchCount(currentDebug);
             }
+            Debug.Unindent();
             return r.ErrorCount;
         }
 
@@ -434,6 +451,7 @@ namespace Tacny
         public string ParseCheck(IList<string/*!*/>/*!*/ fileNames, string/*!*/ programName, out Dafny.Program program)
         //modifies Bpl.CommandLineOptions.Clo.XmlSink.*;
         {
+            //Debug.WriteLine("ACTION: Parsing Dafny program");
             Contract.Requires(programName != null);
             Contract.Requires(fileNames != null);
             program = null;
@@ -471,7 +489,7 @@ namespace Tacny
 
 
             if (Bpl.CommandLineOptions.Clo.NoResolve || Bpl.CommandLineOptions.Clo.NoTypecheck) { return null; }
-
+            Debug.WriteLine("SUCCESS: Parsing Dafny Program");
             return null;
         }
         // Lower-case file names before comparing them, since Windows uses case-insensitive file names
@@ -800,8 +818,7 @@ namespace Tacny
         public void MaybePrintProgram(Dafny.Program prog, string filename)
         {
             // if program is not in debug mode disable console printing
-            if (!DEBUG)
-                return;
+            #if DEBUG
             TextWriter tw = null;
             if (filename == null || filename == "-")
             {
@@ -815,6 +832,42 @@ namespace Tacny
                 
             }
 
+            #endif
+
+        }
+
+        public void PrintMember(Dafny.Program prog, string memberName, string filename = null)
+        {
+            Contract.Requires(prog != null);
+            Contract.Requires(memberName != null);
+#if DEBUG
+            TextWriter tw;
+            if (filename == null || filename == "-")
+            {
+                tw = System.Console.Out;
+            }
+            else
+            {
+                tw = new System.IO.StreamWriter(filename);
+            }
+
+            Printer printer = new Util.Printer(tw);
+
+            foreach (var tld in prog.DefaultModuleDef.TopLevelDecls)
+            {
+                if (tld is ClassDecl)
+                {
+                    ClassDecl cd = tld as ClassDecl;
+                    MemberDecl md = cd.Members.FirstOrDefault(i => i.Name == memberName);
+                    if (md != null)
+                    {
+                        printer.PrintMembers(new List<MemberDecl> { md }, Debug.IndentLevel, this.fileNames[0]);
+                        return;
+                    }
+                }
+            }
+
+#endif
         }
 
         private void PrintProgram(TextWriter tw, Dafny.Program prog, DafnyOptions.PrintModes printMode = DafnyOptions.PrintModes.Everything)

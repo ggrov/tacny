@@ -7,64 +7,67 @@ using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
 using Microsoft.Boogie;
 using Util;
+using System.Diagnostics;
+using Tacny;
 
-namespace Tacny
+namespace LazyTacny
 {
-    class WhileAtomic : BlockAtomic, IAtomicStmt
+    class WhileAtomic : BlockAtomic, IAtomicLazyStmt
     {
         public WhileAtomic(Atomic atomic) : base(atomic) { }
 
-        public void Resolve(Statement st, ref List<Solution> solution_list)
+        
+
+        public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
             Contract.Assert(ExtractGuard(st) != null, Util.Error.MkErr(st, 2));
+            Debug.Indent();
             /**
              * Check if the loop guard can be resolved localy
              */
             if (IsResolvable())
-                ExecuteLoop(st as WhileStmt, ref solution_list);
+                foreach (var item in ExecuteLoop(st as WhileStmt, solution))
+                    yield return item;
             else
-                InsertLoop(st as WhileStmt, ref solution_list);
+                foreach (var item in InsertLoop(st as WhileStmt, solution))
+                    yield return item;
+            Debug.Unindent();
+            yield break;
         }
 
-
-        private void ExecuteLoop(WhileStmt whileStmt, ref List<Solution> solution_list)
+        private IEnumerable<Solution> ExecuteLoop(WhileStmt whileStmt, Solution solution)
         {
-            List<Solution> result = null;
             bool guard_res = false;
             guard_res = EvaluateGuard();
             // if the guard has been resolved to true resolve then body
             if (guard_res)
             {
-                ResolveBody(whileStmt.Body, out result);
-
-                // @HACK update the context of each result
-                foreach (var item in result)
+                
+                foreach (var item in ResolveBody(whileStmt.Body))
                 {
-                    item.state.localContext.tac_body = localContext.tac_body; // set the body 
-                    item.state.localContext.tac_call = localContext.tac_call;
-                    item.state.localContext.SetCounter(localContext.GetCounter());
+                    item.state.localContext.isPartialyResolved = true;
+                    yield return item;
+                    
                 }
-
-                solution_list.AddRange(result);
             }
+
+            yield break;
         }
 
-        private void InsertLoop(WhileStmt whileStmt, ref List<Solution> solution_list)
+        private IEnumerable<Solution> InsertLoop(WhileStmt whileStmt, Solution solution)
         {
             Contract.Requires(whileStmt != null);
             ResolveExpression(this.guard);
             Expression guard = this.guard.TreeToExpression();
-            List<Solution> solList;
-            ResolveBody(whileStmt.Body, out solList);
-            List<WhileStmt> result = new List<WhileStmt>();
-            GenerateWhileStmt(whileStmt, guard, solList, ref result);
 
-            foreach (var item in result)
+            foreach (var item in ResolveBody(whileStmt.Body))
             {
+                var result = GenerateWhileStmt(whileStmt, guard, item);
                 Atomic ac = this.Copy();
-                ac.AddUpdated(item, item);
-                solution_list.Add(new Solution(ac));
+                ac.AddUpdated(result, result);
+                yield return new Solution(ac);
             }
+            yield break;
         }
 
         private static WhileStmt ReplaceGuard(WhileStmt stmt, Expression new_guard)
@@ -72,14 +75,11 @@ namespace Tacny
             return new WhileStmt(stmt.Tok, stmt.EndTok, new_guard, stmt.Invariants, stmt.Decreases, stmt.Mod, stmt.Body);
         }
 
-        private static void GenerateWhileStmt(WhileStmt original, Expression guard, List<Solution> body, ref List<WhileStmt> result)
+        private static WhileStmt GenerateWhileStmt(WhileStmt original, Expression guard, Solution body)
         {
-            for (int i = 0; i < body.Count; i++)
-            {
-                List<Statement> bodyList = body[i].state.GetAllUpdated();
-                BlockStmt thenBody = new BlockStmt(original.Body.Tok, original.Body.EndTok, bodyList);
-                result.Add(new WhileStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), original.Invariants, original.Decreases, original.Mod, Util.Copy.CopyBlockStmt(thenBody)));
-            }
+            List<Statement> bodyList = body.state.GetAllUpdated();
+            BlockStmt thenBody = new BlockStmt(original.Body.Tok, original.Body.EndTok, bodyList);
+            return new WhileStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), original.Invariants, original.Decreases, original.Mod, Util.Copy.CopyBlockStmt(thenBody));
         }
     }
 }

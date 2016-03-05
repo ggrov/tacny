@@ -219,7 +219,7 @@ namespace Tacny
             Contract.Ensures(Contract.ValueAtReturn(out result) != null);
 
             Atomic atomic = this.Copy();
-            atomic.localContext.tac_body = body.Body;
+            atomic.localContext.tacticBody = body.Body;
             atomic.localContext.ResetCounter();
             if (result == null || result.Count == 0)
                 result = new List<Solution>() { new Solution(atomic) };
@@ -292,14 +292,14 @@ namespace Tacny
 
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
                         List<Expression> exps = ((ApplySuffix)er.Expr).Args;
-                        Contract.Assert(exps.Count == ac.localContext.tac.Ins.Count);
+                        Contract.Assert(exps.Count == ac.localContext.tactic.Ins.Count);
                         ac.SetNewTarget(GetNewTarget());
                         for (int i = 0; i < exps.Count; i++)
                         {
                             Expression result = null;
                             ProcessArg(exps[i], out result);
 
-                            ac.AddLocal(ac.localContext.tac.Ins[i], result);
+                            ac.AddLocal(ac.localContext.tactic.Ins[i], result);
                         }
                         List<Solution> sol_list = new List<Solution>();
                         ResolveTactic(ref sol_list, ac);
@@ -538,8 +538,8 @@ namespace Tacny
                 List<Solution> sol_list = new List<Solution>();
                 CallAction(tvds, ref sol_list); // change
 
-                result = localContext.local_variables[lv];
-                localContext.local_variables.Remove(lv);
+                result = localContext.localDeclarations[lv];
+                localContext.localDeclarations.Remove(lv);
 
             }
             else if (argument is BinaryExpr || argument is ParensExpression)
@@ -661,7 +661,7 @@ namespace Tacny
         public void Fin()
         {
             globalContext.resolved.Clear();
-            globalContext.resolved.AddRange(localContext.updated_statements.Values.ToArray());
+            globalContext.resolved.AddRange(localContext.generatedStatements.Values.ToArray());
             globalContext.new_target = localContext.new_target;
         }
 
@@ -716,7 +716,7 @@ namespace Tacny
 
         public Dictionary<Statement, Statement> GetResult()
         {
-            return localContext.updated_statements;
+            return localContext.generatedStatements;
         }
 
         public bool IsFinal(List<Solution> solution_list)
@@ -750,14 +750,14 @@ namespace Tacny
         protected Solution CreateTactic(List<Statement> newBody, bool decCounter = true)
         {
             Contract.Ensures(Contract.Result<Solution>() != null);
-            Tactic tac = localContext.tac;
+            Tactic tac = localContext.tactic;
             Tactic newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
                                         tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
                                         tac.Decreases, new BlockStmt(tac.Body.Tok, tac.Body.EndTok, newBody),
                                         tac.Attributes, tac.SignatureEllipsis);
             Atomic newAtomic = this.Copy();
-            newAtomic.localContext.tac = newTac;
-            newAtomic.localContext.tac_body = newBody;
+            newAtomic.localContext.tactic = newTac;
+            newAtomic.localContext.tacticBody = newBody;
             /* HACK */
             // decrase the tactic body counter
             // so the interpreter would execute newly inserted atomic

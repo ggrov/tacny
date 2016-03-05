@@ -6,6 +6,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using Tacny;
+using System.Diagnostics;
 namespace LazyTacny
 {
     class MergeAtomic : Atomic, IAtomicLazyStmt
@@ -19,9 +20,10 @@ namespace LazyTacny
         /// <returns></returns>
         public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
+            Debug.Indent();
             IVariable lv = null;
             List<Expression> call_arguments;
-
+            IList result = null;
             InitArgs(st, out lv, out call_arguments);
             Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
             Contract.Assert(tcce.OfSize(call_arguments, 2), Util.Error.MkErr(st, 0, 2, call_arguments.Count));
@@ -42,19 +44,21 @@ namespace LazyTacny
                     dynamic darg2 = arg2;
 
                     System.Type listType = typeof(List<>).MakeGenericType(new[] { type1 });
-                    IList result = (IList)Activator.CreateInstance(listType);
+                    result = (IList)Activator.CreateInstance(listType);
                     darg1.AddRange(darg2);
                     // skip duplicates
                     foreach (var t in darg1)
                     {
                         if (!result.Contains(t))
                             result.Add(t);
-
                     }
+
                     AddLocal(lv, result);
                     yield return new Solution(this.Copy());
                 }
             }
+            
+            Debug.Unindent();
             yield break;
         }
 

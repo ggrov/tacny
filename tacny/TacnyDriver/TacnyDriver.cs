@@ -1,5 +1,4 @@
 ﻿#define DEBUG
-
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -11,6 +10,7 @@ using Microsoft.Boogie;
 using Bpl = Microsoft.Boogie;
 using Tacny;
 using LazyTacny;
+using System.Reflection;
 
 namespace Main
 {
@@ -27,8 +27,6 @@ namespace Main
         /// <param name="args"></param>
         static int Main(string[] args)
         {
-
-  
             int ret = 0;
             var thread = new System.Threading.Thread(
                 new System.Threading.ThreadStart(() =>  
@@ -39,7 +37,7 @@ namespace Main
             thread.Start();
             thread.Join();
             
-                    return ret;
+            return ret;
         }
 
         /// <summary>
@@ -48,22 +46,28 @@ namespace Main
         /// <param name="args"></param>
         /// <returns></returns>
         public static int ExecuteTacny(string[] args)
-        {
-            // measure execution time
-           
+        {  
             Contract.Requires(tcce.NonNullElements(args));
+            Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
+            Debug.AutoFlush = true;
+            // install Dafny and Bogie commands
+            Util.TacnyOptions.Install(new Util.TacnyOptions());
+            CommandLineOptions.Clo.RunningBoogieFromCommandLine = true;
 
+            Debug.WriteLine("BEGIN: Tacny Options");
+
+            Util.TacnyOptions tc = Util.TacnyOptions.O;
+            FieldInfo[] fields = tc.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+            foreach (var field in fields)
+            {
+                if(field.IsPublic)
+                    Debug.WriteLine("# {0} : {1}", field.Name, field.GetValue(tc).ToString());
+            }
+            Debug.WriteLine("END: Tacny Options");
             printer = new TacnyConsolePrinter();
             ExecutionEngine.printer = printer;
 
             ExitValue exitValue = ExitValue.VERIFIED;
-
-            Util.TacnyOptions.Install(new Util.TacnyOptions()); // prep Dafny/Boogie
-            CommandLineOptions.Clo.RunningBoogieFromCommandLine = true;
-            #if DEBUG
-            CommandLineOptions.Clo.Wait = true;
-            #endif
-                
 
             // parse the file
             if (!CommandLineOptions.Clo.Parse(args))
@@ -181,6 +185,7 @@ namespace Main
                 string programName = fileNames.Count == 1 ? fileNames[0] : "the program";
                 try
                 {
+                    Debug.WriteLine("Initializing Tacny Program");
                     tacnyProgram = new Tacny.Program(fileNames, programId);
                     tacnyProgram.MaybePrintProgram(tacnyProgram.dafnyProgram, programName + "_src");
                     }
@@ -197,6 +202,7 @@ namespace Main
 
                     if (!Util.TacnyOptions.O.LazyEval)
                     {
+                        Debug.WriteLine("Starting eager tactic evaluation");
                         Tacny.Interpreter r = new Tacny.Interpreter(tacnyProgram);
 
                         err = r.ResolveProgram();
@@ -212,9 +218,11 @@ namespace Main
                     }
                     else
                     {
+                        Debug.WriteLine("Starting lazy tactic evaluation");
                         LazyTacny.Interpreter r = new LazyTacny.Interpreter(tacnyProgram);
                         r.ResolveProgram();
                         tacnyProgram.Print();
+                        Debug.WriteLine("Fnished lazy tactic evaluation");
                     }
                 }
             }

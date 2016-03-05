@@ -40,7 +40,7 @@ namespace Tacny
                 // @HACK update the context of each result
                 foreach (var item in result)
                 {
-                    item.state.localContext.tac_body = localContext.tac_body; // set the body 
+                    item.state.localContext.tacticBody = localContext.tacticBody; // set the body 
                     item.state.localContext.tac_call = localContext.tac_call;
                     item.state.localContext.SetCounter(localContext.GetCounter());
                 }

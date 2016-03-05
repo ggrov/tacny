@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 using System.Diagnostics.Contracts;
-using System.Threading;
-using System.Threading.Tasks;
-using Tacny;
+using System.Diagnostics;
 
 namespace LazyTacny
 {
@@ -24,6 +22,7 @@ namespace LazyTacny
 
         public Dafny.Program ResolveProgram()
         {
+            Debug.Indent();
             if (tacnyProgram.tactics.Count < 1)
             {
                 return tacnyProgram.ParseProgram();
@@ -47,6 +46,8 @@ namespace LazyTacny
             foreach (var solution in final)
                 solution.GenerateProgram(ref prog);
             tacnyProgram.dafnyProgram = prog;
+
+            Debug.Unindent();
             return prog;
                 
         }
@@ -54,8 +55,9 @@ namespace LazyTacny
        
         private Solution LazyScanMemberBody(MemberDecl md)
         {
-
             Contract.Requires(md != null);
+
+            Debug.WriteLine(String.Format("Scanning member {0} body", md.Name));
             Method m = md as Method;
             if (m == null)
                 return null;
@@ -63,11 +65,7 @@ namespace LazyTacny
                 return null;
 
             List<IVariable> variables = new List<IVariable>();
-            variables.AddRange(m.Ins);
-            variables.AddRange(m.Outs);
-            SolutionList sol_list = new SolutionList();
-            sol_list.AddRange(solution_list.plist);
-
+        
             foreach (var st in m.Body.Body)
             {
                 // register local variables
@@ -80,13 +78,20 @@ namespace LazyTacny
                 {
                     if (tacnyProgram.IsTacticCall(us))
                     {
+                        Debug.WriteLine("Tactic call found");
                         try
                         {
-                            tacnyProgram.SetCurrent(tacnyProgram.GetTactic(us), md);
-                            // get the resolved variables
+
+                            Tactic tac = tacnyProgram.GetTactic(us);
+                            tacnyProgram.SetCurrent(tac, md);
+                            variables.AddRange(m.Ins);
+                            variables.AddRange(m.Outs);
+                            SolutionList sol_list = new SolutionList();
+                            //sol_list.AddRange(solution_list.plist);
+                                // get the resolved variables
                             List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
                             resolved.AddRange(m.Ins); // add input arguments as resolved variables
-                            LazyTacny.Solution result = LazyTacny.Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, resolved, sol_list);
+                            Solution result = Atomic.ResolveTactic(tac, us, md, tacnyProgram, variables, resolved, sol_list);
                             tacnyProgram.PrintDebugData(tacnyProgram.currentDebug);
                             return result;
                         }

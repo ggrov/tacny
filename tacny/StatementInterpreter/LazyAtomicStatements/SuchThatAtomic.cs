@@ -6,9 +6,7 @@ using System.Linq;
 using System.Text;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
-using Util;
-using Tacny;
+using System.Diagnostics;
 
 namespace LazyTacny
 {
@@ -18,13 +16,17 @@ namespace LazyTacny
 
         public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
-            throw new NotImplementedException();
+            Debug.Indent();
+            foreach (var item in SuchThat(st, solution))
+            {
+                yield return item;
+            }
+            Debug.Unindent();
+            yield break;
         }
 
         private IEnumerable<Solution> SuchThat(Statement st, Solution solution)
         {
-            object value = null;
-            dynamic dynamic_val = null;
             TacticVarDeclStmt tvds = st as TacticVarDeclStmt;
             Contract.Assert(tvds != null, Util.Error.MkErr(st, 5, typeof(TacticVarDeclStmt), st.GetType()));
 
@@ -33,22 +35,20 @@ namespace LazyTacny
 
             BinaryExpr bexp = suchThat.Expr as BinaryExpr;
             Contract.Assert(bexp != null, Util.Error.MkErr(st, 5, typeof(BinaryExpr), suchThat.Expr.GetType()));
-            ResolveExpression(bexp, tvds.Locals[0], out value);
-            dynamic_val = value;
-            if (dynamic_val is IEnumerable)
+
+            
+            foreach (var item in ResolveExpression(bexp, tvds.Locals[0]))
             {
-                foreach (var item in dynamic_val)
-                {
-                    AddLocal(tvds.Locals[0], item);
-                    yield return new Solution(this.Copy());
-                }
+                AddLocal(tvds.Locals[0], item);
+                yield return new Solution(this.Copy());
+
             }
+            yield break;
         }
 
-        private void ResolveExpression(Expression expr, IVariable declaration, out object result)
+        private IEnumerable<object> ResolveExpression(Expression expr, IVariable declaration)
         {
             Contract.Requires(expr != null);
-            Contract.Ensures(Contract.ValueAtReturn(out result) != null);
 
             if (expr is BinaryExpr)
             {
@@ -60,70 +60,45 @@ namespace LazyTacny
                         NameSegment var = bexp.E0 as NameSegment;
                         Contract.Assert(var != null, Util.Error.MkErr(bexp, 6, declaration.Name));
                         Contract.Assert(var.Name == declaration.Name, Util.Error.MkErr(bexp, 6, var.Name));
-                        ProcessArg(bexp.E1, out result);
-                        return;
+                        foreach (var result in ProcessStmtArgument(bexp.E1))
+                        {
+                            if(result is IEnumerable)
+                            {
+                                dynamic resultList = result;
+                                foreach(var item in resultList)
+                                {
+                                    yield return item;
+                                }
+                            }
+                        }
+                        yield break;
 
                     case BinaryExpr.Opcode.And:
-                        object lhs_res;
-                        // resolve lhs of the expression
-                        ResolveExpression(bexp.E0, declaration, out lhs_res);
-                        dynamic lhs_dres = lhs_res;
-                        if (lhs_dres is IEnumerable)
+                        // for each item in the resolved lhs of the expression
+                        foreach (var item in ResolveExpression(bexp.E0, declaration))
                         {
-                            List<dynamic> tmp = new List<dynamic>();
-                            foreach (var item in lhs_dres)
+                            Atomic copy = this.Copy();
+                            copy.AddLocal(declaration, item);
+                            // resolve the rhs expression
+                            foreach (var res in copy.ProcessStmtArgument(bexp.E1))
                             {
-                                Atomic copy = this.Copy();
-                                copy.AddLocal(declaration, item);
-                                object res;
-                                copy.ProcessArg(bexp.E1, out res);
                                 Dafny.LiteralExpr lit = res as Dafny.LiteralExpr;
+                                // sanity check
                                 Contract.Assert(lit != null, Util.Error.MkErr(expr, 17));
                                 if (lit.Value is bool)
                                 {
+                                    // if resolved to true
                                     if ((bool)lit.Value)
                                     {
-                                        tmp.Add(item);
+                                        yield return item;
                                     }
                                 }
                             }
-                            result = tmp;
                         }
-                        // apply the constraints to the results
-                        //ResolveExpression(bexp.E1, declaration, out res_2);
-                        break;
+
+                        yield break;
                 }
             }
         }
-        private void ResolveLhs(BinaryExpr bexp, IVariable declaration, out object result)
-        {
-            Contract.Requires(bexp != null && declaration != null);
-            Contract.Ensures(Contract.ValueAtReturn(out result) != null);
-            result = null;
-            Expression lhs = bexp.E0;
-            Expression rhs = bexp.E1;
-
-
-            NameSegment lhs_declaration = lhs as NameSegment;
-            if (lhs_declaration == null)
-            {
-                Util.Printer.Error(bexp, "Unexpected expression type after :|. Expected {0} Received {1}", typeof(BinaryExpr), lhs.GetType());
-                return;
-            }
-
-            if (!lhs_declaration.Name.Equals(declaration.Name))
-            {
-                Util.Printer.Error(bexp, "Declared variable and variable after :| don't match. Expected {0} Received {1}", declaration.Name, lhs_declaration.Name);
-                return;
-            }
-            /* HACK
-             * object value will be either a list<T> but T is unkown.
-             * Or it will be a NameSegment
-             * For now, cast it to dynamic type and pray.
-             */
-            ProcessArg(rhs, out result);
-        }
     }
-
-
 }

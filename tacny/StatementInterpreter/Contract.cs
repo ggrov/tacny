@@ -31,7 +31,7 @@ namespace Tacny
         protected void ValidateRequires()
         {
             if (atomic != null)
-                foreach (var req in atomic.localContext.tac.Req)
+                foreach (var req in atomic.localContext.tactic.Req)
                     ValidateOne(req);
         }
 

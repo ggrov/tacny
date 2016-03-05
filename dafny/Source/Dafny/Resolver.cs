@@ -5223,7 +5223,7 @@ namespace Microsoft.Dafny
         ctors = null;
       } else {
         Contract.Assert(sourceType != null);  // dtd and sourceType are set together above
-        ctors = datatypeCtors[dtd];
+        xctors = datatypeCtors[dtd];
         Contract.Assert(ctors != null);  // dtd should have been inserted into datatypeCtors during a previous resolution stage
 
         // build the type-parameter substitution map for this use of the datatype

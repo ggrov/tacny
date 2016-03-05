@@ -4,10 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
-using Microsoft.Boogie;
-using Bpl = Microsoft.Boogie;
-using Tacny;
-
+using System.Diagnostics;
 namespace LazyTacny
 {
     public class SolutionList
@@ -83,7 +80,11 @@ namespace LazyTacny
         public void Fin()
         {
             if (plist.Count > 0)
+            {
                 AddFinal(plist);
+                plist.Clear();
+            }
+                
         }
     }
 
@@ -119,6 +120,7 @@ namespace LazyTacny
 
         public string GenerateProgram(ref Dafny.Program prog, bool isFinal = false)
         {
+            Debug.WriteLine("Generating Dafny program");
             Method method = null;
             List<Dafny.Program> prog_list = new List<Dafny.Program>();
             Atomic ac = state.Copy();
@@ -130,7 +132,7 @@ namespace LazyTacny
             List<Statement> body = method.Body.Body;
             body = InsertSolution(body, tac_call, ac.GetResolved());
             if (body == null)
-                throw new Exception("Body not filled");
+                return null;
             if (!isFinal)
             {
                 for (int i = 0; i < body.Count; i++)
@@ -164,6 +166,7 @@ namespace LazyTacny
                 }
             }
 
+            Debug.WriteLine("Dafny program generated");
             return null;
         }
 
