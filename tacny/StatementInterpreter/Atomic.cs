@@ -217,7 +217,7 @@ namespace Tacny
         {
             Contract.Requires<ArgumentNullException>(body != null);
             Contract.Ensures(Contract.ValueAtReturn(out result) != null);
-
+            //result = null;
             Atomic atomic = this.Copy();
             atomic.localContext.tacticBody = body.Body;
             atomic.localContext.ResetCounter();
@@ -940,7 +940,7 @@ namespace Tacny
             Dafny.Program prog = globalContext.program.ParseProgram();
             solution.GenerateProgram(ref prog);
             globalContext.program.ClearBody(localContext.md);
-            //globalContext.program.MaybePrintProgram(prog, null);
+            globalContext.program.PrintMember(prog, solution.state.localContext.md.Name);
             if (!globalContext.program.ResolveProgram())
                 return false;
             globalContext.program.VerifyProgram();

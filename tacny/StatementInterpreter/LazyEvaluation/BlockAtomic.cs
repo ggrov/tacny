@@ -105,7 +105,9 @@ namespace LazyTacny
                     res = l.CompareTo(r);
                 }
                 else if (lhs.Value is bool)
+                {
                     res = ((bool)lhs.Value).CompareTo((bool)rhs.Value);
+                }
 
                 if (bexp.Op == BinaryExpr.Opcode.Eq)
                     return res == 0;

@@ -162,7 +162,8 @@ namespace LazyTacny
                                 curDecl.Members[j] = nMethod;
 
                     }
-                    prog.DefaultModuleDef.TopLevelDecls[i] = RemoveTactics(curDecl);
+      
+                        prog.DefaultModuleDef.TopLevelDecls[i] = RemoveTactics(curDecl);
                 }
             }
 
@@ -301,5 +302,21 @@ namespace LazyTacny
             return new ClassDecl(cd.tok, cd.Name, cd.Module, cd.TypeArgs, mdl, cd.Attributes, cd.TraitsTyp);
         }
 
+
+        private static TopLevelDecl ExtractContext(MemberDecl md, ClassDecl cd)
+        {
+            Dictionary<string, MemberDecl> context = new Dictionary<string, MemberDecl>();
+            if(md is Method)
+            {
+                Method method = Util.Copy.CopyMethod(md as Method);
+                // check what member declarations are called in the pre condition
+                List<MaybeFreeExpression> lMfe = method.Req;
+                foreach(var mfe in lMfe)
+                {
+                    Expression exp = mfe.E;
+                }
+            }
+            return null;
+        }
     }
 }

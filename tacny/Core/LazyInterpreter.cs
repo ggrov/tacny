@@ -4,6 +4,8 @@ using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 using System.Diagnostics.Contracts;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace LazyTacny
 {
@@ -27,16 +29,34 @@ namespace LazyTacny
             {
                 return tacnyProgram.ParseProgram();
             }
-            foreach (var member in tacnyProgram.members)
+            if (Util.TacnyOptions.O.ParallelExecution)
             {
-                var res = LazyScanMemberBody(member.Value);
+                Parallel.ForEach(tacnyProgram.members, (member) =>
+            {
+                if (Thread.CurrentThread.Name == null)
+                    Thread.CurrentThread.Name = member.Value.Name;
+                var res = LazyScanMemberBody(tacnyProgram.NewProgram(), member.Value);
                 if (res != null)
                 {
+
                     solution_list.Add(res);
                     solution_list.Fin();
+
+                }
+            });
+            }
+            else {
+                foreach (var member in tacnyProgram.members)
+                {
+                    var res = LazyScanMemberBody(tacnyProgram.NewProgram(), member.Value);
+                    if (res != null)
+                    {
+                        solution_list.Add(res);
+                        solution_list.Fin();
+
+                    }
                 }
             }
-
             // temp hack
             List<Solution> final = new List<Solution>();
             foreach (var solution in solution_list.GetFinal())
@@ -49,11 +69,11 @@ namespace LazyTacny
 
             Debug.Unindent();
             return prog;
-                
+
         }
 
-       
-        private Solution LazyScanMemberBody(MemberDecl md)
+
+        private Solution LazyScanMemberBody(Tacny.Program prog, MemberDecl md)
         {
             Contract.Requires(md != null);
 
@@ -65,7 +85,7 @@ namespace LazyTacny
                 return null;
 
             List<IVariable> variables = new List<IVariable>();
-        
+
             foreach (var st in m.Body.Body)
             {
                 // register local variables
@@ -81,18 +101,20 @@ namespace LazyTacny
                         Debug.WriteLine("Tactic call found");
                         try
                         {
-
-                            Tactic tac = tacnyProgram.GetTactic(us);
-                            tacnyProgram.SetCurrent(tac, md);
+                            Tactic tac = prog.GetTactic(us);
+                            prog.SetCurrent(tac, md);
                             variables.AddRange(m.Ins);
                             variables.AddRange(m.Outs);
                             SolutionList sol_list = new SolutionList();
                             //sol_list.AddRange(solution_list.plist);
-                                // get the resolved variables
-                            List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
+                            // get the resolved variables
+                            List<IVariable> resolved = prog.GetResolvedVariables(md);
                             resolved.AddRange(m.Ins); // add input arguments as resolved variables
-                            Solution result = Atomic.ResolveTactic(tac, us, md, tacnyProgram, variables, resolved, sol_list);
-                            tacnyProgram.PrintDebugData(tacnyProgram.currentDebug);
+                            Solution result = Atomic.ResolveTactic(tac, us, md, prog, variables, resolved, sol_list);
+                            lock (this)
+                            {
+                                prog.currentDebug.PrintDebugData(prog);
+                            }
                             return result;
                         }
                         catch (Exception e)

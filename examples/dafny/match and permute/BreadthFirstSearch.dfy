@@ -1,8 +1,8 @@
 // RUN: %dafny /compile:0 /dprint:"%t.dprint" /vcsMaxKeepGoingSplits:10 "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
-class BreadthFirstSearch<Vertex(==)>
-{
+//class BreadthFirstSearch<Vertex(==)>/
+//{
   // The following function is left uninterpreted (for the purpose of the 
   // verification problem, it can be thought of as a parameter to the class)
   function method Succ(x: Vertex): set<Vertex>
@@ -229,7 +229,7 @@ class BreadthFirstSearch<Vertex(==)>
       newPaths := UpdatePaths(vSuccs - {succ}, source, newPaths, v, pathToV);
     }
   }
-}
+
 
 function domain<T, U>(m: map<T, U>): set<T>
 {

@@ -9,6 +9,8 @@ using Bpl = Microsoft.Boogie;
 using System.Diagnostics.Contracts;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+
 namespace Tacny
 {
     public class Program
@@ -50,7 +52,8 @@ namespace Tacny
         public readonly List<DatatypeDecl> globals;
         private Util.Printer printer;
         public DebugData currentDebug;
-        private List<DebugData> debugDataList;
+        public List<DebugData> debugDataList;
+        
         public class DebugData
         {
             public string tactic = null;
@@ -72,7 +75,7 @@ namespace Tacny
                 this.method = method;
             }
 
-            private void Fin()
+            public void Fin()
             {
                 if (EndTime == 0)
                     EndTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
@@ -164,12 +167,14 @@ namespace Tacny
             currentDebug = dd;
         }
 
-        public Program(IList<string> fileNames, string programId, string programName = null)
+        public Program(IList<string> fileNames, string programId)
         {
             Debug.Indent();
             this.fileNames = fileNames;
             this.programId = programId;
             string err = ParseCheck(fileNames, programId, out _original);
+            if (err != null)
+                throw new Exception(err);
             dafnyProgram = ParseProgram();
             Debug.Unindent();
             
@@ -179,12 +184,22 @@ namespace Tacny
             Init(out tactics, out members, out globals);
         }
 
+        public Program(IList<string> fileNames, string programId, Dafny.Program program)
+        {
+            this.fileNames = fileNames;
+            this.programId = programId;
+            this._original = program;
+            this.dafnyProgram = program;
+            Init(out tactics, out members, out globals);
+        }
+
         private void Init(out Dictionary<string, Tactic> tactics, out Dictionary<string, MemberDecl> members, out List<DatatypeDecl> globals)
         {
             tactics = new Dictionary<string, Tactic>();
             members = new Dictionary<string, MemberDecl>();
             globals = new List<DatatypeDecl>();
             debugDataList = new List<DebugData>();
+           
             foreach (var item in dafnyProgram.DefaultModuleDef.TopLevelDecls)
             {
                 ClassDecl curDecl = item as ClassDecl;
@@ -215,7 +230,7 @@ namespace Tacny
         /// <returns></returns>
         public Program NewProgram()
         {
-            return new Program(fileNames, programId);
+            return new Program(fileNames, programId, _original);
 
         }
 
@@ -245,10 +260,8 @@ namespace Tacny
         {
             Debug.WriteLine("Verifying Dafny program");
             Debug.Indent();
-            Bpl.Program boogieProgram;
             IncCallsToBoogie(currentDebug);
-            Translate(prog, fileNames, programId, out boogieProgram);
-            po = BoogiePipeline(boogieProgram, prog, fileNames, programId);
+            po = Pipeline.VerifyProgram(prog, fileNames, programId, out stats, out errList, out errorInfo);
             if (stats.ErrorCount == 0)
             {
                 Debug.WriteLine("Dafny program VERIFIED");
@@ -362,6 +375,7 @@ namespace Tacny
             }
         }
 
+        // @TODO this could be optimised to hold the resolved data for all the program
         public List<IVariable> GetResolvedVariables(MemberDecl md)
         {
             ParseProgram();
@@ -559,116 +573,9 @@ namespace Tacny
         #endregion
 
         #region Boogie
-        /// <summary>
-        /// Translates Dafny program to Boogie program
-        /// </summary>
-        /// <returns>Exit value</returns>
-        public static void Translate(Dafny.Program dafnyProgram, IList<string> fileNames, string programId, out Bpl.Program boogieProgram)
-        {
+        
 
-            Dafny.Translator translator = new Dafny.Translator();
-            boogieProgram = translator.Translate(dafnyProgram);
-            if (CommandLineOptions.Clo.PrintFile != null)
-            {
-                ExecutionEngine.PrintBplFile(CommandLineOptions.Clo.PrintFile, boogieProgram, false, false, CommandLineOptions.Clo.PrettyPrint);
-            }
-        }
-
-        /// <summary>
-        /// Pipeline the boogie program to Dafny where it is valid
-        /// </summary>
-        /// <returns>Exit value</returns>
-        public Bpl.PipelineOutcome BoogiePipeline(Bpl.Program boogieProgram, Dafny.Program dafnyProgram, IList<string> fileNames, string programIds)
-        {
-
-            string bplFilename;
-            if (CommandLineOptions.Clo.PrintFile != null)
-            {
-                bplFilename = CommandLineOptions.Clo.PrintFile;
-            }
-            else
-            {
-                string baseName = cce.NonNull(Path.GetFileName(fileNames[fileNames.Count - 1]));
-                baseName = cce.NonNull(Path.ChangeExtension(baseName, "bpl"));
-                bplFilename = Path.Combine(Path.GetTempPath(), baseName);
-            }
-
-
-            Bpl.PipelineOutcome oc = BoogiePipelineWithRerun(boogieProgram, bplFilename, out stats, 1 < Dafny.DafnyOptions.Clo.VerifySnapshots ? programId : null);
-
-            //var allOk = stats.ErrorCount == 0 && stats.InconclusiveCount == 0 && stats.TimeoutCount == 0 && stats.OutOfMemoryCount == 0;
-            return oc;
-        }
-
-        /// <summary>
-        /// Resolve, type check, infer invariants for, and verify the given Boogie program.
-        /// The intention is that this Boogie program has been produced by translation from something
-        /// else.  Hence, any resolution errors and type checking errors are due to errors in
-        /// the translation.
-        /// The method prints errors for resolution and type checking errors, but still returns
-        /// their error code.
-        /// </summary>
-        public PipelineOutcome BoogiePipelineWithRerun(Bpl.Program/*!*/ program, string/*!*/ bplFileName,
-            out PipelineStatistics stats, string programId)
-        {
-            Contract.Requires(program != null);
-            Contract.Requires(bplFileName != null);
-            Contract.Ensures(0 <= Contract.ValueAtReturn(out stats).InconclusiveCount && 0 <= Contract.ValueAtReturn(out stats).TimeoutCount);
-
-            stats = new PipelineStatistics();
-            LinearTypeChecker ltc;
-            MoverTypeChecker mtc;
-            PipelineOutcome oc = ExecutionEngine.ResolveAndTypecheck(program, bplFileName, out ltc, out mtc);
-            switch (oc)
-            {
-                case PipelineOutcome.Done:
-                    return oc;
-
-                case PipelineOutcome.ResolutionError:
-                case PipelineOutcome.TypeCheckingError:
-                    {
-                        ExecutionEngine.PrintBplFile(bplFileName, program, false, false, CommandLineOptions.Clo.PrettyPrint);
-                        Console.WriteLine();
-                        Console.WriteLine("*** Encountered internal translation error - re-running Boogie to get better debug information");
-                        Console.WriteLine();
-
-                        List<string/*!*/>/*!*/ fileNames = new List<string/*!*/>();
-                        fileNames.Add(bplFileName);
-                        Bpl.Program reparsedProgram = ExecutionEngine.ParseBoogieProgram(fileNames, true);
-                        if (reparsedProgram != null)
-                        {
-                            ExecutionEngine.ResolveAndTypecheck(reparsedProgram, bplFileName, out ltc, out mtc);
-                        }
-                    }
-                    return oc;
-
-                case PipelineOutcome.ResolvedAndTypeChecked:
-                    ExecutionEngine.EliminateDeadVariables(program);
-                    ExecutionEngine.CollectModSets(program);
-                    ExecutionEngine.CoalesceBlocks(program);
-                    ExecutionEngine.Inline(program);
-                    errList = new List<ErrorInformation>();
-                    //return ExecutionEngine.InferAndVerify(program, stats, programId);
-                    return ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo =>
-                    {
-                        //errorInfo.BoogieErrorCode = null;
-                        if (this.errorInfo == null)
-                            this.errorInfo = errorInfo;
-                        errList.Add(errorInfo);
-                        //Console.WriteLine(errorInfo.FullMsg);
-                        //errorListHolder.AddError(new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1, ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(), System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename), errorInfo.ImplementationName, requestId);
-                        //foreach (var aux in errorInfo.Aux)
-                        //{
-                        //  errorListHolder.AddError(new DafnyError(aux.Tok.filename, aux.Tok.line - 1, aux.Tok.col - 1, ErrorCategory.AuxInformation, aux.FullMsg, s, isRecycled, null, System.IO.Path.GetFullPath(_document.FilePath) == aux.Tok.filename), errorInfo.ImplementationName, requestId);
-                        //}
-
-
-                    });
-
-                default:
-                    Contract.Assert(false); throw new cce.UnreachableException();  // unexpected outcome
-            }
-        }
+        
 
         #endregion
 
@@ -840,6 +747,7 @@ namespace Tacny
         {
             Contract.Requires(prog != null);
             Contract.Requires(memberName != null);
+            
 #if DEBUG
             TextWriter tw;
             if (filename == null || filename == "-")

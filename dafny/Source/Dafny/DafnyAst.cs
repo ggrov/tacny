@@ -2298,7 +2298,8 @@ namespace Microsoft.Dafny
         public bool IsParent { set; get; }
         public TraitDecl(IToken tok, string name, ModuleDefinition module,
           List<TypeParameter> typeArgs, [Captured] List<MemberDecl> members, Attributes attributes)
-            : base(tok, name, module, typeArgs, members, attributes, null) { }
+            : base(tok, name, module, typeArgs, members, attributes, null)
+        { }
     }
 
     public class ClassDecl : TopLevelDecl
@@ -5114,7 +5115,7 @@ namespace Microsoft.Dafny
 
         }
     }
-    
+
     public class GuardedAlternative
     {
         public readonly IToken Tok;
@@ -6822,7 +6823,8 @@ namespace Microsoft.Dafny
     public class AutoGhostIdentifierExpr : IdentifierExpr
     {
         public AutoGhostIdentifierExpr(IToken tok, string name)
-            : base(tok, name) { }
+            : base(tok, name)
+        { }
     }
 
     /// <summary>
@@ -7516,6 +7518,23 @@ namespace Microsoft.Dafny
                 case ResolvedOpcode.SeqEq:
                 case ResolvedOpcode.MultiSetEq:
                 case ResolvedOpcode.MapEq:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        //#######################TACNY#############################
+        public static bool IsEqualityOp(Opcode op)
+        {
+            switch (op)
+            {
+                case Opcode.Eq:
+                case Opcode.Neq:
+                case Opcode.Ge:
+                case Opcode.Gt:
+                case Opcode.Le:
+                case Opcode.Lt:
                     return true;
                 default:
                     return false;

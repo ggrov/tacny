@@ -189,6 +189,7 @@
     <Compile Include="LazyAtomicStatements\ParamsAtomic.cs" />
     <Compile Include="LazyAtomicStatements\VariablesAtomic.cs" />
     <Compile Include="LazyEvaluation\SolutionList.cs" />
+    <Compile Include="LazyEvaluation\Pipeline.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>

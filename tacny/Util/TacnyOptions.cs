@@ -33,7 +33,7 @@ namespace Util
         public bool Debug = false;
         public bool Contracts = true;
         public bool EvalAnalysis = true;
-        public bool ParallelExecution = true;
+        public bool ParallelExecution = false;
         public bool LazyEval = true;
 
         protected override bool ParseOption(string name, Bpl.CommandLineOptionEngine.CommandLineParseState ps)

@@ -77,9 +77,18 @@ namespace LazyTacny
                             Dafny.Type type = globalContext.GetVariableType(arg.Name);
                             if (type != null)
                             {
-                                // if variable type and current argument types match
-                                if (item.Type.ToString() == type.ToString())
-                                    args[i].Add(arg);
+                                if (type is UserDefinedType && item.Type is UserDefinedType)
+                                {
+                                    var udt1 = type as UserDefinedType;
+                                    var udt2 = item.Type as UserDefinedType;
+                                    if (udt1.Name == udt2.Name)
+                                        args[i].Add(arg);
+                                }
+                                else {
+                                    // if variable type and current argument types match
+                                    if (item.Type.ToString() == type.ToString())
+                                        args[i].Add(arg);
+                                }
                             }
                             else
                                 args[i].Add(arg);

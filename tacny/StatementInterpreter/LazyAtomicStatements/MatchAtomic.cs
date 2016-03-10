@@ -14,6 +14,7 @@ namespace LazyTacny
     {
 
         private Token oldToken = null;
+        private Dictionary<string, Dafny.Type> ctorTypes = null;
 
         public MatchAtomic(Atomic atomic) : base(atomic) { }
 
@@ -82,6 +83,7 @@ namespace LazyTacny
             DatatypeDecl datatype = null;
             ParensExpression guard = null;
             NameSegment casesGuard = null;
+            UserDefinedType datatypeType = null;
             string datatypeName = null;
             bool isElement = false;
 
@@ -129,18 +131,17 @@ namespace LazyTacny
                 IVariable original_decl = globalContext.GetGlobalVariable(decl.Name);
                 if (original_decl != null)
                 {
-                    UserDefinedType udt = original_decl.Type as UserDefinedType;
-                    if (udt != null)
-                        datatypeName = udt.Name;
+                    datatypeType = original_decl.Type as UserDefinedType;
+                    if (datatypeType != null)
+                    {
+                        datatypeName = datatypeType.Name;
+                    }
                     else
                         datatypeName = original_decl.Type.ToString();
                 }
                 else
                     Contract.Assert(false, Util.Error.MkErr(st, 9, tac_input.Name));
             }
-            //else
-            //  Contract.Assert(false, Util.Error.MkErr(st, 1, "Element"));
-
 
             if (!globalContext.ContainsGlobalKey(datatypeName))
             {
@@ -149,13 +150,21 @@ namespace LazyTacny
 
             datatype = globalContext.GetGlobal(datatypeName);
 
-
-            /*
-             * HACK Recreate the match block as the old one was modified by the resolver
-             */
-            if (isElement)
+            if(datatype.TypeArgs != null)
             {
+                ctorTypes = new Dictionary<string, Microsoft.Dafny.Type>();
+                Contract.Assert(datatype.TypeArgs.Count == datatypeType.TypeArgs.Count, "Big bad type error");
+                for (int i = 0; i < datatype.TypeArgs.Count; i++)
+                {
+                    var genericType = datatype.TypeArgs[i];
+                    var definedType = datatypeType.TypeArgs[i];
+                    ctorTypes.Add(genericType.Name, definedType);
+                    
+                }
+            }
 
+            if (isElement)
+            { 
                 yield return GenerateVerifiedStmt(datatype, casesGuard, st);
             }
             else
@@ -212,7 +221,7 @@ namespace LazyTacny
             // find the first failing case 
             MatchStmt ms = GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
             Solution solution = CreateSolution(this, ms);
-            if (!GenerateAndVerify(solution))
+            if (!ResolveAndVerify(solution))
             {
                 ctor = 0;
             }
@@ -228,7 +237,7 @@ namespace LazyTacny
 
                 if (!globalContext.program.HasError())
                     break;
-                RegisterLocals(datatype, ctor);
+                RegisterLocals(datatype, ctor, ctorTypes);
 
                 // if nothing was generated for the cases body move on to the next one
                 foreach (var result in ResolveBody(st.Body))
@@ -237,7 +246,7 @@ namespace LazyTacny
                     ms = GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
                     solution = CreateSolution(this, ms);
                     // if the program fails tro resolve skip
-                    if (!GenerateAndVerify(solution))
+                    if (!ResolveAndVerify(solution))
                         continue;
 
                     if (!globalContext.program.HasError())
