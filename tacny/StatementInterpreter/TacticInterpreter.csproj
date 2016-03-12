@@ -195,6 +195,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="SearchFramework.cs" />
     <Compile Include="StatementRegister.cs" />
     <Compile Include="AtomicStatements\InvariantAtomic.cs" />
     <Compile Include="AtomicStatements\MatchAtomic.cs" />

@@ -1,33 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<logicalClassDesignerModel xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" xmlns:dm1="http://schemas.microsoft.com/dsltools/Kernel" xmlns:dm2="http://schemas.microsoft.com/dsltools/Component" xmlns:dm3="http://schemas.microsoft.com/dsltools/UseCase" xmlns:dm4="http://schemas.microsoft.com/dsltools/Activity" xmlns:dm5="http://schemas.microsoft.com/dsltools/Interaction" xmlns:dm6="http://schemas.microsoft.com/dsltools/UmlModelLibrary" xmlns:dm7="http://schemas.microsoft.com/dsltools/UmlDiagrams" xmlns:dm8="http://schemas.microsoft.com/dsltools/ModelStore" dslVersion="1.0.0.0" Id="bb474f51-dab0-4bd1-892e-9e5a0b3b17bb" name="TacnyClassDiagram" linkedPackageId="0cdff057-e8dc-45e5-b511-8efea341b7ba" xmlns="http://schemas.microsoft.com/dsltools/LogicalClassDesigner">
+<logicalClassDesignerModel xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" xmlns:dm1="http://schemas.microsoft.com/dsltools/Kernel" xmlns:dm2="http://schemas.microsoft.com/dsltools/Component" xmlns:dm3="http://schemas.microsoft.com/dsltools/Activity" xmlns:dm4="http://schemas.microsoft.com/dsltools/UseCase" xmlns:dm5="http://schemas.microsoft.com/dsltools/Interaction" xmlns:dm6="http://schemas.microsoft.com/dsltools/UmlModelLibrary" xmlns:dm7="http://schemas.microsoft.com/dsltools/UmlDiagrams" xmlns:dm8="http://schemas.microsoft.com/dsltools/ModelStore" dslVersion="1.0.0.0" Id="bb474f51-dab0-4bd1-892e-9e5a0b3b17bb" name="TacnyClassDiagram" linkedPackageId="0cdff057-e8dc-45e5-b511-8efea341b7ba" xmlns="http://schemas.microsoft.com/dsltools/LogicalClassDesigner">
   <ownedCommentsInternal>
-    <comment Id="e2b296e6-a735-496c-8cb4-2f073868ca62">
-      <elementDefinition Id="e3111da6-6b74-4066-8df6-6dc1806b90d0" />
-      <body>Return the type of the atomic statement</body>
-      <annotatedElements>
-        <classMoniker Id="754ba283-3e5d-412a-a2d8-76acd4ef049a" LastKnownName="StatementRegister" />
-      </annotatedElements>
+    <comment Id="6b396a65-8f67-4176-a94f-c81a3949ca1f">
+      <elementDefinition Id="d8594ca4-2aa3-4fea-b4a4-9b8e504d10eb" />
+      <body>Call the program resolver</body>
     </comment>
-    <comment Id="74de7585-260d-4740-849c-8d4ccae778d7">
-      <elementDefinition Id="a9cfcfaa-3a0f-4a9a-a297-6993daefb584" />
-      <body>Resovle one tactic</body>
-      <annotatedElements>
-        <classMoniker Id="5d0b8194-7f4a-4a08-a6ec-bb98274a7181" LastKnownName="Atomic" />
-      </annotatedElements>
+    <comment Id="4d5debc2-a63c-45e5-81ae-b4c8d898803b">
+      <elementDefinition Id="6fc76ce4-c954-483c-8b49-29e90e4ff739" />
+      <body>Call the tactic resolver for each found tactic call</body>
     </comment>
-    <comment Id="075a5436-12a4-41b5-9325-17713aaeec7d">
-      <elementDefinition Id="8de6be0f-1775-4204-a75d-8eafbc9f29a9" />
-      <body>Resolve the program</body>
-      <annotatedElements>
-        <classMoniker Id="9b7c632f-49ca-4a22-be98-a57e50f9a5a6" LastKnownName="Interpreter" />
-      </annotatedElements>
+    <comment Id="ac677064-88db-4657-8b97-e9bbf48bd758">
+      <elementDefinition Id="4efe2d4a-3515-4321-9ceb-732b9b3d2c85" />
+      <body>For each statement inside the tactic, call the asociated atomic resolver</body>
     </comment>
-    <comment Id="cc8c50c2-45cf-4837-8329-17e1978be01d">
-      <elementDefinition Id="58b494c5-aa4e-420a-9e68-a3e021bd80f5" />
-      <body>Resolve one atomic statement</body>
-      <annotatedElements>
-        <classMoniker Id="7739f0a6-c0b1-4c7e-b134-c44439eb6544" LastKnownName="Tacny::AtomicStmt" />
-      </annotatedElements>
+    <comment Id="eedae3e5-bebf-457c-9d2e-37d06e149859">
+      <elementDefinition Id="eb7e9e6f-be64-4c13-9457-84ae22eb9445" />
+      <body>Get the statement type</body>
     </comment>
   </ownedCommentsInternal>
   <packagedElements>

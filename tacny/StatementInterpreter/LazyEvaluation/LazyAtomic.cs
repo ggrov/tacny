@@ -129,69 +129,11 @@ namespace LazyTacny
         public static IEnumerable<Solution> ResolveTactic(List<Solution> input, Atomic atomic = null, bool verify = true)
         {
             Contract.Requires(input != null);
-            if (atomic != null)
-                Debug.WriteLine(String.Format("Resolving tactic {0}", atomic.localContext.tactic));
-            Debug.Indent();
-            //local solution list
-            SolutionList solutionList = atomic == null ? new SolutionList() : new SolutionList(new Solution(atomic));
-            // if previous solutions exist, add them 
-            if (input.Count > 0)
-                solutionList.AddRange(input);
-            // BFS startegy
-            while (true)
-            {
-                List<Solution> temp = new List<Solution>();
-                if (solutionList.plist.Count == 0)
-                {
-                    Debug.Unindent();
-                    yield break;
-                }
-                // iterate every solution
-                foreach (var item in solutionList.plist)
-                {
-                    // lazily resolve a statement in the solution
-                    foreach (var solution in ResolveStatement(item))
-                    {
-                        // validate result
-                        if (solution.IsResolved())
-                        {
-                            if (verify)
-                            {
-                                if (!solution.state.globalContext.program.HasError())
-                                {
-                                    yield return solution;
-                                    // return the valid solution and terminate
-                                    yield break;
-                                }
-                                else
-                                {  // if verifies break else continue
-                                    solution.state.ResolveAndVerify(solution);
-                                    if (!solution.state.globalContext.program.HasError())
-                                    {
-                                        yield return solution;
-                                        // return the valid solution and terminate
-                                        yield break;
-                                    }
-                                    else
-                                    {
-                                        continue;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                yield return solution;
-                            }
+            ISearch searchStrategy = new DepthFirstSeach();
+            foreach (var item in searchStrategy.Search(input, atomic, verify))
+                yield return item;
+            yield break;
 
-                        }
-                        else
-                        {
-                            temp.Add(solution);
-                        }
-                    }
-                }
-                solutionList.AddRange(temp);
-            }
         }
 
         /// <summary>
@@ -204,39 +146,14 @@ namespace LazyTacny
             Contract.Requires<ArgumentNullException>(body != null);
             Debug.Indent();
             Debug.WriteLine("Resolving statement body");
-            Atomic ac = this.Copy();
-            ac.localContext.tacticBody = body.Body;
-            ac.localContext.ResetCounter();
-            List<Solution> result = new List<Solution>() { new Solution(ac) };
-            // search strategy for body goes here
-            while (true)
+            ISearch strat = new SearchStrategy(SearchStrategy.Strategy.BFS);
+            foreach (var item in strat.SearchBlockStmt(body, this))
             {
-                List<Solution> interm = new List<Solution>();
-                if (result.Count == 0)
-                    break;
-                foreach (var solution in result)
-                {
-                    foreach (var item in ResolveStatement(solution))
-                    {
-                        if (item.state.localContext.isPartialyResolved)
-                        {
-                            { interm.Add(item); }
-                            yield return item;
-                        }
-                        else if (item.state.localContext.GetCurrentStatement() == null)
-                        {
-                            // fix context
-                            item.state.localContext.tacticBody = localContext.tacticBody; // set the body 
-                            item.state.localContext.tac_call = localContext.tac_call;
-                            item.state.localContext.SetCounter(localContext.GetCounter());
-                            yield return item;
-                        }
-                        else { interm.Add(item); }
-                    }
-                }
-
-                result.Clear();
-                result.AddRange(interm);
+                var ns = new Solution(item.state.Copy());
+                ns.state.localContext.tacticBody = this.localContext.tacticBody; // set the body 
+                ns.state.localContext.tac_call = this.localContext.tac_call;
+                ns.state.localContext.SetCounter(this.localContext.GetCounter());
+                yield return ns;
             }
             Debug.WriteLine("Body resolved");
             Debug.Unindent();
