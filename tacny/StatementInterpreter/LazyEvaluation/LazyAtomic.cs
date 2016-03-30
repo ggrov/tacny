@@ -1,4 +1,5 @@
-﻿using Microsoft.Dafny;
+﻿#undef DEBUG
+using Microsoft.Dafny;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -9,9 +10,9 @@ using Microsoft.Boogie;
 using System.Numerics;
 using Tacny;
 
-
 namespace LazyTacny
 {
+
     [ContractClass(typeof(AtomicLazyContract))]
     public interface IAtomicLazyStmt
     {
@@ -35,6 +36,7 @@ namespace LazyTacny
     {
         public readonly StaticContext globalContext;
         public LocalContext localContext;
+        private SearchStrategy.Strategy searchStrat = SearchStrategy.Strategy.BFS;
 
         protected Atomic(Atomic ac)
         {
@@ -60,10 +62,11 @@ namespace LazyTacny
 
         }
 
-        public Atomic(LocalContext localContext, StaticContext globalContext)
+        public Atomic(LocalContext localContext, StaticContext globalContext, SearchStrategy.Strategy searchStrategy)
         {
             this.globalContext = globalContext;
             this.localContext = localContext.Copy();
+            this.searchStrat = searchStrategy;
         }
         public void Initialize()
         {
@@ -81,7 +84,7 @@ namespace LazyTacny
         public Atomic Copy()
         {
             Contract.Ensures(Contract.Result<Atomic>() != null);
-            return new Atomic(localContext, globalContext);
+            return new Atomic(localContext, globalContext, this.searchStrat);
         }
 
 
@@ -100,6 +103,8 @@ namespace LazyTacny
             {
                 Atomic ac = new Atomic(md, tac, tac_call, tacnyProgram);
                 ac.globalContext.RegsiterGlobalVariables(variables, resolved);
+                // set strategy
+                ac.searchStrat = SearchStrategy.GetSearchStrategy(tac);
                 // because solution is verified at the end
                 // we can safely terminated after the first item is received
                 // TODO
@@ -126,10 +131,11 @@ namespace LazyTacny
             !!!Search strategies will go in here!!!
             !!! Validation of the results should also go here!!!
          */
-        public static IEnumerable<Solution> ResolveTactic(List<Solution> input, Atomic atomic = null, bool verify = true)
+        public static IEnumerable<Solution> ResolveTactic(List<Solution> input, Atomic atomic, bool verify = true)
         {
             Contract.Requires(input != null);
-            ISearch searchStrategy = new DepthFirstSeach();
+            Contract.Requires(atomic != null);
+            ISearch searchStrategy = new SearchStrategy(atomic.searchStrat);
             foreach (var item in searchStrategy.Search(input, atomic, verify))
                 yield return item;
             yield break;
@@ -146,14 +152,14 @@ namespace LazyTacny
             Contract.Requires<ArgumentNullException>(body != null);
             Debug.Indent();
             Debug.WriteLine("Resolving statement body");
-            ISearch strat = new SearchStrategy(SearchStrategy.Strategy.BFS);
+            ISearch strat = new SearchStrategy(this.searchStrat);
             foreach (var item in strat.SearchBlockStmt(body, this))
             {
-                var ns = new Solution(item.state.Copy());
-                ns.state.localContext.tacticBody = this.localContext.tacticBody; // set the body 
-                ns.state.localContext.tac_call = this.localContext.tac_call;
-                ns.state.localContext.SetCounter(this.localContext.GetCounter());
-                yield return ns;
+
+                item.state.localContext.tacticBody = this.localContext.tacticBody; // set the body 
+                item.state.localContext.tac_call = this.localContext.tac_call;
+                item.state.localContext.SetCounter(this.localContext.GetCounter());
+                yield return item;
             }
             Debug.WriteLine("Body resolved");
             Debug.Unindent();
@@ -932,13 +938,17 @@ namespace LazyTacny
             Dafny.Program prog = globalContext.program.ParseProgram();
             solution.GenerateProgram(ref prog);
             globalContext.program.ClearBody(localContext.md);
-            globalContext.program.PrintMember(prog, solution.state.globalContext.md.Name);
+#if !DEBUG
+           // globalContext.program.PrintMember(prog, solution.state.globalContext.md.Name);
+#endif
             if (!globalContext.program.ResolveProgram())
                 return false;
             globalContext.program.VerifyProgram();
             return true;
 
         }
+
+
 
         /// <summary>
         /// Register datatype ctor vars as locals

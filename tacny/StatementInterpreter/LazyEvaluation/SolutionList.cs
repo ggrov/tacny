@@ -188,6 +188,15 @@ namespace LazyTacny
                     mdBody, src.Attributes, src.SignatureEllipsis);
         }
 
+        public static void PrintSolution(Solution solution)
+        {
+            Dafny.Program prog = solution.state.globalContext.program.ParseProgram();
+            solution.GenerateProgram(ref prog);
+            solution.state.globalContext.program.ClearBody(solution.state.localContext.md);
+            Console.WriteLine(String.Format("Tactic call {0} in {1} results: ", solution.state.localContext.tactic.Name, solution.state.localContext.md.Name));
+            solution.state.globalContext.program.PrintMember(prog, solution.state.globalContext.md.Name);
+        }
+
         private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)
         {
             WhileStmt ws = null;

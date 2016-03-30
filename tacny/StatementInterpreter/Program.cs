@@ -292,7 +292,7 @@ namespace Tacny
             if (r.ErrorCount != 0)
             {
                 Debug.WriteLine("Resolution FAILED");
-                Util.Printer.Error("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
+                Debug.WriteLine("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
                 IncBadBranchCount(currentDebug);
             }
             else
@@ -708,7 +708,7 @@ namespace Tacny
         {
             foreach (var filename in fileNames)
             {
-                printer = new Util.Printer(new System.IO.StreamWriter(filename.Substring(0, filename.LastIndexOf(".")) + ".tacny.dfy"), DafnyOptions.O.PrintMode);
+                printer = new Util.Printer(new System.IO.StreamWriter(filename.Substring(0, filename.LastIndexOf(".")) + ".dfy"), DafnyOptions.O.PrintMode);
                 printer.PrintProgram(dafnyProgram);
             }
         }
@@ -747,8 +747,7 @@ namespace Tacny
         {
             Contract.Requires(prog != null);
             Contract.Requires(memberName != null);
-            
-#if DEBUG
+
             TextWriter tw;
             if (filename == null || filename == "-")
             {
@@ -775,7 +774,6 @@ namespace Tacny
                 }
             }
 
-#endif
         }
 
         private void PrintProgram(TextWriter tw, Dafny.Program prog, DafnyOptions.PrintModes printMode = DafnyOptions.PrintModes.Everything)

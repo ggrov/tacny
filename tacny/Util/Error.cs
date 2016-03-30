@@ -101,6 +101,7 @@ namespace Util
                 case 16: s = "Solution does not exist"; break;
                 case 17: s = "Right hand side expected binary expression"; break;
                 case 18: s = "Atomic {0} does not implement {1} interface"; break;
+                case 19: s = "Unsuported search strategy: {0}"; break;
                 default: s = "error" + n; break;
             }
 

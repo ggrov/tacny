@@ -7,8 +7,8 @@
     <ProjectGuid>{6F761865-501E-4F68-9F6F-5DFE4923CCA3}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TacnyDriver</RootNamespace>
-    <AssemblyName>TacnyDriver</AssemblyName>
+    <RootNamespace>Tacny</RootNamespace>
+    <AssemblyName>Tacny</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile>

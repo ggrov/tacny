@@ -146,6 +146,11 @@
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
+    <packageHasNamedElement>
+      <undefinedType
+        Id="79f74e61-2a2a-4aa0-a67b-f65e46072602"
+        name="List&lt;ErrorInformation&gt;" />
+    </packageHasNamedElement>
   </packagedElements>
   <primitiveType
     Id="220a3521-e091-4221-bae9-3ef9018e845c"

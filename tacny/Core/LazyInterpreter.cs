@@ -64,7 +64,9 @@ namespace LazyTacny
 
             Dafny.Program prog = tacnyProgram.ParseProgram();
             foreach (var solution in final)
+            {
                 solution.GenerateProgram(ref prog);
+            }
             tacnyProgram.dafnyProgram = prog;
 
             Debug.Unindent();
@@ -109,12 +111,14 @@ namespace LazyTacny
                             //sol_list.AddRange(solution_list.plist);
                             // get the resolved variables
                             List<IVariable> resolved = prog.GetResolvedVariables(md);
+                            Console.Out.WriteLine(String.Format("Resolving {0} in {1}", tac.Name, md.Name));
                             resolved.AddRange(m.Ins); // add input arguments as resolved variables
                             Solution result = Atomic.ResolveTactic(tac, us, md, prog, variables, resolved, sol_list);
                             Debug.IndentLevel = 0;
                             lock (this)
                             {
                                 prog.currentDebug.PrintDebugData(prog);
+                                Solution.PrintSolution(result);
                             }
                             return result;
                         }

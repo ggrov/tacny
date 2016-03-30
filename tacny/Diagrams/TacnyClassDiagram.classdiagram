@@ -708,72 +708,6 @@
           </property>
         </ownedAttributesInternal>
         <ownedOperationsInternal>
-          <operation Id="e239e07d-8a57-4979-9cbd-3ae33f2b0063" name="Interpreter" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
-            <referencesInternal>
-              <reference Id="da37b447-1c9e-420c-aa62-a71f65785851" handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FCore%2Fbin%2FDebug%2FTacny.dll Namespace%3DTacny Type%3DInterpreter Member%3D(Name%3D.ctor OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DProgram)])" tag="ViewCode">
-                <elementDefinition Id="0f8277e5-e362-42d6-acc8-62c8e4eea46b" />
-              </reference>
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance Id="9fff0033-0c48-46da-b083-235b3a0f6e43" name="method" profile="CSharpProfile">
-                <elementDefinition Id="e4e53443-1f35-4fa6-a1c3-9a92a2899642" />
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="5b9df647-bea3-4c0c-89b9-0f8c7068285d">
-                    <propertyInstance Id="23fda380-6f3d-485b-b51f-1e7667406073" name="ClrAttributes">
-                      <elementDefinition Id="98b3e7e0-c64a-4e91-aa0b-0f4ce01b4a85" />
-                    </propertyInstance>
-                    <elementDefinition Id="eeec7886-d66b-4577-97b1-d5a1a1dce00c" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="4c58602d-0dab-4f19-b8e1-f8b5794ed152">
-                    <propertyInstance Id="1033244b-ba9d-4031-85ca-36d886d78f7d" name="IsPartial" value="false">
-                      <elementDefinition Id="1485310e-2713-4cce-975d-fbe59cbeb0df" />
-                    </propertyInstance>
-                    <elementDefinition Id="b2663990-0f50-4eb2-8a8a-51b2ee3b8a79" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="f16ddf82-b3d1-4d39-986a-6617c872cace">
-                    <propertyInstance Id="754aabd7-f540-470d-8031-60083b67bc42" name="IsUnsafe" value="false">
-                      <elementDefinition Id="03e6e7b8-0a1c-402e-85c5-41ca62a69f20" />
-                    </propertyInstance>
-                    <elementDefinition Id="3c0709a2-da1d-433c-9ffc-b2278a12a729" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="e304684e-ba8d-4134-bbc8-70c1ad9b8fc3">
-                    <propertyInstance Id="0d3b80fe-c5f1-4c1b-8a43-61dc780ef8ff" name="Inheritance" value="none">
-                      <elementDefinition Id="64786af3-b3bf-48c5-974c-511481f3884b" />
-                    </propertyInstance>
-                    <elementDefinition Id="e2ba6579-01c4-4980-bac7-a076cf021811" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="c20a7372-7891-485d-9f01-effc1d93f77e">
-                    <propertyInstance Id="f8e146cc-0eb5-4307-9e0d-a63577fc6361" name="PackageVisibility" value="internal">
-                      <elementDefinition Id="cdf420a6-6193-417d-a983-720448c6ad20" />
-                    </propertyInstance>
-                    <elementDefinition Id="dc60e34a-1d61-4347-bf2c-2a698e079f86" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="956b4daf-7450-4611-a87c-c723f0a997d0">
-                    <propertyInstance Id="7d5198f1-d59f-4c82-8996-d3f40d945667" name="params" value="false">
-                      <elementDefinition Id="d0c65183-3a10-4596-9239-3509b3e3e3bb" />
-                    </propertyInstance>
-                    <elementDefinition Id="856488db-9b77-4d2b-848d-f6b28869501e" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <elementDefinition Id="7b885245-9b06-429a-92d5-7c85e42df3d9" />
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="97b9a0c6-59a6-498d-aa3b-b37efdd7ad94" name="tacnyProgram" direction="In">
-                  <referencesInternal>
-                    <reference Id="975774cb-f0a5-48ba-b24f-cfcaf7d23952" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FCore%2Fbin%2FDebug%2FTacny.dll Namespace%3DTacny Type%3DInterpreter Member%3D(Name%3D.ctor OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DProgram)]) ParameterIdentifier%3DtacnyProgram" tag="ViewCode">
-                      <elementDefinition Id="b0b23d9d-4890-4d21-8b41-14cde967288a" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="36f09e42-abac-4795-acf6-928a31599b3a" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="d400c52c-d9aa-459e-b0d5-56b6094989b7" LastKnownName="Program" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
           <operation Id="93f0d3ba-a718-403f-878d-e7fcfa99b8dd" name="ResolveProgram" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
             <referencesInternal>
               <reference Id="896ac5dd-ba6c-41c7-b567-55e92caacf64" handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FCore%2Fbin%2FDebug%2FTacny.dll Namespace%3DTacny Type%3DInterpreter Member%3DResolveProgram" tag="ViewCode">
@@ -1023,6 +957,12 @@
           </stereotypeInstance>
         </appliedStereotypesInternal>
         <elementDefinition Id="26a17acd-3883-4952-acd4-b7be116b71fe" />
+        <generalsInternal>
+          <generalization Id="7943cd65-df5c-4793-ad9f-0f4b3b82ac67" isSubstitutable="false">
+            <classMoniker Id="7739f0a6-c0b1-4c7e-b134-c44439eb6544" LastKnownName="Tacny::AtomicStmt" />
+            <elementDefinition Id="88c5a243-e510-490d-865a-15a4db4667c0" />
+          </generalization>
+        </generalsInternal>
         <targetEnds>
           <association Id="f24926f5-9bf5-4af3-898c-b6c9615822c2" isDerived="false" sourceEndRoleName="Atomic" targetEndRoleName="GlobalContext" isLeaf="false" isAbstract="false">
             <classMoniker Id="3caeb513-89ff-4e39-956e-7d15ae94fbd9" LastKnownName="GlobalContext" />
@@ -1071,22 +1011,6 @@
               </associationHasOwnedEnds>
             </relationshipOwnedElementsInternal>
             <elementDefinition Id="bba4123f-5302-40a1-993b-d21fdb1b3d15" />
-          </association>
-          <association Id="72ab7a85-010b-4f7b-b513-8de107dda77c" isDerived="false" sourceEndRoleName="Atomic" targetEndRoleName="Tacny::AtomicStmt" isLeaf="false" isAbstract="false">
-            <classMoniker Id="7739f0a6-c0b1-4c7e-b134-c44439eb6544" LastKnownName="Tacny::AtomicStmt" />
-            <relationshipOwnedElementsInternal>
-              <associationHasOwnedEnds>
-                <memberEnd Id="25118092-5c1a-4641-8cfe-08505fa807b6" name="Atomic" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
-                  <elementDefinition Id="1e7c8d83-c98b-4ee2-a017-558c693d60e6" />
-                </memberEnd>
-              </associationHasOwnedEnds>
-              <associationHasOwnedEnds>
-                <memberEnd Id="1c3e4e4a-2716-4a94-ab84-a589b831db55" name="Tacny::AtomicStmt" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
-                  <elementDefinition Id="05c6873f-15e3-4cd6-85a2-26457881d6e8" />
-                </memberEnd>
-              </associationHasOwnedEnds>
-            </relationshipOwnedElementsInternal>
-            <elementDefinition Id="5deb9af3-a18a-4881-bba0-4dd2c1323bcf" />
           </association>
           <association Id="120f59c3-172d-4473-b728-1f542f952d22" isDerived="false" sourceEndRoleName="Atomic" targetEndRoleName="StatementRegister" isLeaf="false" isAbstract="false">
             <classMoniker Id="754ba283-3e5d-412a-a2d8-76acd4ef049a" LastKnownName="StatementRegister" />
@@ -1252,172 +1176,6 @@
           </property>
         </ownedAttributesInternal>
         <ownedOperationsInternal>
-          <operation Id="2046ec02-0c9e-453e-b486-3a45dd5cc08d" name="ProcessArg" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
-            <referencesInternal>
-              <reference Id="2527ab74-e9e1-44d8-95f5-84e04588d1f6" handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DProcessArg OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression)%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression ParamKind%3DRef)])" tag="ViewCode">
-                <elementDefinition Id="55ce1cfb-f04a-4b99-825e-e949c9536497" />
-              </reference>
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance Id="8302e27f-c20c-4c9a-9cb2-03ce84bbc747" name="method" profile="CSharpProfile">
-                <elementDefinition Id="78e3b304-e132-4451-90e2-e31addebcfb6" />
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="dab35182-9e58-4a47-a577-25886ee5b94f">
-                    <propertyInstance Id="a6cbe892-fba2-4985-8237-3fcc3a3d6153" name="ClrAttributes">
-                      <elementDefinition Id="3f407112-6303-4ff8-90f7-e3753eeee985" />
-                    </propertyInstance>
-                    <elementDefinition Id="dbda42c5-a0d1-465b-a24b-25cd6dd3b926" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="f8798dff-bfb4-472d-80c1-8d1fcc78425b">
-                    <propertyInstance Id="19d8d987-b04b-4ab2-bdfb-0326137cd932" name="IsPartial" value="false">
-                      <elementDefinition Id="6656a395-b110-47b7-9891-b0eaca08ba01" />
-                    </propertyInstance>
-                    <elementDefinition Id="9719db12-5878-4488-b399-02454a98bc60" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="f0073ec0-2bcd-4b44-80ea-e43bb25f5ac4">
-                    <propertyInstance Id="a5e88913-687e-45d0-b627-4f780dfc6bd3" name="IsUnsafe" value="false">
-                      <elementDefinition Id="ee9e43c6-5e41-4804-9b51-d5f99cf2c6c6" />
-                    </propertyInstance>
-                    <elementDefinition Id="590b2468-655f-43ed-a328-28d78dd5f9d9" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="b662e4d7-d162-41d6-aeed-3a5cb95eb243">
-                    <propertyInstance Id="dd2618a1-16cc-4cd1-9daa-f04b7fa95b39" name="Inheritance" value="none">
-                      <elementDefinition Id="0be92df2-8257-4d02-b45f-9b6130aeade3" />
-                    </propertyInstance>
-                    <elementDefinition Id="f72b9735-4142-4799-81b5-a71eb1e3512d" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="d7e8b9f9-2117-4f68-add8-3fbdf0f0bce1">
-                    <propertyInstance Id="73ca8107-d7b3-4017-8a54-9c266b6a3298" name="PackageVisibility" value="internal">
-                      <elementDefinition Id="8a594e83-89ce-45ca-b268-b5758d7d34bf" />
-                    </propertyInstance>
-                    <elementDefinition Id="927ea094-db8d-4bfd-86ab-657d324fb579" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="ec3d6e2e-89f9-4db7-8a5d-d2bb55b5ce5f">
-                    <propertyInstance Id="96aba531-0c2c-40eb-90a9-c78398798b24" name="params" value="false">
-                      <elementDefinition Id="f0ea7bb0-6f63-4d49-991e-660b4ca5f1ec" />
-                    </propertyInstance>
-                    <elementDefinition Id="f3e8dc09-73ee-4a2f-af07-536dffe02d98" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <elementDefinition Id="89acb136-8ff7-49cb-914a-b8690ec0d342" />
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="33407446-7ba2-4f2d-8b92-a66c24c43f73" name="argument" direction="In">
-                  <referencesInternal>
-                    <reference Id="d437890a-87a8-4690-9fd8-299c4e00c960" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DProcessArg OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression)%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression ParamKind%3DRef)]) ParameterIdentifier%3Dargument" tag="ViewCode">
-                      <elementDefinition Id="ee1b1c1a-a5e9-485c-ba42-42de4f993753" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="72a54098-6037-4f84-9595-888a9a32c933" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="56fe60d0-3a89-4f69-89a0-24f3511f4228" LastKnownName="Expression" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="d9ec14a5-c2e6-43c3-bed0-2abd79fc88a5" name="result" direction="Out">
-                  <referencesInternal>
-                    <reference Id="57fd650a-ab0d-4cf3-90f7-20f4614c1844" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DProcessArg OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression)%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression ParamKind%3DRef)]) ParameterIdentifier%3Dresult" tag="ViewCode">
-                      <elementDefinition Id="12f723ef-5ff1-4490-8bda-94c5ed60392d" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="f66b0645-51f4-4052-ac87-0dfe4af833b2" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="56fe60d0-3a89-4f69-89a0-24f3511f4228" LastKnownName="Expression" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
-          <operation Id="799ec72c-2017-4111-a7a5-61187921357a" name="ProcessArg" visibility="Protected" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
-            <referencesInternal>
-              <reference Id="c9425ca4-a1b8-4182-bc2e-73bbaf50c911" handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DProcessArg OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DObject ParamKind%3DRef)])" tag="ViewCode">
-                <elementDefinition Id="36caccbb-b1f8-49be-8b15-e73f94d0783c" />
-              </reference>
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance Id="9e80ea79-6a4b-4be5-9fcc-c1c81bbb7fc1" name="method" profile="CSharpProfile">
-                <elementDefinition Id="d4598199-5b88-472b-b1c8-213769624a92" />
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="97828064-2c44-4832-8d79-3081b37dafd3">
-                    <propertyInstance Id="d5d7c207-7f48-4e71-aae3-fa9b682ab6e5" name="ClrAttributes">
-                      <elementDefinition Id="21c08ae9-8187-4359-9ea5-533d10ab2e96" />
-                    </propertyInstance>
-                    <elementDefinition Id="ec91a5a0-1830-4013-968a-df5303f0c384" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="01697a80-4c9c-4b27-883c-5eb31216f0ce">
-                    <propertyInstance Id="f6e16254-1552-4533-b721-8438b044e7e0" name="IsPartial" value="false">
-                      <elementDefinition Id="18b9578b-cf8c-4fcf-90fd-3cee0b5ef5a4" />
-                    </propertyInstance>
-                    <elementDefinition Id="ad848c78-fa68-4137-bd46-df39de25e6da" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="a8d8589f-740f-41ed-a5b5-e8ed490e149d">
-                    <propertyInstance Id="a9d55ace-5b95-4b1a-a36d-21b31c806391" name="IsUnsafe" value="false">
-                      <elementDefinition Id="41ff9da9-d414-4404-abe5-4f6e9f71a7a0" />
-                    </propertyInstance>
-                    <elementDefinition Id="6aeb479b-a24e-480b-9157-9a89f37cbd89" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="03616eb7-f2ea-4d64-9187-0c7d19237af4">
-                    <propertyInstance Id="f71a4fa3-ab46-4fb5-a8af-dc77a882f0b1" name="Inheritance" value="none">
-                      <elementDefinition Id="9202046d-3ad2-4935-94c5-f3ee1cc720b6" />
-                    </propertyInstance>
-                    <elementDefinition Id="f1c085bc-acfa-4238-9ea5-4a4c736a7548" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="c0d71a77-a41c-43c2-8e0d-eb5c9aa49a4b">
-                    <propertyInstance Id="a312253f-1f2d-44e3-8355-76e58805aa3b" name="PackageVisibility" value="internal">
-                      <elementDefinition Id="acfb1b99-e13e-4d3a-a446-0d71c34fe7dc" />
-                    </propertyInstance>
-                    <elementDefinition Id="6f9d619d-bf49-4010-aa10-8f7952a3839d" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="8167330f-f613-4aa7-9475-b813c6a75e0a">
-                    <propertyInstance Id="5eab683b-0ace-4834-b2cd-a0c330bc82a9" name="params" value="false">
-                      <elementDefinition Id="c338cbc9-8cfa-4d38-a34f-989f4e663428" />
-                    </propertyInstance>
-                    <elementDefinition Id="fe20743b-0550-4b6a-b8bc-adf689ba65f2" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <elementDefinition Id="230eb885-8abe-459d-a7e2-2d1c1e384d8b" />
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="e5fa77c9-98e5-4c89-b6d5-bb66add17917" name="argument" direction="In">
-                  <referencesInternal>
-                    <reference Id="6e2edf49-debe-4295-9f87-20fcab681461" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DProcessArg OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DObject ParamKind%3DRef)]) ParameterIdentifier%3Dargument" tag="ViewCode">
-                      <elementDefinition Id="204d5c69-508e-416a-8cba-a4817cc1e785" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="258d9b00-fc01-42c0-850e-cdfc22677d96" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="56fe60d0-3a89-4f69-89a0-24f3511f4228" LastKnownName="Expression" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="73cf2a34-0052-402e-a04b-60688d8afbc5" name="result" direction="Out">
-                  <referencesInternal>
-                    <reference Id="86f01813-0ab5-41aa-b131-562bca7f3786" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DProcessArg OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DObject ParamKind%3DRef)]) ParameterIdentifier%3Dresult" tag="ViewCode">
-                      <elementDefinition Id="ac455b26-52fe-4520-b7b2-2b903b54fd3d" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="1264cfa4-f59b-4afa-9822-782accc0efd8" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="d800ba17-544f-4b01-9274-596f3fbecdcb" LastKnownName="Object" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="109342c2-8013-4366-a18a-5d665de1adce" direction="Return">
-                  <elementDefinition Id="a692fc8c-1a02-4aaa-9eed-26ad2428018a" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="25182a57-dd4b-4fa9-8cf8-5ac33782373a" LastKnownName="Solution" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
           <operation Id="9a978460-88b4-49ca-8056-8ba9e8389d87" name="ResolveTactic" isLeaf="false" isStatic="true" isAbstract="false" concurrency="Sequential" isQuery="false">
             <referencesInternal>
               <reference Id="9beda4e5-60c3-4518-b0ed-4d1c6490988d" handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DResolveTactic OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DTactic)%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DUpdateStmt)%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DMemberDecl)%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DProgram)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DIVariable)]))%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolutionList ParamKind%3DRef)])" tag="ViewCode">
@@ -1552,93 +1310,6 @@
                   <elementDefinition Id="cba5c4d5-e80d-42bd-9fcf-2f6088b6bcd6" />
                   <type_NamedElement>
                     <referencedTypeMoniker Id="1b1acad7-a13b-46d9-ab78-a3ba91878d51" LastKnownName="SolutionList" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
-          <operation Id="7e8ccd00-2bf7-44f8-b60b-e3993261d6f7" name="ResolveStatement" isLeaf="false" isStatic="true" isAbstract="false" concurrency="Sequential" isQuery="false">
-            <referencesInternal>
-              <reference Id="7c8236b1-6f91-4caa-880b-6995ce0160bb" handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DResolveStatement OverloadingParameters%3D[(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]))])" tag="ViewCode">
-                <elementDefinition Id="eb930ce7-2a3b-4561-9f44-fc1ec1f960d8" />
-              </reference>
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance Id="d20ac918-cc09-4392-97e9-db13d305a766" name="method" profile="CSharpProfile">
-                <elementDefinition Id="341e3717-da55-48f5-ad8c-57acca42eed2" />
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="410a4c71-6015-41d5-b04c-4aa54bc3f0c7">
-                    <propertyInstance Id="db819334-adb6-419d-83f3-9772f276f7f1" name="ClrAttributes">
-                      <elementDefinition Id="216d75cc-bb3e-47df-bc57-cce93fe25ace" />
-                    </propertyInstance>
-                    <elementDefinition Id="ae9f61cc-4ed9-481a-ae08-e368a34edcb6" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="3fdf43d3-3ad4-44e1-a8cb-ca412e8911c3">
-                    <propertyInstance Id="b673a0c9-f679-4cc2-aeb3-ad776b524a87" name="IsPartial" value="false">
-                      <elementDefinition Id="c2bfd4db-e1a6-4ff6-ac62-6879940e15df" />
-                    </propertyInstance>
-                    <elementDefinition Id="d9e2b2c7-5b63-464d-94b4-1edf7e69308a" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="d5961a32-df6c-4f66-89c6-31c0f8b99c03">
-                    <propertyInstance Id="fe1f6d4c-4e32-45b0-83d6-f6afb5c669f7" name="IsUnsafe" value="false">
-                      <elementDefinition Id="ffe481ee-6e10-4804-8382-632222d6a32c" />
-                    </propertyInstance>
-                    <elementDefinition Id="9d36844e-c470-43d5-ada7-7a226298a5dc" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="5f1b954e-84d7-4c3c-a459-a4b25cd10e57">
-                    <propertyInstance Id="21b3252e-78cd-4cce-b883-b8c26f940392" name="Inheritance" value="none">
-                      <elementDefinition Id="f47248e1-f107-4f42-826a-eefdf0e823aa" />
-                    </propertyInstance>
-                    <elementDefinition Id="4b7d374f-0aa5-447d-8fe3-b56be213cf47" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="f6d80305-3321-4524-bcf7-7dd421b426d2">
-                    <propertyInstance Id="be2777e7-825c-4567-9a17-fff6472249fd" name="PackageVisibility" value="internal">
-                      <elementDefinition Id="de34ce3b-a293-4b1e-bcd6-fb9fc94fefad" />
-                    </propertyInstance>
-                    <elementDefinition Id="bea20870-654d-4bb5-8ce2-55b3685cab06" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="ff507adc-ebed-49b5-be57-b4c9609cd53e">
-                    <propertyInstance Id="816a5242-3f51-4db9-a324-5efc25c9569b" name="params" value="false">
-                      <elementDefinition Id="9db3369f-b3af-4520-857d-59f65cc00e28" />
-                    </propertyInstance>
-                    <elementDefinition Id="8910ab1f-b070-48e5-826a-aa6dfe3a919e" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <elementDefinition Id="a6f6c316-8eb3-4b72-8ccd-7e337ac3194e" />
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="215a22e8-f45b-4611-ac10-2476f9d53f2a" direction="Return">
-                  <elementDefinition Id="f87b87fa-15f7-445c-8c64-47fedb18f654" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="25182a57-dd4b-4fa9-8cf8-5ac33782373a" LastKnownName="Solution" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="bbc89498-3440-4169-beb4-82616803f8f9" name="result" direction="InOut">
-                  <referencesInternal>
-                    <reference Id="5c7bc4c5-ad5f-46cd-b339-9a1566043966" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DResolveStatement OverloadingParameters%3D[(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]))]) ParameterIdentifier%3Dresult" tag="ViewCode">
-                      <elementDefinition Id="214fdf22-2a18-4972-9f2f-6d5e13ea999f" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="4b0ed926-77d9-4bcc-97d5-b82695c9f40e" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="807747c2-1ea4-406d-9d55-b6e75bf9c7f0" LastKnownName="List&lt;Solution‎&gt;" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="1dbd6679-23f2-4dd9-85ca-e117bbe02b5f" name="solution_list" direction="In">
-                  <referencesInternal>
-                    <reference Id="b3e8a1c1-2418-4644-8e63-d4f7a68d7842" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DResolveStatement OverloadingParameters%3D[(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]))]) ParameterIdentifier%3Dsolution_list" tag="ViewCode">
-                      <elementDefinition Id="abb085f7-21cd-4c9e-86a9-4f6eb0a9926a" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="7b13e30f-2ff6-4047-a7ae-9d6af86b7d07" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="807747c2-1ea4-406d-9d55-b6e75bf9c7f0" LastKnownName="List&lt;Solution‎&gt;" />
                   </type_NamedElement>
                 </parameter>
               </operationHasOwnedParameters>
@@ -1818,348 +1489,6 @@
               </operationHasOwnedParameters>
             </ownedParameters>
           </operation>
-          <operation Id="9235a4f8-0737-45c3-9534-9efd8b9449f6" name="CallDefaultAction" visibility="Private" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
-            <referencesInternal>
-              <reference Id="b59ba444-6583-42cb-bb7e-d826bcf9d8cf" handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DCallDefaultAction OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)])" tag="ViewCode">
-                <elementDefinition Id="f03128d3-3e25-4594-96e7-dba1c7953324" />
-              </reference>
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance Id="015b2163-27ef-4ac4-b5aa-cfd4b6266968" name="method" profile="CSharpProfile">
-                <elementDefinition Id="6270340c-2b6c-4d33-a736-f5cb9732a66d" />
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="d4be4cc6-87ec-4c11-b46a-c14cfd18dc3c">
-                    <propertyInstance Id="6985446f-84fe-4672-af5a-ff85e1a3ba25" name="ClrAttributes">
-                      <elementDefinition Id="c02be84d-086b-458d-b621-346d34d428b7" />
-                    </propertyInstance>
-                    <elementDefinition Id="140b7a57-6ad9-4ffc-9bda-40b8fe21d44b" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="dcd30bcc-53e0-4a6a-8165-9c76708a73c1">
-                    <propertyInstance Id="167a82f4-e657-40b4-8c4a-6752d6cda81f" name="IsPartial" value="false">
-                      <elementDefinition Id="eea71c2a-cb0e-4edb-974f-b785574fdf86" />
-                    </propertyInstance>
-                    <elementDefinition Id="8a6b30ad-13f4-40a4-915a-1bdc7e102906" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="60292f3f-bf50-49b1-9361-999d799b8c5a">
-                    <propertyInstance Id="eb7cf060-dc70-4234-9d92-1b5d713e6262" name="IsUnsafe" value="false">
-                      <elementDefinition Id="cc393c45-284c-4b44-acea-d5d72839d713" />
-                    </propertyInstance>
-                    <elementDefinition Id="a9d464c6-50bb-4146-907f-5cd362b8b888" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="e76660a7-f5ab-40e1-a845-13d3dca969a6">
-                    <propertyInstance Id="884f4004-b9e3-4e08-bad3-5893e477aa7b" name="Inheritance" value="none">
-                      <elementDefinition Id="96307f39-7892-416b-b1d9-5131b2b1f287" />
-                    </propertyInstance>
-                    <elementDefinition Id="f33f6ac6-bb42-489b-aa2b-103763b934ae" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="37bb5174-2757-4673-a982-85f24601e5b5">
-                    <propertyInstance Id="038dc5a8-623a-46eb-a0c8-271c415b4c9e" name="PackageVisibility" value="internal">
-                      <elementDefinition Id="0aa8deb8-bc36-4ae0-8419-d814a659ad0d" />
-                    </propertyInstance>
-                    <elementDefinition Id="a58c66e1-2bbb-4cd3-9190-28c87807fcae" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="52da86fc-4780-458f-ad5b-0a505d484c40">
-                    <propertyInstance Id="4b30b8e0-ff88-4253-afe6-480a1f04061b" name="params" value="false">
-                      <elementDefinition Id="b025bf9c-cccc-4338-b9c5-6d52063d08dc" />
-                    </propertyInstance>
-                    <elementDefinition Id="2180110a-3675-442a-a08e-58e28d533bfc" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <elementDefinition Id="25a37920-89f3-4be4-96cd-81868af650dc" />
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="124d418d-de63-4fc8-afb8-cd3aefd6f5fe" direction="Return">
-                  <elementDefinition Id="670b7071-4f2f-4ec5-8fac-fa67172300a2" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="25182a57-dd4b-4fa9-8cf8-5ac33782373a" LastKnownName="Solution" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="507f42e8-5849-41f0-8a5e-42d9bbdf4817" name="st" direction="In">
-                  <referencesInternal>
-                    <reference Id="d39b36f9-1c59-41f5-8e05-70408e603a05" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DCallDefaultAction OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)]) ParameterIdentifier%3Dst" tag="ViewCode">
-                      <elementDefinition Id="c677715f-e866-4f6b-9b16-22d6d441f3de" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="8195217a-6c16-4168-8792-2b72536bd05c" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="525b6089-a3e1-4e39-b866-887446e16e9f" LastKnownName="Statement" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="61f11256-abf0-4925-be03-b4493f4b16a5" name="solution_list" direction="InOut">
-                  <referencesInternal>
-                    <reference Id="75238a2a-dc3f-42b6-a650-0583478d454c" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DCallDefaultAction OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)]) ParameterIdentifier%3Dsolution_list" tag="ViewCode">
-                      <elementDefinition Id="89a4134a-4643-45aa-8fff-7a419c31554f" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="db142099-c67b-4376-8a5f-9a2c18c5ce2d" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="807747c2-1ea4-406d-9d55-b6e75bf9c7f0" LastKnownName="List&lt;Solution‎&gt;" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
-          <operation Id="e12e2f8e-a915-4c9f-825d-a913923de60e" name="GetCallArguments" visibility="Protected" isLeaf="false" isStatic="true" isAbstract="false" concurrency="Sequential" isQuery="false">
-            <referencesInternal>
-              <reference Id="c713f70c-c512-46f6-a418-1364c5f18132" handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DGetCallArguments OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DUpdateStmt)])" tag="ViewCode">
-                <elementDefinition Id="ac56cd0f-abfb-4caa-8aad-4cd8c8f5560a" />
-              </reference>
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance Id="0ecc486a-1be4-4a6a-b821-8f1e344330c5" name="method" profile="CSharpProfile">
-                <elementDefinition Id="69dec44e-7a80-455d-8c72-36e7a39fa91f" />
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="89705b1d-75ac-4a77-ae2a-de78e911ed76">
-                    <propertyInstance Id="7344d034-89a9-46dd-a907-78c79302105f" name="ClrAttributes">
-                      <elementDefinition Id="af918266-39de-45ac-82cc-14ba4d6b1a70" />
-                    </propertyInstance>
-                    <elementDefinition Id="0b3e8a39-7534-4854-93bc-2a18711d6b80" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="9596bdb2-177a-40e3-a05f-63620369ae2f">
-                    <propertyInstance Id="65748a28-a822-4184-bdd2-38394ce2604e" name="IsPartial" value="false">
-                      <elementDefinition Id="c6f32be5-0bd9-4e01-93c2-573e8fcae739" />
-                    </propertyInstance>
-                    <elementDefinition Id="d8193855-6e84-4305-b1d9-6a934de47781" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="ce874c28-2505-41d2-b43a-5ca46826264a">
-                    <propertyInstance Id="310bfae4-e54b-4e69-9ad0-732adbb892d2" name="IsUnsafe" value="false">
-                      <elementDefinition Id="303a5fcb-58bb-490b-8dd9-3b703c00ffad" />
-                    </propertyInstance>
-                    <elementDefinition Id="13957745-d25a-4e11-9c81-45c7c6f25bc4" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="d285f931-e45c-4871-8724-a1b95103f488">
-                    <propertyInstance Id="4fd99c92-895a-47b1-9a5e-05ac99d5b886" name="Inheritance" value="none">
-                      <elementDefinition Id="1935e965-fce0-4b07-89f1-cb6c0e5fe145" />
-                    </propertyInstance>
-                    <elementDefinition Id="5277d0bf-f869-4321-8fb9-e6c31f1199f8" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="bb1cbbd1-22cf-4b3d-a6b8-7bb9114c3324">
-                    <propertyInstance Id="72d7d74a-f41e-4d7e-9cf1-ccde07585546" name="PackageVisibility" value="internal">
-                      <elementDefinition Id="1accc279-3ecc-4dbb-8de9-c6a39155000b" />
-                    </propertyInstance>
-                    <elementDefinition Id="24220e5e-c124-4269-b961-2b13a4056ffc" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="1ced5e39-956f-4e22-8fdc-b75e6ceefecb">
-                    <propertyInstance Id="89c5d0cb-2ec0-446c-94c8-5b939519e9f2" name="params" value="false">
-                      <elementDefinition Id="e89eded9-1c84-4036-9308-fe18b9eb3a94" />
-                    </propertyInstance>
-                    <elementDefinition Id="d438bb01-0177-4a5c-9dc8-d0236017e61a" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <elementDefinition Id="99425b7c-b057-44a0-9067-2caaf6bc7722" />
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="8dc3f399-65ed-43ad-84c4-0b82eb11064d" direction="Return">
-                  <elementDefinition Id="ea13682d-123a-4068-bcf0-88560e638d06" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="33040089-67e6-4f6a-8411-2accd74ba81e" LastKnownName="List&lt;Expression‎&gt;" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="59dbe3c7-7df7-4bbb-a67d-a861ef7225c6" name="us" direction="In">
-                  <referencesInternal>
-                    <reference Id="78098c7f-f2ef-40fd-9dcd-1fdc943c9d08" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DGetCallArguments OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DUpdateStmt)]) ParameterIdentifier%3Dus" tag="ViewCode">
-                      <elementDefinition Id="71386b39-7f86-4df4-855a-ccc547f14670" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="9f8c817b-8e8e-4625-bdea-6c4b7b82eef9" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="2be3b367-5593-4825-aafe-86bc8e8e4348" LastKnownName="UpdateStmt" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
-          <operation Id="1629e842-99d3-4e63-8a8e-adf60aa9b37c" name="CreateToken" visibility="Protected" isLeaf="false" isStatic="true" isAbstract="false" concurrency="Sequential" isQuery="false">
-            <referencesInternal>
-              <reference Id="1b0e9cde-3bc4-4300-9a89-fced76aca423" handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DCreateToken OverloadingParameters%3D[(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DString)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DInt32)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DInt32)])" tag="ViewCode">
-                <elementDefinition Id="245932f4-46ba-43b4-853e-e21747190d2f" />
-              </reference>
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance Id="68a938e7-16c3-4c4d-a101-95acf601c423" name="method" profile="CSharpProfile">
-                <elementDefinition Id="860194b5-8271-4f08-8a09-6a808fc93012" />
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="b0d6d73d-020c-42f2-87eb-1477b5553509">
-                    <propertyInstance Id="c9ec64b3-fec8-423b-91a7-7731ab0be1b9" name="ClrAttributes">
-                      <elementDefinition Id="5876c41b-6e21-402a-b862-ab6ca59112a4" />
-                    </propertyInstance>
-                    <elementDefinition Id="2f3a6ddc-452c-4a01-b799-4e05f6b7c673" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="f345ab90-0da9-4142-8f40-0a4d54f6ea9e">
-                    <propertyInstance Id="3755a4e1-ba14-4d50-bb11-a0704babeabc" name="IsPartial" value="false">
-                      <elementDefinition Id="c4930a34-4e84-4af0-a05d-2509a871ad91" />
-                    </propertyInstance>
-                    <elementDefinition Id="a9c87ff8-8c37-4d62-b980-23c1b25bbcfd" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="f5727a6c-26ae-438e-bfee-437b0b2d9663">
-                    <propertyInstance Id="f873c600-96ed-41f8-bfe0-bdc479f1afcd" name="IsUnsafe" value="false">
-                      <elementDefinition Id="4086f570-5c96-48ea-a79a-771cb0dacff6" />
-                    </propertyInstance>
-                    <elementDefinition Id="ee09d91d-0adb-442e-a32e-d871ada022e6" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="87c68ad4-9ba9-4201-ba28-bba8431397da">
-                    <propertyInstance Id="f7237dd5-8174-4503-8f43-c27840da10a5" name="Inheritance" value="none">
-                      <elementDefinition Id="9d15b9ae-7bac-48d1-bdf7-1aaceb4cb8b4" />
-                    </propertyInstance>
-                    <elementDefinition Id="6164c2fc-940b-40f7-a3ad-cf7e657928df" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="23a14f2d-f451-4289-a2d1-32912984573f">
-                    <propertyInstance Id="276f5223-4fb2-4111-8efe-1243ce7a79bf" name="PackageVisibility" value="internal">
-                      <elementDefinition Id="46b91d00-c336-484d-9049-1cfccff7d1f6" />
-                    </propertyInstance>
-                    <elementDefinition Id="f3bdf928-a674-4658-b16b-bd94486e834b" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="ee9fc779-7b93-4ea6-8944-832f77d00c28">
-                    <propertyInstance Id="378ab04f-53fd-453b-bbb8-f5f2fabe2b6b" name="params" value="false">
-                      <elementDefinition Id="558b1ca4-2af4-4631-b886-343fb0ca0161" />
-                    </propertyInstance>
-                    <elementDefinition Id="326feb39-f130-403f-9fe0-993c576d6f41" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <elementDefinition Id="6180c0a9-0976-46d6-8216-115e4de94c5d" />
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="34310036-1409-43b8-941f-5536177e0927" direction="Return">
-                  <elementDefinition Id="cda6e99b-8ca8-4657-bd44-a68463d22a62" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="1ad253de-d490-47c9-9f0c-e537ec7659a1" LastKnownName="Token" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="becda37f-53da-4a59-9b71-fc8cc5546565" name="val" direction="In">
-                  <referencesInternal>
-                    <reference Id="029c4ac2-d27a-4061-9014-d0161dcaa238" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DCreateToken OverloadingParameters%3D[(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DString)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DInt32)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DInt32)]) ParameterIdentifier%3Dval" tag="ViewCode">
-                      <elementDefinition Id="5288ec04-ad81-4d71-897f-cd4eb67f5d55" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="6ebf0b94-97b8-40c4-8bd2-fe38bce4ec3e" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="fefab78b-60f9-4916-b7ab-5527bc2e6d4d" LastKnownName="String" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="eeb4094d-0d90-474c-8f89-8a5078eafec6" name="line" direction="In">
-                  <referencesInternal>
-                    <reference Id="9e64e4ff-6456-421f-b47e-a9e383d01126" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DCreateToken OverloadingParameters%3D[(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DString)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DInt32)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DInt32)]) ParameterIdentifier%3Dline" tag="ViewCode">
-                      <elementDefinition Id="ecb70ec6-f51c-45e5-900b-2d0a89bfc262" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="4f23986e-01b9-49ca-ac17-ac5ee03afd02" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="f9f07342-3fbd-4896-8b78-9f538de9bb06" LastKnownName="Integer" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="5f84c545-8384-4b13-b5fb-a058bac4c8f5" name="col" direction="In">
-                  <referencesInternal>
-                    <reference Id="dc44273d-4b02-4fa5-b0de-63b811e229a0" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DCreateToken OverloadingParameters%3D[(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DString)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DInt32)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DInt32)]) ParameterIdentifier%3Dcol" tag="ViewCode">
-                      <elementDefinition Id="690baf8d-44ca-4b1c-947f-e4a13a739a8c" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="0161acc7-ab99-4270-8f2a-1f59d63fea92" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="f9f07342-3fbd-4896-8b78-9f538de9bb06" LastKnownName="Integer" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
-          <operation Id="9268e478-c071-499c-bf82-081238b9c656" name="SetNewTarget" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
-            <referencesInternal>
-              <reference Id="e9905095-0a58-487b-bbd2-24f17ca9bbbc" handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DSetNewTarget OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DMethod)])" tag="ViewCode">
-                <elementDefinition Id="5126bf68-6048-40c3-a8a9-ff93c0321337" />
-              </reference>
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance Id="b7ad1405-7a79-40d0-ae71-b2586093cda4" name="method" profile="CSharpProfile">
-                <elementDefinition Id="5564c137-cbd5-4b80-815d-b2145359be35" />
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="0c8fbc62-fc0c-4a20-a444-89b1e813303d">
-                    <propertyInstance Id="dca177c1-8ad3-4afc-8196-2f755fbca3a9" name="ClrAttributes">
-                      <elementDefinition Id="18ebd0b6-3b94-434a-880a-04ae181970e3" />
-                    </propertyInstance>
-                    <elementDefinition Id="8fdf62d2-1a3e-4379-9572-75fc8c9a3075" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="86dae0a1-4da9-469b-b2d2-423788bbb98a">
-                    <propertyInstance Id="40ca87dd-39f3-43f9-9c68-f217f6b4ff99" name="IsPartial" value="false">
-                      <elementDefinition Id="6035180c-0964-473b-bdac-d08c9748440b" />
-                    </propertyInstance>
-                    <elementDefinition Id="a99605e5-bf1f-4e24-b085-69406d3afb7d" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="9743110f-df95-491c-8351-0608480500d7">
-                    <propertyInstance Id="4d96ecca-dd44-4b7f-b81d-48fda8146c38" name="IsUnsafe" value="false">
-                      <elementDefinition Id="343386f2-37dc-4cba-87df-3c4afa093739" />
-                    </propertyInstance>
-                    <elementDefinition Id="31c6aff5-bb87-4d36-9d6f-88be74e2342a" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="d7c08142-9f95-4880-a4ca-d97dc0926ac5">
-                    <propertyInstance Id="2afe7999-3682-4e7d-bd8c-15f2cab224cf" name="Inheritance" value="none">
-                      <elementDefinition Id="a6902329-67aa-4ec5-9c70-bc8e95c99ecd" />
-                    </propertyInstance>
-                    <elementDefinition Id="91cdc804-4bed-4b1c-82f2-fef19b7d2666" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="ef3107e8-cf53-4b94-9695-eb81bb4c30b6">
-                    <propertyInstance Id="0abb6412-9fa9-43a5-8447-c4fbab1f45c9" name="PackageVisibility" value="internal">
-                      <elementDefinition Id="066be1b3-5dbc-4df0-bbd2-dd3c917151e2" />
-                    </propertyInstance>
-                    <elementDefinition Id="a8e05a94-cc99-41f5-aac6-4e3191132f73" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances Id="007795a9-98e7-4d4a-ba77-e64ca5bb4e6a">
-                    <propertyInstance Id="7dc5ab63-649d-4d59-a1bb-6f7159e9ced7" name="params" value="false">
-                      <elementDefinition Id="22a2a5e3-3b84-4044-97da-a2d69f55d0c7" />
-                    </propertyInstance>
-                    <elementDefinition Id="a68c4aa8-99f3-4afd-9b22-f980d7c5ceed" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <elementDefinition Id="1ce3b04a-1adc-4e11-823c-303958f14120" />
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="08a3b143-c392-46da-a613-0c355cf62e3b" name="new_target" direction="In">
-                  <referencesInternal>
-                    <reference Id="be467afa-b220-4c8c-99f3-fe5f68ad2b48" handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic Member%3D(Name%3DSetNewTarget OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DMethod)]) ParameterIdentifier%3Dnew_target" tag="ViewCode">
-                      <elementDefinition Id="a1c77d48-47f9-4d9f-a6ac-794900ad6e7a" />
-                    </reference>
-                  </referencesInternal>
-                  <elementDefinition Id="9fcc4b10-6c43-47ad-adc1-af0800806852" />
-                  <type_NamedElement>
-                    <referencedTypeMoniker Id="71ebaf09-9228-4918-8ad7-32dc94f06436" LastKnownName="Method" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
-          <operation Id="731b22aa-4674-4b2d-82ae-b6c3a213722c" name="Resolve" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
-            <elementDefinition Id="2aebd72d-5a32-43f9-a8da-404f7d5580a2" />
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="f7f04858-21e4-4222-aa7b-8c3adbd2912b" name="Statement st" direction="In" isUnique="false">
-                  <elementDefinition Id="bec51069-f6c4-4ef6-b473-17cbfa2c36d8" />
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter Id="7a9b1c85-b7ca-448f-9904-bc752618f78a" name="ref List&lt;Solution&gt; solution_list" direction="In" isUnique="false">
-                  <elementDefinition Id="c09a3c6a-dea3-42a5-a452-a66e79ba8ea3" />
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
         </ownedOperationsInternal>
       </class>
     </logicalClassDesignerModelHasTypes>
@@ -2171,11 +1500,6 @@
     <packageHasNamedElement>
       <referencedType Id="1cfb299c-a45d-49eb-82ce-64909e965e2f" name="LocalContext" isAbstract="false" isLeaf="false" cachedFullName="Diagrams::Tacny::LocalContext">
         <elementDefinition Id="e792f3f3-fc5f-4b52-bd67-0a23c31267cf" />
-      </referencedType>
-    </packageHasNamedElement>
-    <packageHasNamedElement>
-      <referencedType Id="56fe60d0-3a89-4f69-89a0-24f3511f4228" name="Expression" isAbstract="false" isLeaf="false" cachedFullName="Diagrams::Microsoft::Dafny::Expression">
-        <elementDefinition Id="5d44fbb4-058e-4e5d-8a2b-dd5e8b3cd098" />
       </referencedType>
     </packageHasNamedElement>
     <packageHasNamedElement>
@@ -2216,21 +1540,6 @@
     <packageHasNamedElement>
       <referencedType Id="525b6089-a3e1-4e39-b866-887446e16e9f" name="Statement" isAbstract="false" isLeaf="false" cachedFullName="Diagrams::Microsoft::Dafny::Statement">
         <elementDefinition Id="872824fe-4bc3-4e2d-83e0-a0771050724b" />
-      </referencedType>
-    </packageHasNamedElement>
-    <packageHasNamedElement>
-      <referencedType Id="33040089-67e6-4f6a-8411-2accd74ba81e" name="List&lt;Expression‎&gt;" isAbstract="false" isLeaf="false" cachedFullName="Diagrams::System::Collections::Generic::List&lt;Expression‎&gt;">
-        <elementDefinition Id="61d9f4f0-f403-46c4-bcf2-6f4f7fe658ee" />
-      </referencedType>
-    </packageHasNamedElement>
-    <packageHasNamedElement>
-      <referencedType Id="1ad253de-d490-47c9-9f0c-e537ec7659a1" name="Token" isAbstract="false" isLeaf="false" cachedFullName="Diagrams::Microsoft::Boogie::Token">
-        <elementDefinition Id="3a6583be-93ab-48ed-9d90-3e4458f8e746" />
-      </referencedType>
-    </packageHasNamedElement>
-    <packageHasNamedElement>
-      <referencedType Id="71ebaf09-9228-4918-8ad7-32dc94f06436" name="Method" isAbstract="false" isLeaf="false" cachedFullName="Diagrams::Microsoft::Dafny::Method">
-        <elementDefinition Id="899d6308-9b1f-44e4-8e81-26b01a000f38" />
       </referencedType>
     </packageHasNamedElement>
     <logicalClassDesignerModelHasTypes>
@@ -3084,6 +2393,12 @@
               <referencedTypeMoniker Id="c803de94-9640-4439-b4c5-1224187e1708" LastKnownName="Program" />
             </type_NamedElement>
           </property>
+          <property Id="7674c7dd-fa9f-42c8-b35c-c97a76d19c2f" name="errroList" isLeaf="false" isStatic="false" isReadOnly="false" isUnique="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+            <elementDefinition Id="2b3528e3-2f69-4ff2-adce-fd8c92c8974a" />
+            <type_NamedElement>
+              <referencedTypeMoniker Id="92d538bc-4f2f-49d2-87ec-72803103f172" LastKnownName="List&lt;ErrorInformation&gt;" />
+            </type_NamedElement>
+          </property>
         </ownedAttributesInternal>
         <ownedOperationsInternal>
           <operation Id="51cd1346-7a9d-429a-bcb8-c9301fbd92a3" name="VerifyProgram" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
@@ -3845,6 +3160,11 @@
     <packageHasNamedElement>
       <referencedType Id="c15fbded-67c8-4a1f-af9c-700f29804ce2" name="Type" isAbstract="false" isLeaf="false" cachedFullName="Diagrams::System::Type">
         <elementDefinition Id="18e45db6-e1ff-426c-91cf-4802354ccc90" />
+      </referencedType>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <referencedType Id="92d538bc-4f2f-49d2-87ec-72803103f172" name="List&lt;ErrorInformation&gt;" isAbstract="false" isLeaf="false" cachedFullName="List&lt;ErrorInformation&gt;">
+        <elementDefinition Id="79f74e61-2a2a-4aa0-a67b-f65e46072602" />
       </referencedType>
     </packageHasNamedElement>
   </packagedElements>

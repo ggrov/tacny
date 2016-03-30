@@ -68,9 +68,9 @@ namespace LazyTacny
                     enumerable = BreadthFirstSeach.Search(input, atomic, verify);
                     break;
             }
-
+            // return a fresh copy of the atomic
             foreach (var item in enumerable)
-                yield return item;
+                yield return new Solution(item.state.Copy());
             yield break;
         }
 
@@ -93,9 +93,43 @@ namespace LazyTacny
             foreach (var item in enumerable)
             {
                 // fix context
-                yield return item;
+                    yield return new Solution(item.state.Copy());
             }
             yield break;
+        }
+
+        internal static Strategy GetSearchStrategy(Tactic tac)
+        {
+            Contract.Requires<ArgumentNullException>(tac != null);
+            Attributes attrs = tac.Attributes;
+            if(attrs != null)
+            {
+                if(attrs.Name == "search")
+                {
+                    Expression expr = attrs.Args.FirstOrDefault();
+                    if(expr != null)
+                    {
+                        // the search strategy is expected to be a name segment
+                        var ns = expr as NameSegment;
+                        if(ns != null)
+                        {
+                            switch(ns.Name.ToUpper())
+                            {
+                                case "BFS":
+                                    return Strategy.BFS;
+                                case "DFS":
+                                    return Strategy.DFS;
+                                default:
+                                    Contract.Assert(false, (Util.Error.MkErr(expr, 19, ns.Name)));
+                                    return Strategy.BFS;
+
+                            }
+                        }
+                    } 
+                }
+            }
+
+            return Strategy.BFS;
         }
     }
 
