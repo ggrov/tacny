@@ -107,13 +107,12 @@ namespace LazyTacny
                             prog.SetCurrent(tac, md);
                             variables.AddRange(m.Ins);
                             variables.AddRange(m.Outs);
-                            SolutionList sol_list = new SolutionList();
                             //sol_list.AddRange(solution_list.plist);
                             // get the resolved variables
                             List<IVariable> resolved = prog.GetResolvedVariables(md);
                             Console.Out.WriteLine(String.Format("Resolving {0} in {1}", tac.Name, md.Name));
                             resolved.AddRange(m.Ins); // add input arguments as resolved variables
-                            Solution result = Atomic.ResolveTactic(tac, us, md, prog, variables, resolved, sol_list);
+                            Solution result = Atomic.ResolveTactic(tac, us, md, prog, variables, resolved);
                             Debug.IndentLevel = 0;
                             lock (this)
                             {

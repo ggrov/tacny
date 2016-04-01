@@ -44,8 +44,8 @@ namespace Main
         public static int ExecuteTacny(string[] args)
         {
             Contract.Requires(tcce.NonNullElements(args));
-          //  Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
-           // Debug.AutoFlush = true;
+            //Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
+            //Debug.AutoFlush = true;
             
             // install Dafny and Boogie commands
             var options = new Util.TacnyOptions();

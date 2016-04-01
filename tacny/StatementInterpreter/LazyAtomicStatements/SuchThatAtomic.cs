@@ -95,7 +95,6 @@ namespace LazyTacny
                                 }
                             }
                         }
-
                         yield break;
                 }
             }

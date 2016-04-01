@@ -53,7 +53,7 @@ namespace LazyTacny
             {"replace_singleton", Atomic.REPLACE_SINGLETON},
             {"create_invariant", Atomic.CREATE_INVAR},
             {"add_invariant", Atomic.ADD_INVAR},
-            {"extract_guard", Atomic.EXTRACT_GUARD},
+            {"loop_guard", Atomic.EXTRACT_GUARD},
             {"replace_operator", Atomic.REPLACE_OP},
             {"is_valid", Atomic.IS_VALID},
             {"cases", Atomic.ADD_MATCH},

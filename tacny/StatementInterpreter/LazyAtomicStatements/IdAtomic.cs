@@ -7,29 +7,29 @@ using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
 using Microsoft.Boogie;
 
-namespace Tacny
+namespace LazyTacny
 {
-    class IdAtomic : Atomic, IAtomicStmt
+    class IdAtomic : Atomic, IAtomicLazyStmt
     {
         public IdAtomic(Atomic atomic) : base(atomic) { }
 
-
         /// <summary>
-        /// Evaluate a statement to true
+        /// Identity expression
         /// </summary>
         /// <param name="st"></param>
-        /// <param name="solution_list"></param>
+        /// <param name="solution"></param>
         /// <returns></returns>
-        public void Resolve(Statement st, ref List<Solution> solution_list)
+        public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
             Contract.Requires(st is TacticVarDeclStmt);
             List<Expression> args = null;
             IVariable lv = null;
             InitArgs(st, out lv, out args);
             Dafny.LiteralExpr lit = new Dafny.LiteralExpr(st.Tok, true);
-            localContext.AddLocal(lv, lit);
+            var ac = this.Copy();
+            ac.localContext.AddLocal(lv, lit);
+            yield return new Solution(ac);
+            yield break;
         }
-
-
     }
 }

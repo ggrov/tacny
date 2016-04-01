@@ -45,14 +45,19 @@ namespace LazyTacny
 
                     System.Type listType = typeof(List<>).MakeGenericType(new[] { type1 });
                     result = (IList)Activator.CreateInstance(listType);
-                    darg1.AddRange(darg2);
-                    // skip duplicates
+
+                  
                     foreach (var t in darg1)
                     {
                         if (!result.Contains(t))
                             result.Add(t);
                     }
 
+                    foreach (var t in darg2)
+                    {
+                        if (!result.Contains(t))
+                            result.Add(t);
+                    }
                     AddLocal(lv, result);
                     yield return new Solution(this.Copy());
                 }

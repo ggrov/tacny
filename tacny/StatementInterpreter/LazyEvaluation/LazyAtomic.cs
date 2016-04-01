@@ -1,5 +1,4 @@
-﻿#undef DEBUG
-using Microsoft.Dafny;
+﻿using Microsoft.Dafny;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -44,6 +43,7 @@ namespace LazyTacny
 
             this.localContext = ac.localContext;
             this.globalContext = ac.globalContext;
+            this.searchStrat = ac.searchStrat;
         }
 
         public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, Tacny.Program program)
@@ -88,7 +88,7 @@ namespace LazyTacny
         }
 
 
-        public static Solution ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Tacny.Program tacnyProgram, List<IVariable> variables, List<IVariable> resolved, SolutionList result)
+        public static Solution ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Tacny.Program tacnyProgram, List<IVariable> variables, List<IVariable> resolved)//, SolutionList result)
         {
             Contract.Requires(tac != null);
             Contract.Requires(tac_call != null);
@@ -96,11 +96,8 @@ namespace LazyTacny
             Contract.Requires(tacnyProgram != null);
             Contract.Requires(tcce.NonNullElements<IVariable>(variables));
             Contract.Requires(tcce.NonNullElements<IVariable>(resolved));
-            Contract.Requires(result != null);
+            //Contract.Requires(result != null);
             List<Solution> res = new List<Solution>();
-
-            if (result.plist.Count == 0)
-            {
                 Atomic ac = new Atomic(md, tac, tac_call, tacnyProgram);
                 ac.globalContext.RegsiterGlobalVariables(variables, resolved);
                 // set strategy
@@ -113,11 +110,8 @@ namespace LazyTacny
                     return item;
                 }
 
-            }
-
-            result.AddRange(res);
-
             return null;
+
         }
 
 
@@ -153,9 +147,9 @@ namespace LazyTacny
             Debug.Indent();
             Debug.WriteLine("Resolving statement body");
             ISearch strat = new SearchStrategy(this.searchStrat);
-            foreach (var item in strat.SearchBlockStmt(body, this))
+            foreach (var result in strat.SearchBlockStmt(body, this))
             {
-
+                var item = new Solution(result.state.Copy());
                 item.state.localContext.tacticBody = this.localContext.tacticBody; // set the body 
                 item.state.localContext.tac_call = this.localContext.tac_call;
                 item.state.localContext.SetCounter(this.localContext.GetCounter());
@@ -939,7 +933,7 @@ namespace LazyTacny
             solution.GenerateProgram(ref prog);
             globalContext.program.ClearBody(localContext.md);
 #if !DEBUG
-           // globalContext.program.PrintMember(prog, solution.state.globalContext.md.Name);
+            globalContext.program.PrintMember(prog, solution.state.globalContext.md.Name);
 #endif
             if (!globalContext.program.ResolveProgram())
                 return false;

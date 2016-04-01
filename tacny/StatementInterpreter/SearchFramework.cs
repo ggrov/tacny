@@ -93,7 +93,7 @@ namespace LazyTacny
             foreach (var item in enumerable)
             {
                 // fix context
-                    yield return new Solution(item.state.Copy());
+                yield return item;
             }
             yield break;
         }
@@ -263,7 +263,6 @@ namespace LazyTacny
                     continue;
 
                 var solution = solutionEnum.Current;
-
                 solutionStack.Push(solutionEnum);
                 if (solution.IsResolved())
                 {

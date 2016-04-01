@@ -153,13 +153,16 @@ namespace LazyTacny
             if(datatype.TypeArgs != null)
             {
                 ctorTypes = new Dictionary<string, Microsoft.Dafny.Type>();
-                Contract.Assert(datatype.TypeArgs.Count == datatypeType.TypeArgs.Count, "Big bad type error");
-                for (int i = 0; i < datatype.TypeArgs.Count; i++)
+
+                if(datatype.TypeArgs.Count == datatypeType.TypeArgs.Count)
                 {
-                    var genericType = datatype.TypeArgs[i];
-                    var definedType = datatypeType.TypeArgs[i];
-                    ctorTypes.Add(genericType.Name, definedType);
-                    
+                    for (int i = 0; i < datatype.TypeArgs.Count; i++)
+                    {
+                        var genericType = datatype.TypeArgs[i];
+                        var definedType = datatypeType.TypeArgs[i];
+                        ctorTypes.Add(genericType.Name, definedType);
+
+                    }
                 }
             }
 
@@ -228,6 +231,12 @@ namespace LazyTacny
             else
             {
                 ctor = GetErrorIndex(globalContext.program.GetErrorToken(), ms);
+                // the error is occuring outside the match stmt
+                if(ctor == -1)
+                {
+                    ms = GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
+                    return CreateSolution(this, ms);
+                }
                 ctorFlags[ctor] = true;
                 this.oldToken = globalContext.program.GetErrorToken();
             }

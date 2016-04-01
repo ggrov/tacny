@@ -1,19 +1,16 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
-
-namespace Tacny
+using System;
+using Tacny;
+namespace LazyTacny
 {
-    class GuardAtomic : Atomic, IAtomicStmt
+    class GuardAtomic : Atomic, IAtomicLazyStmt
     {
         public GuardAtomic(Atomic atomic) : base(atomic) { }
 
-        public void Resolve(Statement st, ref List<Solution> solution_list)
-        {
-            ExtractGuard(st, ref solution_list);
-        }
 
-        public void ExtractGuard(Statement st, ref List<Solution> solution_list)
+        public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
             WhileStmt ws = null;
             IVariable lv = null;
@@ -27,10 +24,10 @@ namespace Tacny
             ws = FindWhileStmt(globalContext.tac_call, globalContext.md);
             Contract.Assert(ws != null, Util.Error.MkErr(st, 11));
             guard = ws.Guard;
-
-            AddLocal(lv, guard);
-            solution_list.Add(new Solution(this.Copy()));
+            var ac = this.Copy();
+            ac.AddLocal(lv, guard);
+            yield return new Solution(ac);
+            yield break;
         }
-
     }
 }
