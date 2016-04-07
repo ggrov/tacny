@@ -24,7 +24,7 @@ namespace LazyTacny
 
         public Dafny.Program ResolveProgram()
         {
-            Debug.Indent();
+            
             if (tacnyProgram.tactics.Count < 1)
             {
                 return tacnyProgram.ParseProgram();
@@ -48,7 +48,7 @@ namespace LazyTacny
             else {
                 foreach (var member in tacnyProgram.members)
                 {
-                    var res = LazyScanMemberBody(tacnyProgram.NewProgram(), member.Value);
+                    var res = LazyScanMemberBody(tacnyProgram, member.Value);
                     if (res != null)
                     {
                         solution_list.Add(res);
@@ -68,8 +68,7 @@ namespace LazyTacny
                 solution.GenerateProgram(ref prog);
             }
             tacnyProgram.dafnyProgram = prog;
-
-            Debug.Unindent();
+            
             return prog;
 
         }
@@ -114,11 +113,8 @@ namespace LazyTacny
                             resolved.AddRange(m.Ins); // add input arguments as resolved variables
                             Solution result = Atomic.ResolveTactic(tac, us, md, prog, variables, resolved);
                             Debug.IndentLevel = 0;
-                            lock (this)
-                            {
-                                prog.currentDebug.PrintDebugData(prog);
-                                Solution.PrintSolution(result);
-                            }
+                            Solution.PrintSolution(result);
+                            tacnyProgram.currentDebug.Fin();
                             return result;
                         }
                         catch (Exception e)

@@ -50,10 +50,9 @@ namespace Tacny
         public readonly Dictionary<string, Tactic> tactics;
         public readonly Dictionary<string, MemberDecl> members;
         public readonly List<DatatypeDecl> globals;
-        private Util.Printer printer;
         public DebugData currentDebug;
         public List<DebugData> debugDataList;
-        
+
         public class DebugData
         {
             public string tactic = null;
@@ -67,7 +66,7 @@ namespace Tacny
             public int CallsToDafny = 0;        // number of calls to Dafny resolver
             public int StartTime = 0;           // Unix timestamp when the tactic resolution begins
             public int EndTime = 0;             // Unix timestamp when the tactic resolution finishes
-
+            private bool PrintHeader = true;
             public DebugData(string tactic, string method)
             {
                 StartTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
@@ -80,34 +79,55 @@ namespace Tacny
                 if (EndTime == 0)
                     EndTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
             }
-            public void PrintDebugData(Program program)
+            public void PrintDebugData()
             {
                 Fin();
-                TextWriter tw = new System.IO.StreamWriter(program.fileNames[0] + "_debug.dat", true);
-                program.PrintDebugMessage("Method: {0}", tw, method);
-                program.PrintDebugMessage("Tactic: {0}", tw, tactic);
-                program.PrintDebugMessage("Execution time: {0} seconds", tw, EndTime - StartTime);
-                program.PrintDebugMessage("Generated branches: {0}", tw, TotalBranchCount);
-                program.PrintDebugMessage("Generated invalid branches: {0}", tw, BadBranchCount);
-                program.PrintDebugMessage("Generated valid branches: {0}", tw, GoodBranchCount);
-                program.PrintDebugMessage("Verification failed {0} times", tw, VerificationFailure);
-                program.PrintDebugMessage("Verification succeeded {0} times", tw, VerificationSucc);
-                program.PrintDebugMessage("Times Boogie was called: {0}", tw, CallsToBoogie);
-                program.PrintDebugMessage("Times Dafny was called: {0}", tw, CallsToDafny);
-                tw.Close();
+                System.Text.StringBuilder builder = new System.Text.StringBuilder();
+                builder.AppendLine(string.Format("Method: {0}", method));
+                builder.AppendLine(string.Format("Tactic: {0}", tactic));
+                builder.AppendLine(string.Format("Execution time: {0} seconds", EndTime - StartTime));
+                builder.AppendLine(string.Format("Generated branches: {0}", TotalBranchCount));
+                builder.AppendLine(string.Format("Generated invalid branches: {0}", BadBranchCount));
+                builder.AppendLine(string.Format("Generated valid branches: {0}", GoodBranchCount));
+                builder.AppendLine(string.Format("Verification failed {0} times", VerificationFailure));
+                builder.AppendLine(string.Format("Verification succeeded {0} times", VerificationSucc));
+                builder.AppendLine(string.Format("Times Boogie was called: {0}", CallsToBoogie));
+                builder.AppendLine(string.Format("Times Dafny was called: {0}", CallsToDafny));
+                Util.Printer.P.PrintDebugMessage(builder.ToString());
             }
 
-            public void PrintCsvDebugData(Program program)
+            public void PrintCsvDebugData(bool printHeader)
             {
                 Fin();
-                TextWriter tw = new System.IO.StreamWriter(program.fileNames[0] + "_debug.csv");
-                program.PrintDebugMessage("tacitic, method, exec_time, branch_count, inv_branch_count, vld_branch_count, verif_fail, verif_succ, boogie_calls, dafny_calls\n", tw);
-                program.PrintDebugMessage("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}", tw,
-                    tactic, method, 
+                System.Text.StringBuilder builder = new System.Text.StringBuilder();
+                if (printHeader)
+                {
+                    builder.AppendLine("Tactic, Method, Execution time, Generated Nodes, Invalid nodes, Valid nodes, Verification Failure, Verification success, Boogie calls, Dafny Calls");
+                }
+                builder.AppendLine(string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}",
+                    tactic, method,
                     EndTime - StartTime, TotalBranchCount,
                     BadBranchCount, GoodBranchCount,
                     VerificationFailure, VerificationSucc,
-                    CallsToBoogie, CallsToDafny);
+                    CallsToBoogie, CallsToDafny));
+                Util.Printer.P.PrintCsvData(builder.ToString());
+            }
+        }
+
+        public void PrintAllDebugData(bool isCsv = false)
+        {
+            bool printHeader = true;
+            foreach (var item in debugDataList)
+            {
+                if (isCsv)
+                {
+                    item.PrintCsvDebugData(printHeader);
+                    printHeader = false;
+                }
+                else
+                {
+                    item.PrintDebugData();
+                }
             }
         }
 
@@ -115,9 +135,9 @@ namespace Tacny
         public void PrintDebugData(DebugData debugData, bool isCsv = false)
         {
             if (isCsv)
-                debugData.PrintCsvDebugData(this);
+                debugData.PrintCsvDebugData(true);
             else
-                debugData.PrintDebugData(this);
+                debugData.PrintDebugData();
         }
 
 
@@ -169,16 +189,16 @@ namespace Tacny
 
         public Program(IList<string> fileNames, string programId)
         {
-            Debug.Indent();
+
             this.fileNames = fileNames;
             this.programId = programId;
             string err = ParseCheck(fileNames, programId, out _original);
             if (err != null)
                 throw new Exception(err);
             dafnyProgram = ParseProgram();
-            Debug.Unindent();
-            
-            
+
+
+
             if (err != null)
                 throw new ArgumentException(err);
             Init(out tactics, out members, out globals);
@@ -199,7 +219,7 @@ namespace Tacny
             members = new Dictionary<string, MemberDecl>();
             globals = new List<DatatypeDecl>();
             debugDataList = new List<DebugData>();
-           
+
             foreach (var item in dafnyProgram.DefaultModuleDef.TopLevelDecls)
             {
                 ClassDecl curDecl = item as ClassDecl;
@@ -259,7 +279,7 @@ namespace Tacny
         public void VerifyProgram(Dafny.Program prog)
         {
             Debug.WriteLine("Verifying Dafny program");
-            Debug.Indent();
+
             IncCallsToBoogie(currentDebug);
             po = Pipeline.VerifyProgram(prog, fileNames, programId, out stats, out errList, out errorInfo);
             if (stats.ErrorCount == 0)
@@ -272,7 +292,7 @@ namespace Tacny
                 Debug.WriteLine("Dafny program NOT VERIFIED");
                 IncVerificationFailure(currentDebug);
             }
-            Debug.Unindent();
+
         }
 
         public bool ResolveProgram()
@@ -285,7 +305,7 @@ namespace Tacny
         public int ResolveProgram(Dafny.Program program)
         {
             Debug.WriteLine("Resolving Dafny program");
-            Debug.Indent();
+
             IncCallsToDafny(currentDebug);
             Dafny.Resolver r = new Dafny.Resolver(program);
             r.ResolveProgram(program);
@@ -300,7 +320,7 @@ namespace Tacny
                 Debug.WriteLine("Resolution SUCCESSFUL");
                 IncGoodBranchCount(currentDebug);
             }
-            Debug.Unindent();
+
             return r.ErrorCount;
         }
 
@@ -400,7 +420,7 @@ namespace Tacny
                                 VarDeclStmt vds = stmt as VarDeclStmt;
                                 if (vds != null)
                                 {
-                                    foreach(var local in vds.Locals)
+                                    foreach (var local in vds.Locals)
                                     {
                                         if (local.Type != null)
                                             result.Add(local);
@@ -413,7 +433,7 @@ namespace Tacny
             }
             return result;
         }
-        
+
         private string GetSignature(UpdateStmt us)
         {
             ExprRhs er = us.Rhss[0] as ExprRhs;
@@ -556,7 +576,7 @@ namespace Tacny
             var fn = DafnyOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(dafnyFileName) : dafnyFileName;
             try
             {
-                
+
                 int errorCount = Dafny.Parser.Parse(dafnyFileName, module, builtIns, errs, verifyThisFile);
                 if (errorCount != 0)
                 {
@@ -573,9 +593,9 @@ namespace Tacny
         #endregion
 
         #region Boogie
-        
 
-        
+
+
 
         #endregion
 
@@ -704,13 +724,13 @@ namespace Tacny
         /// <summary>
         /// Print verified program to file
         /// </summary>
-        public void Print()
+        public void PrintProgram(Dafny.Program program = null)
         {
-            foreach (var filename in fileNames)
-            {
-                printer = new Util.Printer(new System.IO.StreamWriter(filename.Substring(0, filename.LastIndexOf(".")) + ".dfy"), DafnyOptions.O.PrintMode);
-                printer.PrintProgram(dafnyProgram);
-            }
+            if (program == null)
+                Util.Printer.P.PrintProgram(dafnyProgram);
+            else
+                Util.Printer.P.PrintProgram(program);
+
         }
 
         public void MaybePrintProgram(string filename)
@@ -725,22 +745,7 @@ namespace Tacny
         public void MaybePrintProgram(Dafny.Program prog, string filename)
         {
             // if program is not in debug mode disable console printing
-            #if DEBUG
-            TextWriter tw = null;
-            if (filename == null || filename == "-")
-            {
-                tw = System.Console.Out;
-                PrintProgram(tw, prog, DafnyOptions.O.PrintMode);
-            }
-            else
-            {
-                printer = new Util.Printer(new System.IO.StreamWriter(filename), DafnyOptions.O.PrintMode);
-                printer.PrintProgram(dafnyProgram);
-                
-            }
-
-            #endif
-
+            PrintProgram(prog);
         }
 
         public void PrintMember(Dafny.Program prog, string memberName, string filename = null)
@@ -748,17 +753,11 @@ namespace Tacny
             Contract.Requires(prog != null);
             Contract.Requires(memberName != null);
 
-            TextWriter tw;
-            if (filename == null || filename == "-")
-            {
-                tw = System.Console.Out;
-            }
-            else
-            {
-                tw = new System.IO.StreamWriter(filename);
-            }
+            bool printToConsole = false;
 
-            Printer printer = new Util.Printer(tw);
+            if (filename == null || filename == "-")
+                printToConsole = true;
+
 
             foreach (var tld in prog.DefaultModuleDef.TopLevelDecls)
             {
@@ -768,25 +767,12 @@ namespace Tacny
                     MemberDecl md = cd.Members.FirstOrDefault(i => i.Name == memberName);
                     if (md != null)
                     {
-                        printer.PrintMembers(new List<MemberDecl> { md }, Debug.IndentLevel, this.fileNames[0]);
+                        Util.Printer.P.PrintMembers(new List<MemberDecl> { md }, Debug.IndentLevel, this.fileNames[0]);
                         return;
                     }
                 }
             }
 
-        }
-
-        private void PrintProgram(TextWriter tw, Dafny.Program prog, DafnyOptions.PrintModes printMode = DafnyOptions.PrintModes.Everything)
-        {
-            //if (printer == null)
-            printer = new Util.Printer(tw, DafnyOptions.O.PrintMode);
-            printer.PrintProgram(prog);
-        }
-
-        public void PrintDebugMessage(string message, TextWriter tw, params object[] args)
-        {
-            Util.Printer prt = new Util.Printer(tw, DafnyOptions.O.PrintMode);
-            prt.PrintDebugMessage(message, fileNames[0], args);
         }
     }
 }

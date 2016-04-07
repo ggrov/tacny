@@ -3466,7 +3466,7 @@
             Id="49b1b7d8-e873-44d8-a0fa-fdb1d1dd31df">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -3780,53 +3780,20 @@
           </operation>
           <operation
             Id="3a281a1c-8277-4652-8ae1-8c598eaabbde"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="47621156-0963-455b-9384-f89e42017c71"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="d1357542-7884-45d3-9d77-6ad090a9cee9"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="7f71c616-5d06-4e0e-859c-ed91be652937"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="ca3a6920-217d-43ae-872e-ad28af67ed7f"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -5936,7 +5903,7 @@
     <packageHasNamedElement>
       <Interface
         Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-        name="IAtomicStmt"
+        name="ISearch"
         isAbstract="false"
         isLeaf="false">
         <referencesInternal>
@@ -5983,122 +5950,13 @@
         </appliedStereotypesInternal>
         <ownedOperations>
           <operation
-            Id="46a3bf48-266f-4cfc-9f70-900c9db0aeb8"
-            name="Resolve"
+            Id="d01d1ff1-2b91-44a1-ad2c-5b40398c0ab3"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="true"
             concurrency="Sequential"
-            isQuery="false">
-            <referencesInternal>
-              <reference
-                Id="d63b535c-f944-4b76-9be1-75a3809646e8"
-                handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DIAtomicStmt Member%3D(Name%3DResolve OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)])"
-                tag="ViewCode" />
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance
-                Id="2f0d0a02-a9f6-450a-9191-04af1f49bbf6"
-                name="method"
-                profile="CSharpProfile">
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="ad9e635c-d17f-4a5c-85aa-0ccc4396644b">
-                    <propertyInstance
-                      Id="40c4ad28-b308-42fc-ab6a-785397bf9324"
-                      name="ClrAttributes" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="8d2e0da4-d664-4315-bf5e-53d36ba37e3d">
-                    <propertyInstance
-                      Id="115f5294-f060-44eb-976f-1a1a4379e408"
-                      name="IsPartial"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="8ae77f0b-f230-461d-a193-76eb4d651d50">
-                    <propertyInstance
-                      Id="105f8b55-65cb-48a6-99f6-c3fca8a8f601"
-                      name="IsUnsafe"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="581a0552-c6fe-444f-9c14-a03063373434">
-                    <propertyInstance
-                      Id="e65832fa-fd37-4ff2-98be-2e9b1ef2d44d"
-                      name="Inheritance"
-                      value="none" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="c59e6b93-e043-4ade-ae14-19f563ad8a35">
-                    <propertyInstance
-                      Id="587af0e0-a36d-4601-8b2e-5ffb9487b045"
-                      name="PackageVisibility"
-                      value="internal" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="10182b22-08bb-49a4-bc39-b5f7f03e460f">
-                    <propertyInstance
-                      Id="8f1adefa-00f2-4ac8-a052-fd8b3511a7b5"
-                      name="params"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="21392048-09cb-40b1-a2ed-0053ebd11c82"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="43d0c302-68bf-4850-adf7-2b292c5366ea"
-                  name="st"
-                  direction="In">
-                  <referencesInternal>
-                    <reference
-                      Id="f51708fa-dd48-4a39-a60a-5b9aa381fa5d"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DIAtomicStmt Member%3D(Name%3DResolve OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)]) ParameterIdentifier%3Dst"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="ecbab731-5d26-458c-89d6-221817aa62e0"
-                  name="solution_list"
-                  direction="InOut">
-                  <referencesInternal>
-                    <reference
-                      Id="ecd37f7a-0a4a-4bf1-9893-a6a94b63ebe4"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DIAtomicStmt Member%3D(Name%3DResolve OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)]) ParameterIdentifier%3Dsolution_list"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
         </ownedOperations>
       </Interface>
     </packageHasNamedElement>
@@ -7133,7 +6991,7 @@
             Id="7d46f594-f281-46e6-b462-a95ad3835be5">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -7671,53 +7529,20 @@
           </operation>
           <operation
             Id="694fbf94-1666-45bf-8b34-9b8ea80afa17"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="0ec4bffd-3ea9-48f7-bbb1-022823ecdd7a"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="c58e760f-95db-42b4-a07d-8707a29f8758"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="ecff086e-f2b7-4966-a30a-f672280e59f3"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="5341eee3-d394-44d2-a6be-c58bf2727bc7"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -8368,7 +8193,7 @@
             Id="6be1007d-278e-4dd2-ba4d-4aa08657cc6c">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -8682,53 +8507,20 @@
           </operation>
           <operation
             Id="7f7a3d7e-6c3b-4254-abcf-1ac4ca8831d6"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="f1b459a7-b166-4388-996d-f6bf75d6df92"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="8eb923d7-bbaa-4d13-afb1-7c624ef2bc6d"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="ee6e38f4-fce6-43f4-9d02-5e8a66abb933"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="63b23f99-a558-441a-9abe-18870e457b1f"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -8794,7 +8586,7 @@
             Id="5c2c645f-e0aa-4e63-abf9-2d26b4ddbe18">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -9108,53 +8900,20 @@
           </operation>
           <operation
             Id="dc3e47af-08b2-4439-a3ae-ae634e26437c"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="c51b0056-3dda-41a3-94b4-034e63eee7e4"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="09d4102c-f4c4-4da5-8280-5a756a3e9f01"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="87c713d1-b240-4b63-865e-0865e320c928"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="692e92e9-7514-4a3c-ba7a-867985bf2cd3"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -9220,7 +8979,7 @@
             Id="eead0ed8-e37e-4f75-8f3b-81185a2d8e77">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -9758,53 +9517,20 @@
           </operation>
           <operation
             Id="5d27ec99-4251-4ec2-a7ee-26295ccbbd6e"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="eb46176c-6182-42be-9d16-bbbb02b76a0c"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="f969f5e2-12da-4d55-ad88-b1f737975b82"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="9ae4bdca-1c17-42da-bc5d-deabccb186b4"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="0e188ada-8472-4b1b-bb76-e360014b0e83"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -10325,7 +10051,7 @@
             Id="08074644-fb0f-4ba9-9339-15ef7f0432b7">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -10533,53 +10259,20 @@
           </operation>
           <operation
             Id="83b790e7-94e4-4dd7-b7d9-0ded8debcf61"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="97a3d84f-fb73-4c5f-8072-c8a6de4c05f0"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="9db989b4-013f-47d1-b215-9dae97fe4de7"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="8984ae6f-96f4-41f8-87ef-9d9699efcaf1"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="3b7c25cc-0b0d-4f96-b144-bd304ffff000"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -10645,7 +10338,7 @@
             Id="44fd6e4a-b5ae-4bd6-8485-d646cbf566c0">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -10959,53 +10652,20 @@
           </operation>
           <operation
             Id="65639663-8ed1-4e47-b54c-9866c0430749"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="cee09bc9-9bf0-4e97-b561-e25180b99a97"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="ee3bfdaa-a7a5-4b45-9499-7434ae71330c"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="63b56ce6-1a6f-496f-ae06-b644c4ca09e2"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="feae05e0-d32f-4417-a871-2377cf6924a3"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -11071,7 +10731,7 @@
             Id="e8c81fb6-234d-47e2-b2ac-1f93797a6e2e">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -11279,53 +10939,20 @@
           </operation>
           <operation
             Id="227c79d6-cc24-4415-b87d-fdd73f37a1d8"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="e927fc2d-10b6-4e85-af92-fa957bbc0842"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="b48cc9d7-8a23-4ef2-8a56-880b3c2eae7b"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="d53c3fe5-22f2-4a58-aca7-49e6dc4bd4fa"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="09387c6a-786f-4a03-9017-abe5e7037cf8"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -16219,7 +15846,7 @@
             Id="15b0d7d6-82b0-436b-af8b-c1e836d5ca94">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -16533,53 +16160,20 @@
           </operation>
           <operation
             Id="c45c280c-1047-4019-bebc-4c2563523ea9"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="e99f0ca5-5493-4cd5-b2e7-1f386803b2f3"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="da85c2f8-ff76-451d-a464-cdad1b70e9d7"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="898f12ea-493f-4a31-8c30-27c7ba938d13"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="825d8ba0-2606-4020-8789-df113b0cfb40"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -16645,7 +16239,7 @@
             Id="31e068c5-6769-431b-8d35-e80ffbf7439a">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -17589,53 +17183,20 @@
           </operation>
           <operation
             Id="923fcacc-9e5e-47ff-8ada-44184eacbca3"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="5d86ce65-5a07-4da4-ab8f-78b07fc537fa"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="64b907e8-3bfa-4067-a9ee-64ba6b09aab7"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="e00fb563-df7f-44f9-b5e5-e16020d3b5fc"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="d5c7db3d-84b1-4a66-9cc7-1fbe64d57ab4"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -17701,7 +17262,7 @@
             Id="bce3f40a-9f52-4bf7-9478-1564ff21d262">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -18140,53 +17701,20 @@
           </operation>
           <operation
             Id="87728a13-a374-4c5f-b934-19b3528241d7"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="6e6e3e52-7c51-4e7b-894c-390fc60b002a"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="950ba364-4fd2-4661-8cb1-f326a6f6b042"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="1a09fc40-38e6-43e5-be45-a949c615a8ee"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="04535af3-6af7-42b2-b776-ed0f0dfff60e"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -18252,7 +17780,7 @@
             Id="45b4178d-91be-4aaa-8dce-b25d64842891">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -18566,53 +18094,20 @@
           </operation>
           <operation
             Id="0d56c896-14ff-4a70-8dc2-18356c7bd86a"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="12cc416d-36e7-4c28-818f-907814f580de"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="3bb60d4e-98a8-4a00-965d-4ca465d976b4"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="df8e45ce-e751-455e-9a6f-cf755ead129b"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="3b798b8d-81b5-4f6c-ac9b-a48be2029c09"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -18677,7 +18172,7 @@
             Id="218597fe-147e-480b-b9f5-445b77c2032e">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -18854,53 +18349,20 @@
           </operation>
           <operation
             Id="7ca9f323-1956-44c1-86a9-65687fde2cc3"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="b2d44f7b-5fac-4a00-8e52-87afb839eb4f"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="b15997fb-0d61-4cdd-9891-de7290f78ee3"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="152a54aa-50bd-472f-b714-df144aff4eed"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="58d2146b-1ed7-4b63-bcda-6001f0ffe92e"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -18966,7 +18428,7 @@
             Id="2af69d23-9ba2-4c49-836d-6c88c760c0b7">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -19280,53 +18742,20 @@
           </operation>
           <operation
             Id="43790e0f-687a-434a-a744-9d38cb7ef743"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="0874bd33-a905-460f-b588-dc7fd8977728"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="2b4cf681-93d5-44a3-8802-bca901536990"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="085c9273-73ea-4411-929c-da6883646787"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="2528cd2c-971a-44b3-a930-a1e281cf6e3c"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -19392,7 +18821,7 @@
             Id="03f65bc3-bed0-4471-896c-ca25f488d5d7">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -19706,53 +19135,20 @@
           </operation>
           <operation
             Id="e640aaec-b52c-4e4e-8161-afbc724bda33"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="bb0b8b07-78a9-4c41-a0dd-63d24423e262"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="4df99690-5610-416b-b9d8-8d36047ca99b"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="6edd1444-a092-4b16-8862-b86795539ab8"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="4891c82c-00b1-474c-82dd-e79713abffa6"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -19818,7 +19214,7 @@
             Id="75c062d7-2896-423e-92fa-989d40e13c72">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -20276,53 +19672,20 @@
           </operation>
           <operation
             Id="8c74ac0f-b564-4dcd-97a8-8d52fac4a9df"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="4aad1ece-6a36-40d1-89db-c5977fe4c8ed"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="0203622c-bead-4a3d-8243-76e36c3d54c1"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="677afca9-84e8-443a-935d-c60e4e2df259"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="e3fba79a-5bfc-4a2c-921b-c9cf397163c6"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -20388,7 +19751,7 @@
             Id="373635c7-d3bc-4724-b434-bdae1873b2aa">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -20801,53 +20164,20 @@
           </operation>
           <operation
             Id="321c0f21-a4cc-4634-935c-5b56d7fd15f3"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="fcc7a67d-04e0-4d9b-8ff9-57f441b254a1"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="c53c3b99-bef0-4f57-b603-41e171e6f9ad"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="0794a2a5-d103-4f88-847e-498e9eb5f667"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="de18f546-a03c-4354-ad3a-b1d95352e3d3"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -21890,7 +21220,7 @@
             Id="5264d578-abde-4c84-aa20-a764656b4843">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -22308,53 +21638,20 @@
           </operation>
           <operation
             Id="d3d98a00-b319-4542-a87f-57e782fd55d5"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="cbbc9cd4-1d9c-4304-a5e8-0bc2297dfa88"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="1b62d56c-c396-4e73-9010-e94189ecfc69"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="aa4701f1-a184-428f-abd2-f2aaad8a0edd"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="2d863fb5-6126-4b1b-99da-eda2730c9e68"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -22420,7 +21717,7 @@
             Id="047c480b-a6e9-436b-884b-521dee55f516">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -22628,53 +21925,20 @@
           </operation>
           <operation
             Id="3b136f97-c08f-4e66-b874-f3ee4b5e8b68"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="0ca013be-073d-40ea-a630-f996f4402598"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="75e0fae7-1e6f-4932-a677-0f2b3b9fb231"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="59cba328-aef5-4074-98f1-421f931b01c6"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="e05e5b71-e169-469b-bbaf-6b95068f2673"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -22740,7 +22004,7 @@
             Id="204bbbee-be0e-4a44-a1c5-ffc761e6a542">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -23054,53 +22318,20 @@
           </operation>
           <operation
             Id="687c4c27-411b-4bf7-8132-fb06bdac9ff5"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="b81b2723-e4ce-42b8-8671-aca19ba894b0"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="39503e72-e360-47ab-a032-7ddcd07f4e52"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="0b4497c1-766b-49e4-8910-8e22e6419c3a"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="6bc2c3aa-5505-47ae-9317-dafb871483aa"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -24319,7 +23550,7 @@
     <packageHasNamedElement>
       <class
         Id="4410b5b3-4505-47f4-a085-5688b38e0dee"
-        name="OperatorAtomic"
+        name="SearchStrategy"
         visibility="Package"
         isAbstract="false"
         isLeaf="false"
@@ -24375,10 +23606,10 @@
         </appliedStereotypesInternal>
         <suppliersInternal>
           <interfaceRealization
-            Id="9e2414c2-15d5-4a73-9a57-6c4408659392">
+            Id="950e2dce-57ac-4ed8-8a33-61ecdaa811b3">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -24392,607 +23623,46 @@
               LastKnownLocation="Package_1348.uml" />
           </generalization>
         </generalsInternal>
+        <ownedAttributesInternal>
+          <property
+            Id="cb159495-7c20-49e6-93a0-0cde48b428db"
+            name="ActiveStrategy::Strategy"
+            isLeaf="false"
+            isStatic="false"
+            isReadOnly="false"
+            isUnique="false"
+            isDerived="false"
+            isDerivedUnion="false"
+            aggregation="None"
+            isComposite="false" />
+        </ownedAttributesInternal>
         <ownedOperationsInternal>
           <operation
-            Id="b70c036e-8be3-40ab-8afc-e39b460f1b69"
-            name="OperatorAtomic"
+            Id="2595a7e6-014b-4f70-a654-4e7858b369f9"
+            name="Strategy GetSearchStrategy"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
             isQuery="false">
-            <referencesInternal>
-              <reference
-                Id="b0719419-4f8d-46ca-a4d0-5626b4b63068"
-                handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3D.ctor OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic)])"
-                tag="ViewCode" />
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance
-                Id="7ce46bfa-98c9-441a-b913-722ddb33b6f3"
-                name="method"
-                profile="CSharpProfile">
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="9e7f22ab-b975-4ccf-a819-0de943b1f487">
-                    <propertyInstance
-                      Id="8fc28b4d-0e10-4f01-af09-20d2f91cf36c"
-                      name="ClrAttributes" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="15725469-f602-4b60-8a58-b4fa107d9362">
-                    <propertyInstance
-                      Id="bc467696-9277-48ad-b152-31012eb94863"
-                      name="IsPartial"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="9f000e80-70df-447a-817d-a960e6d13b77">
-                    <propertyInstance
-                      Id="b1cd9389-b104-454e-9bff-bc9bf5e2201d"
-                      name="IsUnsafe"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="d9516c6d-05eb-4ef6-a322-d7c154bdb4cd">
-                    <propertyInstance
-                      Id="c0da6b29-3610-437e-9cc6-e0762c02a347"
-                      name="Inheritance"
-                      value="none" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="da1cda49-0ec7-4ede-ab8a-44ad61f58280">
-                    <propertyInstance
-                      Id="5cdb96aa-7d0a-4ac1-ba8b-f2b8a5071469"
-                      name="PackageVisibility"
-                      value="internal" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="f4deec61-718e-43b4-92a5-dbe677f3af3c">
-                    <propertyInstance
-                      Id="0558d1d5-f04f-43ce-8c34-3b3e3b095329"
-                      name="params"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
             <ownedParameters>
               <operationHasOwnedParameters>
                 <parameter
-                  Id="338ad7a2-6a5c-444b-954b-123cc0c803d3"
-                  name="atomic"
-                  direction="In">
-                  <referencesInternal>
-                    <reference
-                      Id="080c5301-fab5-43e0-ad50-66392718c4e8"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3D.ctor OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DAtomic)]) ParameterIdentifier%3Datomic"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="26a17acd-3883-4952-acd4-b7be116b71fe"
-                      LastKnownName="Atomic"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
+                  Id="146ad8fb-1f41-4ecf-bb2a-ef36ab9a0eec"
+                  name="Tactic tac"
+                  direction="In"
+                  isUnique="false" />
               </operationHasOwnedParameters>
             </ownedParameters>
           </operation>
           <operation
-            Id="0a973a59-3da6-429d-8c85-0f53c7a575f6"
-            name="Resolve"
+            Id="aa07d183-0f42-4bc9-a37c-e4611f22cd65"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <referencesInternal>
-              <reference
-                Id="cafbcb75-0ed5-4587-ae98-2a7fdef09509"
-                handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DResolve OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)])"
-                tag="ViewCode" />
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance
-                Id="25cdd964-00d6-4488-ab16-17a4d79e7e0e"
-                name="method"
-                profile="CSharpProfile">
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="a675aa94-a603-4cae-8bd0-b6d677881278">
-                    <propertyInstance
-                      Id="7ab7fdc0-9082-47f4-a653-a08037e19bab"
-                      name="ClrAttributes" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="bd25fe66-fe73-4dfe-8e95-3e805fdd5ba8">
-                    <propertyInstance
-                      Id="bbe87bb4-c234-4046-b3e4-a06a07d34242"
-                      name="IsPartial"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="ecf9af95-7ba7-4c5e-8a3d-1929a270f4cd">
-                    <propertyInstance
-                      Id="e1c84967-46ac-4ab5-b2cc-10215b0a461f"
-                      name="IsUnsafe"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="133789ca-1bd5-4ee8-81ba-2c7c3546a593">
-                    <propertyInstance
-                      Id="eb84a62b-9e7a-4fdb-8fa4-9159b15c18df"
-                      name="Inheritance"
-                      value="none" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="284f6f7f-6972-4b93-8cc4-a00c87cb4af9">
-                    <propertyInstance
-                      Id="a664e423-fb0c-4567-952d-cb65c923e6a5"
-                      name="PackageVisibility"
-                      value="internal" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="fdeab56f-9355-4532-a934-ed1d72b47761">
-                    <propertyInstance
-                      Id="fc980797-9404-4e2d-b720-f82caee83fef"
-                      name="params"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="ef7c62be-29d7-43f3-8f47-4acb1e80981d"
-                  name="st"
-                  direction="In">
-                  <referencesInternal>
-                    <reference
-                      Id="5621eb23-adc4-4be6-a8d8-7f548f090584"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DResolve OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)]) ParameterIdentifier%3Dst"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="7150c366-af89-461b-8119-b5403c84009f"
-                  name="solution_list"
-                  direction="InOut">
-                  <referencesInternal>
-                    <reference
-                      Id="5735095b-5650-4e83-a000-09905d619d05"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DResolve OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)]) ParameterIdentifier%3Dsolution_list"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
-          <operation
-            Id="6e0337d3-5136-4b26-bb55-023370b71ace"
-            name="ReplaceOperator"
-            isLeaf="false"
-            isStatic="false"
-            isAbstract="false"
-            concurrency="Sequential"
-            isQuery="false">
-            <referencesInternal>
-              <reference
-                Id="7dc05dee-6c2e-4b2c-b4fd-dc1e88952001"
-                handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DReplaceOperator OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)])"
-                tag="ViewCode" />
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance
-                Id="a2a7fb6f-4cce-4afc-a6d6-c2159e8ed5e5"
-                name="method"
-                profile="CSharpProfile">
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="e6fb8dd1-3cf6-48ff-947e-a2054c7b8e30">
-                    <propertyInstance
-                      Id="0949cb5f-7b75-4852-a121-99eb473276a2"
-                      name="ClrAttributes" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="4162d1d5-a5ca-47d0-86d3-c282d1f37162">
-                    <propertyInstance
-                      Id="20d32a34-a90f-4db4-b88f-c4d4dd6a4c33"
-                      name="IsPartial"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="ca5b20cc-7847-47c3-842b-fcde7ffb508c">
-                    <propertyInstance
-                      Id="64f2d7b5-1faa-4dbd-b74b-870fc4d6f46c"
-                      name="IsUnsafe"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="a344b5e6-862e-42ee-870e-9f15edd9c762">
-                    <propertyInstance
-                      Id="25c7304d-8c59-4ba5-a710-f4b13b0cdc85"
-                      name="Inheritance"
-                      value="none" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="df7ee9f5-f79d-4f53-b5a3-491eeffbc1e0">
-                    <propertyInstance
-                      Id="4949120d-d39f-4123-bdd2-194c97381eb4"
-                      name="PackageVisibility"
-                      value="internal" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="7a94e639-8956-4b3f-a619-b799e09e59b3">
-                    <propertyInstance
-                      Id="b86f2fe7-a992-46fb-84c9-d3729d3f1cfa"
-                      name="params"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="99593f28-2dd1-42cf-a5c7-6c7dd8a14881"
-                  name="st"
-                  direction="In">
-                  <referencesInternal>
-                    <reference
-                      Id="e489b9ac-adae-4c74-91f7-d191c731a9e4"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DReplaceOperator OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)]) ParameterIdentifier%3Dst"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="2f165c88-55d7-46c8-9cb8-e93c7884244d"
-                  name="solution_list"
-                  direction="InOut">
-                  <referencesInternal>
-                    <reference
-                      Id="03167eff-b66a-453f-ae93-ebe3f311cb32"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DReplaceOperator OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DSolution)]) ParamKind%3DRef)]) ParameterIdentifier%3Dsolution_list"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
-          <operation
-            Id="b1f27fed-6658-4fd0-bb46-f4798a0f22f9"
-            name="ReplaceOp"
-            visibility="Protected"
-            isLeaf="false"
-            isStatic="false"
-            isAbstract="false"
-            concurrency="Sequential"
-            isQuery="false">
-            <referencesInternal>
-              <reference
-                Id="88f17c0a-00df-4fd7-bdd8-2c3893c78dce"
-                handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DReplaceOp OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DOpcode ParentType%3DBinaryExpr))%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DOpcode ParentType%3DBinaryExpr))%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DExpressionTree)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression)]) ParamKind%3DRef)])"
-                tag="ViewCode" />
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance
-                Id="06a809a9-2bb4-4df6-836a-b30095d056f1"
-                name="method"
-                profile="CSharpProfile">
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="409859ca-4f08-4866-98f0-17c5771cb489">
-                    <propertyInstance
-                      Id="c43e4487-ebe0-40fd-a844-fc3fd2eafbda"
-                      name="ClrAttributes" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="d9f2becf-a937-4738-81c5-d067129be377">
-                    <propertyInstance
-                      Id="136f8cc5-f14e-43ca-af66-d17e12855fe0"
-                      name="IsPartial"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="08a945a2-2400-4003-ba3b-b561425076a6">
-                    <propertyInstance
-                      Id="875aa373-e2ef-4f13-81a7-5e46d54ff833"
-                      name="IsUnsafe"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="de353e3a-448b-4aab-bf6e-2782d5acd345">
-                    <propertyInstance
-                      Id="c7a3b108-16fa-46b2-8439-fb1c28ce7589"
-                      name="Inheritance"
-                      value="none" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="a56a3dc8-069c-43d0-90d7-9ad2a4b04b04">
-                    <propertyInstance
-                      Id="db3584a1-cfa6-4c4c-bcb6-0ee94144f3bb"
-                      name="PackageVisibility"
-                      value="internal" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="ed7ca363-b52e-458f-a823-cfa941e5ee9d">
-                    <propertyInstance
-                      Id="d1a5cf8b-998f-4831-a86e-ecd1cb54dd11"
-                      name="params"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="06978276-f989-452b-9ce5-cfd5b10a883b"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="5d44fbb4-058e-4e5d-8a2b-dd5e8b3cd098"
-                      LastKnownName="Expression"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="060ee7db-de0f-48c2-aa73-87f830c6ec8b"
-                  name="old_op"
-                  direction="In">
-                  <referencesInternal>
-                    <reference
-                      Id="bbf25125-b34c-4e59-acfb-28280b276482"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DReplaceOp OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DOpcode ParentType%3DBinaryExpr))%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DOpcode ParentType%3DBinaryExpr))%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DExpressionTree)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression)]) ParamKind%3DRef)]) ParameterIdentifier%3Dold_op"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <enumerationMoniker
-                      Id="cba6f499-fd64-4867-83fa-366255b283d0"
-                      LastKnownName="Opcode"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="b0d103a9-c9a4-4a2f-978b-d9f6aacee0d8"
-                  name="new_op"
-                  direction="In">
-                  <referencesInternal>
-                    <reference
-                      Id="05cd514d-2d88-4dcd-ad57-6295a638198a"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DReplaceOp OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DOpcode ParentType%3DBinaryExpr))%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DOpcode ParentType%3DBinaryExpr))%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DExpressionTree)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression)]) ParamKind%3DRef)]) ParameterIdentifier%3Dnew_op"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <enumerationMoniker
-                      Id="cba6f499-fd64-4867-83fa-366255b283d0"
-                      LastKnownName="Opcode"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="bba5247a-1f63-45a0-b960-dcac718a7568"
-                  name="formula"
-                  direction="In">
-                  <referencesInternal>
-                    <reference
-                      Id="c44633ca-84cd-4af3-93d2-9d30bc1ed8a5"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DReplaceOp OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DOpcode ParentType%3DBinaryExpr))%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DOpcode ParentType%3DBinaryExpr))%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DExpressionTree)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression)]) ParamKind%3DRef)]) ParameterIdentifier%3Dformula"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="b610b03f-783c-4729-8f03-11a0e5704a68"
-                      LastKnownName="ExpressionTree"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="fa14d369-9971-4709-8634-29a6f7c394e5"
-                  name="nexp"
-                  direction="InOut">
-                  <referencesInternal>
-                    <reference
-                      Id="90993f5c-cb83-4859-ae06-52c988308f11"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DReplaceOp OverloadingParameters%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DOpcode ParentType%3DBinaryExpr))%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DOpcode ParentType%3DBinaryExpr))%2C(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DExpressionTree)%2C(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem.Collections.Generic Type%3D(Name%3DList GenericParameterCount%3D1 GenericArguments%3D[(Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression)]) ParamKind%3DRef)]) ParameterIdentifier%3Dnexp"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="61d9f4f0-f403-46c4-bcf2-6f4f7fe658ee"
-                      LastKnownName="List&lt;Expression‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
-          <operation
-            Id="88239ec0-c08f-4a11-8e02-e24e386227c0"
-            name="ToOpCode"
-            visibility="Protected"
-            isLeaf="false"
-            isStatic="false"
-            isAbstract="false"
-            concurrency="Sequential"
-            isQuery="false">
-            <referencesInternal>
-              <reference
-                Id="0327d9c9-4498-4631-a893-f7c2175fa465"
-                handle="viewcode://./CodeSchema_Method?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DToOpCode OverloadingParameters%3D[(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DString)])"
-                tag="ViewCode" />
-            </referencesInternal>
-            <appliedStereotypesInternal>
-              <stereotypeInstance
-                Id="567aa6e6-9ef4-4dab-8f97-9f5d81b61264"
-                name="method"
-                profile="CSharpProfile">
-                <propertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="852b8521-bc8f-49a2-82fe-2bda0d24af60">
-                    <propertyInstance
-                      Id="39bead25-b5e1-43e3-a953-cbaea206b0b2"
-                      name="ClrAttributes" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="ce956f00-a5fe-43d9-a5ad-1c280857d468">
-                    <propertyInstance
-                      Id="5bfbd6d8-14e0-4b44-850d-7f5dc64edca3"
-                      name="IsPartial"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="3b8c0264-0bcb-4158-a088-6289ddb9e3c1">
-                    <propertyInstance
-                      Id="10c19783-e199-4a2d-89b3-96774b001ae0"
-                      name="IsUnsafe"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="45c978ca-15a8-43dc-ae18-84e60e52746a">
-                    <propertyInstance
-                      Id="0e23f740-90f8-411a-815a-7daf1207f509"
-                      name="Inheritance"
-                      value="none" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="9d7afbdd-818f-4687-b99e-65325874e1b9">
-                    <propertyInstance
-                      Id="4d455004-0add-461c-9be6-992c360e5d38"
-                      name="PackageVisibility"
-                      value="internal" />
-                  </stereotypeInstanceHasPropertyInstances>
-                  <stereotypeInstanceHasPropertyInstances
-                    Id="59977f08-51aa-4807-b196-b5cfa057dfc1">
-                    <propertyInstance
-                      Id="23648662-10a8-4f57-b157-4edf320991e4"
-                      name="params"
-                      value="false" />
-                  </stereotypeInstanceHasPropertyInstances>
-                </propertyInstances>
-              </stereotypeInstance>
-            </appliedStereotypesInternal>
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="6e2a9df9-fb85-4179-a878-3f88258a441a"
-                  direction="Return">
-                  <type_NamedElement>
-                    <enumerationMoniker
-                      Id="cba6f499-fd64-4867-83fa-366255b283d0"
-                      LastKnownName="Opcode"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="9985471f-1d8a-4410-9db4-2568452a3cf6"
-                  name="op"
-                  direction="In">
-                  <referencesInternal>
-                    <reference
-                      Id="9ec968ac-4fc5-42b1-93f2-a54fa448fe48"
-                      handle="viewcode://./CodeSchema_Parameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic Member%3D(Name%3DToOpCode OverloadingParameters%3D[(Assembly%3D&quot;file:%2F%2F%2FC:%2FProgram Files (x86)%2FReference Assemblies%2FMicrosoft%2FFramework%2F.NETFramework%2Fv4.0%2Fmscorlib.dll&quot; Namespace%3DSystem Type%3DString)]) ParameterIdentifier%3Dop"
-                      tag="ViewCode" />
-                  </referencesInternal>
-                  <type_NamedElement>
-                    <primitiveTypeMoniker
-                      Id="59259974-6d55-42c6-b7bd-763d77ac8ef9"
-                      LastKnownName="String"
-                      LastKnownLocation="Diagrams.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
-          <operation
-            Id="adcbe521-e92f-443d-ac0b-39091eefb008"
-            name="Resolve"
-            isLeaf="false"
-            isStatic="false"
-            isAbstract="false"
-            concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="d3eda31b-a587-4986-91a1-87f269d4060c"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="1a9ba4a1-2600-4091-ae60-c44f2fbf8f8b"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="2c43cb71-ccea-4b24-a1da-e218ee7a64c5"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -25058,7 +23728,7 @@
             Id="7083de29-1c6a-4985-8c3a-03245bd887bb">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -25372,53 +24042,20 @@
           </operation>
           <operation
             Id="8c588a91-33cc-4104-b198-3829fc821261"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="86c42941-9ee3-42e7-811c-0acf9eae86db"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="e543a314-9547-4507-9b66-1282d0448aeb"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="b1c24f7b-dc50-4a53-b989-f9fb3b815185"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="3d287175-edd5-4dbc-8041-ffd0ddca67b8"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -25484,7 +24121,7 @@
             Id="f0a09d3a-63e3-4dbd-8666-c705c1babf27">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -25798,53 +24435,20 @@
           </operation>
           <operation
             Id="50fabec8-6eca-4405-ad21-9506825f19ac"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="03c82568-20ed-4df3-b142-700ed40be1d1"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="16104cda-a551-40ea-aa08-6e69ce13058b"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="b0443622-fa72-491d-ba35-23b266ea5c87"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="9d6ed647-0be8-4aec-b1e1-9e79ac165db9"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -25910,7 +24514,7 @@
             Id="f730a2d8-3186-4152-8a7a-e7eda9f72695">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -28024,53 +26628,20 @@
           </operation>
           <operation
             Id="955d9f76-e880-488d-a0f1-d16fb5f69ad8"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="09a6c6bb-4109-4545-aea1-6492d428cd07"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="e847de66-9641-4b13-8cab-58b31352891e"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="63c2dd86-c6b1-4b47-9006-b71c0ffc943e"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="e27f2627-83af-4dcc-afca-fcd20e69d9fe"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -28136,7 +26707,7 @@
             Id="80dc76c6-8f08-4f4a-8204-f76f6c08882c">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -28449,53 +27020,20 @@
           </operation>
           <operation
             Id="65a7cdac-8613-46bf-805a-bf5655680b51"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="5cae4878-840b-4f6a-8328-07c3930693c2"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="ce37c8a6-a24a-4a30-95bd-565cbb27a241"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="be924c33-96d1-44e9-994d-4f1bd83aaddc"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="7b7e056d-051e-480a-bbc8-a2b03b439b87"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>
@@ -28561,7 +27099,7 @@
             Id="5b15a0a5-74a9-4927-9125-18b3bf225fd3">
             <interfaceMoniker
               Id="7c50df96-8983-4260-aa96-7af19e04dee9"
-              LastKnownName="IAtomicStmt"
+              LastKnownName="ISearch"
               LastKnownLocation="Package_1348.uml" />
           </interfaceRealization>
         </suppliersInternal>
@@ -28875,53 +27413,20 @@
           </operation>
           <operation
             Id="78dddbe3-050b-4306-86ef-f7cc96b6480b"
-            name="Resolve"
+            name="+ + IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
             isLeaf="false"
             isStatic="false"
             isAbstract="false"
             concurrency="Sequential"
-            isQuery="false">
-            <ownedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="93d3854d-d8da-4b43-b2dc-5e85e9e5ac81"
-                  name="st"
-                  direction="In">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
-                      LastKnownName="Statement"
-                      LastKnownLocation="Package7_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="365d07fa-ffb2-467e-95f0-9d9ab9064dbb"
-                  name="solution_list"
-                  direction="InOut">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="c961b7e4-300e-46d6-b329-27c81fdad194"
-                      LastKnownName="List&lt;Solution‎&gt;"
-                      LastKnownLocation="Package3_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-              <operationHasOwnedParameters>
-                <parameter
-                  Id="70b6addd-14d8-47fc-93f8-e1b74f6bbcd8"
-                  direction="Return">
-                  <type_NamedElement>
-                    <classMoniker
-                      Id="94f6949d-fac4-4204-a0e8-b7c2c668de3e"
-                      LastKnownName="Solution"
-                      LastKnownLocation="Package_1348.uml" />
-                  </type_NamedElement>
-                </parameter>
-              </operationHasOwnedParameters>
-            </ownedParameters>
-          </operation>
+            isQuery="false" />
+          <operation
+            Id="c672cd9a-5fb2-4666-80be-89372c5412d4"
+            name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);"
+            isLeaf="false"
+            isStatic="false"
+            isAbstract="false"
+            concurrency="Sequential"
+            isQuery="false" />
         </ownedOperationsInternal>
       </class>
     </packageHasNamedElement>

@@ -20,7 +20,7 @@ namespace LazyTacny
         /// <returns></returns>
         public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
-            Debug.Indent();
+            
             IVariable lv = null;
             List<Expression> call_arguments;
             IList result = null;
@@ -63,7 +63,7 @@ namespace LazyTacny
                 }
             }
             
-            Debug.Unindent();
+            
             yield break;
         }
 

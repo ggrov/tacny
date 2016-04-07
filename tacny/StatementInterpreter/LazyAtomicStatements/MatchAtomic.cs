@@ -20,12 +20,12 @@ namespace LazyTacny
 
         public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
-            Debug.Indent();
+            
             foreach (var item in GenerateMatch(st as TacnyCasesBlockStmt, solution))
             {
                 yield return item;
             }
-            Debug.Unindent();
+            
             yield break;
         }
 

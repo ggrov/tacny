@@ -21,7 +21,7 @@ namespace LazyTacny
         public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
             Contract.Assert(ExtractGuard(st) != null, Util.Error.MkErr(st, 2));
-            Debug.Indent();
+            
             /**
              * Check if the loop guard can be resolved localy
              */
@@ -31,7 +31,7 @@ namespace LazyTacny
             else
                 foreach (var item in InsertLoop(st as WhileStmt, solution))
                     yield return item;
-            Debug.Unindent();
+            
             yield break;
         }
 

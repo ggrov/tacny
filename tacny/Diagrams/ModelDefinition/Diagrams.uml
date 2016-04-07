@@ -151,6 +151,14 @@
         Id="79f74e61-2a2a-4aa0-a67b-f65e46072602"
         name="List&lt;ErrorInformation&gt;" />
     </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="58f453ea-8138-4748-896e-4f9710978f75"
+        name="Class1"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false" />
+    </packageHasNamedElement>
   </packagedElements>
   <primitiveType
     Id="220a3521-e091-4221-bae9-3ef9018e845c"

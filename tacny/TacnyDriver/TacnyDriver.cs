@@ -45,24 +45,14 @@ namespace Main
         {
             Contract.Requires(tcce.NonNullElements(args));
             //Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
+            Debug.Listeners.Clear();
             //Debug.AutoFlush = true;
-            
+
             // install Dafny and Boogie commands
             var options = new Util.TacnyOptions();
             options.VerifySnapshots = 2;
-           // options.VcsCores = Math.Max(1, System.Environment.ProcessorCount - 1);
             Util.TacnyOptions.Install(options);
-            
 
-            Debug.WriteLine("BEGIN: Tacny Options");
-            Util.TacnyOptions tc = Util.TacnyOptions.O;
-            FieldInfo[] fields = tc.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-            foreach (var field in fields)
-            {
-                if (field.IsPublic)
-                    Debug.WriteLine("# {0} : {1}", field.Name, field.GetValue(tc).ToString());
-            }
-            Debug.WriteLine("END: Tacny Options");
             printer = new TacnyConsolePrinter();
             ExecutionEngine.printer = printer;
 
@@ -82,7 +72,16 @@ namespace Main
                 exitValue = ExitValue.PREPROCESSING_ERROR;
                 return (int)exitValue;
             }
-  
+            Console.Out.WriteLine("BEGIN: Tacny Options");
+            Util.TacnyOptions tc = Util.TacnyOptions.O;
+            FieldInfo[] fields = tc.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+            foreach (var field in fields)
+            {
+                if (field.IsPublic)
+                    Console.Out.WriteLine("# {0} : {1}", field.Name, field.GetValue(tc).ToString());
+            }
+            
+            Console.Out.WriteLine("END: Tacny Options");
             exitValue = ProcessFiles(CommandLineOptions.Clo.Files);
 
             return (int)exitValue;
@@ -125,10 +124,13 @@ namespace Main
             {
                 Tacny.Program tacnyProgram;
                 string programName = fileNames.Count == 1 ? fileNames[0] : "the program";
+                // install Util.Printer
                 try
                 {
                     Debug.WriteLine("Initializing Tacny Program");
                     tacnyProgram = new Tacny.Program(fileNames, programId);
+                    // Initialize the printer
+                    Util.Printer.Install(fileNames[0]);
                     tacnyProgram.MaybePrintProgram(tacnyProgram.dafnyProgram, programName + "_src");
                 }
                 catch (ArgumentException ex)
@@ -154,7 +156,7 @@ namespace Main
                         }
                         else
                         {
-                            tacnyProgram.Print();
+                            tacnyProgram.PrintProgram();
                         }
                     }
                     else
@@ -165,11 +167,12 @@ namespace Main
                         r.ResolveProgram();
                         var EndTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
                         TextWriter tw = new System.IO.StreamWriter("_debug.dat", true);
-                        tacnyProgram.PrintDebugMessage((EndTime - StartTime).ToString(), tw);
-                        tacnyProgram.Print();
+                        //tacnyProgram.PrintDebugMessage((EndTime - StartTime).ToString(), tw);
+                        tacnyProgram.PrintProgram();
                         Debug.WriteLine("Fnished lazy tactic evaluation");
                     }
                 }
+                tacnyProgram.PrintAllDebugData(Util.TacnyOptions.O.PrintCsv);
             }
             return exitValue;
         }

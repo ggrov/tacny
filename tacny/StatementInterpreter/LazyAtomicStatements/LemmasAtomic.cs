@@ -13,9 +13,9 @@ namespace LazyTacny
 
         public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
-            Debug.Indent();
+            
             yield return Lemmas(st, solution);
-            Debug.Unindent();
+            
             yield break;
         }
 

@@ -70,12 +70,12 @@ namespace LazyTacny
         }
         public void Initialize()
         {
-            Debug.Indent();
+            
         }
 
         ~Atomic()
         {
-            Debug.Unindent();
+            
         }
         /// <summary>
         /// Create a deep copy of an action
@@ -105,7 +105,7 @@ namespace LazyTacny
                 // because solution is verified at the end
                 // we can safely terminated after the first item is received
                 // TODO
-                foreach (var item in ResolveTactic(res, ac))
+                foreach (var item in ResolveTactic(ac))
                 {
                     return item;
                 }
@@ -125,12 +125,11 @@ namespace LazyTacny
             !!!Search strategies will go in here!!!
             !!! Validation of the results should also go here!!!
          */
-        public static IEnumerable<Solution> ResolveTactic(List<Solution> input, Atomic atomic, bool verify = true)
+        public static IEnumerable<Solution> ResolveTactic(Atomic atomic, bool verify = true)
         {
-            Contract.Requires(input != null);
             Contract.Requires(atomic != null);
             ISearch searchStrategy = new SearchStrategy(atomic.searchStrat);
-            foreach (var item in searchStrategy.Search(input, atomic, verify))
+            foreach (var item in searchStrategy.Search(atomic, verify))
                 yield return item;
             yield break;
 
@@ -144,10 +143,13 @@ namespace LazyTacny
         public IEnumerable<Solution> ResolveBody(BlockStmt body)
         {
             Contract.Requires<ArgumentNullException>(body != null);
-            Debug.Indent();
+            
             Debug.WriteLine("Resolving statement body");
             ISearch strat = new SearchStrategy(this.searchStrat);
-            foreach (var result in strat.SearchBlockStmt(body, this))
+            Atomic ac = this.Copy();
+            ac.localContext.tacticBody = body.Body;
+            ac.localContext.ResetCounter();
+            foreach (var result in strat.Search(ac, false))
             {
                 var item = new Solution(result.state.Copy());
                 item.state.localContext.tacticBody = this.localContext.tacticBody; // set the body 
@@ -156,7 +158,7 @@ namespace LazyTacny
                 yield return item;
             }
             Debug.WriteLine("Body resolved");
-            Debug.Unindent();
+            
             yield break;
         }
 
@@ -263,7 +265,7 @@ namespace LazyTacny
                         /**
                          * Transfer the results from evaluating the nested tactic
                          */
-                        foreach (var item in ResolveTactic(sol_list, ac, false))
+                        foreach (var item in ResolveTactic(ac, false))
                         {
                             Atomic action = this.Copy();
                             action.SetNewTarget(solution.state.GetNewTarget());

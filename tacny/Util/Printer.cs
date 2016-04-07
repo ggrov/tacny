@@ -3,48 +3,114 @@ using System.IO;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
-using Bpl = Microsoft.Boogie;
+using System.Diagnostics;
 using Microsoft.Boogie;
 
 namespace Util
 {
     public class Printer : Dafny.Printer
     {
-        TextWriter wr;
+        // Print the program
+        private TextWriter wr;
+        private TextWriter debugWriter; // debug writer
+        private TextWriter csvWriter; // debug writer
         DafnyOptions.PrintModes printMode;
-        const string SUFFIX = "_dbg";
+        const string DEBUG_SUFFIX = "data";
         const string FILENAME = "tacny";
-        private string filename = null;
+        const string DEBUG_FOLDER = "Debug";
+        private string FileName = null;
+        private static Printer p;
+        public static Printer P { get { return p; } }
 
-        public Printer(TextWriter wr, DafnyOptions.PrintModes printMode = DafnyOptions.PrintModes.Everything)
-            : base(wr, printMode)
+        public static void Install(string filename)
         {
-            Contract.Requires(wr != null);
-            this.wr = wr;
+            Contract.Requires(filename != null);
+            var fn = filename;
+            if (fn.Contains("\\"))
+            {
+                int index = fn.LastIndexOf("\\");
+                fn = fn.Substring(fn.LastIndexOf("\\") + 1);
+            }
+
+            if (fn.LastIndexOf(".") >= 0)
+                fn = fn.Substring(0, fn.LastIndexOf("."));
+            try {
+                var tw = new System.IO.StreamWriter(fn + ".dfy");
+                p = new Printer(tw, fn, TacnyOptions.O.PrintMode);
+            } catch(IOException e)
+            {
+                Debug.WriteLine(e.Message);
+                var tw = Console.Out;
+                p = new Printer(tw, fn, TacnyOptions.O.PrintMode);
+            }
+        }
+        protected Printer(TextWriter tw, string filename, DafnyOptions.PrintModes printMode = DafnyOptions.PrintModes.Everything) : base(tw, printMode)
+        {
+            this.FileName = filename;
+            this.wr = tw;
             this.printMode = printMode;
         }
 
-        public void PrintProgram(Dafny.Program prog)
+        [ContractInvariantMethod]
+        protected void ObjectInvariant()
+        {
+            Contract.Invariant(wr != null);
+        }
+
+        private void InitializeDebugWriter(bool clearDirectory = true)
+        {
+            // check if folder exists
+            var working_path = Path.Combine(Directory.GetCurrentDirectory(), DEBUG_FOLDER);
+            // delete old debug data
+            if (!Directory.Exists(working_path))
+                Directory.CreateDirectory(working_path);
+            debugWriter = new StreamWriter(Path.Combine(working_path, string.Format("{0}.{1}", FileName, DEBUG_SUFFIX)), true);
+
+        }
+
+        private void InitializeCsvWriter()
+        {
+            // check if folder exists
+
+            if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), DEBUG_FOLDER)))
+                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), DEBUG_FOLDER));
+            if(File.Exists(Path.Combine(Directory.GetCurrentDirectory(), DEBUG_FOLDER, string.Format("{0}.{1}", FileName, "csv"))))
+            {
+                File.Delete(Path.Combine(Directory.GetCurrentDirectory(), DEBUG_FOLDER, string.Format("{0}.{1}", FileName, "csv")));
+            }
+            csvWriter = new StreamWriter(Path.Combine(Directory.GetCurrentDirectory(), DEBUG_FOLDER, string.Format("{0}.{1}", FileName, "csv")), true);
+        }
+
+        private void ClearStream(ref TextWriter tw)
+        {
+            tw.Close();
+            tw = null;
+        }
+
+        new public void PrintProgram(Dafny.Program prog)
         {
             Contract.Requires(prog != null);
-            if (Bpl.CommandLineOptions.Clo.ShowEnv != Bpl.CommandLineOptions.ShowEnvironment.Never)
-            {
-                wr.WriteLine("// " + Bpl.CommandLineOptions.Clo.Version);
-                wr.WriteLine("// " + Bpl.CommandLineOptions.Clo.Environment);
-            }
-            filename = prog.Name;
             wr.WriteLine("// {0}", prog.Name);
             PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, Path.GetFullPath(prog.FullName));
             wr.Flush();
-            wr.Close();
         }
 
-        public void PrintDebugMessage(string message, string program_name, params object[] args)
+        public void PrintDebugMessage(string message, params object[] args)
         {
-            //wr.WriteLine("*DEBUG DATA*");
-            //wr.WriteLine("Program: {0}", program_name);
-            wr.WriteLine(String.Format(message, args));
-            wr.Flush();
+            if (debugWriter == null)
+                InitializeDebugWriter();
+            debugWriter.WriteLine(string.Format(message, args));
+            debugWriter.Flush();
+        }
+
+        public void PrintCsvData(string data)
+        {
+            if (csvWriter == null)
+                InitializeCsvWriter();
+
+            csvWriter.Write(data);
+            csvWriter.Flush();
+            //ClearStream(ref csvWriter);
         }
 
         public static void Error(string msg, params object[] args)

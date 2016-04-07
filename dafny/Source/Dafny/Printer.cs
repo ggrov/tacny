@@ -515,6 +515,8 @@ namespace Microsoft.Dafny {
       Contract.Requires(0 <= amount);
 
       while (0 < amount) {
+        if (amount > BunchaSpaces.Length)
+            return;
         wr.Write(BunchaSpaces.Substring(0, amount));
         amount -= BunchaSpaces.Length;
       }
