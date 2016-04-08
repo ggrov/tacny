@@ -46,6 +46,7 @@ namespace Main
             Contract.Requires(tcce.NonNullElements(args));
             //Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
             Debug.Listeners.Clear();
+            //Console.SetOut(TextWriter.Null);
             //Debug.AutoFlush = true;
 
             // install Dafny and Boogie commands

@@ -166,6 +166,15 @@ namespace Tacny
             return null;
         }
 
+        public static void PrintSolution(Solution solution)
+        {
+            Dafny.Program prog = solution.state.globalContext.program.ParseProgram();
+            solution.GenerateProgram(ref prog);
+            solution.state.globalContext.program.ClearBody(solution.state.localContext.md);
+            Console.WriteLine(String.Format("Tactic call {0} in {1} results: ", solution.state.localContext.tactic.Name, solution.state.localContext.md.Name));
+            solution.state.globalContext.program.PrintMember(prog, solution.state.globalContext.md.Name);
+        }
+
         private static Method GenerateMethod(Method oldMd, List<Statement> body, Method source = null)
         {
             Method src = source == null ? oldMd : source;

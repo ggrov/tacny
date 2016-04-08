@@ -753,12 +753,15 @@ namespace Tacny
             Contract.Requires(prog != null);
             Contract.Requires(memberName != null);
 
-            bool printToConsole = false;
+            bool printToConsole = true;
 
             if (filename == null || filename == "-")
                 printToConsole = true;
-
-
+            Printer p = null;
+            if (printToConsole)
+                p = new Dafny.Printer(Console.Out, Util.TacnyOptions.O.PrintMode);
+            else
+                p = Util.Printer.P;
             foreach (var tld in prog.DefaultModuleDef.TopLevelDecls)
             {
                 if (tld is ClassDecl)
@@ -767,7 +770,7 @@ namespace Tacny
                     MemberDecl md = cd.Members.FirstOrDefault(i => i.Name == memberName);
                     if (md != null)
                     {
-                        Util.Printer.P.PrintMembers(new List<MemberDecl> { md }, Debug.IndentLevel, this.fileNames[0]);
+                        p.PrintMembers(new List<MemberDecl> { md }, Debug.IndentLevel, this.fileNames[0]);
                         return;
                     }
                 }
