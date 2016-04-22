@@ -1019,7 +1019,7 @@ namespace Tacny
             Dafny.Program prog = globalContext.program.ParseProgram();
             solution.GenerateProgram(ref prog);
             globalContext.program.ClearBody(localContext.md);
-            //globalContext.program.PrintMember(prog, solution.state.localContext.md.Name);
+            globalContext.program.PrintMember(prog, solution.state.localContext.md.Name);
             if (!globalContext.program.ResolveProgram())
                 return false;
             globalContext.program.VerifyProgram();

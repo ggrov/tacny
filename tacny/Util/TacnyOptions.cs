@@ -6,7 +6,6 @@ using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 using System.Diagnostics.Contracts;
 using Bpl = Microsoft.Boogie;
-
 namespace Util
 {
     public class TacnyOptions : DafnyOptions
@@ -33,7 +32,7 @@ namespace Util
         public bool ParallelExecution = false;
         public bool LazyEval = true;
         public bool PrintCsv = false;
-        public bool EnableSearch = true;
+        public int EnableSearch = -1;
         protected override bool ParseOption(string name, Bpl.CommandLineOptionEngine.CommandLineParseState ps)
         {
             var args = ps.args;
@@ -65,10 +64,12 @@ namespace Util
                         this.PrintCsv = m == 1;
                     return true;
                 case "search":
-                    int s = 0;
+                    int s = -1;
+
                     if (ps.GetNumericArgument(ref s, 2))
-                        this.EnableSearch = s == 1;
+                        this.EnableSearch = s;
                     return true;
+
                 default:
                     break;
             }

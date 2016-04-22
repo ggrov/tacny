@@ -113,7 +113,7 @@ namespace LazyTacny
                             resolved.AddRange(m.Ins); // add input arguments as resolved variables
                             Solution result = Atomic.ResolveTactic(tac, us, md, prog, variables, resolved);
                             Debug.IndentLevel = 0;
-                            Solution.PrintSolution(result);
+//                            Solution.PrintSolution(result);
                             tacnyProgram.currentDebug.Fin();
                             return result;
                         }

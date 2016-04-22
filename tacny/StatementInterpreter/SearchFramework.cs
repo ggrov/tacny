@@ -14,7 +14,11 @@ namespace LazyTacny
         IEnumerable<LazyTacny.Solution> Search(Atomic atomic, bool verify = true);
         //  IEnumerable<Solution> SearchBlockStmt(BlockStmt body, Atomic ac);
     }
-
+    public enum Strategy
+    {
+        BFS = 0,
+        DFS
+    }
     [ContractClassFor(typeof(ISearch))]
     // Validate the input before execution
     public abstract class ISearchContract : ISearch
@@ -29,16 +33,23 @@ namespace LazyTacny
 
     public class SearchStrategy : ISearch
     {
-        public enum Strategy
-        {
-            BFS,
-            DFS
-        }
-
-        private Strategy ActiveStrategy = Strategy.BFS;
+       private Strategy ActiveStrategy = Strategy.BFS;
         public SearchStrategy(Strategy strategy)
         {
-            ActiveStrategy = strategy;
+            if (Util.TacnyOptions.O.EnableSearch >= 0)
+            {
+                try
+                {
+                    ActiveStrategy = (Strategy)Util.TacnyOptions.O.EnableSearch;
+                }
+                catch
+                {
+                    ActiveStrategy = Strategy.BFS;
+                }
+            }
+            else
+                ActiveStrategy = strategy;
+
         }
 
         protected SearchStrategy()
@@ -67,31 +78,7 @@ namespace LazyTacny
             yield break;
         }
 
-        //public IEnumerable<Solution> SearchBlockStmt(BlockStmt body, Atomic atomic)
-        //{
-        //    IEnumerable<Solution> enumerable;
-        //    switch (ActiveStrategy)
-        //    {
-        //        case Strategy.BFS:
-        //            enumerable = BreadthFirstSeach.SearchBlockStmt(body, atomic);
-        //            break;
-        //        case Strategy.DFS:
-        //            enumerable = DepthFirstSeach.SearchBlockStmt(body, atomic);
-        //            break;
-        //        default:
-        //            enumerable = BreadthFirstSeach.SearchBlockStmt(body, atomic);
-        //            break;
-        //    }
-
-        //    foreach (var item in enumerable)
-        //    {
-        //        // fix context
-        //        yield return item;
-        //    }
-        //    yield break;
-        //}
-
-        internal static Strategy GetSearchStrategy(Tactic tac)
+        public  static Strategy GetSearchStrategy(Tactic tac)
         {
             Contract.Requires<ArgumentNullException>(tac != null);
             Attributes attrs = tac.Attributes;
@@ -147,21 +134,21 @@ namespace LazyTacny
         }
     }
 
-    public class BreadthFirstSeach : SearchStrategy
+    internal class BreadthFirstSeach : SearchStrategy
     {
         public static new IEnumerable<Solution> Search(Atomic atomic, bool verify = true)
         {
-             Debug.WriteLine(String.Format("Resolving tactic {0}", atomic.localContext.tactic));
-            
+            Debug.WriteLine(String.Format("Resolving tactic {0}", atomic.localContext.tactic));
+
             //local solution list
             List<Solution> result = atomic == null ? new List<Solution>() : new List<Solution>() { new Solution(atomic) };
-         
+
             while (true)
             {
                 List<Solution> Interm = new List<Solution>();
                 if (result.Count == 0)
                 {
-                    
+
                     yield break;
                 }
                 // iterate every solution
@@ -231,13 +218,13 @@ namespace LazyTacny
         }
     }
 
-    public class DepthFirstSeach : SearchStrategy
+    internal class DepthFirstSeach : SearchStrategy
     {
         public static new IEnumerable<Solution> Search(Atomic atomic, bool verify = true)
         {
-            
+
             Stack<IEnumerator<Solution>> solutionStack = new Stack<IEnumerator<Solution>>();
-            
+
             if (atomic != null)
                 solutionStack.Push(Atomic.ResolveStatement(new Solution(atomic)).GetEnumerator());
 
@@ -245,7 +232,7 @@ namespace LazyTacny
             {
                 if (solutionStack.Count == 0)
                 {
-                    
+
                     yield break;
                 }
 
@@ -307,7 +294,7 @@ namespace LazyTacny
             {
                 if (solutionStack.Count == 0)
                 {
-                    
+
                     yield break;
                 }
 

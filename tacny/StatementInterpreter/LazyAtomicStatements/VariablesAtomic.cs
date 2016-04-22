@@ -12,18 +12,18 @@ namespace LazyTacny
 {
     class VariablesAtomic : Atomic, IAtomicLazyStmt
     {
+        public VariablesAtomic(Atomic atomic) : base(atomic) { }
+
         public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
             yield return GetVariables(st, solution);
             yield break;
         }
 
-        public VariablesAtomic(Atomic atomic) : base(atomic) { }
-
         private Solution GetVariables(Statement st, Solution solution)
         {
             IVariable lv = null;
-            List<Expression> call_arguments; // we don't care about this
+            List<Expression> call_arguments;
             List<IVariable> locals = new List<IVariable>();
 
             InitArgs(st, out lv, out call_arguments);

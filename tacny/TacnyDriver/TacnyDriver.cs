@@ -46,16 +46,14 @@ namespace Main
             Contract.Requires(tcce.NonNullElements(args));
             //Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
             Debug.Listeners.Clear();
-            //Console.SetOut(TextWriter.Null);
             //Debug.AutoFlush = true;
-
             // install Dafny and Boogie commands
             var options = new Util.TacnyOptions();
             options.VerifySnapshots = 2;
             Util.TacnyOptions.Install(options);
 
             printer = new TacnyConsolePrinter();
-            ExecutionEngine.printer = printer;
+            ExecutionEngine.printer = new ConsolePrinter();
 
             ExitValue exitValue = ExitValue.VERIFIED;
 
@@ -78,8 +76,25 @@ namespace Main
             FieldInfo[] fields = tc.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
             foreach (var field in fields)
             {
+
                 if (field.IsPublic)
-                    Console.Out.WriteLine("# {0} : {1}", field.Name, field.GetValue(tc).ToString());
+                {
+                    if (field.Name == "EnableSearch")
+                    {
+                        var val = field.GetValue(tc);
+                        if (val is int)
+                        {
+                            var tmp = (int)val;
+                            if (tmp >= 0)
+                            {
+                                var name = (LazyTacny.Strategy)tmp;
+                                Console.Out.WriteLine("# {0} : {1}", "SearchStrategy", name.ToString());
+                            }
+                        }
+                    } else
+                        Console.Out.WriteLine("# {0} : {1}", field.Name, field.GetValue(tc).ToString());
+                }
+
             }
             
             Console.Out.WriteLine("END: Tacny Options");
@@ -159,17 +174,14 @@ namespace Main
                         {
                             tacnyProgram.PrintProgram();
                         }
+                        Debug.WriteLine("Fnished eager tactic evaluation");
                     }
                     else
                     {
-                        var StartTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
                         Debug.WriteLine("Starting lazy tactic evaluation");
                         LazyTacny.Interpreter r = new LazyTacny.Interpreter(tacnyProgram);
-                        r.ResolveProgram();
-                        var EndTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-                        TextWriter tw = new System.IO.StreamWriter("_debug.dat", true);
-                        //tacnyProgram.PrintDebugMessage((EndTime - StartTime).ToString(), tw);
-                        tacnyProgram.PrintProgram();
+                        var prog = r.ResolveProgram();
+                        tacnyProgram.PrintProgram(prog);
                         Debug.WriteLine("Fnished lazy tactic evaluation");
                     }
                 }

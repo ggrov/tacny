@@ -66,7 +66,10 @@ namespace Tacny
             public int CallsToDafny = 0;        // number of calls to Dafny resolver
             public int StartTime = 0;           // Unix timestamp when the tactic resolution begins
             public int EndTime = 0;             // Unix timestamp when the tactic resolution finishes
+            public int TimeAtBoogie = 0;
+            public int TimeAtDafny = 0;
             private bool PrintHeader = true;
+          
             public DebugData(string tactic, string method)
             {
                 StartTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
@@ -92,7 +95,9 @@ namespace Tacny
                 builder.AppendLine(string.Format("Verification failed {0} times", VerificationFailure));
                 builder.AppendLine(string.Format("Verification succeeded {0} times", VerificationSucc));
                 builder.AppendLine(string.Format("Times Boogie was called: {0}", CallsToBoogie));
+                builder.AppendLine(string.Format("Total time at Boogie: {0}", TimeAtBoogie));
                 builder.AppendLine(string.Format("Times Dafny was called: {0}", CallsToDafny));
+                builder.AppendLine(string.Format("Total time at Dafny: {0}", CallsToDafny));
                 Util.Printer.P.PrintDebugMessage(builder.ToString());
             }
 
@@ -102,14 +107,14 @@ namespace Tacny
                 System.Text.StringBuilder builder = new System.Text.StringBuilder();
                 if (printHeader)
                 {
-                    builder.AppendLine("Tactic, Method, Execution time, Generated Nodes, Invalid nodes, Valid nodes, Verification Failure, Verification success, Boogie calls, Dafny Calls");
+                    builder.AppendLine("Tactic, Method, Execution time, Generated Nodes, Invalid nodes, Valid nodes, Verification Failure, Verification success, Boogie calls, Boogie Wait, Dafny Calls, Dafny Wait");
                 }
-                builder.AppendLine(string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}",
+                builder.AppendLine(string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}",
                     tactic, method,
                     EndTime - StartTime, TotalBranchCount,
                     BadBranchCount, GoodBranchCount,
                     VerificationFailure, VerificationSucc,
-                    CallsToBoogie, CallsToDafny));
+                    CallsToBoogie, TimeAtBoogie, CallsToDafny, TimeAtDafny));
                 Util.Printer.P.PrintCsvData(builder.ToString());
             }
         }
@@ -174,6 +179,16 @@ namespace Tacny
         private void IncCallsToDafny(DebugData debugData)
         {
             debugData.CallsToDafny++;
+        }
+
+        private void IncTimeAtBoogie(DebugData debugData, int time)
+        {
+            debugData.TimeAtBoogie += time;
+        }
+
+        private void IncTimeAtDafny(DebugData debugData, int time)
+        {
+            debugData.TimeAtDafny += time;
         }
 
         public void SetCurrent(Tactic tac, MemberDecl md)
@@ -281,7 +296,14 @@ namespace Tacny
             Debug.WriteLine("Verifying Dafny program");
 
             IncCallsToBoogie(currentDebug);
+            //disable Dafny output
+            var cOut = Console.Out;
+            Console.SetOut(TextWriter.Null);
+            var start = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
             po = Pipeline.VerifyProgram(prog, fileNames, programId, out stats, out errList, out errorInfo);
+            var end = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            Console.SetOut(cOut);
+            IncTimeAtBoogie(currentDebug, end - start);
             if (stats.ErrorCount == 0)
             {
                 Debug.WriteLine("Dafny program VERIFIED");
@@ -307,8 +329,15 @@ namespace Tacny
             Debug.WriteLine("Resolving Dafny program");
 
             IncCallsToDafny(currentDebug);
+            //disable Dafny output
+            var cOut = Console.Out;
+            Console.SetOut(TextWriter.Null);
             Dafny.Resolver r = new Dafny.Resolver(program);
+            var start = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
             r.ResolveProgram(program);
+            var end = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            Console.SetOut(cOut);
+            IncTimeAtDafny(currentDebug, end - start);
             if (r.ErrorCount != 0)
             {
                 Debug.WriteLine("Resolution FAILED");
@@ -745,7 +774,7 @@ namespace Tacny
         public void MaybePrintProgram(Dafny.Program prog, string filename)
         {
             // if program is not in debug mode disable console printing
-            PrintProgram(prog);
+           // PrintProgram(prog);
         }
 
         public void PrintMember(Dafny.Program prog, string memberName, string filename = null)

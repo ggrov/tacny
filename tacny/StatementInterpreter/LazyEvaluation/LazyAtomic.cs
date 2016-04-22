@@ -35,7 +35,7 @@ namespace LazyTacny
     {
         public readonly StaticContext globalContext;
         public LocalContext localContext;
-        private SearchStrategy.Strategy searchStrat = SearchStrategy.Strategy.BFS;
+        private Strategy searchStrat = Strategy.BFS;
 
         protected Atomic(Atomic ac)
         {
@@ -62,7 +62,7 @@ namespace LazyTacny
 
         }
 
-        public Atomic(LocalContext localContext, StaticContext globalContext, SearchStrategy.Strategy searchStrategy)
+        public Atomic(LocalContext localContext, StaticContext globalContext, Strategy searchStrategy)
         {
             this.globalContext = globalContext;
             this.localContext = localContext.Copy();
