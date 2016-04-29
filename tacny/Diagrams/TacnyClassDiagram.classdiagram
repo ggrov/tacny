@@ -65,21 +65,21 @@
         </appliedStereotypesInternal>
         <elementDefinition Id="7df3a092-d694-4ff8-a407-b249f1df432e" />
         <targetEnds>
-          <association Id="b20d84d9-6199-4577-aafb-fcc01d3efa02" isDerived="false" sourceEndRoleName="TacnyDriver" targetEndRoleName="Interpreter" isLeaf="false" isAbstract="false">
+          <association Id="d0bffe3a-4b94-43a2-9924-627345ce0c63" isDerived="false" sourceEndRoleName="" targetEndRoleName="" isLeaf="false" isAbstract="false">
             <classMoniker Id="9b7c632f-49ca-4a22-be98-a57e50f9a5a6" LastKnownName="Interpreter" />
             <relationshipOwnedElementsInternal>
               <associationHasOwnedEnds>
-                <memberEnd Id="af168401-943c-4e87-907d-096ac477066e" name="TacnyDriver" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
-                  <elementDefinition Id="6ab22025-6c7c-4cc0-ab49-4f18b00e8c32" />
+                <memberEnd Id="049b479b-e1ab-476d-822c-ea8d79a1c7cd" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
+                  <elementDefinition Id="b73ad077-5bd4-457b-a6ad-a9ea5782290c" />
                 </memberEnd>
               </associationHasOwnedEnds>
               <associationHasOwnedEnds>
-                <memberEnd Id="272a4bb8-f49a-4382-819c-c563516e144e" name="Interpreter" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
-                  <elementDefinition Id="e11e52c7-9702-4c21-8405-08fe5822e973" />
+                <memberEnd Id="7d1ae6f8-6ebc-4041-aadb-b1305e8a5f48" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+                  <elementDefinition Id="08efcadd-8d67-4dd6-bbb1-4f1e07f11aca" />
                 </memberEnd>
               </associationHasOwnedEnds>
             </relationshipOwnedElementsInternal>
-            <elementDefinition Id="8ec15ce1-6230-4b04-a6fd-6a84220465b3" />
+            <elementDefinition Id="12200385-30da-42ca-8c5d-0c5f0b0c0430" />
           </association>
         </targetEnds>
         <ownedAttributesInternal>
@@ -576,32 +576,32 @@
         </appliedStereotypesInternal>
         <elementDefinition Id="ac62335d-a16f-4f23-b1ea-eb948c21be6b" />
         <targetEnds>
-          <association Id="8063dd13-bc76-43a6-87ca-7574c51755c6" isDerived="false" sourceEndRoleName="Interpreter" targetEndRoleName="Atomic" isLeaf="false" isAbstract="false">
+          <association Id="8063dd13-bc76-43a6-87ca-7574c51755c6" isDerived="false" sourceEndRoleName="" targetEndRoleName="" isLeaf="false" isAbstract="false">
             <classMoniker Id="5d0b8194-7f4a-4a08-a6ec-bb98274a7181" LastKnownName="Atomic" />
             <relationshipOwnedElementsInternal>
               <associationHasOwnedEnds>
-                <memberEnd Id="9878b69e-806b-4aae-9581-e72a04ae7599" name="Interpreter" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
+                <memberEnd Id="9878b69e-806b-4aae-9581-e72a04ae7599" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
                   <elementDefinition Id="ab2eb391-daf3-40c0-b0b0-0ac053fb3bbd" />
                 </memberEnd>
               </associationHasOwnedEnds>
               <associationHasOwnedEnds>
-                <memberEnd Id="b30e6076-8f58-4ac5-a727-f3158659a9f4" name="Atomic" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+                <memberEnd Id="b30e6076-8f58-4ac5-a727-f3158659a9f4" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
                   <elementDefinition Id="8a10368d-d114-4c28-9e73-ada7bafb8773" />
                 </memberEnd>
               </associationHasOwnedEnds>
             </relationshipOwnedElementsInternal>
             <elementDefinition Id="091234a3-ae9e-4f7a-825d-1c30efb9a7d6" />
           </association>
-          <association Id="dc67e57d-fa47-4ef5-8626-4c7f931bbe52" isDerived="false" sourceEndRoleName="Interpreter" targetEndRoleName="Program" isLeaf="false" isAbstract="false">
+          <association Id="dc67e57d-fa47-4ef5-8626-4c7f931bbe52" isDerived="false" sourceEndRoleName="" targetEndRoleName="" isLeaf="false" isAbstract="false">
             <classMoniker Id="5a5a73a4-b0c3-455c-a8b7-357a59303352" LastKnownName="Program" />
             <relationshipOwnedElementsInternal>
               <associationHasOwnedEnds>
-                <memberEnd Id="8de5b1a2-cb91-4d45-ba44-a95db601d894" name="Interpreter" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
+                <memberEnd Id="8de5b1a2-cb91-4d45-ba44-a95db601d894" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
                   <elementDefinition Id="efcbb16b-0beb-40c4-b755-d8b44b37d561" />
                 </memberEnd>
               </associationHasOwnedEnds>
               <associationHasOwnedEnds>
-                <memberEnd Id="2840f6d9-b72a-46fe-9846-88fe40e094b4" name="Program" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+                <memberEnd Id="2840f6d9-b72a-46fe-9846-88fe40e094b4" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
                   <elementDefinition Id="5dffa460-e0bc-4c0a-87be-65a652802a28" />
                 </memberEnd>
               </associationHasOwnedEnds>
@@ -964,43 +964,43 @@
           </generalization>
         </generalsInternal>
         <targetEnds>
-          <association Id="f24926f5-9bf5-4af3-898c-b6c9615822c2" isDerived="false" sourceEndRoleName="Atomic" targetEndRoleName="GlobalContext" isLeaf="false" isAbstract="false">
+          <association Id="f24926f5-9bf5-4af3-898c-b6c9615822c2" isDerived="false" sourceEndRoleName="" targetEndRoleName="" isLeaf="false" isAbstract="false">
             <classMoniker Id="3caeb513-89ff-4e39-956e-7d15ae94fbd9" LastKnownName="GlobalContext" />
             <relationshipOwnedElementsInternal>
               <associationHasOwnedEnds>
-                <memberEnd Id="8313d289-0b74-48a2-ac4d-9cdf5d06f5a5" name="Atomic" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
+                <memberEnd Id="8313d289-0b74-48a2-ac4d-9cdf5d06f5a5" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
                   <elementDefinition Id="cc7619dd-0c70-48a4-99fd-56db819ea7a3" />
                 </memberEnd>
               </associationHasOwnedEnds>
               <associationHasOwnedEnds>
-                <memberEnd Id="a3f9af8f-6033-46de-8bd1-406e039c5e8f" name="GlobalContext" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+                <memberEnd Id="a3f9af8f-6033-46de-8bd1-406e039c5e8f" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
                   <elementDefinition Id="789108c2-2db8-4a60-a14b-194182209ba8" />
                 </memberEnd>
               </associationHasOwnedEnds>
             </relationshipOwnedElementsInternal>
             <elementDefinition Id="c593a0ba-13de-4b52-a93b-b15084c83c37" />
           </association>
-          <association Id="0d483b79-a208-456a-8d4f-d020ea5f5ac9" isDerived="false" sourceEndRoleName="Atomic" targetEndRoleName="LocalContext" isLeaf="false" isAbstract="false">
+          <association Id="0d483b79-a208-456a-8d4f-d020ea5f5ac9" isDerived="false" sourceEndRoleName="" targetEndRoleName="" isLeaf="false" isAbstract="false">
             <classMoniker Id="26089697-6135-4588-b7db-d0170b30a511" LastKnownName="LocalContext" />
             <relationshipOwnedElementsInternal>
               <associationHasOwnedEnds>
-                <memberEnd Id="720012d8-1992-464e-a6d2-796d2bc7f34e" name="Atomic" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
+                <memberEnd Id="720012d8-1992-464e-a6d2-796d2bc7f34e" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
                   <elementDefinition Id="333c9cf6-7415-43f7-b699-46cbc7792f6f" />
                 </memberEnd>
               </associationHasOwnedEnds>
               <associationHasOwnedEnds>
-                <memberEnd Id="7295c534-b931-453f-a7d5-6d3122e9628d" name="LocalContext" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+                <memberEnd Id="7295c534-b931-453f-a7d5-6d3122e9628d" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
                   <elementDefinition Id="3013395d-564c-4df2-9ea7-6d4138f9dd0a" />
                 </memberEnd>
               </associationHasOwnedEnds>
             </relationshipOwnedElementsInternal>
             <elementDefinition Id="2cca8624-f65e-4d6a-b034-80caf5813773" />
           </association>
-          <association Id="9f8001d4-cc00-40c5-8d26-b825fba5f8ac" isDerived="false" sourceEndRoleName="Atomic" targetEndRoleName="Program" isLeaf="false" isAbstract="false">
+          <association Id="9f8001d4-cc00-40c5-8d26-b825fba5f8ac" isDerived="false" sourceEndRoleName="" targetEndRoleName="Program" isLeaf="false" isAbstract="false">
             <classMoniker Id="5a5a73a4-b0c3-455c-a8b7-357a59303352" LastKnownName="Program" />
             <relationshipOwnedElementsInternal>
               <associationHasOwnedEnds>
-                <memberEnd Id="277b9ac3-b641-42ee-a21c-37ee51bcb4a0" name="Atomic" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
+                <memberEnd Id="277b9ac3-b641-42ee-a21c-37ee51bcb4a0" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
                   <elementDefinition Id="f72d2204-0b8c-4a3f-8ee4-106e724298fd" />
                 </memberEnd>
               </associationHasOwnedEnds>
@@ -1012,16 +1012,16 @@
             </relationshipOwnedElementsInternal>
             <elementDefinition Id="bba4123f-5302-40a1-993b-d21fdb1b3d15" />
           </association>
-          <association Id="120f59c3-172d-4473-b728-1f542f952d22" isDerived="false" sourceEndRoleName="Atomic" targetEndRoleName="StatementRegister" isLeaf="false" isAbstract="false">
+          <association Id="120f59c3-172d-4473-b728-1f542f952d22" isDerived="false" sourceEndRoleName="" targetEndRoleName="" isLeaf="false" isAbstract="false">
             <classMoniker Id="754ba283-3e5d-412a-a2d8-76acd4ef049a" LastKnownName="StatementRegister" />
             <relationshipOwnedElementsInternal>
               <associationHasOwnedEnds>
-                <memberEnd Id="69926101-2b1d-4262-896b-3ebe5fab87ed" name="Atomic" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
+                <memberEnd Id="69926101-2b1d-4262-896b-3ebe5fab87ed" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
                   <elementDefinition Id="ce22a144-619e-4a19-a318-5c2246409463" />
                 </memberEnd>
               </associationHasOwnedEnds>
               <associationHasOwnedEnds>
-                <memberEnd Id="3d1ba9ef-1cba-4e06-ae92-dd737a5635fa" name="StatementRegister" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+                <memberEnd Id="3d1ba9ef-1cba-4e06-ae92-dd737a5635fa" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
                   <elementDefinition Id="ac8166f1-1e4d-4089-9759-c6d154ffb28e" />
                 </memberEnd>
               </associationHasOwnedEnds>

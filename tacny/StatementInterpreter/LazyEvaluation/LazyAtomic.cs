@@ -33,16 +33,16 @@ namespace LazyTacny
 
     public class Atomic
     {
-        public readonly StaticContext globalContext;
-        public LocalContext localContext;
+        public readonly StaticContext staticContext;
+        public DynamicContext dynamicContext;
         private Strategy searchStrat = Strategy.BFS;
 
         protected Atomic(Atomic ac)
         {
             Contract.Requires(ac != null);
 
-            this.localContext = ac.localContext;
-            this.globalContext = ac.globalContext;
+            this.dynamicContext = ac.dynamicContext;
+            this.staticContext = ac.staticContext;
             this.searchStrat = ac.searchStrat;
         }
 
@@ -51,21 +51,21 @@ namespace LazyTacny
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
 
-            this.localContext = new LocalContext(md, tac, tac_call);
-            this.globalContext = new StaticContext(md, tac_call, program);
+            this.dynamicContext = new DynamicContext(md, tac, tac_call);
+            this.staticContext = new StaticContext(md, tac_call, program);
         }
 
         public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, StaticContext globalContext)
         {
-            this.localContext = new LocalContext(md, tac, tac_call);
-            this.globalContext = globalContext;
+            this.dynamicContext = new DynamicContext(md, tac, tac_call);
+            this.staticContext = globalContext;
 
         }
 
-        public Atomic(LocalContext localContext, StaticContext globalContext, Strategy searchStrategy)
+        public Atomic(DynamicContext localContext, StaticContext globalContext, Strategy searchStrategy)
         {
-            this.globalContext = globalContext;
-            this.localContext = localContext.Copy();
+            this.staticContext = globalContext;
+            this.dynamicContext = localContext.Copy();
             this.searchStrat = searchStrategy;
         }
         public void Initialize()
@@ -84,7 +84,7 @@ namespace LazyTacny
         public Atomic Copy()
         {
             Contract.Ensures(Contract.Result<Atomic>() != null);
-            return new Atomic(localContext, globalContext, this.searchStrat);
+            return new Atomic(dynamicContext, staticContext, this.searchStrat);
         }
 
 
@@ -99,7 +99,7 @@ namespace LazyTacny
             //Contract.Requires(result != null);
             List<Solution> res = new List<Solution>();
                 Atomic ac = new Atomic(md, tac, tac_call, tacnyProgram);
-                ac.globalContext.RegsiterGlobalVariables(variables, resolved);
+                ac.staticContext.RegsiterGlobalVariables(variables, resolved);
                 // set strategy
                 ac.searchStrat = SearchStrategy.GetSearchStrategy(tac);
                 // because solution is verified at the end
@@ -147,14 +147,14 @@ namespace LazyTacny
             Debug.WriteLine("Resolving statement body");
             ISearch strat = new SearchStrategy(this.searchStrat);
             Atomic ac = this.Copy();
-            ac.localContext.tacticBody = body.Body;
-            ac.localContext.ResetCounter();
+            ac.dynamicContext.tacticBody = body.Body;
+            ac.dynamicContext.ResetCounter();
             foreach (var result in strat.Search(ac, false))
             {
                 var item = new Solution(result.state.Copy());
-                item.state.localContext.tacticBody = this.localContext.tacticBody; // set the body 
-                item.state.localContext.tac_call = this.localContext.tac_call;
-                item.state.localContext.SetCounter(this.localContext.GetCounter());
+                item.state.dynamicContext.tacticBody = this.dynamicContext.tacticBody; // set the body 
+                item.state.dynamicContext.tac_call = this.dynamicContext.tac_call;
+                item.state.dynamicContext.SetCounter(this.dynamicContext.GetCounter());
                 yield return item;
             }
             Debug.WriteLine("Body resolved");
@@ -165,19 +165,19 @@ namespace LazyTacny
         public static IEnumerable<Solution> ResolveStatement(Solution solution)
         {
             Contract.Requires<ArgumentNullException>(solution != null);
-            if (solution.state.localContext.IsResolved())
+            if (solution.state.dynamicContext.IsResolved())
                 yield break;
             // if no statements have been resolved, check the preconditions
-            if (solution.state.localContext.IsFirstStatment())
+            if (solution.state.dynamicContext.IsFirstStatment())
                 TacnyContract.ValidateRequires(solution);
             // foreach result yield
-            foreach (var result in solution.state.CallAction(solution.state.localContext.GetCurrentStatement(), solution))
+            foreach (var result in solution.state.CallAction(solution.state.dynamicContext.GetCurrentStatement(), solution))
             {
 
                 result.parent = solution;
                 // increment the counter if the statement has been fully resolved
-                if (!result.state.localContext.isPartialyResolved)
-                    result.state.localContext.IncCounter();
+                if (!result.state.dynamicContext.isPartialyResolved)
+                    result.state.dynamicContext.IncCounter();
                 yield return result;
 
             }
@@ -190,7 +190,7 @@ namespace LazyTacny
         {
             foreach (var item in CallAtomic(call, solution))
             {
-                globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
+                staticContext.program.IncTotalBranchCount(staticContext.program.currentDebug);
                 yield return item;
             }
 
@@ -245,20 +245,20 @@ namespace LazyTacny
                 else if ((us = st as UpdateStmt) != null)
                 {
                     // if the statement is nested tactic call
-                    if (globalContext.program.IsTacticCall(us))
+                    if (staticContext.program.IsTacticCall(us))
                     {
                         Debug.WriteLine("Found nested tactic call");
-                        Atomic ac = new Atomic(localContext.md, globalContext.program.GetTactic(us), us, globalContext);
+                        Atomic ac = new Atomic(dynamicContext.md, staticContext.program.GetTactic(us), us, staticContext);
                         // TODO fix nested tactic calls
-                        ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
+                        ExprRhs er = (ExprRhs)ac.dynamicContext.tac_call.Rhss[0];
                         List<Expression> exps = ((ApplySuffix)er.Expr).Args;
-                        Contract.Assert(exps.Count == ac.localContext.tactic.Ins.Count);
+                        Contract.Assert(exps.Count == ac.dynamicContext.tactic.Ins.Count);
                         ac.SetNewTarget(GetNewTarget());
                         for (int i = 0; i < exps.Count; i++)
                         {
                             foreach (var result in ProcessStmtArgument(exps[i]))
                             {
-                                ac.AddLocal(ac.localContext.tactic.Ins[i], result);
+                                ac.AddLocal(ac.dynamicContext.tactic.Ins[i], result);
                             }
                         }
                         List<Solution> sol_list = new List<Solution>();
@@ -315,8 +315,8 @@ namespace LazyTacny
                 List<Solution> sol_list = new List<Solution>();
                 foreach (var item in CallAction(tvds, new Solution(this.Copy())))
                 {
-                    var res = item.state.localContext.localDeclarations[lv];
-                    item.state.localContext.localDeclarations.Remove(lv);
+                    var res = item.state.dynamicContext.localDeclarations[lv];
+                    item.state.dynamicContext.localDeclarations.Remove(lv);
                     yield return res;
                 }
             }
@@ -426,7 +426,7 @@ namespace LazyTacny
         /// </summary>
         public void FillTacticInputs()
         {
-            localContext.FillTacticInputs();
+            dynamicContext.FillTacticInputs();
         }
 
         protected void InitArgs(Statement st, out List<Expression> call_arguments)
@@ -541,51 +541,51 @@ namespace LazyTacny
         protected bool HasLocalWithName(NameSegment ns)
         {
             Contract.Requires<ArgumentNullException>(ns != null);
-            return localContext.HasLocalWithName(ns);
+            return dynamicContext.HasLocalWithName(ns);
         }
 
         protected object GetLocalValueByName(NameSegment ns)
         {
             Contract.Requires<ArgumentNullException>(ns != null);
-            return localContext.GetLocalValueByName(ns.Name);
+            return dynamicContext.GetLocalValueByName(ns.Name);
         }
 
         protected object GetLocalValueByName(IVariable variable)
         {
             Contract.Requires<ArgumentNullException>(variable != null);
-            return localContext.GetLocalValueByName(variable);
+            return dynamicContext.GetLocalValueByName(variable);
         }
 
         protected object GetLocalValueByName(string name)
         {
             Contract.Requires<ArgumentNullException>(name != null);
-            return localContext.GetLocalValueByName(name);
+            return dynamicContext.GetLocalValueByName(name);
         }
 
         protected IVariable GetLocalKeyByName(NameSegment ns)
         {
             Contract.Requires<ArgumentNullException>(ns != null);
-            return localContext.GetLocalKeyByName(ns.Name);
+            return dynamicContext.GetLocalKeyByName(ns.Name);
         }
 
         protected IVariable GetLocalKeyByName(string name)
         {
             Contract.Requires<ArgumentNullException>(name != null);
-            return localContext.GetLocalKeyByName(name);
+            return dynamicContext.GetLocalKeyByName(name);
         }
 
         public void Fin()
         {
-            globalContext.resolved.Clear();
-            globalContext.resolved.AddRange(localContext.generatedStatements.Values.ToArray());
-            globalContext.new_target = localContext.new_target;
+            staticContext.resolved.Clear();
+            staticContext.resolved.AddRange(dynamicContext.generatedStatements.Values.ToArray());
+            staticContext.new_target = dynamicContext.new_target;
         }
 
         public void AddLocal(IVariable lv, object value)
         {
             Contract.Requires<ArgumentNullException>(lv != null);
             // globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
-            localContext.AddLocal(lv, value);
+            dynamicContext.AddLocal(lv, value);
         }
 
         protected static Token CreateToken(string val, int line, int col)
@@ -597,42 +597,42 @@ namespace LazyTacny
 
         public List<Statement> GetResolved()
         {
-            return globalContext.resolved;
+            return staticContext.resolved;
         }
 
         public UpdateStmt GetTacticCall()
         {
-            return localContext.tac_call;
+            return dynamicContext.tac_call;
         }
 
         public void AddUpdated(Statement key, Statement value)
         {
             Contract.Requires(key != null && value != null);
             //  globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
-            localContext.AddUpdated(key, value);
+            dynamicContext.AddUpdated(key, value);
         }
 
         public void RemoveUpdated(Statement key)
         {
             Contract.Requires(key != null);
-            localContext.RemoveUpdated(key);
+            dynamicContext.RemoveUpdated(key);
         }
 
         public Statement GetUpdated(Statement key)
         {
             Contract.Requires(key != null);
-            return localContext.GetUpdated(key);
+            return dynamicContext.GetUpdated(key);
         }
 
         public List<Statement> GetAllUpdated()
         {
             Contract.Ensures(Contract.Result<List<Statement>>() != null);
-            return localContext.GetAllUpdated();
+            return dynamicContext.GetAllUpdated();
         }
 
         public Dictionary<Statement, Statement> GetResult()
         {
-            return localContext.generatedStatements;
+            return dynamicContext.generatedStatements;
         }
 
         public bool IsFinal(List<Solution> solution_list)
@@ -649,12 +649,12 @@ namespace LazyTacny
 
         public Method GetNewTarget()
         {
-            return localContext.new_target;
+            return dynamicContext.new_target;
         }
 
         public void SetNewTarget(Method new_target)
         {
-            localContext.new_target = new_target;
+            dynamicContext.new_target = new_target;
         }
         /// <summary>
         /// Creates a new tactic from a given tactic body and updates the context
@@ -666,19 +666,19 @@ namespace LazyTacny
         protected Solution CreateTactic(List<Statement> newBody, bool decCounter = true)
         {
             Contract.Ensures(Contract.Result<Solution>() != null);
-            Tactic tac = localContext.tactic;
+            Tactic tac = dynamicContext.tactic;
             Tactic newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
                                         tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
                                         tac.Decreases, new BlockStmt(tac.Body.Tok, tac.Body.EndTok, newBody),
                                         tac.Attributes, tac.SignatureEllipsis);
             Atomic newAtomic = this.Copy();
-            newAtomic.localContext.tactic = newTac;
-            newAtomic.localContext.tacticBody = newBody;
+            newAtomic.dynamicContext.tactic = newTac;
+            newAtomic.dynamicContext.tacticBody = newBody;
             /* HACK */
             // decrase the tactic body counter
             // so the interpreter would execute newly inserted atomic
             if (decCounter)
-                newAtomic.localContext.DecCounter();
+                newAtomic.dynamicContext.DecCounter();
             return new Solution(newAtomic);
         }
 
@@ -692,8 +692,8 @@ namespace LazyTacny
         {
             Contract.Requires(newStatement != null);
             Contract.Ensures(Contract.Result<List<Statement>>() != null);
-            int index = localContext.GetCounter();
-            List<Statement> newBody = localContext.GetFreshTacticBody();
+            int index = dynamicContext.GetCounter();
+            List<Statement> newBody = dynamicContext.GetFreshTacticBody();
             newBody[index] = newStatement;
             return newBody;
         }
@@ -702,8 +702,8 @@ namespace LazyTacny
         {
             Contract.Requires(list != null);
             Contract.Ensures(Contract.Result<List<Statement>>() != null);
-            int index = localContext.GetCounter();
-            List<Statement> newBody = localContext.GetFreshTacticBody();
+            int index = dynamicContext.GetCounter();
+            List<Statement> newBody = dynamicContext.GetFreshTacticBody();
             newBody.RemoveAt(index);
             newBody.InsertRange(index, list);
             return newBody;
@@ -924,6 +924,13 @@ namespace LazyTacny
             return true;
         }
 
+        public Solution CreateSolution<T>(T oldValue, T newValue) where T : Statement
+        {
+            var ac = this.Copy();
+            ac.AddUpdated(oldValue, newValue);
+            return new Solution(ac);
+        }
+
         /// <summary>
         /// Generate a Dafny program and verify it
         /// </summary>
@@ -931,15 +938,15 @@ namespace LazyTacny
         {
             Contract.Requires<ArgumentNullException>(solution != null);
 
-            Dafny.Program prog = globalContext.program.ParseProgram();
+            Dafny.Program prog = staticContext.program.ParseProgram();
             solution.GenerateProgram(ref prog);
-            globalContext.program.ClearBody(localContext.md);
+            staticContext.program.ClearBody(dynamicContext.md);
 #if !DEBUG
             globalContext.program.PrintMember(prog, solution.state.globalContext.md.Name);
 #endif
-            if (!globalContext.program.ResolveProgram())
+            if (!staticContext.program.ResolveProgram())
                 return false;
-            globalContext.program.VerifyProgram();
+            staticContext.program.VerifyProgram();
             return true;
 
         }
@@ -968,21 +975,21 @@ namespace LazyTacny
                         if (ctorTypes.ContainsKey(udt.Name))
                         {
                             Dafny.Formal newFormal = new Dafny.Formal(formal.Tok, formal.Name, ctorTypes[udt.Name], formal.InParam, formal.IsGhost);
-                            globalContext.RegsiterGlobalVariable(newFormal);
+                            staticContext.RegsiterGlobalVariable(newFormal);
                         }
                         else
                         {
-                            globalContext.RegsiterGlobalVariable(formal);
+                            staticContext.RegsiterGlobalVariable(formal);
                         }
                     }
                     else
                     {
-                        globalContext.RegsiterGlobalVariable(formal);
+                        staticContext.RegsiterGlobalVariable(formal);
                     }
 
                 }
                 else
-                    globalContext.RegsiterGlobalVariable(formal);
+                    staticContext.RegsiterGlobalVariable(formal);
             }
         }
 
@@ -998,7 +1005,7 @@ namespace LazyTacny
             foreach (var formal in datatype.Ctors[index].Formals)
             {
                 // register globals as name segments
-                globalContext.RemoveGlobalVariable(formal);
+                staticContext.RemoveGlobalVariable(formal);
             }
         }
 

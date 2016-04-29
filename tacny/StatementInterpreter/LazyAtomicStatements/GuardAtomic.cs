@@ -21,7 +21,7 @@ namespace LazyTacny
             Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
             Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
 
-            ws = FindWhileStmt(globalContext.tac_call, globalContext.md);
+            ws = FindWhileStmt(staticContext.tac_call, staticContext.md);
             Contract.Assert(ws != null, Util.Error.MkErr(st, 11));
             guard = ws.Guard;
             var ac = this.Copy();

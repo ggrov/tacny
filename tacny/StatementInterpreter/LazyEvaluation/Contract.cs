@@ -31,7 +31,7 @@ namespace LazyTacny
         protected void ValidateRequires()
         {
             if (atomic != null)
-                foreach (var req in atomic.localContext.tactic.Req)
+                foreach (var req in atomic.dynamicContext.tactic.Req)
                     ValidateOne(req);
         }
 

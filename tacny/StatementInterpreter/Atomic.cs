@@ -32,7 +32,7 @@ namespace Tacny
     public class Atomic
     {
         public readonly StaticContext globalContext;
-        public LocalContext localContext;
+        public DynamicContext localContext;
 
         protected Atomic(Atomic ac)
         {
@@ -47,18 +47,18 @@ namespace Tacny
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
 
-            this.localContext = new LocalContext(md, tac, tac_call);
+            this.localContext = new DynamicContext(md, tac, tac_call);
             this.globalContext = new StaticContext(md, tac_call, program);
         }
 
         public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, StaticContext globalContext)
         {
-            this.localContext = new LocalContext(md, tac, tac_call);
+            this.localContext = new DynamicContext(md, tac, tac_call);
             this.globalContext = globalContext;
 
         }
 
-        public Atomic(LocalContext localContext, StaticContext globalContext)
+        public Atomic(DynamicContext localContext, StaticContext globalContext)
         {
             this.globalContext = globalContext;
             this.localContext = localContext.Copy();

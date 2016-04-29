@@ -115,7 +115,7 @@ namespace LazyTacny
 
         internal static bool VerifySolution(Solution solution)
         {
-            if (!solution.state.globalContext.program.HasError())
+            if (!solution.state.staticContext.program.HasError())
             {
                 // return the valid solution and terminate
                 return true;
@@ -124,7 +124,7 @@ namespace LazyTacny
             {  // if verifies break else continue to the next solution
                 if (solution.state.ResolveAndVerify(solution))
                 {
-                    return solution.state.globalContext.program.HasError() ? false : true;
+                    return solution.state.staticContext.program.HasError() ? false : true;
                 }
                 else
                 {
@@ -138,7 +138,7 @@ namespace LazyTacny
     {
         public static new IEnumerable<Solution> Search(Atomic atomic, bool verify = true)
         {
-            Debug.WriteLine(String.Format("Resolving tactic {0}", atomic.localContext.tactic));
+            Debug.WriteLine(String.Format("Resolving tactic {0}", atomic.dynamicContext.tactic));
 
             //local solution list
             List<Solution> result = atomic == null ? new List<Solution>() : new List<Solution>() { new Solution(atomic) };
@@ -166,7 +166,7 @@ namespace LazyTacny
                             }
                             else { yield return solution; }
                         }
-                        else if (solution.state.localContext.isPartialyResolved)
+                        else if (solution.state.dynamicContext.isPartialyResolved)
                         {
                             if (verify)
                             {
@@ -189,8 +189,8 @@ namespace LazyTacny
         public static new IEnumerable<Solution> SearchBlockStmt(BlockStmt body, Atomic atomic)
         {
             Atomic ac = atomic.Copy();
-            ac.localContext.tacticBody = body.Body;
-            ac.localContext.ResetCounter();
+            ac.dynamicContext.tacticBody = body.Body;
+            ac.dynamicContext.ResetCounter();
             List<Solution> result = new List<Solution>() { new Solution(ac) };
             // search strategy for body goes here
             while (true)
@@ -202,12 +202,12 @@ namespace LazyTacny
                 {
                     foreach (var item in Atomic.ResolveStatement(solution))
                     {
-                        if (item.state.localContext.isPartialyResolved)
+                        if (item.state.dynamicContext.isPartialyResolved)
                         {
                             { interm.Add(item); }
                             yield return item;
                         }
-                        else if (item.state.localContext.GetCurrentStatement() == null) { yield return item; }
+                        else if (item.state.dynamicContext.GetCurrentStatement() == null) { yield return item; }
                         else { interm.Add(item); }
                     }
                 }
@@ -255,7 +255,7 @@ namespace LazyTacny
                         yield return solution;
                     }
                 }
-                else if (solution.state.localContext.isPartialyResolved)
+                else if (solution.state.dynamicContext.isPartialyResolved)
                 {
                     if (verify)
                     {
@@ -285,8 +285,8 @@ namespace LazyTacny
         public static new IEnumerable<Solution> SearchBlockStmt(BlockStmt body, Atomic atomic)
         {
             Atomic ac = atomic.Copy();
-            ac.localContext.tacticBody = body.Body;
-            ac.localContext.ResetCounter();
+            ac.dynamicContext.tacticBody = body.Body;
+            ac.dynamicContext.ResetCounter();
             Stack<IEnumerator<Solution>> solutionStack = new Stack<IEnumerator<Solution>>();
             solutionStack.Push(Atomic.ResolveStatement(new Solution(ac)).GetEnumerator());
 
@@ -306,12 +306,12 @@ namespace LazyTacny
                 var solution = solutionEnum.Current;
 
                 solutionStack.Push(solutionEnum);
-                if (solution.state.localContext.isPartialyResolved)
+                if (solution.state.dynamicContext.isPartialyResolved)
                 {
                     solutionStack.Push(Atomic.ResolveStatement(solution).GetEnumerator());
                     yield return solution;
                 }
-                else if (solution.state.localContext.GetCurrentStatement() == null)
+                else if (solution.state.dynamicContext.GetCurrentStatement() == null)
                 {
                     yield return solution;
                 }

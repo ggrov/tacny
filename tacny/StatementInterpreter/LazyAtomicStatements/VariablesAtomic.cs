@@ -30,10 +30,10 @@ namespace LazyTacny
             Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
             Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
 
-            Method source = localContext.md as Method;
+            Method source = dynamicContext.md as Method;
             Contract.Assert(source != null, Util.Error.MkErr(st, 4));
 
-            locals.AddRange(globalContext.staticVariables.Values.ToList());
+            locals.AddRange(staticContext.staticVariables.Values.ToList());
         
             AddLocal(lv, locals);
             return new Solution(this.Copy());

@@ -4,16 +4,17 @@ using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
 using Microsoft.Boogie;
 using Util;
+using System;
 
-namespace Tacny
+namespace LazyTacny
 {
-    class IfAtomic : BlockAtomic, IAtomicStmt
+    class IfAtomic : BlockAtomic, IAtomicLazyStmt
     {
 
 
         public IfAtomic(Atomic atomic) : base(atomic) { }
 
-        public void Resolve(Statement st, ref List<Solution> solution_list)
+        public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
             Contract.Assert(ExtractGuard(st) != null, Util.Error.MkErr(st, 2));
             /**
@@ -21,44 +22,33 @@ namespace Tacny
              * Check if the loop guard can be resolved localy
              */
             if (IsResolvable())
-                ExecuteIf(st as IfStmt, ref solution_list);
+                return ExecuteIf(st as IfStmt, solution);
             else
-                InsertIf(st as IfStmt, ref solution_list);
+                return InsertIf(st as IfStmt, solution);
         }
 
-        private void ExecuteIf(IfStmt loop, ref List<Solution> solution_list)
+        private IEnumerable<Solution> ExecuteIf(IfStmt ifStmt, Solution solution)
         {
-            List<Solution> result = null;
+            Contract.Requires(ifStmt != null);
             bool guard_res = false;
             guard_res = EvaluateGuard();
-            // if the guard has been resolved to true resolve then body
+            // if the guard has been resolved to true resolve if body
             if (guard_res)
-                ResolveBody(loop.Thn, out result);
-            else if (!guard_res && loop.Els != null)
             {
-                // if else is a blockStmt
-                if (loop.Els is BlockStmt)
-                    ResolveBody(loop.Els as BlockStmt, out result);
-                else
-                /**
-                 * the if statement is of the following form: if(){ .. } else if(){ .. }
-                 * replace the top_level if with the bottom if
-                 * */
+                return ResolveBody(ifStmt.Thn);
+
+            }
+            else if (!guard_res && ifStmt.Els != null) // if else statement exists
+            {
+                // if it a block statement resolve the body
+                if (ifStmt.Els is BlockStmt)
+                    return ResolveBody(ifStmt.Els as BlockStmt);
+                else // otherwise it is 'else if' block, resolve recursively
                 {
-                    List<Statement> new_body = ReplaceCurrentAtomic(loop.Els);
-                    Solution sol = CreateTactic(new_body);
-                    solution_list.Add(sol);
+                    return ExecuteIf(ifStmt.Els as IfStmt, solution);
                 }
-
-            }
-
-            // @HACK update the context of each result
-            foreach (var item in result)
-            {
-                item.state.localContext.tac_body = localContext.tac_body; // set the body 
-                item.state.localContext.SetCounter(localContext.GetCounter()); // set the counter
-            }
-            solution_list.InsertRange(0, result);
+            } else
+                return default(IEnumerable<Solution>);
         }
 
         /// <summary>
@@ -67,56 +57,55 @@ namespace Tacny
         /// <param name="ifStmt"></param>
         /// <param name="solution_list"></param>
         /// <returns></returns>
-        private void InsertIf(IfStmt ifStmt, ref List<Solution> solution_list)
+        private IEnumerable<Solution> InsertIf(IfStmt ifStmt, Solution solution)
         {
             Contract.Requires(ifStmt != null);
+
             ResolveExpression(this.guard);
             Expression guard = this.guard.TreeToExpression();
-            // resolve the if statement body
-            List<Solution> resultThn = null;
-            ResolveBody(ifStmt.Thn, out resultThn);
-            List<Solution> resultEls = new List<Solution>();
+            
+            // resolve 'if' block
+            var ifStmtEnum = ResolveBody(ifStmt.Thn);
+            IEnumerable<Solution> elseStmtEnum = null;
+
             if (ifStmt.Els != null)
             {
+                // resovle else block
                 if (ifStmt.Els is BlockStmt)
-                    ResolveBody(ifStmt.Els as BlockStmt, out resultEls);
-                else
-                    CallAction(ifStmt.Els, ref resultEls);
+                    elseStmtEnum = ResolveBody(ifStmt.Els as BlockStmt);
+                else // resolve 'else if' block
+                    elseStmtEnum = InsertIf(ifStmt.Els as IfStmt, solution);
             }
-            List<IfStmt> result = new List<IfStmt>();
-            GenerateIfStmt(ifStmt, guard, resultThn, resultEls, ref result);
 
-            foreach (var item in result)
-            {
-                Atomic ac = this.Copy();
-                ac.AddUpdated(item, item);
-                solution_list.Add(new Solution(ac));
-            }
+            List<IfStmt> result = new List<IfStmt>();
+            return GenerateIfStmt(ifStmt, guard, ifStmtEnum, elseStmtEnum);
 
         }
 
-        private static void GenerateIfStmt(IfStmt original, Expression guard, List<Solution> thn, List<Solution> els, ref List<IfStmt> result)
+        private IEnumerable<Solution> GenerateIfStmt(IfStmt original, Expression guard, IEnumerable<Solution> ifStmtEnum, IEnumerable<Solution> elseStmtEnum)
         {
-            for (int i = 0; i < thn.Count; i++)
+            foreach(var @if in ifStmtEnum)
             {
-                List<Statement> bodyList = thn[i].state.GetAllUpdated();
-                BlockStmt thenBody = new BlockStmt(original.Thn.Tok, original.Thn.EndTok, bodyList);
-                if (els != null)
+                List<Statement> bodyList = @if.state.GetAllUpdated();
+                var ifBody = new BlockStmt(original.Thn.Tok, original.Thn.EndTok, bodyList);
+                if (elseStmtEnum != null)
                 {
-                    for (int j = 0; j < els.Count; j++)
+                   foreach(var @else in elseStmtEnum)
                     {
-                        List<Statement> elseList = els[i].state.GetAllUpdated();
+                        List<Statement> elseList = @else.state.GetAllUpdated();
                         Statement elseBody = null;
+                        // if original body was a plain else block
                         if (original.Els is BlockStmt)
                             elseBody = new BlockStmt(original.Els.Tok, original.Thn.EndTok, elseList);
-                        else
+                        else // otherwise it was a 'else if' and the solution list should only contain one if stmt
                             elseBody = elseList[0];
-                        result.Add(new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(thenBody), elseBody));
+
+                        yield return CreateSolution<IfStmt>(original, new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(ifBody), elseBody));
                     }
                 }
                 else
                 {
-                    result.Add(new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(thenBody), null));
+                    yield return CreateSolution<IfStmt>(original, new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(ifBody), null));
                 }
             }
         }

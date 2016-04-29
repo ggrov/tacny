@@ -1,39 +1,70 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
+using System;
+using Tacny;
 
-namespace Tacny
+namespace LazyTacny
 {
-    class PostcondAtomic : Atomic, IAtomicStmt
+    class PostcondAtomic : Atomic, IAtomicLazyStmt
     {
         public PostcondAtomic(Atomic atomic) : base(atomic) { }
 
-
-
-        public void Resolve(Statement st, ref List<Solution> solution_list)
+        public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
-            Postcond(st, ref solution_list);
+            yield return Postcond(st, solution);
+            yield break;
         }
 
-        private void Postcond(Statement st, ref List<Solution> solution_list)
+
+        private Solution Postcond(Statement st, Solution solution)
         {
             IVariable lv = null;
             List<Expression> call_arguments; // we don't care about this
-            List<MaybeFreeExpression> post_conditions = new List<MaybeFreeExpression>();
-
+            List<Expression> ensures = null;
             InitArgs(st, out lv, out call_arguments);
             Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-            Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
 
-            Method method = globalContext.md as Method;
-            Contract.Assert(method != null, Util.Error.MkErr(st, 15, "postconditions"));
-            foreach (var post in method.Ens)
+            Contract.Assert(call_arguments.Count <= 1, Util.Error.MkErr(st, 0, 0, call_arguments.Count));
+            MemberDecl memberDecl = null;
+            if (call_arguments.Count > 0)
             {
-                post_conditions.Add(Util.Copy.CopyMaybeFreeExpression(post));
-
+                foreach (var member in ProcessStmtArgument(call_arguments[0]))
+                {
+                    memberDecl = member as MemberDecl;
+                    if (memberDecl == null)
+                        Contract.Assert(false, Util.Error.MkErr(st, 1, "Function, [Ghost] Method, Declaration"));
+                    break;
+                }
             }
-            AddLocal(lv, post_conditions);
-            solution_list.Add(new Solution(this.Copy()));
+            else
+            {
+                memberDecl = staticContext.md;
+            }
+
+            Function fun = memberDecl as Function;
+            if (fun != null)
+            {
+                foreach (var req in fun.Ens)
+                    ensures.Add(Util.Copy.CopyExpression(req));
+            }
+            else
+            {
+
+                Method method = memberDecl as Method;
+                if (method != null)
+                {
+                    foreach (var req in method.Ens)
+                        ensures.Add(Util.Copy.CopyExpression(req.E));
+                }
+                else
+                {
+                    Contract.Assert(false, Util.Error.MkErr(st, 1, "Function, [Ghost] Method, Declaration"));
+                }
+            }
+            var ac = this.Copy();
+            ac.AddLocal(lv, ensures);
+            return new Solution(ac);
         }
     }
 }

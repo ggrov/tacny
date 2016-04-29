@@ -128,7 +128,7 @@ namespace LazyTacny
                 NameSegment decl = val as NameSegment;
                 Contract.Assert(decl != null, Util.Error.MkErr(st, 9, tac_input.Name));
 
-                IVariable original_decl = globalContext.GetGlobalVariable(decl.Name);
+                IVariable original_decl = staticContext.GetGlobalVariable(decl.Name);
                 if (original_decl != null)
                 {
                     datatypeType = original_decl.Type as UserDefinedType;
@@ -143,12 +143,12 @@ namespace LazyTacny
                     Contract.Assert(false, Util.Error.MkErr(st, 9, tac_input.Name));
             }
 
-            if (!globalContext.ContainsGlobalKey(datatypeName))
+            if (!staticContext.ContainsGlobalKey(datatypeName))
             {
                 Contract.Assert(false, Util.Error.MkErr(st, 12, datatypeName));
             }
 
-            datatype = globalContext.GetGlobal(datatypeName);
+            datatype = staticContext.GetGlobal(datatypeName);
 
             if(datatype.TypeArgs != null)
             {
@@ -206,7 +206,7 @@ namespace LazyTacny
                 ctor++;
             }
 
-            foreach (var stmt in GenerateAllMatchStmt(localContext.tac_call.Tok.line, 0, Util.Copy.CopyNameSegment(casesGuard), datatype, allCtorBodies, new List<Solution>()))
+            foreach (var stmt in GenerateAllMatchStmt(dynamicContext.tac_call.Tok.line, 0, Util.Copy.CopyNameSegment(casesGuard), datatype, allCtorBodies, new List<Solution>()))
             {
                 yield return CreateSolution(this, stmt);
             }
@@ -222,7 +222,7 @@ namespace LazyTacny
             InitCtorFlags(datatype, out ctorFlags);
             List<Solution> ctorBodies = RepeatedDefault<Solution>(datatype.Ctors.Count);
             // find the first failing case 
-            MatchStmt ms = GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
+            MatchStmt ms = GenerateMatchStmt(dynamicContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
             Solution solution = CreateSolution(this, ms);
             if (!ResolveAndVerify(solution))
             {
@@ -230,21 +230,21 @@ namespace LazyTacny
             }
             else
             {
-                ctor = GetErrorIndex(globalContext.program.GetErrorToken(), ms);
+                ctor = GetErrorIndex(staticContext.program.GetErrorToken(), ms);
                 // the error is occuring outside the match stmt
                 if(ctor == -1)
                 {
-                    ms = GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
+                    ms = GenerateMatchStmt(dynamicContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
                     return CreateSolution(this, ms);
                 }
                 ctorFlags[ctor] = true;
-                this.oldToken = globalContext.program.GetErrorToken();
+                this.oldToken = staticContext.program.GetErrorToken();
             }
             List<Solution> interm = new List<Solution>() { new Solution(this) };
             while (ctor < datatype.Ctors.Count)
             {
 
-                if (!globalContext.program.HasError())
+                if (!staticContext.program.HasError())
                     break;
                 RegisterLocals(datatype, ctor, ctorTypes);
 
@@ -252,13 +252,13 @@ namespace LazyTacny
                 foreach (var result in ResolveBody(st.Body))
                 {
                     ctorBodies[ctor] = result;
-                    ms = GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
+                    ms = GenerateMatchStmt(dynamicContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
                     solution = CreateSolution(this, ms);
                     // if the program fails tro resolve skip
                     if (!ResolveAndVerify(solution))
                         continue;
 
-                    if (!globalContext.program.HasError())
+                    if (!staticContext.program.HasError())
                         break;
                     if (CheckError(ms, ref ctorFlags, ctor))
                     {
@@ -274,7 +274,7 @@ namespace LazyTacny
 
             }
 
-            ms = GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
+            ms = GenerateMatchStmt(dynamicContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
             return CreateSolution(this, ms);
         }
 
@@ -386,13 +386,13 @@ namespace LazyTacny
         private bool CheckError(MatchStmt ms, ref bool[] ctorFlags, int ctor)
         {
             // hack for termination
-            if (globalContext.program.errorInfo.Msg == "cannot prove termination; try supplying a decreases clause")
+            if (staticContext.program.errorInfo.Msg == "cannot prove termination; try supplying a decreases clause")
                 return false;
             // if the error token has not changed since last iteration
-            if (!ErrorChanged(globalContext.program.GetErrorToken(), ms, ctor))
+            if (!ErrorChanged(staticContext.program.GetErrorToken(), ms, ctor))
                 return false;
 
-            this.oldToken = globalContext.program.GetErrorToken();
+            this.oldToken = staticContext.program.GetErrorToken();
             if (oldToken != null)
             {
                 int index = GetErrorIndex(oldToken, ms);

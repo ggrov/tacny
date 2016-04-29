@@ -13,7 +13,8 @@ namespace Util
         // Print the program
         private TextWriter wr;
         private TextWriter debugWriter; // debug writer
-        private TextWriter csvWriter; // debug writer
+        private TextWriter csvWriter; // csv writer
+
         DafnyOptions.PrintModes printMode;
         const string DEBUG_SUFFIX = "data";
         const string FILENAME = "tacny";
@@ -90,9 +91,9 @@ namespace Util
         new public void PrintProgram(Dafny.Program prog)
         {
             Contract.Requires(prog != null);
-            wr.WriteLine("// {0}", prog.Name);
-            PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, Path.GetFullPath(prog.FullName));
-            wr.Flush();
+            wr = new System.IO.StreamWriter(prog.FullName + ".dfy");
+            var printer = new Dafny.Printer(wr, printMode);
+            printer.PrintProgram(prog);// PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, Path.GetFullPath(prog.FullName));
         }
 
         public void PrintDebugMessage(string message, params object[] args)

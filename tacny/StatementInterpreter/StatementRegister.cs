@@ -45,7 +45,7 @@ namespace Tacny
             IS_INDUCTIVE,
             TRY_CATCH,
             RETURNS,
-            IS_DATATYPE
+            IS_DATATYPE,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -76,6 +76,7 @@ namespace Tacny
             {"tryCatch", Atomic.TRY_CATCH},
             {"get_returns", Atomic.RETURNS},
             {"is_datatype", Atomic.IS_DATATYPE},
+           
         };
         
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()

@@ -45,7 +45,8 @@ namespace LazyTacny
             IS_INDUCTIVE,
             TRY_CATCH,
             RETURNS,
-            IS_DATATYPE
+            IS_DATATYPE,
+            GET_MEMBER,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -76,8 +77,9 @@ namespace LazyTacny
             {"tryCatch", Atomic.TRY_CATCH},
             {"get_returns", Atomic.RETURNS},
             {"is_datatype", Atomic.IS_DATATYPE},
+            {"get_member", Atomic.GET_MEMBER }
         };
-        
+
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
         {
             //{Atomic.REPLACE_SINGLETON, typeof(SingletonAtomic)},
@@ -85,26 +87,27 @@ namespace LazyTacny
             //{Atomic.ADD_INVAR, typeof(InvariantAtomic)},
             {Atomic.ADD_MATCH, typeof(MatchAtomic)},
             //{Atomic.REPLACE_OP, typeof(OperatorAtomic)},
-            //{Atomic.EXTRACT_GUARD, typeof(GuardAtomic)},
+            {Atomic.EXTRACT_GUARD, typeof(GuardAtomic)},
             {Atomic.PERM, typeof(PermAtomic)},
             //{Atomic.OR, typeof(OrAtomic)},
-            //{Atomic.ID, typeof(IdAtomic)},
-            //{Atomic.FAIL, typeof(FailAtomic)},
+            {Atomic.ID, typeof(IdAtomic)},
+            {Atomic.FAIL, typeof(FailAtomic)},
             //{Atomic.ADD_VARIANT, typeof(VariantAtomic)},
             {Atomic.VARIABLES, typeof(VariablesAtomic)},
             {Atomic.PARAMS, typeof(ParamsAtomic)},
             {Atomic.MERGE_LISTS, typeof(MergeAtomic)},
             {Atomic.SUCH_THAT, typeof(SuchThatAtomic)},
             {Atomic.LEMMAS, typeof(LemmasAtomic)},
-            //{Atomic.IF, typeof(IfAtomic)},
+            {Atomic.IF, typeof(IfAtomic)},
             {Atomic.WHILE, typeof(WhileAtomic)},
             //{Atomic.SOLVED, typeof(SolvedAtomic)},
             //{Atomic.CHANGED, typeof(ChangedAtomic)},
             //{Atomic.FUNCTIONS, typeof(FunctionsAtomic)},
-            //{Atomic.PRE_COND, typeof(PrecondAtomic)},
-            //{Atomic.POST_COND, typeof(PostcondAtomic)},
+            {Atomic.PRE_COND, typeof(PrecondAtomic)},
+            {Atomic.POST_COND, typeof(PostcondAtomic)},
+            {Atomic.GET_MEMBER, typeof(GetMemberAtomic) },
             //{Atomic.IS_INDUCTIVE, typeof(IsInductiveAtomic)},
-            //{Atomic.TRY_CATCH, typeof(TryCatchAtomic)},
+            {Atomic.TRY_CATCH, typeof(TryCatchAtomic)},
             //{Atomic.RETURNS, typeof(ReturnAtomic)},
             //{Atomic.IS_DATATYPE, typeof(IsDatatypeAtomic)},
         };
@@ -121,12 +124,12 @@ namespace LazyTacny
             ApplySuffix aps;
             if ((st = call as Statement) != null)
                 return GetAtomicType(st);
-            else if((aps = call as ApplySuffix) != null)
+            else if ((aps = call as ApplySuffix) != null)
                 return GetAtomicType(aps);
-            
+
             return Atomic.UNDEFINED;
         }
-        
+
 
         public static Atomic GetAtomicType(Statement st)
         {
@@ -200,7 +203,7 @@ namespace LazyTacny
         /// </summary>
         /// <param name="name">string signature</param>
         /// <returns>Atomic type</returns>
-        public static Atomic GetAtomicType(IToken tok) 
+        public static Atomic GetAtomicType(IToken tok)
         {
             Contract.Requires<ArgumentNullException>(tok != null);
             string name = tok.val;

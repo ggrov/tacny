@@ -26,7 +26,7 @@ namespace Tacny
     /// Local context for the tactic currently being resolved
     /// </summary>
     #region LocalContext
-    public class LocalContext : Context
+    public class DynamicContext : Context
     {
         public Tactic tactic = null;  // The called tactic
         public List<Statement> tacticBody = new List<Statement>(); // body of the currently worked tactic
@@ -37,7 +37,7 @@ namespace Tacny
         private int tacCounter;
         public bool isPartialyResolved = false;
 
-        public LocalContext(MemberDecl md, Tactic tac, UpdateStmt tac_call)
+        public DynamicContext(MemberDecl md, Tactic tac, UpdateStmt tac_call)
             : base(md, tac_call)
         {
             this.tactic = tac;
@@ -46,7 +46,7 @@ namespace Tacny
             FillTacticInputs();
         }
 
-        public LocalContext(MemberDecl md, Tactic tac, UpdateStmt tac_call,
+        public DynamicContext(MemberDecl md, Tactic tac, UpdateStmt tac_call,
             List<Statement> tac_body, Dictionary<Dafny.IVariable, object> local_variables,
             Dictionary<Statement, Statement> updated_statements, int tacCounter, Method old_target)
             : base(md, tac_call)
@@ -64,12 +64,12 @@ namespace Tacny
             this.new_target = old_target;
         }
 
-        public LocalContext Copy()
+        public DynamicContext Copy()
         {
             Method newM = Util.Copy.CopyMember(md);
             Tactic newTac = Util.Copy.CopyMember(tactic) as Tactic;
             Method new_target = Util.Copy.CopyMember(this.new_target);
-            return new LocalContext(newM, newTac, tac_call, tacticBody, localDeclarations, Util.Copy.CopyStatementDict(generatedStatements), tacCounter, new_target);
+            return new DynamicContext(newM, newTac, tac_call, tacticBody, localDeclarations, Util.Copy.CopyStatementDict(generatedStatements), tacCounter, new_target);
         }
 
 

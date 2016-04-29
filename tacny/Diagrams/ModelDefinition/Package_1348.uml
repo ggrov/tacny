@@ -78,10 +78,10 @@
         </appliedStereotypesInternal>
         <targetEnds>
           <association
-            Id="8ec15ce1-6230-4b04-a6fd-6a84220465b3"
+            Id="12200385-30da-42ca-8c5d-0c5f0b0c0430"
             isDerived="false"
-            sourceEndRoleName="TacnyDriver"
-            targetEndRoleName="Interpreter"
+            sourceEndRoleName=""
+            targetEndRoleName=""
             isLeaf="false"
             isAbstract="false">
             <classMoniker
@@ -91,8 +91,7 @@
             <relationshipOwnedElementsInternal>
               <associationHasOwnedEnds>
                 <memberEnd
-                  Id="6ab22025-6c7c-4cc0-ab49-4f18b00e8c32"
-                  name="TacnyDriver"
+                  Id="b73ad077-5bd4-457b-a6ad-a9ea5782290c"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -104,8 +103,7 @@
               </associationHasOwnedEnds>
               <associationHasOwnedEnds>
                 <memberEnd
-                  Id="e11e52c7-9702-4c21-8405-08fe5822e973"
-                  name="Interpreter"
+                  Id="08efcadd-8d67-4dd6-bbb1-4f1e07f11aca"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -1518,8 +1516,8 @@
           <association
             Id="091234a3-ae9e-4f7a-825d-1c30efb9a7d6"
             isDerived="false"
-            sourceEndRoleName="Interpreter"
-            targetEndRoleName="Atomic"
+            sourceEndRoleName=""
+            targetEndRoleName=""
             isLeaf="false"
             isAbstract="false">
             <classMoniker
@@ -1530,7 +1528,6 @@
               <associationHasOwnedEnds>
                 <memberEnd
                   Id="ab2eb391-daf3-40c0-b0b0-0ac053fb3bbd"
-                  name="Interpreter"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -1543,7 +1540,6 @@
               <associationHasOwnedEnds>
                 <memberEnd
                   Id="8a10368d-d114-4c28-9e73-ada7bafb8773"
-                  name="Atomic"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -1557,8 +1553,8 @@
           <association
             Id="aba6dd50-1082-4855-82f8-cf51c57abe74"
             isDerived="false"
-            sourceEndRoleName="Interpreter"
-            targetEndRoleName="Program"
+            sourceEndRoleName=""
+            targetEndRoleName=""
             isLeaf="false"
             isAbstract="false">
             <classMoniker
@@ -1569,7 +1565,6 @@
               <associationHasOwnedEnds>
                 <memberEnd
                   Id="efcbb16b-0beb-40c4-b755-d8b44b37d561"
-                  name="Interpreter"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -1582,7 +1577,6 @@
               <associationHasOwnedEnds>
                 <memberEnd
                   Id="5dffa460-e0bc-4c0a-87be-65a652802a28"
-                  name="Program"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -3867,8 +3861,8 @@
           <association
             Id="c593a0ba-13de-4b52-a93b-b15084c83c37"
             isDerived="false"
-            sourceEndRoleName="Atomic"
-            targetEndRoleName="GlobalContext"
+            sourceEndRoleName=""
+            targetEndRoleName=""
             isLeaf="false"
             isAbstract="false">
             <classMoniker
@@ -3879,7 +3873,6 @@
               <associationHasOwnedEnds>
                 <memberEnd
                   Id="cc7619dd-0c70-48a4-99fd-56db819ea7a3"
-                  name="Atomic"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -3892,7 +3885,6 @@
               <associationHasOwnedEnds>
                 <memberEnd
                   Id="789108c2-2db8-4a60-a14b-194182209ba8"
-                  name="GlobalContext"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -3906,8 +3898,8 @@
           <association
             Id="2cca8624-f65e-4d6a-b034-80caf5813773"
             isDerived="false"
-            sourceEndRoleName="Atomic"
-            targetEndRoleName="LocalContext"
+            sourceEndRoleName=""
+            targetEndRoleName=""
             isLeaf="false"
             isAbstract="false">
             <classMoniker
@@ -3918,7 +3910,6 @@
               <associationHasOwnedEnds>
                 <memberEnd
                   Id="333c9cf6-7415-43f7-b699-46cbc7792f6f"
-                  name="Atomic"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -3931,7 +3922,6 @@
               <associationHasOwnedEnds>
                 <memberEnd
                   Id="3013395d-564c-4df2-9ea7-6d4138f9dd0a"
-                  name="LocalContext"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -3945,7 +3935,7 @@
           <association
             Id="bba4123f-5302-40a1-993b-d21fdb1b3d15"
             isDerived="false"
-            sourceEndRoleName="Atomic"
+            sourceEndRoleName=""
             targetEndRoleName="Program"
             isLeaf="false"
             isAbstract="false">
@@ -3957,7 +3947,6 @@
               <associationHasOwnedEnds>
                 <memberEnd
                   Id="f72d2204-0b8c-4a3f-8ee4-106e724298fd"
-                  name="Atomic"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -3984,8 +3973,8 @@
           <association
             Id="48e7dd54-5909-4931-8e74-a3cfb13420b6"
             isDerived="false"
-            sourceEndRoleName="Atomic"
-            targetEndRoleName="StatementRegister"
+            sourceEndRoleName=""
+            targetEndRoleName=""
             isLeaf="false"
             isAbstract="false">
             <classMoniker
@@ -3996,7 +3985,6 @@
               <associationHasOwnedEnds>
                 <memberEnd
                   Id="ce22a144-619e-4a19-a318-5c2246409463"
-                  name="Atomic"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
@@ -4009,7 +3997,6 @@
               <associationHasOwnedEnds>
                 <memberEnd
                   Id="ac8166f1-1e4d-4089-9759-c6d154ffb28e"
-                  name="StatementRegister"
                   isLeaf="false"
                   isStatic="false"
                   isReadOnly="false"
