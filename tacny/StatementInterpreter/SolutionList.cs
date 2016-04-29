@@ -110,6 +110,11 @@ namespace Tacny
             this.isFinal = isFinal;
             this.parent = parent;
         }
+        [Pure]
+        public bool IsResolved()
+        {
+            return state.localContext.IsResolved();
+        }
 
         public string GenerateProgram(ref Dafny.Program prog, bool isFinal = false)
         {
@@ -159,6 +164,15 @@ namespace Tacny
             }
 
             return null;
+        }
+
+        public static void PrintSolution(Solution solution)
+        {
+            Dafny.Program prog = solution.state.globalContext.program.ParseProgram();
+            solution.GenerateProgram(ref prog);
+            solution.state.globalContext.program.ClearBody(solution.state.localContext.md);
+            Console.WriteLine(String.Format("Tactic call {0} in {1} results: ", solution.state.localContext.tactic.Name, solution.state.localContext.md.Name));
+            solution.state.globalContext.program.PrintMember(prog, solution.state.globalContext.md.Name);
         }
 
         private static Method GenerateMethod(Method oldMd, List<Statement> body, Method source = null)

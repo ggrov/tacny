@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="file:///D:/PROGRAM FILES (X86)/MICROSOFT VISUAL STUDIO 11.0/COMMON7/IDE/EXTENSIONS/MICROSOFT/ARCHITECTURE TOOLS/EXTENSIBILITY/Logging/ReverseEngineeringLog.xslt"?>
+<Log xmlns="http://schemas.microsoft.com/VisualStudio/2010/CodeGen.RE.Log" Label="Code Generation/Text Transformation Log">
+  <MessageClass Name="Message" Label="Message" Option="Show informational messages" />
+  <MessageClass Name="Warning" Label="Warning" Option="Show warnings" />
+  <MessageClass Name="Error" Label="Error" Option="Show errors" />
+  <MessageClass Name="Property" Label="Property" Option="Show metadata" />
+  <MessageClass Name="Diagnostic" Label="Message" Option="Show diagnostic messages" />
+  <Message Timestamp="2016-02-02T15:53:02" Importance="High" Text="Reverse Engineering Started." />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: '16d056b6-614a-4668-a120-0ca03f638bf6' -  (ClassifierTemplateParameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: '23efa67b-e43e-4b60-a2d3-f7171a63a5a7' -  (ClassifierTemplateParameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: '396901da-65e5-46c7-b0fa-fb3b5d638a78' -  (ClassifierTemplateParameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Boolean' -  (PrimitiveType)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'caf64536-7059-464c-b863-a141d00a3923' -  (ClassifierTemplateParameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft' -  (Package)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Boogie' -  (Package)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Boogie::CommandLineParseState' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Boogie::IToken' -  (Interface)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny' -  (Package)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::ApplySuffix' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::BlockStmt' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::CoLemma' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::DafnyOptions' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::Declaration' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::Expression' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::IfStmt' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::Lemma' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::MaybeFreeExpression' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::MemberDecl' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::Method' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::NameSegment' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::NonglobalVariable' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::Printer' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::PrintModes' -  (Enumeration)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::Program' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::Specification' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::Specification&lt;Expression‎&gt;' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::Statement' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::Tactic' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::UpdateStmt' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Microsoft::Dafny::WhileStmt' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System' -  (Package)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System::Collections' -  (Package)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System::Collections::Generic' -  (Package)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System::Collections::Generic::Dictionary' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System::Collections::Generic::Dictionary&lt;Statement‎, Statement‎&gt;' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System::Collections::Generic::List' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System::Collections::Generic::List&lt;Expression‎&gt;' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System::Collections::Generic::List&lt;MaybeFreeExpression‎&gt;' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System::Collections::Generic::List&lt;Statement‎&gt;' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System::IO' -  (Package)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System::IO::TextWriter' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::System::Object' -  (Class)   (partially reverse engineered - definition not updated) " />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util' -  (Package)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Medium" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy' -  (Class)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyApplySuffix' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyApplySuffix::old_aps' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyBlockStmt' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyBlockStmt::stmt' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyCoLemma' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyCoLemma::md' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyCoLemma::oldCl' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyExpression' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyExpression::exp' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyExpressionList' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyExpressionList::source' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyIfStmt' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyIfStmt::stmt' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyLemma' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyLemma::md' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyLemma::oldLm' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyMaybeFreeExpression' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyMaybeFreeExpression::mfe' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyMaybeFreeExpressionList' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyMaybeFreeExpressionList::list' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyMember' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyMember::md' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyMethod' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyMethod::md' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyMethod::oldMd' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyNameSegment' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyNameSegment::old' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopySpecificationExpression' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopySpecificationExpression::item' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyStatement' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyStatement::item' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyStatementDict' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyStatementDict::oldDict' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyStatementList' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyStatementList::source' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyTactic' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyTactic::md' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyTactic::oldTac' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyUpdateStmt' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyUpdateStmt::stmt' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyWhileStmt' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Copy::CopyWhileStmt::stmt' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Medium" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Error' -  (Class)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Error::GetErrorString' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Error::GetErrorString::n' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Error::MkErr' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Error::MkErr::args' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Error::MkErr::d' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Error::MkErr::e' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Error::MkErr::n' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Error::MkErr::s' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Error::MkErr::tok' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Error::MkErr::v' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Medium" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer' -  (Class)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Error' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Error::args' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Error::d' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Error::e' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Error::msg' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Error::s' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Error::tok' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Error::v' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::filename' -  (Property)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::FILENAME' -  (Property)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::PrintDebugMessage' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::PrintDebugMessage::args' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::PrintDebugMessage::message' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::PrintDebugMessage::program_name' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Printer' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Printer::printMode' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Printer::wr' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::printMode' -  (Property)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::PrintProgram' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::PrintProgram::prog' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::SUFFIX' -  (Property)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Warning' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Warning::args' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Warning::msg' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::Warning::tok' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::Printer::wr' -  (Property)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Medium" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions' -  (Class)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::clo' -  (Property)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::Contracts' -  (Property)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::Debug' -  (Property)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::Install' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::Install::options' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::O' -  (Property)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::ParseOption' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::ParseOption::name' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::ParseOption::ps' -  (Parameter)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::ResolveTactics' -  (Property)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::TacnyOptions' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Diagrams::Util::TacnyOptions::Usage' -  (Operation)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'Integer' -  (PrimitiveType)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Element reverse engineered into the UML model: 'String' -  (PrimitiveType)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Relationship reverse engineered into the UML model: Diagrams::Util::Printer to Diagrams::Microsoft::Dafny::Printer (Generalization)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Relationship reverse engineered into the UML model: Diagrams::Util::TacnyOptions to Diagrams::Util::TacnyOptions (Association)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Relationship reverse engineered into the UML model: Diagrams::Util::TacnyOptions to Diagrams::Microsoft::Dafny::DafnyOptions (Generalization)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Relationship reverse engineered into the UML model: Diagrams::Microsoft::Dafny::IfStmt to Diagrams::Microsoft::Dafny::Statement (Generalization)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Relationship reverse engineered into the UML model: Diagrams::Microsoft::Dafny::BlockStmt to Diagrams::Microsoft::Dafny::Statement (Generalization)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Relationship reverse engineered into the UML model: Diagrams::Microsoft::Dafny::MemberDecl to Diagrams::Microsoft::Dafny::Declaration (Generalization)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Relationship reverse engineered into the UML model: Diagrams::Microsoft::Dafny::Lemma to Diagrams::Microsoft::Dafny::Method (Generalization)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Relationship reverse engineered into the UML model: Diagrams::Microsoft::Dafny::Method to Diagrams::Microsoft::Dafny::MemberDecl (Generalization)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Relationship reverse engineered into the UML model: Diagrams::Microsoft::Dafny::Tactic to Diagrams::Microsoft::Dafny::Method (Generalization)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="Diagnostic" Text="Relationship reverse engineered into the UML model: Diagrams::Microsoft::Dafny::NonglobalVariable to Diagrams::Microsoft::Dafny::IVariable (InterfaceRealization)" />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="High" Text="(4) type(s) fully reverse engineered." />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="High" Text="(32) type(s) partially reverse engineered.  These types were not included in the original selection so their full definitions are not reverse engineered.  Instead, this shallow operation has simply ensured these types exist in the UML model because they are needed in order to fully describe other elements." />
+  <Message Timestamp="2016-02-02T15:53:10" Importance="High" Text="The reverse engineering operation completed with (0) error(s), and (0) warning(s)." />
+</Log>

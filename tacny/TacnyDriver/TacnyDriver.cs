@@ -1,16 +1,14 @@
-﻿#define DEBUG
-
-using System;
+﻿using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Diagnostics;
 using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
-using Bpl = Microsoft.Boogie;
+using Tacny;
+using System.Reflection;
 
-namespace Tacny
+namespace Main
 {
     class TacnyDriver
     {
@@ -25,19 +23,17 @@ namespace Tacny
         /// <param name="args"></param>
         static int Main(string[] args)
         {
-
-  
             int ret = 0;
             var thread = new System.Threading.Thread(
-                new System.Threading.ThreadStart(() =>  
+                new System.Threading.ThreadStart(() =>
                 { ret = ExecuteTacny(args); }),
-            
+
                 0x10000000); // 256MB stack size to prevent stack
-            
+
             thread.Start();
             thread.Join();
-            
-                    return ret;
+
+            return ret;
         }
 
         /// <summary>
@@ -47,27 +43,25 @@ namespace Tacny
         /// <returns></returns>
         public static int ExecuteTacny(string[] args)
         {
-            // measure execution time
-           
             Contract.Requires(tcce.NonNullElements(args));
+            //Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
+            Debug.Listeners.Clear();
+            //Debug.AutoFlush = true;
+            // install Dafny and Boogie commands
+            var options = new Util.TacnyOptions();
+            options.VerifySnapshots = 2;
+            Util.TacnyOptions.Install(options);
 
             printer = new TacnyConsolePrinter();
-            ExecutionEngine.printer = printer;
+            ExecutionEngine.printer = new ConsolePrinter();
 
             ExitValue exitValue = ExitValue.VERIFIED;
 
-            Util.TacnyOptions.Install(new Util.TacnyOptions()); // prep Dafny/Boogie
-            CommandLineOptions.Clo.RunningBoogieFromCommandLine = true;
-            #if DEBUG
-            CommandLineOptions.Clo.Wait = true;
-            #endif
-                
-
-            // parse the file
+            // parse command line args
+            //Util.TacnyOptions.O.Parse(args);
             if (!CommandLineOptions.Clo.Parse(args))
             {
                 exitValue = ExitValue.PREPROCESSING_ERROR;
-                cleanup();
                 return (int)exitValue;
             }
 
@@ -75,52 +69,35 @@ namespace Tacny
             {
                 printer.ErrorWriteLine(Console.Out, "*** Error: No input files were specified.");
                 exitValue = ExitValue.PREPROCESSING_ERROR;
-                cleanup();
                 return (int)exitValue;
             }
-            if (CommandLineOptions.Clo.XmlSink != null)
+            Console.Out.WriteLine("BEGIN: Tacny Options");
+            Util.TacnyOptions tc = Util.TacnyOptions.O;
+            FieldInfo[] fields = tc.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+            foreach (var field in fields)
             {
-                string errMsg = CommandLineOptions.Clo.XmlSink.Open();
-                if (errMsg != null)
+
+                if (field.IsPublic)
                 {
-                    printer.ErrorWriteLine(Console.Out, "*** Error: " + errMsg);
-                    exitValue = ExitValue.PREPROCESSING_ERROR;
-                    cleanup();
-                    return (int)exitValue;
+                    if (field.Name == "EnableSearch")
+                    {
+                        var val = field.GetValue(tc);
+                        if (val is int)
+                        {
+                            var tmp = (int)val;
+                            if (tmp >= 0)
+                            {
+                                var name = (LazyTacny.Strategy)tmp;
+                                Console.Out.WriteLine("# {0} : {1}", "SearchStrategy", name.ToString());
+                            }
+                        }
+                    } else
+                        Console.Out.WriteLine("# {0} : {1}", field.Name, field.GetValue(tc).ToString());
                 }
-            }
 
-            if (!CommandLineOptions.Clo.DontShowLogo)
-            {
-                Console.WriteLine(CommandLineOptions.Clo.Version);
             }
-
-            if (CommandLineOptions.Clo.ShowEnv == CommandLineOptions.ShowEnvironment.Always)
-            {
-                Console.WriteLine("---Command arguments");
-                foreach (string arg in args)
-                {
-                    Contract.Assert(arg != null);
-                    Console.WriteLine(arg);
-                }
-                Console.WriteLine("--------------------");
-            }
-
-            foreach (string file in CommandLineOptions.Clo.Files)
-            {
-                Contract.Assert(file != null);
-                string extension = Path.GetExtension(file);
-                if (extension != null) { extension = extension.ToLower(); }
-                if (extension != ".dfy")
-                {
-                    printer.ErrorWriteLine(Console.Out, "*** Error: '{0}': Filename extension '{1}' is not supported. Input files must be Dafny programs (.dfy).", file,
-                        extension == null ? "" : extension);
-                    exitValue = ExitValue.PREPROCESSING_ERROR;
-                    cleanup();
-                    return (int)exitValue;
-                }
-            }
-
+            
+            Console.Out.WriteLine("END: Tacny Options");
             exitValue = ProcessFiles(CommandLineOptions.Clo.Files);
 
             return (int)exitValue;
@@ -159,29 +136,19 @@ namespace Tacny
                 return exitValue;
             }
 
-            if (0 <= CommandLineOptions.Clo.VerifySnapshots && lookForSnapshots)
-            {
-                var snapshotsByVersion = ExecutionEngine.LookForSnapshots(fileNames);
-                foreach (var s in snapshotsByVersion)
-                {
-                    var ev = ProcessFiles(new List<string>(s), false, programId);
-                    if (exitValue != ev && ev != ExitValue.VERIFIED)
-                    {
-                        exitValue = ev;
-                    }
-                }
-                return exitValue;
-            }
-
             using (XmlFileScope xf = new XmlFileScope(CommandLineOptions.Clo.XmlSink, fileNames[fileNames.Count - 1]))
             {
                 Tacny.Program tacnyProgram;
                 string programName = fileNames.Count == 1 ? fileNames[0] : "the program";
+                // install Util.Printer
                 try
                 {
+                    Debug.WriteLine("Initializing Tacny Program");
                     tacnyProgram = new Tacny.Program(fileNames, programId);
+                    // Initialize the printer
+                    Util.Printer.Install(fileNames[0]);
                     tacnyProgram.MaybePrintProgram(tacnyProgram.dafnyProgram, programName + "_src");
-                    }
+                }
                 catch (ArgumentException ex)
                 {
                     exitValue = ExitValue.DAFNY_ERROR;
@@ -189,44 +156,39 @@ namespace Tacny
                     return exitValue;
                 }
 
-                
                 if (!CommandLineOptions.Clo.NoResolve && !CommandLineOptions.Clo.NoTypecheck && DafnyOptions.O.DafnyVerify)
                 {
-                    Interpreter r = new Interpreter(tacnyProgram);
 
-                    err = r.ResolveProgram();
-                    if (err != null)
+                    if (!Util.TacnyOptions.O.LazyEval)
                     {
-                        exitValue = ExitValue.DAFNY_ERROR;
-                        printer.ErrorWriteLine(Console.Out, err);
+                        Debug.WriteLine("Starting eager tactic evaluation");
+                        Tacny.Interpreter r = new Tacny.Interpreter(tacnyProgram);
+
+                        err = r.ResolveProgram();
+                        if (err != null)
+                        {
+                            exitValue = ExitValue.DAFNY_ERROR;
+                            printer.ErrorWriteLine(Console.Out, err);
+                        }
+                        else
+                        {
+                            tacnyProgram.PrintProgram();
+                        }
+                        Debug.WriteLine("Fnished eager tactic evaluation");
                     }
                     else
                     {
-                        tacnyProgram.Print();
+                        Debug.WriteLine("Starting lazy tactic evaluation");
+                        LazyTacny.Interpreter r = new LazyTacny.Interpreter(tacnyProgram);
+                        var prog = r.ResolveProgram();
+                        tacnyProgram.PrintProgram(prog);
+                        Debug.WriteLine("Fnished lazy tactic evaluation");
                     }
-                   // tacnyProgram.PrintDebugData(false);
                 }
+                tacnyProgram.PrintAllDebugData(Util.TacnyOptions.O.PrintCsv);
             }
             return exitValue;
         }
-
-
-        /// <summary>
-        /// Clean up before exiting
-        /// </summary>
-        static void cleanup()
-        {
-            if (CommandLineOptions.Clo.XmlSink != null)
-            {
-                CommandLineOptions.Clo.XmlSink.Close();
-            }
-            if (CommandLineOptions.Clo.Wait)
-            {
-                Console.WriteLine("Press Enter to exit.");
-                Console.ReadLine();
-            }
-        }
-
 
         class TacnyConsolePrinter : OutputPrinter
         {
@@ -257,7 +219,7 @@ namespace Tacny
 
             public void WriteTrailer(PipelineStatistics stats)
             {
-               
+
             }
         }
     }

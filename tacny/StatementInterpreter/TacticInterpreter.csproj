@@ -7,8 +7,8 @@
     <ProjectGuid>{D68D70F0-BD07-4176-B3DE-0B00612F84F7}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>StatementInterpreter</RootNamespace>
-    <AssemblyName>StatementInterpreter</AssemblyName>
+    <RootNamespace>TacticInterpreter</RootNamespace>
+    <AssemblyName>TacticInterpreter</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -18,9 +18,9 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
@@ -67,7 +67,7 @@
     <CodeContractsRuntimeCheckingLevel>Full</CodeContractsRuntimeCheckingLevel>
     <CodeContractsReferenceAssembly>%28none%29</CodeContractsReferenceAssembly>
     <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -174,11 +174,36 @@
     <Compile Include="AtomicStatements\GuardAtomic.cs" />
     <Compile Include="AtomicStatements\IfAtomic.cs" />
     <Compile Include="Contract.cs" />
+    <Compile Include="LazyAtomicStatements\FailAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\GetMemberAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\GuardAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\IdAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\IfAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\LemmasAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\MatchAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\MergeAtomic.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LazyAtomicStatements\PermAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\PostcondAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\PrecondAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\SuchThatAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\TryCatchAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\WhileAtomic.cs" />
+    <Compile Include="LazyEvaluation\BlockAtomic.cs" />
+    <Compile Include="LazyEvaluation\StatementRegister.cs" />
+    <Compile Include="LazyEvaluation\Contract.cs" />
+    <Compile Include="LazyEvaluation\LazyAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\ParamsAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\VariablesAtomic.cs" />
+    <Compile Include="LazyEvaluation\SolutionList.cs" />
+    <Compile Include="LazyEvaluation\Pipeline.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="SearchFramework.cs" />
     <Compile Include="StatementRegister.cs" />
     <Compile Include="AtomicStatements\InvariantAtomic.cs" />
     <Compile Include="AtomicStatements\MatchAtomic.cs" />
@@ -193,6 +218,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="ClassDiagram1.cd" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

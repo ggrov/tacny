@@ -100,6 +100,9 @@ namespace Util
                 case 15: s = "{0} can only be called from a (ghost) method"; break;
                 case 16: s = "Solution does not exist"; break;
                 case 17: s = "Right hand side expected binary expression"; break;
+                case 18: s = "Atomic {0} does not implement {1} interface"; break;
+                case 19: s = "Unsuported search strategy: {0}"; break;
+                case 20: s = "Member {0} does not exist"; break;
                 default: s = "error" + n; break;
             }
 

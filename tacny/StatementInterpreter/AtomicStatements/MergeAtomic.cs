@@ -26,7 +26,7 @@ namespace Tacny
         {
             IVariable lv = null;
             List<Expression> call_arguments;
-
+            IList result = null;
             InitArgs(st, out lv, out call_arguments);
             Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
             Contract.Assert(tcce.OfSize(call_arguments, 2), Util.Error.MkErr(st, 0, 2, call_arguments.Count));
@@ -35,29 +35,30 @@ namespace Tacny
             ProcessArg(call_arguments[0], out arg1);
             object arg2;
             ProcessArg(call_arguments[1], out arg2);
-            // valdiate the argument types
             System.Type type1 = arg1.GetType().GetGenericArguments().Single();
             System.Type type2 = arg2.GetType().GetGenericArguments().Single();
             Contract.Assert(type1.Equals(type2), Util.Error.MkErr(st, 1, type1));
-            
-            if(!(arg1 is IEnumerable) || !(arg2 is IEnumerable))
+
+            if (!(arg1 is IEnumerable) || !(arg2 is IEnumerable))
                 Contract.Assert(false, Util.Error.MkErr(st, 1, typeof(IEnumerable)));
 
             dynamic darg1 = arg1;
             dynamic darg2 = arg2;
 
-
-
-
             System.Type listType = typeof(List<>).MakeGenericType(new[] { type1 });
-            IList result = (IList)Activator.CreateInstance(listType);
-            darg1.AddRange(darg2);
-            // skip duplicates
+            result = (IList)Activator.CreateInstance(listType);
+
+
             foreach (var t in darg1)
             {
                 if (!result.Contains(t))
                     result.Add(t);
-                
+            }
+
+            foreach (var t in darg2)
+            {
+                if (!result.Contains(t))
+                    result.Add(t);
             }
             AddLocal(lv, result);
 

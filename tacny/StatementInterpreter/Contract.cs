@@ -31,7 +31,7 @@ namespace Tacny
         protected void ValidateRequires()
         {
             if (atomic != null)
-                foreach (var req in atomic.localContext.tac.Req)
+                foreach (var req in atomic.localContext.tactic.Req)
                     ValidateOne(req);
         }
 
@@ -46,7 +46,5 @@ namespace Tacny
             Contract.Assert(result != null, Util.Error.MkErr(expr, 1, "Boolean Expression"));
             Contract.Assert((bool)result.Value, Util.Error.MkErr(expr, 14));
         }
-
-
     }
 }

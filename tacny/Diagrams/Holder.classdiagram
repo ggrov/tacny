@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<logicalClassDesignerModel xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" xmlns:dm1="http://schemas.microsoft.com/dsltools/Kernel" xmlns:dm2="http://schemas.microsoft.com/dsltools/Component" xmlns:dm3="http://schemas.microsoft.com/dsltools/Activity" xmlns:dm4="http://schemas.microsoft.com/dsltools/UseCase" xmlns:dm5="http://schemas.microsoft.com/dsltools/Interaction" xmlns:dm6="http://schemas.microsoft.com/dsltools/UmlModelLibrary" xmlns:dm7="http://schemas.microsoft.com/dsltools/UmlDiagrams" xmlns:dm8="http://schemas.microsoft.com/dsltools/ModelStore" dslVersion="1.0.0.0" Id="ddfb1d11-d2ee-4458-b477-4328ce80e6a6" name="Holder" linkedPackageId="af7a669c-af02-48dc-aae6-7f2262158e46" xmlns="http://schemas.microsoft.com/dsltools/LogicalClassDesigner">
+  <profileInstances>
+    <packageHasProfileInstances Id="e0cb6198-6fe6-479c-a77e-754507f58148">
+      <profileInstance Id="3f1177cd-4930-4716-8ac4-926c39fe28ba" name="StandardProfileL2">
+        <elementDefinition Id="e34d544e-0fea-4ed6-ac5e-1b74119ac791" />
+      </profileInstance>
+      <elementDefinition Id="0caec977-1f8c-4ba3-a7db-8cc9ad9cc73b" />
+    </packageHasProfileInstances>
+    <packageHasProfileInstances Id="f28b9a19-b7a8-4068-963b-2257343e4b0a">
+      <profileInstance Id="a4a87199-a97a-4e3f-98f8-cdc17977ee5b" name="StandardProfileL3">
+        <elementDefinition Id="532ea607-fb19-44b8-8502-3351b05452be" />
+      </profileInstance>
+      <elementDefinition Id="29349502-908c-4fda-9054-c48619c59ed0" />
+    </packageHasProfileInstances>
+    <packageHasProfileInstances Id="b9de5ba2-8608-4994-a77d-48eed242d3af">
+      <profileInstance Id="792fc1a7-261c-495b-8ba9-8e236a302e52" name="CSharpProfile">
+        <elementDefinition Id="6ebc89d1-6f30-44e7-ac1f-5448e2057c07" />
+      </profileInstance>
+      <elementDefinition Id="4ca069fb-7179-48e5-9b2b-b2d3d0a2862d" />
+    </packageHasProfileInstances>
+  </profileInstances>
+  <packagedElements>
+    <logicalClassDesignerModelHasTypes>
+      <Interface Id="1a45a356-ba26-4650-9d9e-e8bb679920ed" name="ISearch" isAbstract="false" isLeaf="false">
+        <referencesInternal>
+          <reference Id="7beb245e-790c-4675-a154-15adb0baa67f" handle="viewcode://./CodeSchema_Interface?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DIAtomicStmt" tag="ViewCode">
+            <elementDefinition Id="5d32eabb-114c-4c1a-9e44-fddc4431d8e3" />
+          </reference>
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance Id="044d7d28-2270-4ea0-be80-92d2337ce863" name="interface" profile="CSharpProfile">
+            <elementDefinition Id="a108a1d4-7fc7-4a6e-8162-b8da3e351940" />
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances Id="67351bff-59fd-4389-89e0-3dd65b482e43">
+                <propertyInstance Id="30f13940-befc-4a83-8f4a-994ea84f6eb6" name="ClrAttributes">
+                  <elementDefinition Id="062ab82d-d660-412e-b68b-cef6dd2f1a8e" />
+                </propertyInstance>
+                <elementDefinition Id="e318c6df-41fc-40dd-88b9-87013873e2d7" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances Id="368ca938-9957-4608-899b-934c89011085">
+                <propertyInstance Id="0c103a59-da33-477f-b5e3-b3cafa8a5510" name="IsPartial" value="false">
+                  <elementDefinition Id="5ca354ee-d178-4077-9996-79352d765e3e" />
+                </propertyInstance>
+                <elementDefinition Id="c9eb830e-1b4f-4a80-90b6-39aee221996a" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances Id="ac52d941-63a8-4bb2-80b1-d8ba7607ef41">
+                <propertyInstance Id="e5cb087a-cc8b-4634-9ced-3ee79e5a8720" name="IsUnsafe" value="false">
+                  <elementDefinition Id="e72593a4-48fd-47aa-83c2-a063c699d826" />
+                </propertyInstance>
+                <elementDefinition Id="9ad95c73-7986-4b34-8e32-71cd5583fb33" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances Id="b3c7950e-2ce1-473f-976c-ff75f8cd5897">
+                <propertyInstance Id="fe60c497-bc7b-4300-843e-35f0524e7be3" name="PackageVisibility" value="internal">
+                  <elementDefinition Id="0e2a24a7-c652-4a17-8a80-24aaea98156e" />
+                </propertyInstance>
+                <elementDefinition Id="50a68a16-6d6b-48ec-a36d-bf3ce9def090" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <elementDefinition Id="7c50df96-8983-4260-aa96-7af19e04dee9" />
+        <ownedOperations>
+          <operation Id="0c519704-f6dd-4110-8564-2c6c2505cbfd" name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);" isLeaf="false" isStatic="false" isAbstract="true" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="d01d1ff1-2b91-44a1-ad2c-5b40398c0ab3" />
+          </operation>
+        </ownedOperations>
+      </Interface>
+    </logicalClassDesignerModelHasTypes>
+    <logicalClassDesignerModelHasTypes>
+      <class Id="f3a38362-004e-4d4e-b9fa-51831e9f4b8f" name="SearchStrategy" visibility="Package" isAbstract="false" isLeaf="false" isActiveClass="false">
+        <referencesInternal>
+          <reference Id="3507d4de-6f3d-451d-b630-b3873c038ac2" handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Ftacny%2FStatementInterpreter%2Fbin%2FDebug%2FStatementInterpreter.dll Namespace%3DTacny Type%3DOperatorAtomic" tag="ViewCode">
+            <elementDefinition Id="427936c7-86fb-4ee7-8a38-81b8d7ffbf86" />
+          </reference>
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance Id="3467624c-0efe-40ae-994a-6d793ed252d0" name="class" profile="CSharpProfile">
+            <elementDefinition Id="a7f0c04f-a4d8-4f50-a47d-93a95864abd4" />
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances Id="3531495f-798b-49ca-82f8-30dcb47aa2a3">
+                <propertyInstance Id="f094d5f6-6c2c-43cc-8801-3454adb07e92" name="ClrAttributes">
+                  <elementDefinition Id="238d3661-87b3-4d87-834d-7451b591c8e8" />
+                </propertyInstance>
+                <elementDefinition Id="faade8fb-aed4-4564-8ddc-da84d181fa46" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances Id="8d50404e-b7bc-48cb-95eb-0526f1a100e9">
+                <propertyInstance Id="81465467-a4e7-496e-91f5-6ef01ea92d91" name="IsPartial" value="false">
+                  <elementDefinition Id="e65e8ab7-9bcd-4a90-89c5-353597250bbd" />
+                </propertyInstance>
+                <elementDefinition Id="4598b07f-2533-4f36-99dd-032e4b315d2e" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances Id="3df98e5b-4842-4544-93a2-ed9feaab43f5">
+                <propertyInstance Id="81cbd9d2-5762-4fb6-935e-6242c7dd7fd1" name="IsStatic" value="False">
+                  <elementDefinition Id="e2c9dd52-571b-4131-8892-16172307611c" />
+                </propertyInstance>
+                <elementDefinition Id="3d1c4936-ff13-4e51-8ecb-53aacc66d1a0" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances Id="0386b38c-2486-4080-bf9b-c3c34bdfa812">
+                <propertyInstance Id="8eb5bb1b-c927-4203-8ba0-d3292074c668" name="IsUnsafe" value="false">
+                  <elementDefinition Id="5d8f6366-bbd0-49b7-b9c1-f712d4b23525" />
+                </propertyInstance>
+                <elementDefinition Id="9b2a691c-8389-44ff-9ccc-6836a7ba595b" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances Id="c4db7351-5f5c-4e21-a636-32b6a2c74c04">
+                <propertyInstance Id="7f26665d-fad9-4bdc-a22b-a2fbebdc3ad0" name="PackageVisibility" value="internal">
+                  <elementDefinition Id="8ef96129-71fa-42bf-b5d2-c5fb7de0a1de" />
+                </propertyInstance>
+                <elementDefinition Id="ae8fc7c9-1e07-4edb-80e1-89e6b8d5e70a" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <elementDefinition Id="4410b5b3-4505-47f4-a085-5688b38e0dee" />
+        <suppliersInternal>
+          <interfaceRealization Id="7a6e9503-53b4-44f8-8220-ef069f2d73ce">
+            <interfaceMoniker Id="1a45a356-ba26-4650-9d9e-e8bb679920ed" LastKnownName="ISearch" />
+            <elementDefinition Id="950e2dce-57ac-4ed8-8a33-61ecdaa811b3" />
+          </interfaceRealization>
+        </suppliersInternal>
+        <ownedAttributesInternal>
+          <property Id="b30121f4-60ef-4c5e-a10f-96ff44a087b5" name="ActiveStrategy::Strategy" isLeaf="false" isStatic="false" isReadOnly="false" isUnique="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+            <elementDefinition Id="cb159495-7c20-49e6-93a0-0cde48b428db" />
+          </property>
+        </ownedAttributesInternal>
+        <ownedOperationsInternal>
+          <operation Id="b477301c-0d11-4bff-b1b1-2c50b4ebf2c8" name="Strategy GetSearchStrategy" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="2595a7e6-014b-4f70-a654-4e7858b369f9" />
+            <ownedParameters>
+              <operationHasOwnedParameters>
+                <parameter Id="7c36c779-07d1-4af2-afd3-9e267cdd4778" name="Tactic tac" direction="In" isUnique="false">
+                  <elementDefinition Id="146ad8fb-1f41-4ecf-bb2a-ef36ab9a0eec" />
+                </parameter>
+              </operationHasOwnedParameters>
+            </ownedParameters>
+          </operation>
+          <operation Id="f49eec78-3f6e-4a89-bb4b-67e71a47fe13" name="IEnumerable&lt;Solution&gt; Search(Atomic atomic, bool verify = true);" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="aa07d183-0f42-4bc9-a37c-e4611f22cd65" />
+          </operation>
+        </ownedOperationsInternal>
+      </class>
+    </logicalClassDesignerModelHasTypes>
+  </packagedElements>
+  <package Id="af7a669c-af02-48dc-aae6-7f2262158e46" name="Diagrams">
+    <elementDefinition Id="e5eea4aa-4316-439d-b5e8-283f7ca9c122" />
+  </package>
+</logicalClassDesignerModel>

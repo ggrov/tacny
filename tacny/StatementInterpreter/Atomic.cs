@@ -28,11 +28,11 @@ namespace Tacny
             Contract.Requires(tcce.NonNullElements<Solution>(solution_list));
         }
     }
-
+    
     public class Atomic
     {
         public readonly StaticContext globalContext;
-        public LocalContext localContext;
+        public DynamicContext localContext;
 
         protected Atomic(Atomic ac)
         {
@@ -47,18 +47,18 @@ namespace Tacny
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
 
-            this.localContext = new LocalContext(md, tac, tac_call);
+            this.localContext = new DynamicContext(md, tac, tac_call);
             this.globalContext = new StaticContext(md, tac_call, program);
         }
 
         public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, StaticContext globalContext)
         {
-            this.localContext = new LocalContext(md, tac, tac_call);
+            this.localContext = new DynamicContext(md, tac, tac_call);
             this.globalContext = globalContext;
 
         }
 
-        public Atomic(LocalContext localContext, StaticContext globalContext)
+        public Atomic(DynamicContext localContext, StaticContext globalContext)
         {
             this.globalContext = globalContext;
             this.localContext = localContext.Copy();
@@ -148,7 +148,6 @@ namespace Tacny
             result.AddRange(solution_list.plist);
         }
 
-
         public static void ResolveStatement(ref List<Solution> result, List<Solution> solution_list)
         {
             Contract.Requires(solution_list != null);
@@ -207,6 +206,7 @@ namespace Tacny
             }
         }
 
+    
         /// <summary>
         /// Resolves atomic statements inside a block stmt
         /// </summary>
@@ -217,9 +217,9 @@ namespace Tacny
         {
             Contract.Requires<ArgumentNullException>(body != null);
             Contract.Ensures(Contract.ValueAtReturn(out result) != null);
-
+            //result = null;
             Atomic atomic = this.Copy();
-            atomic.localContext.tac_body = body.Body;
+            atomic.localContext.tacticBody = body.Body;
             atomic.localContext.ResetCounter();
             if (result == null || result.Count == 0)
                 result = new List<Solution>() { new Solution(atomic) };
@@ -296,15 +296,13 @@ namespace Tacny
 
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
                         List<Expression> exps = ((ApplySuffix)er.Expr).Args;
-                        Contract.Assert(exps.Count == ac.localContext.tac.Ins.Count);
+                        Contract.Assert(exps.Count == ac.localContext.tactic.Ins.Count);
                         ac.SetNewTarget(GetNewTarget());
                         for (int i = 0; i < exps.Count; i++)
                         {
                             object result = null;
                             ProcessArg(exps[i], out result);
-                            Dafny.Formal input = ac.localContext.tac.Ins[i];
-                            ac.localContext.AddLocal(input, result);
-                             
+                            ac.AddLocal(ac.localContext.tactic.Ins[i], result);
                         }
                         List<Solution> sol_list = new List<Solution>();
                         ResolveTactic(ref sol_list, ac);
@@ -393,6 +391,11 @@ namespace Tacny
             result = new Solution(this.Copy());
         }
 
+        /**
+         * !!!TODO: HOW AM I REQUIRED!!!
+         * 
+         * 
+         */
         private void RegisterLocalVariable(UpdateStmt updateStmt, out Solution result)
         {
             Contract.Requires(updateStmt != null);
@@ -538,8 +541,8 @@ namespace Tacny
                 List<Solution> sol_list = new List<Solution>();
                 CallAction(tvds, ref sol_list); // change
 
-                result = localContext.local_variables[lv];
-                localContext.local_variables.Remove(lv);
+                result = localContext.localDeclarations[lv];
+                localContext.localDeclarations.Remove(lv);
 
             }
             else if (argument is BinaryExpr || argument is ParensExpression)
@@ -661,7 +664,7 @@ namespace Tacny
         public void Fin()
         {
             globalContext.resolved.Clear();
-            globalContext.resolved.AddRange(localContext.updated_statements.Values.ToArray());
+            globalContext.resolved.AddRange(localContext.generatedStatements.Values.ToArray());
             globalContext.new_target = localContext.new_target;
         }
 
@@ -716,7 +719,7 @@ namespace Tacny
 
         public Dictionary<Statement, Statement> GetResult()
         {
-            return localContext.updated_statements;
+            return localContext.generatedStatements;
         }
 
         public bool IsFinal(List<Solution> solution_list)
@@ -750,14 +753,14 @@ namespace Tacny
         protected Solution CreateTactic(List<Statement> newBody, bool decCounter = true)
         {
             Contract.Ensures(Contract.Result<Solution>() != null);
-            Tactic tac = localContext.tac;
+            Tactic tac = localContext.tactic;
             Tactic newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
                                         tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
                                         tac.Decreases, new BlockStmt(tac.Body.Tok, tac.Body.EndTok, newBody),
                                         tac.Attributes, tac.SignatureEllipsis);
             Atomic newAtomic = this.Copy();
-            newAtomic.localContext.tac = newTac;
-            newAtomic.localContext.tac_body = newBody;
+            newAtomic.localContext.tactic = newTac;
+            newAtomic.localContext.tacticBody = newBody;
             /* HACK */
             // decrase the tactic body counter
             // so the interpreter would execute newly inserted atomic
@@ -802,36 +805,110 @@ namespace Tacny
             }
             else
             {
-                Dafny.LiteralExpr lhs = EvaluateExpression(expt.lChild) as Dafny.LiteralExpr;
-                Dafny.LiteralExpr rhs = EvaluateExpression(expt.rChild) as Dafny.LiteralExpr;
-
-                // for now asume lhs and rhs are integers
-                BigInteger l = (BigInteger)lhs.Value;
-                BigInteger r = (BigInteger)rhs.Value;
-
-                BigInteger res = 0;
                 BinaryExpr bexp = tcce.NonNull<BinaryExpr>(expt.data as BinaryExpr);
-
-                switch (bexp.Op)
+                if (BinaryExpr.IsEqualityOp(bexp.Op))
                 {
-                    case BinaryExpr.Opcode.Sub:
-                        res = BigInteger.Subtract(l, r);
-                        break;
-                    case BinaryExpr.Opcode.Add:
-                        res = BigInteger.Add(l, r);
-                        break;
-                    case BinaryExpr.Opcode.Mul:
-                        res = BigInteger.Multiply(l, r);
-                        break;
-                    case BinaryExpr.Opcode.Div:
-                        res = BigInteger.Divide(l, r);
-                        break;
+                    var boolVal = EvaluateEqualityExpression(expt);
+                    return new Dafny.LiteralExpr(new Token(), boolVal);
+                }
+                else {
+                    Dafny.LiteralExpr lhs = EvaluateExpression(expt.lChild) as Dafny.LiteralExpr;
+                    Dafny.LiteralExpr rhs = EvaluateExpression(expt.rChild) as Dafny.LiteralExpr;
+                    // for now asume lhs and rhs are integers
+                    BigInteger l = (BigInteger)lhs.Value;
+                    BigInteger r = (BigInteger)rhs.Value;
+
+                    BigInteger res = 0;
+
+
+                    switch (bexp.Op)
+                    {
+                        case BinaryExpr.Opcode.Sub:
+                            res = BigInteger.Subtract(l, r);
+                            break;
+                        case BinaryExpr.Opcode.Add:
+                            res = BigInteger.Add(l, r);
+                            break;
+                        case BinaryExpr.Opcode.Mul:
+                            res = BigInteger.Multiply(l, r);
+                            break;
+                        case BinaryExpr.Opcode.Div:
+                            res = BigInteger.Divide(l, r);
+                            break;
+                    }
+
+                    return new Dafny.LiteralExpr(lhs.tok, res);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Evalutate an expression tree
+        /// </summary>
+        /// <param name="expt"></param>
+        /// <returns></returns>
+        public bool EvaluateEqualityExpression(ExpressionTree expt)
+        {
+            Contract.Requires(expt != null);
+            // if the node is leaf, cast it to bool and return
+            if (expt.isLeaf())
+            {
+                Dafny.LiteralExpr lit = EvaluateLeaf(expt) as Dafny.LiteralExpr;
+                return lit.Value is bool ? (bool)lit.Value : false;
+            }
+            // left branch only
+            else if (expt.lChild != null && expt.rChild == null)
+                return EvaluateEqualityExpression(expt.lChild);
+            // if there is no more nesting resolve the expression
+            else if (expt.lChild.isLeaf() && expt.rChild.isLeaf())
+            {
+                Dafny.LiteralExpr lhs = null;
+                Dafny.LiteralExpr rhs = null;
+                lhs = EvaluateLeaf(expt.lChild) as Dafny.LiteralExpr;
+                rhs = EvaluateLeaf(expt.rChild) as Dafny.LiteralExpr;
+                if (!lhs.GetType().Equals(rhs.GetType()))
+                    return false;
+                BinaryExpr bexp = tcce.NonNull<BinaryExpr>(expt.data as BinaryExpr);
+                int res = -1;
+                if (lhs.Value is BigInteger)
+                {
+                    BigInteger l = (BigInteger)lhs.Value;
+                    BigInteger r = (BigInteger)rhs.Value;
+                    res = l.CompareTo(r);
+                }
+                else if (lhs.Value is string)
+                {
+                    string l = lhs.Value as string;
+                    string r = rhs.Value as string;
+                    res = l.CompareTo(r);
+                }
+                else if (lhs.Value is bool)
+                {
+                    res = ((bool)lhs.Value).CompareTo((bool)rhs.Value);
                 }
 
-                return new Dafny.LiteralExpr(lhs.tok, res);
-
-
+                if (bexp.Op == BinaryExpr.Opcode.Eq)
+                    return res == 0;
+                else if (bexp.Op == BinaryExpr.Opcode.Neq)
+                    return res != 0;
+                else if (bexp.Op == BinaryExpr.Opcode.Ge)
+                    return res >= 0;
+                else if (bexp.Op == BinaryExpr.Opcode.Gt)
+                    return res > 0;
+                else if (bexp.Op == BinaryExpr.Opcode.Le)
+                    return res <= 0;
+                else if (bexp.Op == BinaryExpr.Opcode.Lt)
+                    return res < 0;
             }
+            else // evaluate a nested expression
+            {
+                BinaryExpr bexp = tcce.NonNull<BinaryExpr>(expt.data as BinaryExpr);
+                if (bexp.Op == BinaryExpr.Opcode.And)
+                    return EvaluateEqualityExpression(expt.lChild) && EvaluateEqualityExpression(expt.rChild);
+                else if (bexp.Op == BinaryExpr.Opcode.Or)
+                    return EvaluateEqualityExpression(expt.lChild) || EvaluateEqualityExpression(expt.rChild);
+            }
+            return false;
         }
 
         /// <summary>
@@ -874,7 +951,12 @@ namespace Tacny
                     object result;
                     ProcessArg(guard.data, out result);
                     Contract.Assert(result != null);
-                    if (result is Dafny.Formal)
+                    if (result is MemberDecl)
+                    {
+                        MemberDecl md = result as MemberDecl;
+                        newNs = new Dafny.StringLiteralExpr(new Token(), md.Name, true);
+                    }
+                    else if (result is Dafny.Formal)
                     {
                         var tmp = result as Dafny.Formal;
                         newNs = new NameSegment(tmp.tok, tmp.Name, null);
@@ -940,7 +1022,7 @@ namespace Tacny
             Dafny.Program prog = globalContext.program.ParseProgram();
             solution.GenerateProgram(ref prog);
             globalContext.program.ClearBody(localContext.md);
-            //globalContext.program.MaybePrintProgram(prog, null);
+            globalContext.program.PrintMember(prog, solution.state.localContext.md.Name);
             if (!globalContext.program.ResolveProgram())
                 return false;
             globalContext.program.VerifyProgram();

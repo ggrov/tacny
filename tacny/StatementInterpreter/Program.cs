@@ -7,7 +7,9 @@ using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
 using Bpl = Microsoft.Boogie;
 using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
+
 namespace Tacny
 {
     public class Program
@@ -47,9 +49,9 @@ namespace Tacny
         public readonly Dictionary<string, Tactic> tactics;
         public readonly Dictionary<string, MemberDecl> members;
         public readonly List<DatatypeDecl> globals;
-        private Util.Printer printer;
         public DebugData currentDebug;
-        private List<DebugData> debugDataList;
+        public List<DebugData> debugDataList;
+
         public class DebugData
         {
             public string tactic = null;
@@ -63,7 +65,10 @@ namespace Tacny
             public int CallsToDafny = 0;        // number of calls to Dafny resolver
             public int StartTime = 0;           // Unix timestamp when the tactic resolution begins
             public int EndTime = 0;             // Unix timestamp when the tactic resolution finishes
-
+            public int TimeAtBoogie = 0;
+            public int TimeAtDafny = 0;
+            private bool PrintHeader = true;
+          
             public DebugData(string tactic, string method)
             {
                 StartTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
@@ -71,38 +76,62 @@ namespace Tacny
                 this.method = method;
             }
 
-            private void Fin()
+            public void Fin()
             {
                 if (EndTime == 0)
                     EndTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
             }
-            public void PrintDebugData(Program program)
+            public void PrintDebugData()
             {
                 Fin();
-                TextWriter tw = new System.IO.StreamWriter(program.fileNames[0] + "_debug.dat", true);
-                program.PrintDebugMessage("Method: {0}", tw, method);
-                program.PrintDebugMessage("Tactic: {0}", tw, tactic);
-                program.PrintDebugMessage("Execution time: {0} seconds", tw, EndTime - StartTime);
-                program.PrintDebugMessage("Generated branches: {0}", tw, TotalBranchCount);
-                program.PrintDebugMessage("Generated invalid branches: {0}", tw, BadBranchCount);
-                program.PrintDebugMessage("Generated valid branches: {0}", tw, GoodBranchCount);
-                program.PrintDebugMessage("Verification failed {0} times", tw, VerificationFailure);
-                program.PrintDebugMessage("Verification succeeded {0} times", tw, VerificationSucc);
-                program.PrintDebugMessage("Times Boogie was called: {0}", tw, CallsToBoogie);
-                program.PrintDebugMessage("Times Dafny was called: {0}", tw, CallsToDafny);
+                System.Text.StringBuilder builder = new System.Text.StringBuilder();
+                builder.AppendLine(string.Format("Method: {0}", method));
+                builder.AppendLine(string.Format("Tactic: {0}", tactic));
+                builder.AppendLine(string.Format("Execution time: {0} seconds", EndTime - StartTime));
+                builder.AppendLine(string.Format("Generated branches: {0}", TotalBranchCount));
+                builder.AppendLine(string.Format("Generated invalid branches: {0}", BadBranchCount));
+                builder.AppendLine(string.Format("Generated valid branches: {0}", GoodBranchCount));
+                builder.AppendLine(string.Format("Verification failed {0} times", VerificationFailure));
+                builder.AppendLine(string.Format("Verification succeeded {0} times", VerificationSucc));
+                builder.AppendLine(string.Format("Times Boogie was called: {0}", CallsToBoogie));
+                builder.AppendLine(string.Format("Total time at Boogie: {0}", TimeAtBoogie));
+                builder.AppendLine(string.Format("Times Dafny was called: {0}", CallsToDafny));
+                builder.AppendLine(string.Format("Total time at Dafny: {0}", CallsToDafny));
+                Util.Printer.P.PrintDebugMessage(builder.ToString());
             }
 
-            public void PrintCsvDebugData(Program program)
+            public void PrintCsvDebugData(bool printHeader)
             {
                 Fin();
-                TextWriter tw = new System.IO.StreamWriter(program.fileNames[0] + "_debug.csv");
-                program.PrintDebugMessage("tacitic, method, exec_time, branch_count, inv_branch_count, vld_branch_count, verif_fail, verif_succ, boogie_calls, dafny_calls\n", tw);
-                program.PrintDebugMessage("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}", tw,
-                    tactic, method, 
+                System.Text.StringBuilder builder = new System.Text.StringBuilder();
+                if (printHeader)
+                {
+                    builder.AppendLine("Tactic, Method, Execution time, Generated Nodes, Invalid nodes, Valid nodes, Verification Failure, Verification success, Boogie calls, Boogie Wait, Dafny Calls, Dafny Wait");
+                }
+                builder.AppendLine(string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}",
+                    tactic, method,
                     EndTime - StartTime, TotalBranchCount,
                     BadBranchCount, GoodBranchCount,
                     VerificationFailure, VerificationSucc,
-                    CallsToBoogie, CallsToDafny);
+                    CallsToBoogie, TimeAtBoogie, CallsToDafny, TimeAtDafny));
+                Util.Printer.P.PrintCsvData(builder.ToString());
+            }
+        }
+
+        public void PrintAllDebugData(bool isCsv = false)
+        {
+            bool printHeader = true;
+            foreach (var item in debugDataList)
+            {
+                if (isCsv)
+                {
+                    item.PrintCsvDebugData(printHeader);
+                    printHeader = false;
+                }
+                else
+                {
+                    item.PrintDebugData();
+                }
             }
         }
 
@@ -110,9 +139,9 @@ namespace Tacny
         public void PrintDebugData(DebugData debugData, bool isCsv = false)
         {
             if (isCsv)
-                debugData.PrintCsvDebugData(this);
+                debugData.PrintCsvDebugData(true);
             else
-                debugData.PrintDebugData(this);
+                debugData.PrintDebugData();
         }
 
 
@@ -151,6 +180,16 @@ namespace Tacny
             debugData.CallsToDafny++;
         }
 
+        private void IncTimeAtBoogie(DebugData debugData, int time)
+        {
+            debugData.TimeAtBoogie += time;
+        }
+
+        private void IncTimeAtDafny(DebugData debugData, int time)
+        {
+            debugData.TimeAtDafny += time;
+        }
+
         public void SetCurrent(Tactic tac, MemberDecl md)
         {
             Contract.Requires(tac != null);
@@ -169,13 +208,26 @@ namespace Tacny
             Contract.Requires(fileNames != null);
             Contract.Requires(programId != null);
 
+
             this.fileNames = fileNames;
             this.programId = programId;
             string err = ParseCheck(fileNames, programId, out _original);
             if (err != null)
+                throw new Exception(err);
+            dafnyProgram = ParseProgram();
+            if (err != null)
                 throw new ArgumentException(err);
             dafnyProgram = ParseProgram();
 
+            Init(out tactics, out members, out globals);
+        }
+
+        public Program(IList<string> fileNames, string programId, Dafny.Program program)
+        {
+            this.fileNames = fileNames;
+            this.programId = programId;
+            this._original = program;
+            this.dafnyProgram = program;
             Init(out tactics, out members, out globals);
         }
 
@@ -185,6 +237,7 @@ namespace Tacny
             members = new Dictionary<string, MemberDecl>();
             globals = new List<DatatypeDecl>();
             debugDataList = new List<DebugData>();
+
             foreach (var item in dafnyProgram.DefaultModuleDef.TopLevelDecls)
             {
                 ClassDecl curDecl = item as ClassDecl;
@@ -215,7 +268,7 @@ namespace Tacny
         /// <returns></returns>
         public Program NewProgram()
         {
-            return new Program(fileNames, programId);
+            return new Program(fileNames, programId, _original);
 
         }
 
@@ -243,14 +296,27 @@ namespace Tacny
 
         public void VerifyProgram(Dafny.Program prog)
         {
-            Bpl.Program boogieProgram;
+            Debug.WriteLine("Verifying Dafny program");
+
             IncCallsToBoogie(currentDebug);
-            Translate(prog, fileNames, programId, out boogieProgram);
-            po = BoogiePipeline(boogieProgram, prog, fileNames, programId);
+            //disable Dafny output
+            var cOut = Console.Out;
+            Console.SetOut(TextWriter.Null);
+            var start = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            po = Pipeline.VerifyProgram(prog, fileNames, programId, out stats, out errList, out errorInfo);
+            var end = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            Console.SetOut(cOut);
+            IncTimeAtBoogie(currentDebug, end - start);
             if (stats.ErrorCount == 0)
+            {
+                Debug.WriteLine("Dafny program VERIFIED");
                 IncVerificationSuccess(currentDebug);
+            }
             else
+            {
+                Debug.WriteLine("Dafny program NOT VERIFIED");
                 IncVerificationFailure(currentDebug);
+            }
 
         }
 
@@ -263,18 +329,30 @@ namespace Tacny
 
         public int ResolveProgram(Dafny.Program program)
         {
+            Debug.WriteLine("Resolving Dafny program");
+
             IncCallsToDafny(currentDebug);
+            //disable Dafny output
+            var cOut = Console.Out;
+            Console.SetOut(TextWriter.Null);
             Dafny.Resolver r = new Dafny.Resolver(program);
+            var start = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
             r.ResolveProgram(program);
+            var end = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            Console.SetOut(cOut);
+            IncTimeAtDafny(currentDebug, end - start);
             if (r.ErrorCount != 0)
             {
-                Util.Printer.Error("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
+                Debug.WriteLine("Resolution FAILED");
+                Debug.WriteLine("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
                 IncBadBranchCount(currentDebug);
             }
             else
             {
+                Debug.WriteLine("Resolution SUCCESSFUL");
                 IncGoodBranchCount(currentDebug);
             }
+
             return r.ErrorCount;
         }
 
@@ -349,6 +427,7 @@ namespace Tacny
             }
         }
 
+        // @TODO this could be optimised to hold the resolved data for all the program
         public List<IVariable> GetResolvedVariables(MemberDecl md)
         {
             ParseProgram();
@@ -373,7 +452,7 @@ namespace Tacny
                                 VarDeclStmt vds = stmt as VarDeclStmt;
                                 if (vds != null)
                                 {
-                                    foreach(var local in vds.Locals)
+                                    foreach (var local in vds.Locals)
                                     {
                                         if (local.Type != null)
                                             result.Add(local);
@@ -386,7 +465,7 @@ namespace Tacny
             }
             return result;
         }
-        
+
         private string GetSignature(UpdateStmt us)
         {
             ExprRhs er = us.Rhss[0] as ExprRhs;
@@ -412,6 +491,7 @@ namespace Tacny
             if (name == null)
                 return false;
             return !tactics.ContainsKey(name) ? false : tactics[name] is TacticFunction;
+            
         }
 
         public Tactic GetTactic(string name)
@@ -446,6 +526,7 @@ namespace Tacny
         public string ParseCheck(IList<string/*!*/>/*!*/ fileNames, string/*!*/ programName, out Dafny.Program program)
         //modifies Bpl.CommandLineOptions.Clo.XmlSink.*;
         {
+            //Debug.WriteLine("ACTION: Parsing Dafny program");
             Contract.Requires(programName != null);
             Contract.Requires(fileNames != null);
             program = null;
@@ -483,7 +564,7 @@ namespace Tacny
 
 
             if (Bpl.CommandLineOptions.Clo.NoResolve || Bpl.CommandLineOptions.Clo.NoTypecheck) { return null; }
-
+            Debug.WriteLine("SUCCESS: Parsing Dafny Program");
             return null;
         }
         // Lower-case file names before comparing them, since Windows uses case-insensitive file names
@@ -536,7 +617,7 @@ namespace Tacny
             var fn = DafnyOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(dafnyFileName) : dafnyFileName;
             try
             {
-                
+
                 int errorCount = Dafny.Parser.Parse(dafnyFileName, module, builtIns, errs, verifyThisFile);
                 if (errorCount != 0)
                 {
@@ -553,116 +634,9 @@ namespace Tacny
         #endregion
 
         #region Boogie
-        /// <summary>
-        /// Translates Dafny program to Boogie program
-        /// </summary>
-        /// <returns>Exit value</returns>
-        public static void Translate(Dafny.Program dafnyProgram, IList<string> fileNames, string programId, out Bpl.Program boogieProgram)
-        {
-
-            Dafny.Translator translator = new Dafny.Translator();
-            boogieProgram = translator.Translate(dafnyProgram);
-            if (CommandLineOptions.Clo.PrintFile != null)
-            {
-                ExecutionEngine.PrintBplFile(CommandLineOptions.Clo.PrintFile, boogieProgram, false, false, CommandLineOptions.Clo.PrettyPrint);
-            }
-        }
-
-        /// <summary>
-        /// Pipeline the boogie program to Dafny where it is valid
-        /// </summary>
-        /// <returns>Exit value</returns>
-        public Bpl.PipelineOutcome BoogiePipeline(Bpl.Program boogieProgram, Dafny.Program dafnyProgram, IList<string> fileNames, string programIds)
-        {
-
-            string bplFilename;
-            if (CommandLineOptions.Clo.PrintFile != null)
-            {
-                bplFilename = CommandLineOptions.Clo.PrintFile;
-            }
-            else
-            {
-                string baseName = cce.NonNull(Path.GetFileName(fileNames[fileNames.Count - 1]));
-                baseName = cce.NonNull(Path.ChangeExtension(baseName, "bpl"));
-                bplFilename = Path.Combine(Path.GetTempPath(), baseName);
-            }
 
 
-            Bpl.PipelineOutcome oc = BoogiePipelineWithRerun(boogieProgram, bplFilename, out stats, 1 < Dafny.DafnyOptions.Clo.VerifySnapshots ? programId : null);
 
-            //var allOk = stats.ErrorCount == 0 && stats.InconclusiveCount == 0 && stats.TimeoutCount == 0 && stats.OutOfMemoryCount == 0;
-            return oc;
-        }
-
-        /// <summary>
-        /// Resolve, type check, infer invariants for, and verify the given Boogie program.
-        /// The intention is that this Boogie program has been produced by translation from something
-        /// else.  Hence, any resolution errors and type checking errors are due to errors in
-        /// the translation.
-        /// The method prints errors for resolution and type checking errors, but still returns
-        /// their error code.
-        /// </summary>
-        public PipelineOutcome BoogiePipelineWithRerun(Bpl.Program/*!*/ program, string/*!*/ bplFileName,
-            out PipelineStatistics stats, string programId)
-        {
-            Contract.Requires(program != null);
-            Contract.Requires(bplFileName != null);
-            Contract.Ensures(0 <= Contract.ValueAtReturn(out stats).InconclusiveCount && 0 <= Contract.ValueAtReturn(out stats).TimeoutCount);
-
-            stats = new PipelineStatistics();
-            LinearTypeChecker ltc;
-            MoverTypeChecker mtc;
-            PipelineOutcome oc = ExecutionEngine.ResolveAndTypecheck(program, bplFileName, out ltc, out mtc);
-            switch (oc)
-            {
-                case PipelineOutcome.Done:
-                    return oc;
-
-                case PipelineOutcome.ResolutionError:
-                case PipelineOutcome.TypeCheckingError:
-                    {
-                        ExecutionEngine.PrintBplFile(bplFileName, program, false, false, CommandLineOptions.Clo.PrettyPrint);
-                        Console.WriteLine();
-                        Console.WriteLine("*** Encountered internal translation error - re-running Boogie to get better debug information");
-                        Console.WriteLine();
-
-                        List<string/*!*/>/*!*/ fileNames = new List<string/*!*/>();
-                        fileNames.Add(bplFileName);
-                        Bpl.Program reparsedProgram = ExecutionEngine.ParseBoogieProgram(fileNames, true);
-                        if (reparsedProgram != null)
-                        {
-                            ExecutionEngine.ResolveAndTypecheck(reparsedProgram, bplFileName, out ltc, out mtc);
-                        }
-                    }
-                    return oc;
-
-                case PipelineOutcome.ResolvedAndTypeChecked:
-                    ExecutionEngine.EliminateDeadVariables(program);
-                    ExecutionEngine.CollectModSets(program);
-                    ExecutionEngine.CoalesceBlocks(program);
-                    ExecutionEngine.Inline(program);
-                    errList = new List<ErrorInformation>();
-                    //return ExecutionEngine.InferAndVerify(program, stats, programId);
-                    return ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo =>
-                    {
-                        //errorInfo.BoogieErrorCode = null;
-                        if (this.errorInfo == null)
-                            this.errorInfo = errorInfo;
-                        errList.Add(errorInfo);
-                        //Console.WriteLine(errorInfo.FullMsg);
-                        //errorListHolder.AddError(new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1, ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(), System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename), errorInfo.ImplementationName, requestId);
-                        //foreach (var aux in errorInfo.Aux)
-                        //{
-                        //  errorListHolder.AddError(new DafnyError(aux.Tok.filename, aux.Tok.line - 1, aux.Tok.col - 1, ErrorCategory.AuxInformation, aux.FullMsg, s, isRecycled, null, System.IO.Path.GetFullPath(_document.FilePath) == aux.Tok.filename), errorInfo.ImplementationName, requestId);
-                        //}
-
-
-                    });
-
-                default:
-                    Contract.Assert(false); throw new cce.UnreachableException();  // unexpected outcome
-            }
-        }
 
         #endregion
 
@@ -791,13 +765,13 @@ namespace Tacny
         /// <summary>
         /// Print verified program to file
         /// </summary>
-        public void Print()
+        public void PrintProgram(Dafny.Program program = null)
         {
-            foreach (var filename in fileNames)
-            {
-                printer = new Util.Printer(new System.IO.StreamWriter(filename.Substring(0, filename.LastIndexOf(".")) + ".tacny.dfy"), DafnyOptions.O.PrintMode);
-                printer.PrintProgram(dafnyProgram);
-            }
+            if (program == null)
+                Util.Printer.P.PrintProgram(dafnyProgram);
+            else
+                Util.Printer.P.PrintProgram(program);
+
         }
 
         public void MaybePrintProgram(string filename)
@@ -812,34 +786,37 @@ namespace Tacny
         public void MaybePrintProgram(Dafny.Program prog, string filename)
         {
             // if program is not in debug mode disable console printing
-            if (!DEBUG)
-                return;
-            TextWriter tw = null;
+           // PrintProgram(prog);
+        }
+
+        public void PrintMember(Dafny.Program prog, string memberName, string filename = null)
+        {
+            Contract.Requires(prog != null);
+            Contract.Requires(memberName != null);
+
+            bool printToConsole = true;
+
             if (filename == null || filename == "-")
-            {
-                tw = System.Console.Out;
-                PrintProgram(tw, prog, DafnyOptions.O.PrintMode);
-            }
+                printToConsole = true;
+            Printer p = null;
+            if (printToConsole)
+                p = new Dafny.Printer(Console.Out, Util.TacnyOptions.O.PrintMode);
             else
+                p = Util.Printer.P;
+            foreach (var tld in prog.DefaultModuleDef.TopLevelDecls)
             {
-                printer = new Util.Printer(new System.IO.StreamWriter(filename), DafnyOptions.O.PrintMode);
-                printer.PrintProgram(dafnyProgram);
-                
+                if (tld is ClassDecl)
+                {
+                    ClassDecl cd = tld as ClassDecl;
+                    MemberDecl md = cd.Members.FirstOrDefault(i => i.Name == memberName);
+                    if (md != null)
+                    {
+                        p.PrintMembers(new List<MemberDecl> { md }, Debug.IndentLevel, this.fileNames[0]);
+                        return;
+                    }
+                }
             }
 
-        }
-
-        private void PrintProgram(TextWriter tw, Dafny.Program prog, DafnyOptions.PrintModes printMode = DafnyOptions.PrintModes.Everything)
-        {
-            //if (printer == null)
-            printer = new Util.Printer(tw, DafnyOptions.O.PrintMode);
-            printer.PrintProgram(prog);
-        }
-
-        public void PrintDebugMessage(string message, TextWriter tw, params object[] args)
-        {
-            Util.Printer prt = new Util.Printer(tw, DafnyOptions.O.PrintMode);
-            prt.PrintDebugMessage(message, fileNames[0], args);
         }
     }
 }

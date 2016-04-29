@@ -47,7 +47,7 @@ namespace Tacny
         {
             Contract.Requires(expr != null);
             Contract.Ensures(Contract.ValueAtReturn(out result) != null);
-
+            result = null;
             if (expr is BinaryExpr)
             {
 

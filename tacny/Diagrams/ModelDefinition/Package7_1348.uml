@@ -1,0 +1,2580 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" xmlns:dm1="http://schemas.microsoft.com/dsltools/Kernel" xmlns:dm2="http://schemas.microsoft.com/dsltools/Component" xmlns:dm3="http://schemas.microsoft.com/dsltools/Activity" xmlns:dm4="http://schemas.microsoft.com/dsltools/Interaction" xmlns:dm5="http://schemas.microsoft.com/dsltools/UseCase" xmlns:dm6="http://schemas.microsoft.com/dsltools/UmlModelLibrary" xmlns:dm7="http://schemas.microsoft.com/dsltools/UmlDiagrams" xmlns:dm8="http://schemas.microsoft.com/dsltools/LogicalClassDesigner"
+  dslVersion="1.0.0.0"
+  Id="77def6b3-80b2-40d9-92d9-4a387e0c05ac"
+  name="Dafny"
+  visibility="Private" xmlns="http://schemas.microsoft.com/dsltools/ModelStore">
+  <referencesInternal>
+    <reference
+      Id="415d5719-657c-440c-91b6-89f68c47f5fe"
+      handle="viewcode://./CodeSchema_Namespace?Namespace%3DMicrosoft.Dafny"
+      tag="ViewCode" />
+  </referencesInternal>
+  <profileInstances>
+    <packageHasProfileInstances
+      Id="67e09830-7953-4026-a625-7973e66849ad">
+      <profileInstance
+        Id="95700c1f-73ee-4837-8a55-399000b36e91"
+        name="CSharpProfile" />
+    </packageHasProfileInstances>
+  </profileInstances>
+  <packagedElements>
+    <packageHasNamedElement>
+      <enumeration
+        Id="763ff091-b742-4ed8-bc1a-970d8fcf5557"
+        name="PrintModes"
+        isAbstract="false"
+        isLeaf="false">
+        <referencesInternal>
+          <reference
+            Id="f1b02be6-6f23-4873-a032-ce1fc57b0936"
+            handle="viewcode://./CodeSchema_Enum?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DPrintModes ParentType%3DDafnyOptions)"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="1990a47f-d48c-484f-b433-688485b546be"
+            name="enum"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="dfa6b153-68f2-4d30-ab0b-8aaf32aefd70">
+                <propertyInstance
+                  Id="ece396b1-99ad-4160-bee9-94c56999a117"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="27477645-e210-4728-b118-7e3e34ff0ff7">
+                <propertyInstance
+                  Id="0566fdb9-8924-40d3-acb4-4219804ee7d7"
+                  name="BaseType"
+                  value="int" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="09e86e88-3806-4f79-9ecd-ebab52190eec">
+                <propertyInstance
+                  Id="dfea9a45-edc4-4237-b7f6-ec4a5a24827d"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </enumeration>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="25a7346f-4fed-40f9-94d5-ae3d3796cd8b"
+        name="Program"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="c9468be1-2b28-45de-be74-f6039f32730f"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DProgram"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="f9bd2a2b-5978-4e7b-82a7-4cf81363a7e2"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c372e26f-8c96-4c46-96c8-542e4ecd9406">
+                <propertyInstance
+                  Id="10206202-8503-40ea-a1f8-65bd1ba8613e"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="4a305e30-2d02-49b5-960d-318a079cf269">
+                <propertyInstance
+                  Id="2796dc74-e7ab-422f-aeaa-d04d89ebfb85"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="b0ad8482-40c3-4231-bf87-f272fc11658f">
+                <propertyInstance
+                  Id="859a9f41-ff71-44b1-85c1-e2063c1fbd16"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="751a65d1-8e69-408a-b757-dc58327bfe80">
+                <propertyInstance
+                  Id="990761d8-3a91-4b11-b134-b234853c84db"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="315ec689-e8e4-42ff-8a4e-dc1885b206ef">
+                <propertyInstance
+                  Id="7e7ed176-5a84-47f6-8bbd-0d08ed9add26"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="0ad93b15-4dc5-48ef-915a-772a95dd0712"
+        name="Printer"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="84de5a93-993e-4746-a864-fb744a584791"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DPrinter"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="ed839359-6a1e-4eba-9608-3637ea6a061f"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="00eed3e1-480a-4d8c-8276-069a0a67569e">
+                <propertyInstance
+                  Id="36f24e4e-f189-4fda-a50f-fa5f79b8775a"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c85c5b58-d6ac-4f65-a8d8-e3dd3ae0d8db">
+                <propertyInstance
+                  Id="d964ff44-181b-4faf-a381-dc357b4ef832"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="351b767c-5026-4d4e-9e77-2661d16a0b6b">
+                <propertyInstance
+                  Id="9422832f-f425-4ac0-8eb7-5d61535aca2d"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="db3f6604-b085-4524-b21f-ca0ba39b924a">
+                <propertyInstance
+                  Id="6137c134-78b3-42fa-9edb-ddc1dfeaaac8"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="697baa67-8b69-4ce0-8a62-76be9f8f3342">
+                <propertyInstance
+                  Id="6d30a8da-f4ee-4404-93b0-dedbcb86379c"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="6dcdf205-f114-4c9d-9eb3-3920ccbca1b0"
+        name="MemberDecl"
+        isAbstract="true"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="0b6c950e-60a3-4b92-82c2-7c3fa7428a43"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DMemberDecl"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="c68338a4-5c5a-46ca-ad01-78ffc0171eca"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6d0b9edf-4249-41b4-a3f5-9398d408ac82">
+                <propertyInstance
+                  Id="87b0ab9b-f336-4211-9e5a-54d4ba646a96"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="a198053c-e88b-4406-b5c9-ab018908dc05">
+                <propertyInstance
+                  Id="6a27d6af-7c2a-4081-b65c-bde8b0cc6c5f"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="36fb073a-1f00-42d3-93ef-d4e3c4cff445">
+                <propertyInstance
+                  Id="2fa1a458-a220-4fe3-9d76-6acd878e6e53"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="03a99d1e-f634-4324-827b-8560c1be8085">
+                <propertyInstance
+                  Id="84f283e4-747d-4327-b1aa-968ddbfb848c"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="a06cd875-b8a9-4d2e-a9c2-3e2b86a9c54e">
+                <propertyInstance
+                  Id="f14f628a-fde5-4731-a98d-1ee5e6b6e446"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="235156ec-08aa-4066-be3b-891ddd9cf56d"
+            isSubstitutable="false">
+            <classMoniker
+              Id="8d90d734-e2b8-496e-86b4-7e1d6721c66e"
+              LastKnownName="Declaration"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
+        name="Statement"
+        isAbstract="true"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="7b8e88af-4758-4dec-91e2-8049d75e98d1"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DStatement"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="aa6340bd-68a3-4fcb-81c1-9b8864f1a8a1"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="27473230-8d87-4efd-b7cc-f9ba71402681">
+                <propertyInstance
+                  Id="08fcf14e-1356-4bdd-ac6a-1fdc4919f61d"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="15234df2-5565-4bc9-9ba7-5bfd0abccd7e">
+                <propertyInstance
+                  Id="934ac098-41a8-4ce3-9997-8a98733c6b50"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="1639e58a-a38a-4c24-9b4d-f9c219008606">
+                <propertyInstance
+                  Id="d5071ff0-2c0f-4667-962e-f4878edcf049"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="a35d5f04-1804-4b54-8dfb-49f57b104ef6">
+                <propertyInstance
+                  Id="0c06b89c-c8f0-40d7-b9d6-02f9b761ce0d"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8d1b56b3-9389-48b7-9153-54799fed6a9a">
+                <propertyInstance
+                  Id="a6148709-fc2c-4cde-bb23-efd3df02176e"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="899d6308-9b1f-44e4-8e81-26b01a000f38"
+        name="Method"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="d90cbff1-3403-43d7-9fcc-e28aaa46310f"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DMethod"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="a05c7e75-8501-49ec-a2d5-2ea811169f09"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="33729d7a-2c62-4dff-9a35-77d721f60c25">
+                <propertyInstance
+                  Id="84ee35db-6933-42b2-83dd-0bbff1ff2302"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="05ac61f4-40ee-43fb-b1c2-5844cabd776b">
+                <propertyInstance
+                  Id="50fbb5fa-6d84-4e09-ad4b-e5507e34a3c1"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="69bcadf9-7eae-4ce8-84bd-1b7b77470987">
+                <propertyInstance
+                  Id="1a7f93ec-5e9a-4d6e-b8b1-c97e2ab2d3a1"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="309a86a0-1015-49cc-9e36-dacad92de439">
+                <propertyInstance
+                  Id="9dbc9782-383c-47cc-b37f-7b1bd2945d37"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="b6eabfed-17da-47c0-a7ae-97d9c4ae09eb">
+                <propertyInstance
+                  Id="22e4d8b3-fd75-4112-b1ce-004f8d4f78e3"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="15a15e20-9dc2-4ce5-befc-793aae389ad3"
+            isSubstitutable="false">
+            <classMoniker
+              Id="6dcdf205-f114-4c9d-9eb3-3920ccbca1b0"
+              LastKnownName="MemberDecl"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="aad5c58c-b0a3-4095-a301-ec890724f3a8"
+        name="UpdateStmt"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="0d4ed1ac-97f8-41d1-9c39-edfcd7e45c3d"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DUpdateStmt"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="68ac2c91-9dfb-4760-8a0b-b8d3022a41fa"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="b5bffbfd-7348-4a18-a697-b70c05df8d3d">
+                <propertyInstance
+                  Id="9a4420e4-8acd-4234-90c4-a0e6e42758e6"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="cfa04405-0053-4810-bfcb-4a6130163279">
+                <propertyInstance
+                  Id="2d3bd0b7-903e-4a3d-b8ef-f58c2d97229a"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="ee71bdfc-aacf-4fff-b991-777adc1932cd">
+                <propertyInstance
+                  Id="d06dc620-37a2-4ecf-9731-eadda4367ceb"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="88c68d4f-6cb6-468e-a624-7c8a7f14e5b0">
+                <propertyInstance
+                  Id="8c7d0385-7acf-41fb-8e3a-dd774f01fd8e"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="fe56fe70-faea-4a20-a618-c7460fd119a3">
+                <propertyInstance
+                  Id="247c8691-01f9-4777-af3a-3301364d8d30"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="b9f52924-0610-483e-ac3c-cd49ca2e8fc6"
+        name="TopLevelDecl"
+        isAbstract="true"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="4b4d020f-fc62-472d-a2b9-4ba10ffa26de"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DTopLevelDecl"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="469e3e4f-1025-4632-a9f7-1a94992f7a56"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="955e3743-68b9-4d36-849c-e1578dc58662">
+                <propertyInstance
+                  Id="b159c232-00df-4d2f-9ed9-fd887ed5b574"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="7ad12366-dbff-45d8-8dee-4ec5f836988a">
+                <propertyInstance
+                  Id="5c53cbec-0f08-4c1e-af95-68a1ef6c1b43"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="d6dff05a-85b0-430b-bd2c-a414099d5a2b">
+                <propertyInstance
+                  Id="ab7b4d20-bea5-4907-b52e-1af974b6ff53"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="bc6055f2-f54b-4cca-974d-5899e22f4a2c">
+                <propertyInstance
+                  Id="33a6850b-f68b-4efd-b537-d34acbc23f59"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="33a1c46a-5a65-45e7-b653-e808e6623912">
+                <propertyInstance
+                  Id="f2362249-c800-4e2a-b14f-a7a7191e844c"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="75496ead-a77a-4859-a946-7d4572df054b"
+        name="ClassDecl"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="83c615cd-ee46-4492-86e2-abd609d1de70"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DClassDecl"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="30b28976-de87-48ca-b19d-cc328eeba379"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8778b333-bb50-44cc-b918-27c2bb418104">
+                <propertyInstance
+                  Id="c252a874-5587-4746-b38d-45e527234051"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="113ed08c-9689-45e0-b486-091aecdbb078">
+                <propertyInstance
+                  Id="19b30e95-e779-4f2a-9c60-52a9b01f7bd9"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="37fccb45-d2cf-496c-a19c-e223f6dd4e61">
+                <propertyInstance
+                  Id="32185bb8-5207-4667-b9d9-76a615b50de2"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="bea207a8-5870-4818-afa4-cc47cecfe2d8">
+                <propertyInstance
+                  Id="9bdd374e-0171-4b58-9ef2-38ffb71bc1f8"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e93abcf4-a866-43ef-8845-a55a3f37e3b7">
+                <propertyInstance
+                  Id="75087acb-9250-4f68-bffb-c6a413cef669"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="b2949d30-2767-4874-b9a1-f8b98b251e0b"
+            isSubstitutable="false">
+            <classMoniker
+              Id="b9f52924-0610-483e-ac3c-cd49ca2e8fc6"
+              LastKnownName="TopLevelDecl"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="15cadf75-f1eb-45d5-8231-b4b05e47b822"
+        name="DatatypeDecl"
+        isAbstract="true"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="cee5d148-6f2a-4adb-9b26-d85a5fe89035"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DDatatypeDecl"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="4cfcaf37-1796-4268-ac4c-77446d856d75"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="9d3265e2-0999-436b-b413-5fcd15fdd9f4">
+                <propertyInstance
+                  Id="3547c86c-48c9-4269-b7df-16af75cced59"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="30e2cfec-2ab0-4698-9e15-bd1687ec9b76">
+                <propertyInstance
+                  Id="6a842a25-ee15-4331-b033-ab1ea7ab357b"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6bb7f7b5-5a75-48bb-87ba-6722eb587211">
+                <propertyInstance
+                  Id="8d6cdee4-ca1f-43fc-aaa2-4469703a23ce"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="1ba3b965-9a3e-412b-a2dd-88638f27ceba">
+                <propertyInstance
+                  Id="0e89da49-fdbf-4627-8342-fc54088cf60e"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="dd919ac9-0f94-438a-9de1-c0d5c02050cd">
+                <propertyInstance
+                  Id="d29395a1-4e43-418e-830a-9658757d55c6"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="ed32c873-7a03-44b9-b16c-1fd43c3c25b6"
+            isSubstitutable="false">
+            <classMoniker
+              Id="b9f52924-0610-483e-ac3c-cd49ca2e8fc6"
+              LastKnownName="TopLevelDecl"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <Interface
+        Id="2e1f28cd-a029-4034-a7d8-acf49185c23a"
+        name="IVariable"
+        isAbstract="false"
+        isLeaf="false">
+        <referencesInternal>
+          <reference
+            Id="2884fd1d-010a-4276-ad6a-62e4d2126d94"
+            handle="viewcode://./CodeSchema_Interface?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DIVariable"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="04f90c17-3f4e-4c90-aac5-bcdf23568e08"
+            name="interface"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="1792e28e-bfbb-4e72-85da-40e13f9eb4fc">
+                <propertyInstance
+                  Id="fe487040-c054-4bb1-83ca-25278973311c"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="a2fdceef-a747-4d00-83b6-0ce66a365168">
+                <propertyInstance
+                  Id="643c5a35-8c73-41e0-8fcc-c45c2df3040d"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="7da90a36-83b5-439a-8adf-fd77ee7653f1">
+                <propertyInstance
+                  Id="f539243b-b855-487c-b83d-b8a2ed0fff09"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="1c409f9e-1741-481f-89e5-21e157d44443">
+                <propertyInstance
+                  Id="f73afb7e-79fc-4d75-8969-2c407555f689"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </Interface>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="319f8a14-2b9f-47d3-b3d9-99323a5407a5"
+        name="Tactic"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="7ff07595-6b8d-40a6-9588-ef5e5d0678cb"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DTactic"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="a135f8cf-2472-4078-a5b0-8a31a2efb4eb"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="48ea79ae-e123-4dd6-ba62-1a23a3e6b346">
+                <propertyInstance
+                  Id="990ecd82-92e2-4038-ac0b-11d85073a7b3"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="5fe52352-b37a-4419-80c0-6953f7cab2fe">
+                <propertyInstance
+                  Id="3815eed3-17c2-468b-85f7-f1d6c14208a0"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="3b87f3b4-1706-4448-99e3-e7ba7f67b0a4">
+                <propertyInstance
+                  Id="66444b85-ade6-4cff-988e-a349842f1a27"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6b41e423-bd03-4b0f-85b3-880d7781e5a3">
+                <propertyInstance
+                  Id="2f289e9a-ff69-4468-9e37-5067e735214c"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c6548190-1e33-47a0-a8b5-ce9e8c8ae02b">
+                <propertyInstance
+                  Id="a3ba15b3-ec40-4947-9c23-5050af27b40f"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="f4e979d2-2967-4b72-bbd3-0e0ebe5b7943"
+            isSubstitutable="false">
+            <classMoniker
+              Id="899d6308-9b1f-44e4-8e81-26b01a000f38"
+              LastKnownName="Method"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="7ac47b9f-3922-4947-848f-4c3193e81392"
+        name="NameSegment"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="5c435c56-cde2-4572-8e3b-17008bd0557c"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DNameSegment"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="51d35938-7983-49e9-bb89-f9cbbc0d4d38"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="922ff96f-9ec8-4274-943e-abf295fafd5e">
+                <propertyInstance
+                  Id="44fd47c1-b515-419b-8b63-39a405a02da8"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="52e70993-1ccc-4c99-a8cf-70638da27789">
+                <propertyInstance
+                  Id="6d5102a3-e670-48f4-8046-2a30513192a2"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="83067818-d1b2-49c7-bb1e-f790c52420d5">
+                <propertyInstance
+                  Id="8b921ebf-94ba-43ba-b2a0-2c1b1cfdc595"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8e3a5c52-aa1d-459f-acb2-c00da754429e">
+                <propertyInstance
+                  Id="340f43a3-441a-4a28-8668-634d5465ad7d"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c2ba63ee-797c-45a5-a74d-eb56d1da8982">
+                <propertyInstance
+                  Id="a77e2144-9de3-4514-bd30-2155b0fe0893"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="44519506-c4de-4f0e-942a-64cae83f15e9"
+        name="WhileStmt"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="dc53adcf-102b-4053-98a3-04638b2c4b70"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DWhileStmt"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="9f9cf113-f473-4860-85df-a7de0eabb1e1"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="cdca1a13-2871-46bb-b1b8-347803bb41f2">
+                <propertyInstance
+                  Id="71da0f81-0809-4499-b06c-dc7d0565f55c"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8be4fbd5-8dc9-446c-bfa8-d99a6f0ae911">
+                <propertyInstance
+                  Id="821e41f5-e0b4-47b5-b087-016b97f1bf80"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="84b35b8f-969b-43e3-a75e-2b77c01f1367">
+                <propertyInstance
+                  Id="9ad448ca-5ea7-485a-8ce8-17642dde9743"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="f320cb5a-145b-4b80-be52-c03ce4d16944">
+                <propertyInstance
+                  Id="1104c535-11d1-4aa2-8595-c85adfbd88e8"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="ca89aac2-1fd6-45cf-9daf-4928a07ea533">
+                <propertyInstance
+                  Id="178179b1-6444-449d-83de-27e58628581c"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="5d44fbb4-058e-4e5d-8a2b-dd5e8b3cd098"
+        name="Expression"
+        isAbstract="true"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="49a87344-8848-46a7-a30e-af28c2427216"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DExpression"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="d140095c-900e-4eab-ac9a-be2f0a28d012"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="57e9ce04-4302-4681-9415-ba7a3f316b5b">
+                <propertyInstance
+                  Id="c9dd9fae-9232-4028-a8e0-84b342c19a17"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="f56e9535-184e-4231-b54b-99dffc9ce6e9">
+                <propertyInstance
+                  Id="fcd8bcf4-3090-48b6-832e-1d620fcba5dd"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="46c32bd5-4189-4f45-8ba5-bc83e4cc0029">
+                <propertyInstance
+                  Id="03341ec0-f9d0-4755-8928-737e0c7be817"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="5a86d78e-ebf9-42dc-9f32-a8eb44397a96">
+                <propertyInstance
+                  Id="2c9d06d8-9791-4312-925f-73d0d73d35ad"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="5bcb4b7d-dc28-444e-8e9d-ef2341652c09">
+                <propertyInstance
+                  Id="b3ca88e2-6e2d-4a77-b13c-cccf8d77ec33"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="fa8730ed-a47d-4dd2-bc25-4cf06d8f7ce4"
+        name="IfStmt"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="8b7a60fb-9249-4188-b38a-7d910fecb590"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DIfStmt"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="6ccf0e3f-bad5-4569-b029-1d8b486e5ee4"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="26e82991-f458-48ba-a35d-189147a692d9">
+                <propertyInstance
+                  Id="d2069db4-856c-4376-872f-f52ac782e2a1"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="5696aaac-d4ec-4eed-b82c-be11758be9fe">
+                <propertyInstance
+                  Id="4c8599cb-4c98-48db-bc5d-eef3ce80cb1a"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8e0f7529-7167-429f-a19c-71664e450153">
+                <propertyInstance
+                  Id="dcc59bb9-117c-494a-aa78-9833fd3d2209"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="9aecef72-3e22-44b3-bcc1-c61bfb109ddb">
+                <propertyInstance
+                  Id="774f0e0c-aea2-4a45-9c91-24b570280e6a"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="1238bb3b-ea8f-44ae-8ccf-c2a709dfbbb2">
+                <propertyInstance
+                  Id="d7469593-137f-43b9-9ae4-90bb3408986a"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="a0fc3ffc-7ba6-4003-9633-a372ff7987fc"
+            isSubstitutable="false">
+            <classMoniker
+              Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
+              LastKnownName="Statement"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="87643257-cb8d-4f9d-b344-afadbff262d6"
+        name="MaybeFreeExpression"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="99703940-885b-4655-bfb8-446c9e310979"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DMaybeFreeExpression"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="4d25a9fd-c56d-41b2-bc47-c8c9cfab3d89"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="71067f64-060a-4505-8300-a4e31cd7c407">
+                <propertyInstance
+                  Id="a2731b76-b5fe-4ec0-9bc8-6e7e804ff1b7"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="bffaa845-84da-4cd0-bf9f-d29420c4eddb">
+                <propertyInstance
+                  Id="9bd7b2ca-bbfa-4dc9-837b-ff7cc5fbea08"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="dd496f1c-e805-4052-a8dd-83c9c1fcddff">
+                <propertyInstance
+                  Id="b9fa3f4f-d1f8-427a-ae9a-09e5f43a979d"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="97d43d1b-3bd4-4551-85e4-319fabf7a62c">
+                <propertyInstance
+                  Id="2725dc28-f01b-4d97-841a-e267e174242f"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="d829a413-8c0d-42a3-86ce-cbdbd14b120d">
+                <propertyInstance
+                  Id="998b712e-1d41-4e1a-b64a-5930a78f1aa6"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="8cdbaffa-0ae8-45d4-bbab-ff6f0d7a02cb"
+        name="Graph&lt;T‎&gt;"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="21b202ed-189d-4637-8a70-f38d27880504"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8dfa4a6d-3a22-4e24-92b2-0b892a5b6282">
+                <propertyInstance
+                  Id="0f4da5c4-ec25-46ac-9f24-c4f86659fef6"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="af8276b7-e645-4e63-a32f-1ac1f0495cbd">
+                <propertyInstance
+                  Id="1c147e0e-4fa4-4aa4-8fd1-4deb6d0aee9f"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="5ad975cd-638f-49b8-8f7d-cbb7a9d8b0b0">
+                <propertyInstance
+                  Id="d4a33476-2192-47a3-9dae-d2fe60f46780"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="0559a630-5e68-4a8a-8a62-8115d7f1dba0">
+                <propertyInstance
+                  Id="f96ff215-780a-4a23-820f-cccb64865863"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="5f538007-f108-43cb-a9f3-a61696a17344">
+                <propertyInstance
+                  Id="b62b1676-6893-465c-952e-5c989640d79c"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <signatures>
+          <templateBinding
+            Id="139b40a3-a92b-44a4-8728-2d9f73bfcdab">
+            <redefinableTemplateSignatureMoniker
+              Id="58a239a1-ed05-474d-8fa8-5c3fb74ed862"
+              LastKnownLocation="Package7_1348.uml" />
+            <relationshipOwnedElementsInternal>
+              <templateBindingHasTemplateParameterSubstitution>
+                <templateParameterSubstitution
+                  Id="ccefc409-2c9b-4e1b-ac7a-c3ecb6732f14">
+                  <formal>
+                    <classifierTemplateParameterMoniker
+                      Id="3d8a6311-8a91-4a4b-96a2-842be95de051"
+                      LastKnownLocation="Package7_1348.uml" />
+                  </formal>
+                </templateParameterSubstitution>
+              </templateBindingHasTemplateParameterSubstitution>
+            </relationshipOwnedElementsInternal>
+          </templateBinding>
+        </signatures>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="16e68d4c-1132-4bf1-9bf3-73d06cc0cccc"
+        name="Graph"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="86c26b58-a82d-4716-9445-8d72662770ef"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DGraph GenericParameterCount%3D1)"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="7d45f68d-a89a-46c9-abab-421a298a189d"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e7e89584-2a15-4121-8792-b3f21de356cf">
+                <propertyInstance
+                  Id="4e7e65c4-1885-489a-a544-a4abdf7a5483"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="02c3371b-73ae-49c0-ba85-85f03306bb19">
+                <propertyInstance
+                  Id="194f5ec8-f164-48ec-9d64-d9b97bd48339"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="0e5b9f86-2863-489f-9897-b3930132e214">
+                <propertyInstance
+                  Id="90904d48-6d95-4307-b93d-460d64a38804"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c5f4b067-6f41-4eae-9893-88d6eb1654d5">
+                <propertyInstance
+                  Id="f7cd145f-fc32-4e05-9054-4a200f364852"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="90a34c4e-cb44-4ced-bb06-2cd35961e934">
+                <propertyInstance
+                  Id="0efaccaf-4ca7-45f2-a9dd-f4133fe7006a"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <ownedRedefinableTemplateSignatureInternal>
+          <redefinableTemplateSignature
+            Id="58a239a1-ed05-474d-8fa8-5c3fb74ed862"
+            parameters=""
+            name="RedefinableTemplateSignature1"
+            isLeaf="false">
+            <ownedParameters>
+              <classifierTemplateParameter
+                Id="3d8a6311-8a91-4a4b-96a2-842be95de051">
+                <referencesInternal>
+                  <reference
+                    Id="ce0ea6bd-77ff-46f6-ad5c-c05d8897729e"
+                    handle="viewcode://./CodeSchema_GenericParameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DGraph GenericParameterCount%3D1) ParameterIdentifier%3D0"
+                    tag="ViewCode" />
+                </referencesInternal>
+                <ownedParameterableElement>
+                  <class
+                    Id="d6fc6f56-10ef-4969-95dd-7977758c7aab"
+                    name="Node"
+                    isAbstract="false"
+                    isLeaf="false"
+                    isActiveClass="false" />
+                </ownedParameterableElement>
+              </classifierTemplateParameter>
+            </ownedParameters>
+          </redefinableTemplateSignature>
+        </ownedRedefinableTemplateSignatureInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="4b18965f-dbf4-45d6-be2d-766de34d24e3"
+        name="BinaryExpr"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="12762747-28dd-4430-b97f-423694ca08d5"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DBinaryExpr"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="4bf09585-efea-47c1-9cea-f1c324b7020c"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="f18f4431-007e-4734-bec2-acfc2f0da7e5">
+                <propertyInstance
+                  Id="dab05d66-f2f8-4f6d-9ffd-bae1074c980e"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="d170977d-4f71-4137-b3f1-3d9db5d53641">
+                <propertyInstance
+                  Id="286bb016-938f-4fe9-97e2-c3c38b78d71a"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6a99b97f-37d5-44bc-84f8-9f1f76260d02">
+                <propertyInstance
+                  Id="3f72e10d-ef97-45f9-871e-d03aead97683"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="17778dd9-d25c-4777-8c41-5477a257aadb">
+                <propertyInstance
+                  Id="27f29746-332a-4098-b765-f5180ee75b01"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="eba4d78f-2555-46af-b6c4-59cca32b9fe0">
+                <propertyInstance
+                  Id="a8025f04-d89f-49ed-9088-69836a5cb6b4"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="05283f42-b6c1-4c03-9ddf-c84cd6fc7f6e"
+            isSubstitutable="false">
+            <classMoniker
+              Id="5d44fbb4-058e-4e5d-8a2b-dd5e8b3cd098"
+              LastKnownName="Expression"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="a88b4c98-4058-40d9-bb1e-f53963f649b0"
+        name="BlockStmt"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="1290d0b7-f171-42ca-b86d-bea3d02537f0"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DBlockStmt"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="61c6c900-701d-4968-9e71-32a0d4b1621d"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="b41da340-dd75-4e4c-bd18-02b43d3b9d4b">
+                <propertyInstance
+                  Id="1f059464-f913-4479-b599-3f8776f4d3fb"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="5fc2c7e4-14ae-445e-b6c3-e24bd446b21b">
+                <propertyInstance
+                  Id="2527c5a6-d27d-4689-8b9a-3a639e345d72"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="b0c3c56a-fe7d-42ba-a116-9721bd2ceee1">
+                <propertyInstance
+                  Id="f11ac833-c9bb-4391-b62c-4267aa66b119"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="4a84ded0-49c7-429a-b930-90a2217e0172">
+                <propertyInstance
+                  Id="a4151666-e514-48f9-9957-8b75a599cb7c"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="0dac83d7-5076-400f-83b2-79e34c0164f2">
+                <propertyInstance
+                  Id="33ad5f98-b6fb-4ada-8591-90e56a5a3090"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="59e526af-d339-4881-b93d-3f5c4677e109"
+            isSubstitutable="false">
+            <classMoniker
+              Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
+              LastKnownName="Statement"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="16fec5cc-5809-48c3-89f5-46035bf85493"
+        name="TacticVarDeclStmt"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="f8329566-5f8e-46dc-a0f1-3d0579a899a9"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DTacticVarDeclStmt"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="f2513310-ae4a-49a0-be79-be65587abe00"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="48af4fd2-214a-421b-af50-b23e536f2e0e">
+                <propertyInstance
+                  Id="65a57c61-f51e-4336-9c1d-d458f9fc0ee1"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="cf8d4965-220a-40b3-bc25-53cbcfe2cf71">
+                <propertyInstance
+                  Id="60d8af00-7c33-409f-ab09-22374075f4ef"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="ceaccaf1-7989-41b4-a331-9cb22d84f9fe">
+                <propertyInstance
+                  Id="253371e4-a1b4-411a-89b1-7a2659b797b8"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="4057fb38-b354-48f8-9e3f-cdf953679411">
+                <propertyInstance
+                  Id="ce728a2b-649d-40b2-a1d6-6c78045d14a2"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e7a2120a-533d-43bf-9c1a-f81166e7d803">
+                <propertyInstance
+                  Id="144f2f8a-fddb-4f71-a508-675b8d91accb"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="c88ebcb1-b7b1-4aee-882b-6e1e58a00da5"
+            isSubstitutable="false">
+            <classMoniker
+              Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
+              LastKnownName="Statement"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="7730f2c5-89de-4d3f-afc8-962adf679ff5"
+        name="ApplySuffix"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="d881a1a1-0190-4d29-9093-82f72af28752"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DApplySuffix"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="bdad3d15-d8cf-4128-97a9-d6393e3cbbba"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6b2aa35b-26aa-4fa4-adcf-7d314bd7ecb3">
+                <propertyInstance
+                  Id="18cfd5fb-be7e-4c7d-9064-c6ed3cc7c66a"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="5547b685-ba85-451c-bba2-29a63c5e3f45">
+                <propertyInstance
+                  Id="b98af416-e999-4d70-8944-7c0b768030bf"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="3af1368f-58e4-481e-a1fc-bbe6af98f6e1">
+                <propertyInstance
+                  Id="19dec506-b135-41f0-8749-9279e1b51ac1"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="4f325996-55d2-4339-a898-426ffb3a0b1d">
+                <propertyInstance
+                  Id="55d497ce-eca8-4593-ab07-77c50a9d6164"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="00dfbea2-c4a8-45e4-bb18-22028e9884c0">
+                <propertyInstance
+                  Id="dd2fcd49-b291-4598-8c31-b5516e30e048"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="374f042a-b2d0-4f8c-ac30-7bb91ce059b9"
+        name="ModuleDecl"
+        isAbstract="true"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="ab85e2ad-2a6d-490f-9b47-2f37a24a5552"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DModuleDecl"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="ffdaf73e-37f3-45be-8e25-7fb551e9c3cc"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8801cf9c-c0c3-41f6-ace0-611945b33568">
+                <propertyInstance
+                  Id="73eec6c7-e270-4f88-a6b2-33fe39df800d"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="45660e54-8b8b-47c2-bf6a-f4b7c83f6d3e">
+                <propertyInstance
+                  Id="58fbce5f-0a33-4f64-9bcf-aa3fd4ae4f1d"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="b676ad64-31ff-4e16-a5ee-a0df1213824a">
+                <propertyInstance
+                  Id="d1ee0a69-9c11-41fc-9dc6-695e2ed71ba5"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e1693063-8766-4f4e-9cec-3542c261b196">
+                <propertyInstance
+                  Id="f4cffb5a-6986-44b7-9a48-605d631a4a69"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="41f31326-5e01-469a-aba3-363eda17bea0">
+                <propertyInstance
+                  Id="fea6264d-f875-4b97-9b78-9c4b9445e828"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="afb3400b-fb2a-478f-81a4-1fe3d9aec7bf"
+            isSubstitutable="false">
+            <classMoniker
+              Id="b9f52924-0610-483e-ac3c-cd49ca2e8fc6"
+              LastKnownName="TopLevelDecl"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="44c2da27-a049-4647-9051-4cdf72d0d09b"
+        name="BuiltIns"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="e23a816e-7de9-4d9e-95f8-f859d2e376f9"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DBuiltIns"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="252a968f-35bf-41f5-bb4f-fa0cfe808fcc"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6e1ba87b-0e58-40e4-ad48-deabd40acd61">
+                <propertyInstance
+                  Id="1c93e756-df7a-4538-a4ec-35a0035133c6"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="4642d822-329f-42fc-969f-448eb01875aa">
+                <propertyInstance
+                  Id="e1962438-eac5-440e-ad50-14fd07df219d"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="bc139390-f242-46e5-ba49-cfd27452f4b2">
+                <propertyInstance
+                  Id="a9e837a1-2386-4290-af60-d6d4cb0bd09d"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6c5a2218-e19e-4ef2-89ea-1bcb92589272">
+                <propertyInstance
+                  Id="56a14b07-605f-4651-88b3-14b8519ef5c5"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e339222c-283d-4c57-9ce0-0a2ce27516e4">
+                <propertyInstance
+                  Id="a5d73862-370f-433c-a777-d04857d73dec"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="c2cf53ee-894d-4476-ab36-80bedab962a6"
+        name="Errors"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="0bb39ace-b2c6-4447-aede-9cfe8eec3f18"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DErrors"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="8f29da34-391f-4223-ba5d-9f93e7ec7f3e"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="d523270e-746a-426f-9441-c3bab0b50732">
+                <propertyInstance
+                  Id="55b82f69-c60d-467a-912a-ce22f2d7b82b"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e3dc371e-a569-4c23-a861-25562c853d96">
+                <propertyInstance
+                  Id="5222b286-3ee3-47ad-82be-8efa01135c6e"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c65cdc26-49ce-49c1-8428-f801403cb69d">
+                <propertyInstance
+                  Id="f85062f6-0851-4924-ac27-209633757e4e"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="28c42b1d-0baf-4a47-bdde-739748faba05">
+                <propertyInstance
+                  Id="98225239-5f35-454c-867e-92bb23f351eb"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="b7fa510e-0c29-41ff-9eb2-713db643d819">
+                <propertyInstance
+                  Id="96d96764-e71c-4300-9113-94a32cd64a47"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="44b86fe7-a522-47db-9551-7b2627c3ef7c"
+        name="Include"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="453ed136-b077-4841-afb2-99c25d89bee3"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DInclude"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="1a8cced1-070f-47b1-8211-0e01db6e2729"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="32bf5ed5-43f0-4b7d-a02d-237a3ea6ac82">
+                <propertyInstance
+                  Id="2ac15d40-ffda-4f71-97fb-d5cb62e42046"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="bf07545d-765b-4e87-bb16-dcb452fb6e5b">
+                <propertyInstance
+                  Id="ec6b48d7-249c-4f09-9a71-409d9e2a08bb"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="99d2c880-be82-4b7a-8875-6b401be6dba2">
+                <propertyInstance
+                  Id="5862d6bb-943c-4033-a961-ffbca33876a5"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="9fe5dd07-5f71-4dfa-ad72-6d72665cc787">
+                <propertyInstance
+                  Id="e38f0930-6480-4b31-9bad-780026c76c27"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="f0b48b7c-5dc7-4514-8b72-aa01960dd838">
+                <propertyInstance
+                  Id="6cfd3891-b13d-49aa-a577-9b1dcca3a9b6"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <enumeration
+        Id="cba6f499-fd64-4867-83fa-366255b283d0"
+        name="Opcode"
+        isAbstract="false"
+        isLeaf="false">
+        <referencesInternal>
+          <reference
+            Id="5d6fcdb5-8c84-48a4-9cb9-ce33e7750523"
+            handle="viewcode://./CodeSchema_Enum?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DOpcode ParentType%3DBinaryExpr)"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="01138782-24a6-4ecb-8fd0-a40850f797d7"
+            name="enum"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="dcf216d5-f645-4585-8ab4-830528b7ce81">
+                <propertyInstance
+                  Id="a97756f7-9f6b-4587-a9dd-10bb271c575f"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="7ac822ab-6ac6-4a9e-a4de-5a6d7f04fc4e">
+                <propertyInstance
+                  Id="1ab2b71b-173d-481e-9566-c495868ac068"
+                  name="BaseType"
+                  value="int" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="0c80ecda-ba93-449b-9c4b-03b74dafaad8">
+                <propertyInstance
+                  Id="336b7d48-21de-4108-8a88-157f6d6b194d"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </enumeration>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="7389e8b6-dc62-4897-8014-dd057bc747fe"
+        name="MatchStmt"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="131b2201-3894-48e1-8c2a-d42342b5ebd8"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DMatchStmt"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="2ce0665c-db5b-4844-a7db-68f7ce4469e0"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6d90502f-5317-4b19-9de0-7c6a34237b6a">
+                <propertyInstance
+                  Id="78cc2ae0-6dba-4c7d-9d6d-bb8e4b4d570d"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="50ec8e00-1465-45e1-8d16-bc83f307fd12">
+                <propertyInstance
+                  Id="0b1c10d8-7e36-4291-8c36-216d52e156fc"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="33db21e9-cb06-49a0-b0c6-8abb8af75b7a">
+                <propertyInstance
+                  Id="b48aed35-3b7d-470e-a77e-ce3b2d81dba6"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="761105c7-4db0-4276-8337-12294c0858bf">
+                <propertyInstance
+                  Id="d70e8eaf-c542-479a-ade6-75fcbffa185e"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="1a96ab9b-5226-45a3-9f9f-e3bd523f879a">
+                <propertyInstance
+                  Id="5ef91b28-1c4b-44c0-a85a-01f925697858"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="84c30c3e-a320-4565-8278-319dffe2b87c"
+            isSubstitutable="false">
+            <classMoniker
+              Id="872824fe-4bc3-4e2d-83e0-a0771050724b"
+              LastKnownName="Statement"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="e2528292-5800-4cc1-8ff9-b0b5844d2319"
+        name="TacnyCasesBlockStmt"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="92ec5548-bf26-4118-91d8-27c9b2c6a555"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DTacnyCasesBlockStmt"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="47fcfea3-7852-4f9d-846a-16bfd4e3476f"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="12ede60b-417f-4def-9e5f-04f5470d30d3">
+                <propertyInstance
+                  Id="1964b1df-13db-483b-a9df-099e327bcd1d"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6f07a93e-1988-481e-bcf7-99ba006eefc7">
+                <propertyInstance
+                  Id="22ac06f5-9610-4a71-b218-8f585ffb5849"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="4bcadd4b-c96b-4ed6-9b07-4dc117e01b43">
+                <propertyInstance
+                  Id="e79346da-efdd-47f2-a8a4-b3bab2ba63e6"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="f21bc62a-1ac7-4b5b-8084-75c9958e3884">
+                <propertyInstance
+                  Id="888ca53d-e02e-4e19-8a6e-297a1d5051dd"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="ae8fa32d-94a2-4e6b-874b-93bc4939c68d">
+                <propertyInstance
+                  Id="9961e702-84ab-42ae-a0e6-27ae2fa7f85a"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="4c6ac5d3-c6ac-47b3-94ec-a1c640a79457"
+        name="DatatypeCtor"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="8668e878-9351-494c-bd01-3dfea106c8c6"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DDatatypeCtor"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="10e9eeff-c560-4b08-8b55-3f75fab546bb"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="4c61db5b-4a74-4c5d-bfa4-4e3116408efa">
+                <propertyInstance
+                  Id="b2536433-5b5a-49cc-ac9b-392d9827ac5c"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8a988bb3-4051-4c7d-bd3a-bab410c73179">
+                <propertyInstance
+                  Id="6af87d92-61c8-4aed-bf33-1e68a64cb635"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="7aa2a171-a4de-4e0e-928e-720341a9507e">
+                <propertyInstance
+                  Id="359f4ab2-2c94-480c-b592-719300091e24"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="ad760877-6937-495c-8aed-eee08e35f65f">
+                <propertyInstance
+                  Id="6e942e43-f064-4870-ae54-955fd0d48daa"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8580496b-7716-4899-be0d-ef79ad0d886a">
+                <propertyInstance
+                  Id="e6e5f58f-3a76-4902-846f-49273e93917a"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="f48a4955-700f-41bc-8917-a32babcde500"
+        name="MatchCaseStmt"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="9bc579b4-94ec-48cd-b453-2a960cd4b532"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DMatchCaseStmt"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="28cc9de6-2154-4b72-b88e-bf9bc8b7d411"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c935ea99-b566-488a-b649-1ba3036a5353">
+                <propertyInstance
+                  Id="f9f98960-60d3-4f19-91de-33e6e235b72d"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="f9bbbcb7-dbfd-4b6d-bb72-cdcdf10d8638">
+                <propertyInstance
+                  Id="9078e7c4-486f-4360-bbe2-d6016a5d7d37"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="64131574-719a-492a-a2ba-7f7b811ec9ce">
+                <propertyInstance
+                  Id="75f206f3-cd52-46a9-96be-2c7dd0fe315e"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="4bc45e4a-f217-4d09-9fb4-38bb57f7be88">
+                <propertyInstance
+                  Id="ae110c9f-e165-4523-b080-0c1f02227400"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="acdb83e2-8c64-4390-aa67-aaade4949778">
+                <propertyInstance
+                  Id="00f6a383-4b73-4f67-a1ff-fb7243aabfec"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="ed6dce61-7800-41a3-b75c-906541b8dd16"
+        name="Formal"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="2bd1637c-5398-437e-9dd2-38524cc6fc90"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DFormal"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="dfa10391-e933-4d12-a323-931b57c3de89"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="a16f1345-cafb-4c67-88e2-63dca8738ddb">
+                <propertyInstance
+                  Id="df255af3-805b-419f-9d28-44f3d9a0a614"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="35a5bd18-34a9-4f62-a405-3bd319ca56d5">
+                <propertyInstance
+                  Id="44061a30-75d0-4bf5-9e43-111e13347c6a"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="11d5fa30-3640-4a72-b931-0ba2b7672995">
+                <propertyInstance
+                  Id="f143540e-dd38-4b24-808e-37c99a576c30"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="2e4a3217-d7be-4373-9a87-ec4d1b35bb8a">
+                <propertyInstance
+                  Id="c23c3078-4dcd-45a7-afb7-57494fc12739"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="0568eff0-2987-4d15-b941-f8a351dc635e">
+                <propertyInstance
+                  Id="42a8a829-178b-49a2-a513-ce4c1dae23bc"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="3e3bf4d0-7492-4778-9fb1-6120c58f0899"
+        name="CasePattern"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="525f9bbb-f180-4b70-875c-b551263aeda7"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DCasePattern"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="e918a0a3-ef12-4948-8967-4016c8a6ae8f"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8c3518f2-7025-479c-89be-59ae5fbe1f5d">
+                <propertyInstance
+                  Id="2955fc59-ec2e-4a3f-9ed7-a2d95ba2382e"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="17acdd49-40d7-4170-898a-17a188c58faf">
+                <propertyInstance
+                  Id="1e576e1c-921c-42bf-9c85-f3ee81d3782d"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="b1ef6263-8a0d-4088-b88f-e72088515e02">
+                <propertyInstance
+                  Id="d313723d-4a09-447d-a313-aedeba0a2d3b"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="69562715-5449-4dbb-98a2-1a1605a98ab9">
+                <propertyInstance
+                  Id="d8702816-27a6-4523-ab61-4d4de5de3c83"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="73446121-932b-4092-a2fe-68ba9ecd2689">
+                <propertyInstance
+                  Id="b1e36d19-e37a-41ef-9923-a09f03a23f3b"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="96f3a063-d0bc-449b-a472-8615519d06ce"
+        name="DafnyOptions"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="4598b83e-1de0-4762-9cee-f0fbb8dc2a8d"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DDafnyOptions"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="fe8ed461-ebe1-47a8-8b35-489bd5a71d14"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="4d2770cc-1211-416b-8fea-e9674204c0d4">
+                <propertyInstance
+                  Id="4f988a02-f874-4b4f-aaad-6aa6c105ef2f"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8913a93a-3f8e-4071-9ce5-df7de54e9fe7">
+                <propertyInstance
+                  Id="184677b5-6031-4d07-9092-1b2506e873af"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="9d2bb405-85aa-4e6b-b46b-5fe790df9bd6">
+                <propertyInstance
+                  Id="d498177d-c7b0-42af-8730-65b0770bf712"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="9e430c4c-d6c4-4ef3-9b3b-736fd3c4a240">
+                <propertyInstance
+                  Id="fe4e91c7-2aee-4b22-a43d-e3d5a05df65a"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="5ff35e40-d4ea-492c-a69c-3b282655570a">
+                <propertyInstance
+                  Id="561fbf9b-ac1b-4e0c-bebd-6c919a634203"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="57e61453-0d5a-47ba-b12a-8d161b34ca17"
+        name="Specification&lt;Expression‎&gt;"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="b97576bb-0d76-4477-a4f3-32f93fc4efdd"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="6c76268b-f2e7-47b9-9ce0-4ad1881dd5e9">
+                <propertyInstance
+                  Id="85d67633-b984-46b9-a362-24ae47b0f415"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="0686b344-820d-4732-ae39-92765106e0c1">
+                <propertyInstance
+                  Id="6feb34a6-def7-465f-8b35-e9ea944ddbb2"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e4e1715e-61c9-44df-b13e-1a25491c8402">
+                <propertyInstance
+                  Id="d261c3cf-2d74-4482-ba3c-85ba102433cf"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="60bf733c-9879-401f-94d7-3c76dd7e9fdf">
+                <propertyInstance
+                  Id="e95caea8-57e2-4a34-a02a-e3fca9d2042b"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="4ec97cc6-9d8c-4ce6-b64a-27af50230347">
+                <propertyInstance
+                  Id="551db3ec-8817-48fb-91f4-0a58057dc5f4"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <signatures>
+          <templateBinding
+            Id="229e66e5-5971-44e6-8a17-68075d30a385">
+            <redefinableTemplateSignatureMoniker
+              Id="31eefc68-a080-45d2-be0a-d1a0a5bc0c4f"
+              LastKnownLocation="Package7_1348.uml" />
+            <relationshipOwnedElementsInternal>
+              <templateBindingHasTemplateParameterSubstitution>
+                <templateParameterSubstitution
+                  Id="31b645e0-9130-4533-afaf-63a36d6d39c9">
+                  <actuals>
+                    <classMoniker
+                      Id="5d44fbb4-058e-4e5d-8a2b-dd5e8b3cd098"
+                      LastKnownName="Expression"
+                      LastKnownLocation="Package7_1348.uml" />
+                  </actuals>
+                  <formal>
+                    <classifierTemplateParameterMoniker
+                      Id="23efa67b-e43e-4b60-a2d3-f7171a63a5a7"
+                      LastKnownLocation="Package7_1348.uml" />
+                  </formal>
+                </templateParameterSubstitution>
+              </templateBindingHasTemplateParameterSubstitution>
+            </relationshipOwnedElementsInternal>
+          </templateBinding>
+        </signatures>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="83d7bca8-280d-49ec-9870-8303faf91414"
+        name="Specification"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="90729abd-68db-4951-926d-b50335da11b7"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DSpecification GenericParameterCount%3D1)"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="41fdc2b3-c060-4330-857d-0757eef7ff08"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="0801df57-43dc-4645-9969-e47ed85c1d3f">
+                <propertyInstance
+                  Id="1e87172f-ff53-480c-9dff-b89fd7d00e66"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="f0a7f55c-c358-44aa-97c4-d5aac6fe9a93">
+                <propertyInstance
+                  Id="0ae0fa79-dd92-46e5-b0d6-e95c2f045c31"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="0830e0fd-ce9f-465b-9f47-83ff10386dcd">
+                <propertyInstance
+                  Id="8a904671-264d-4c42-9a95-360a1f0d0485"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="aaaef481-3c37-4517-a60b-375dd9d45ada">
+                <propertyInstance
+                  Id="ba935bdc-cc76-4405-abdb-45d9e4cb296b"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="eb4cf012-d36e-43e1-a314-58733866ea88">
+                <propertyInstance
+                  Id="8f673bb1-8c42-4440-897b-d7c72d5ad305"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <ownedRedefinableTemplateSignatureInternal>
+          <redefinableTemplateSignature
+            Id="31eefc68-a080-45d2-be0a-d1a0a5bc0c4f"
+            parameters=""
+            name="RedefinableTemplateSignature1"
+            isLeaf="false">
+            <ownedParameters>
+              <classifierTemplateParameter
+                Id="23efa67b-e43e-4b60-a2d3-f7171a63a5a7">
+                <referencesInternal>
+                  <reference
+                    Id="f16b0f4a-65b9-4db1-8acf-f329639bad03"
+                    handle="viewcode://./CodeSchema_GenericParameter?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3D(Name%3DSpecification GenericParameterCount%3D1) ParameterIdentifier%3D0"
+                    tag="ViewCode" />
+                </referencesInternal>
+                <ownedParameterableElement>
+                  <class
+                    Id="902a6548-48d8-4ce1-94ff-1d133d695cf5"
+                    name="T"
+                    isAbstract="false"
+                    isLeaf="false"
+                    isActiveClass="false" />
+                </ownedParameterableElement>
+              </classifierTemplateParameter>
+            </ownedParameters>
+          </redefinableTemplateSignature>
+        </ownedRedefinableTemplateSignatureInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="1566074b-4dc4-4bf6-8b3b-e67fa10d77a1"
+        name="CoLemma"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="def66432-d168-413c-8298-14aa4c318baf"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DCoLemma"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="4a9b2b05-8b5c-4cd1-ad54-8c1e01b0190e"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="351b578e-5408-4d69-a472-7b887f18bcd7">
+                <propertyInstance
+                  Id="90bb6305-4e20-439e-a115-28e25572e040"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="d022f176-8b1f-4307-9247-cb009778a95d">
+                <propertyInstance
+                  Id="b9e0c0ac-7ea0-4ed7-a352-b69bae1a9d7e"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c8346438-9685-4b77-94af-b3268ab548ba">
+                <propertyInstance
+                  Id="1ce36a26-f3b1-41e9-be5f-572ba3ff3711"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="2307f596-fc35-409e-8046-e903aaafef27">
+                <propertyInstance
+                  Id="99d08029-09c3-43be-a0ff-747a19fc642a"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="2e08e1fa-3168-486a-b275-80869d4e1814">
+                <propertyInstance
+                  Id="9bc5528e-8029-4d8d-8f0e-e89173c7e15e"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="06be3003-fb3a-437d-af00-8dd1df4fe3f2"
+        name="Lemma"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="11decb9e-c050-494f-b293-d4a368faff14"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DLemma"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="2fe47ee1-8c2f-4d28-b88e-7a47a262dfb4"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="b9258552-10df-4384-a747-c8a4d62b8354">
+                <propertyInstance
+                  Id="381dbcc4-d490-4794-90d6-ddc9badb10aa"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="cfca555b-86d8-4e45-a9d5-318f81b58b34">
+                <propertyInstance
+                  Id="ae617822-0b22-4897-aa32-092f95e28dcb"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="78cc2f4c-2e8f-46cb-8421-13b6c8e00336">
+                <propertyInstance
+                  Id="84d69799-1919-47c5-8669-b881ae0af7c4"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="a9cc0bdb-37b4-4fc5-9ea2-4a6f2240d1d1">
+                <propertyInstance
+                  Id="ac4aa3a8-de4b-4dfc-9c83-a06942e8037b"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="f536fdc7-d84b-4389-841d-6a555af11ce2">
+                <propertyInstance
+                  Id="2955c0dd-af07-4dd6-8de2-e24be898bbec"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <generalsInternal>
+          <generalization
+            Id="3bcfd93e-02e5-4cfd-97d1-877562772c7a"
+            isSubstitutable="false">
+            <classMoniker
+              Id="899d6308-9b1f-44e4-8e81-26b01a000f38"
+              LastKnownName="Method"
+              LastKnownLocation="Package7_1348.uml" />
+          </generalization>
+        </generalsInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="8d90d734-e2b8-496e-86b4-7e1d6721c66e"
+        name="Declaration"
+        isAbstract="true"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="e57550ef-583e-4912-9602-7fae82d9d15e"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DDeclaration"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="3394a603-0562-4b9f-8959-2ac9ab52472c"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e8af01cd-ee6c-4125-bdb6-8b88e659d5eb">
+                <propertyInstance
+                  Id="8559488f-52dd-4a20-9f77-79e1f7cbb3a0"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="0b71dc15-095a-4fec-948b-0ec7b41e52b8">
+                <propertyInstance
+                  Id="06b60f6c-2d46-4003-a653-ea7f41794d10"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8109c79f-feb5-470f-aebf-adc3a22f3b41">
+                <propertyInstance
+                  Id="bf2a7964-26ff-4f7e-891c-89273912eb9b"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c106bb93-6ea0-4175-bcd9-0fa359973a5b">
+                <propertyInstance
+                  Id="14541574-aa4e-43b5-b024-2ee911a4db53"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="c49f5d79-1305-4e98-a567-2b175e51415a">
+                <propertyInstance
+                  Id="139ce93b-9fa7-471d-96ad-580552fe3169"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="64219878-c55d-44c1-89dd-789518f6946e"
+        name="NonglobalVariable"
+        isAbstract="true"
+        isLeaf="false"
+        isActiveClass="false">
+        <referencesInternal>
+          <reference
+            Id="f9c917eb-118f-4643-b702-585ae8b19c70"
+            handle="viewcode://./CodeSchema_Class?Assembly%3Dfile:%2F%2F%2Fd:%2Fworkspace%2Ftacny%2Fdafny%2FBinaries%2FDafnyPipeline.dll Namespace%3DMicrosoft.Dafny Type%3DNonglobalVariable"
+            tag="ViewCode" />
+        </referencesInternal>
+        <appliedStereotypesInternal>
+          <stereotypeInstance
+            Id="1d5267e2-f17b-4760-aec1-5e3bf820cc1e"
+            name="class"
+            profile="CSharpProfile">
+            <propertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="d6b3c5cb-89c9-412e-935c-8d990f110a17">
+                <propertyInstance
+                  Id="ebb539c0-5444-4a01-b2c5-69b0b8af1dbd"
+                  name="ClrAttributes" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="ebc72ded-aa8e-442a-bcb6-49636927c062">
+                <propertyInstance
+                  Id="78c20f61-d9e0-4837-b828-29c2af60d315"
+                  name="IsPartial"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="e810698f-3d1e-4d75-b8b7-7196dadc1503">
+                <propertyInstance
+                  Id="034b18fa-7b25-43ae-97d3-1d54849b7c73"
+                  name="IsStatic"
+                  value="False" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="be7495a0-99d1-445d-984b-5bc6ab7f9c62">
+                <propertyInstance
+                  Id="979d44be-ec08-4065-a26e-24bcbe6dfb7b"
+                  name="IsUnsafe"
+                  value="false" />
+              </stereotypeInstanceHasPropertyInstances>
+              <stereotypeInstanceHasPropertyInstances
+                Id="8fe5d9c8-cead-484d-a9ff-3b2892a85128">
+                <propertyInstance
+                  Id="bce29ddb-8433-4923-9872-d9341cad5f6e"
+                  name="PackageVisibility"
+                  value="internal" />
+              </stereotypeInstanceHasPropertyInstances>
+            </propertyInstances>
+          </stereotypeInstance>
+        </appliedStereotypesInternal>
+        <suppliersInternal>
+          <interfaceRealization
+            Id="a5abf2f6-1092-4e16-8b32-abe7d5a8d2b7">
+            <interfaceMoniker
+              Id="2e1f28cd-a029-4034-a7d8-acf49185c23a"
+              LastKnownName="IVariable"
+              LastKnownLocation="Package7_1348.uml" />
+          </interfaceRealization>
+        </suppliersInternal>
+      </class>
+    </packageHasNamedElement>
+  </packagedElements>
+</package>

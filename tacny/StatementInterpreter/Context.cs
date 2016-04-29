@@ -26,49 +26,50 @@ namespace Tacny
     /// Local context for the tactic currently being resolved
     /// </summary>
     #region LocalContext
-    public class LocalContext : Context
+    public class DynamicContext : Context
     {
-        public Tactic tac = null;  // The called tactic
-        public List<Statement> tac_body = new List<Statement>(); // body of the currently worked tactic
-        public Dictionary<Dafny.IVariable, object> local_variables = new Dictionary<Dafny.IVariable, object>();
-        public Dictionary<Statement, Statement> updated_statements = new Dictionary<Statement, Statement>();
+        public Tactic tactic = null;  // The called tactic
+        public List<Statement> tacticBody = new List<Statement>(); // body of the currently worked tactic
+        public Dictionary<Dafny.IVariable, object> localDeclarations = new Dictionary<Dafny.IVariable, object>();
+        public Dictionary<Statement, Statement> generatedStatements = new Dictionary<Statement, Statement>();
         public Method new_target = null;
 
         private int tacCounter;
+        public bool isPartialyResolved = false;
 
-        public LocalContext(MemberDecl md, Tactic tac, UpdateStmt tac_call)
+        public DynamicContext(MemberDecl md, Tactic tac, UpdateStmt tac_call)
             : base(md, tac_call)
         {
-            this.tac = tac;
-            this.tac_body = new List<Statement>(tac.Body.Body.ToArray());
+            this.tactic = tac;
+            this.tacticBody = new List<Statement>(tac.Body.Body.ToArray());
             this.tacCounter = 0;
             FillTacticInputs();
         }
 
-        public LocalContext(MemberDecl md, Tactic tac, UpdateStmt tac_call,
+        public DynamicContext(MemberDecl md, Tactic tac, UpdateStmt tac_call,
             List<Statement> tac_body, Dictionary<Dafny.IVariable, object> local_variables,
             Dictionary<Statement, Statement> updated_statements, int tacCounter, Method old_target)
             : base(md, tac_call)
         {
-            this.tac = tac;
-            this.tac_body = new List<Statement>(tac_body.ToArray());
+            this.tactic = tac;
+            this.tacticBody = new List<Statement>(tac_body.ToArray());
 
             List<IVariable> lv_keys = new List<IVariable>(local_variables.Keys);
             List<object> lv_values = new List<object>(local_variables.Values);
-            this.local_variables = lv_keys.ToDictionary(x => x, x => lv_values[lv_keys.IndexOf(x)]);
+            this.localDeclarations = lv_keys.ToDictionary(x => x, x => lv_values[lv_keys.IndexOf(x)]);
 
-            this.updated_statements = updated_statements;
+            this.generatedStatements = updated_statements;
 
             this.tacCounter = tacCounter;
             this.new_target = old_target;
         }
 
-        public LocalContext Copy()
+        public DynamicContext Copy()
         {
             Method newM = Util.Copy.CopyMember(md);
-            Tactic newTac = Util.Copy.CopyMember(tac) as Tactic;
+            Tactic newTac = Util.Copy.CopyMember(tactic) as Tactic;
             Method new_target = Util.Copy.CopyMember(this.new_target);
-            return new LocalContext(newM, newTac, tac_call, tac_body, local_variables, Util.Copy.CopyStatementDict(updated_statements), tacCounter, new_target);
+            return new DynamicContext(newM, newTac, tac_call, tacticBody, localDeclarations, Util.Copy.CopyStatementDict(generatedStatements), tacCounter, new_target);
         }
 
 
@@ -77,18 +78,18 @@ namespace Tacny
         /// </summary>
         public void FillTacticInputs()
         {
-            local_variables.Clear();
+            localDeclarations.Clear();
             ExprRhs er = (ExprRhs)tac_call.Rhss[0];
             List<Expression> exps = ((ApplySuffix)er.Expr).Args;
-            Contract.Assert(exps.Count == tac.Ins.Count);
+            Contract.Assert(exps.Count == tactic.Ins.Count);
             for (int i = 0; i < exps.Count; i++)
-                local_variables.Add(tac.Ins[i], exps[i]);
+                localDeclarations.Add(tactic.Ins[i], exps[i]);
         }
 
         public bool HasLocalWithName(NameSegment ns)
         {
             Contract.Requires<ArgumentNullException>(ns != null);
-            List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
+            List<Dafny.IVariable> ins = new List<Dafny.IVariable>(localDeclarations.Keys);
             var key = ins.FirstOrDefault(i => i.Name == ns.Name);
             return key != null;
         }
@@ -108,10 +109,10 @@ namespace Tacny
         public object GetLocalValueByName(string name)
         {
             Contract.Requires<ArgumentNullException>(name != null);
-            List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
+            List<Dafny.IVariable> ins = new List<Dafny.IVariable>(localDeclarations.Keys);
             var key = ins.FirstOrDefault(i => i.Name == name);
             if (key != null)
-                return local_variables[key];
+                return localDeclarations[key];
 
             return null;
         }
@@ -125,24 +126,24 @@ namespace Tacny
         public IVariable GetLocalKeyByName(string name)
         {
             Contract.Requires<ArgumentNullException>(name != null);
-            List<Dafny.IVariable> ins = new List<Dafny.IVariable>(local_variables.Keys);
+            List<Dafny.IVariable> ins = new List<Dafny.IVariable>(localDeclarations.Keys);
             return ins.FirstOrDefault(i => i.Name == name);
         }
 
         public void AddLocal(IVariable lv, object value)
         {
             Contract.Requires<ArgumentNullException>(lv != null);
-            if (!local_variables.ContainsKey(lv))
-                local_variables.Add(lv, value);
+            if (!localDeclarations.ContainsKey(lv))
+                localDeclarations.Add(lv, value);
             else
-                local_variables[lv] = value;
+                localDeclarations[lv] = value;
         }
 
 
 
         public void IncCounter()
         {
-            if (tacCounter <= tac_body.Count)
+            if (tacCounter <= tacticBody.Count)
                 tacCounter++;
             else
                 throw new ArgumentOutOfRangeException("Tactic counter exceeded tactic body length");
@@ -170,17 +171,17 @@ namespace Tacny
 
         public Statement GetCurrentStatement()
         {
-            if (tacCounter >= tac_body.Count)
+            if (tacCounter >= tacticBody.Count)
                 return null;
 
-            return tac_body[tacCounter];
+            return tacticBody[tacCounter];
         }
 
         public Statement GetNextStatement()
         {
-            if (tacCounter + 1 >= tac_body.Count)
+            if (tacCounter + 1 >= tacticBody.Count)
                 return null;
-            return tac_body[tacCounter + 1];
+            return tacticBody[tacCounter + 1];
         }
 
         public bool IsFirstStatment()
@@ -190,43 +191,43 @@ namespace Tacny
 
         public bool IsResolved()
         {
-            return tacCounter >= tac.Body.Body.Count;
+            return tacCounter >= tacticBody.Count;
         }
 
         public void AddUpdated(Statement key, Statement value)
         {
             Contract.Requires(key != null && value != null);
-            if (!updated_statements.ContainsKey(key))
-                updated_statements.Add(key, value);
+            if (!generatedStatements.ContainsKey(key))
+                generatedStatements.Add(key, value);
             else
-                updated_statements[key] = value;
+                generatedStatements[key] = value;
         }
 
         public void RemoveUpdated(Statement key)
         {
             Contract.Requires(key != null);
-            if (updated_statements.ContainsKey(key))
-                updated_statements.Remove(key);
+            if (generatedStatements.ContainsKey(key))
+                generatedStatements.Remove(key);
         }
 
         public Statement GetUpdated(Statement key)
         {
             Contract.Ensures(Contract.Result<Statement>() != null);
-            if (updated_statements.ContainsKey(key))
-                return updated_statements[key];
+            if (generatedStatements.ContainsKey(key))
+                return generatedStatements[key];
             return null;
         }
 
         public List<Statement> GetAllUpdated()
         {
             Contract.Ensures(Contract.Result<List<Statement>>() != null);
-            return new List<Statement>(updated_statements.Values.ToArray());
+            return new List<Statement>(generatedStatements.Values.ToArray());
         }
 
         public List<Statement> GetFreshTacticBody()
         {
             Contract.Ensures(Contract.Result<List<Statement>>() != null);
-            return new List<Statement>(tac_body.ToArray());
+            return new List<Statement>(tacticBody.ToArray());
         }
 
         public Method GetSourceMethod()

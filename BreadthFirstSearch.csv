@@ -1,0 +1,3 @@
+Tactic, Method, Execution time, Generated Nodes, Invalid nodes, Valid nodes, Verification Failure, Verification success, Boogie calls, Boogie Wait, Dafny Calls, Dafny Wait
+mytac, Lemma_IsPath_Closure, 3455, 688717, 229475, 97, 96, 1, 97, 265, 229572, 2212
+mytac2, Lemma_IsPath_R, 46964, 3428160, 3425465, 43, 42, 1, 43, 127, 3425508, 34906
