@@ -248,9 +248,9 @@ namespace LazyTacny
                     if (staticContext.program.IsTacticCall(us))
                     {
                         Debug.WriteLine("Found nested tactic call");
-                        Atomic ac = new Atomic(dynamicContext.md, staticContext.program.GetTactic(us), us, staticContext);
+                        Atomic ac = new Atomic(dynamicContext.md, staticContext.program.GetTactic(us), dynamicContext.tac_call, staticContext);
                         // TODO fix nested tactic calls
-                        ExprRhs er = (ExprRhs)ac.dynamicContext.tac_call.Rhss[0];
+                        ExprRhs er = us.Rhss[0] as ExprRhs;
                         List<Expression> exps = ((ApplySuffix)er.Expr).Args;
                         Contract.Assert(exps.Count == ac.dynamicContext.tactic.Ins.Count);
                         ac.SetNewTarget(GetNewTarget());
@@ -269,9 +269,9 @@ namespace LazyTacny
                         {
                             Atomic action = this.Copy();
                             action.SetNewTarget(solution.state.GetNewTarget());
-                            foreach (KeyValuePair<Statement, Statement> kvp in solution.state.GetResult())
+                            foreach (KeyValuePair<Statement, Statement> kvp in item.state.GetResult())
                                 action.AddUpdated(kvp.Key, kvp.Value);
-                            yield return item;
+                            yield return new Solution(action);
                         }
                     }
                     else if (IsLocalAssignment(us)) // if the updatestmt is asignment
@@ -279,6 +279,25 @@ namespace LazyTacny
                         foreach (var result in UpdateLocalVariable(us))
                         {
                             yield return result;
+                        }
+                    } else if(IsArgumentApplication(us)) // true when tactic is passed as an argument
+                    {
+                        var name = GetNameSegment(us);
+                        var application = GetLocalValueByName(name) as ApplySuffix;
+                        var newUpdateStmt = new UpdateStmt(us.Tok, us.EndTok, us.Lhss, new List<AssignmentRhs>() { new ExprRhs(application) });
+                        var ac = this.Copy();
+                        foreach(var argument in application.Args)
+                        {
+                            var ns = argument as NameSegment;
+                            if(staticContext.HasGlobalVariable(ns.Name))
+                            {
+                                var temp = staticContext.GetGlobalVariable(ns.Name);
+                                ac.dynamicContext.AddLocal(new Dafny.Formal(ns.tok, ns.Name, temp.Type, true, temp.IsGhost), ns);
+                            }
+                        }
+                        foreach (var item in ac.CallAction(newUpdateStmt, solution))
+                        {
+                            yield return item;
                         }
                     }
                     else // insert the statement as is
@@ -949,7 +968,7 @@ namespace LazyTacny
             solution.GenerateProgram(ref prog);
             staticContext.program.ClearBody(dynamicContext.md);
 #if !DEBUG
-            globalContext.program.PrintMember(prog, solution.state.globalContext.md.Name);
+            staticContext.program.PrintMember(prog, solution.state.staticContext.md.Name);
 #endif
             if (!staticContext.program.ResolveProgram())
                 return false;
@@ -1017,9 +1036,32 @@ namespace LazyTacny
         }
 
         [Pure]
-        protected bool IsLocalAssignment(UpdateStmt us)
+        protected static bool IsLocalAssignment(UpdateStmt us)
         {
-            return us.Lhss != null && us.Rhss != null;
+            return us.Lhss.Count > 0 && us.Rhss.Count > 0;
+        }
+
+        protected bool IsArgumentApplication(UpdateStmt us)
+        {
+            var name = GetNameSegment(us);
+            if (dynamicContext.HasLocalWithName(name))
+                return true;
+            return false;
+        }
+
+
+
+
+        protected static NameSegment GetNameSegment(UpdateStmt us)
+        {
+            Contract.Requires(us != null);
+            ExprRhs er = us.Rhss[0] as ExprRhs;
+            if (er == null)
+                return null;
+            ApplySuffix asx = er.Expr as ApplySuffix;
+            if (asx == null)
+                return null;
+            return asx.Lhs as NameSegment;
         }
     }
 }

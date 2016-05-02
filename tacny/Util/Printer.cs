@@ -92,8 +92,10 @@ namespace Util
         {
             Contract.Requires(prog != null);
             wr = new System.IO.StreamWriter(prog.FullName + ".dfy");
-            var printer = new Dafny.Printer(wr, printMode);
-            printer.PrintProgram(prog);// PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, Path.GetFullPath(prog.FullName));
+            var printer = new Dafny.Printer(wr, DafnyOptions.PrintModes.Everything);
+            printer.PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, prog.FullName);
+            //printer.PrintProgram(prog);// PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, Path.GetFullPath(prog.FullName));
+            wr.Flush();
         }
 
         public void PrintDebugMessage(string message, params object[] args)

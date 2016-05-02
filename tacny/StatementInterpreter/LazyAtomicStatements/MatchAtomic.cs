@@ -87,9 +87,6 @@ namespace LazyTacny
             string datatypeName = null;
             bool isElement = false;
 
-            //bool[] ctorFlags = null; //localContext.ctorFlags; // used to keep track of which cases statements require a body
-            //int ctor = 0; // current active match case
-            //List<Solution> ctorBodies = null;
             guard = st.Guard as ParensExpression;
 
             if (guard == null)

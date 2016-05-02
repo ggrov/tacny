@@ -465,7 +465,7 @@ namespace Tacny
             return result;
         }
 
-        private string GetSignature(UpdateStmt us)
+        public static string GetSignature(UpdateStmt us)
         {
             ExprRhs er = us.Rhss[0] as ExprRhs;
             if (er == null)
