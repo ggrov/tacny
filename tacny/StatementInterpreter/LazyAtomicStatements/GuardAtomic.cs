@@ -3,6 +3,7 @@ using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
 using System;
 using Tacny;
+
 namespace LazyTacny
 {
     class GuardAtomic : Atomic, IAtomicLazyStmt

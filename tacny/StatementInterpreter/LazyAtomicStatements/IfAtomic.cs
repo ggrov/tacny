@@ -100,12 +100,12 @@ namespace LazyTacny
                         else // otherwise it was a 'else if' and the solution list should only contain one if stmt
                             elseBody = elseList[0];
 
-                        yield return CreateSolution<IfStmt>(original, new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(ifBody), elseBody));
+                        yield return AddNewStatement<IfStmt>(original, new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(ifBody), elseBody));
                     }
                 }
                 else
                 {
-                    yield return CreateSolution<IfStmt>(original, new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(ifBody), null));
+                    yield return AddNewStatement<IfStmt>(original, new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(ifBody), null));
                 }
             }
         }

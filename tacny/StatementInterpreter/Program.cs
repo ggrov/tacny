@@ -243,7 +243,6 @@ namespace Tacny
                 ClassDecl curDecl = item as ClassDecl;
                 if (curDecl != null)
                 {
-                    // scan each member for tactic calls and resolve if found
                     foreach (var member in curDecl.Members)
                     {
                         Tactic tac = member as Tactic;

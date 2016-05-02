@@ -138,6 +138,11 @@ namespace Util
 
             return ret;
         }
+
+        public static StringLiteralExpr CopyStringLiteralExpr(StringLiteralExpr expr)
+        {
+            return new StringLiteralExpr(expr.tok, expr.AsStringLiteral(), expr.IsVerbatim);
+        }
         /// <summary>
         /// Deep copy an expression
         /// </summary>

@@ -1,28 +1,29 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
-namespace Tacny
+using System;
+using Tacny;
+
+namespace LazyTacny
 {
-    class InvariantAtomic : Atomic, IAtomicStmt
+    class InvariantAtomic : Atomic, IAtomicLazyStmt
     {
         public InvariantAtomic(Atomic atomic) : base(atomic) { }
 
-        public void Resolve(Statement st, ref List<Solution> solution_list)
+        public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
             switch (StatementRegister.GetAtomicType(st))
             {
                 case StatementRegister.Atomic.ADD_INVAR:
-                    AddInvar(st, ref solution_list);
-                    break;
+                    return AddInvar(st, solution);
                 case StatementRegister.Atomic.CREATE_INVAR:
-                     CreateInvar(st, ref solution_list);
-                     break;
+                    return CreateInvar(st, solution);
                 default:
                     throw new cce.UnreachableException();
             }
         }
 
-        public void CreateInvar(Statement st, ref List<Solution> solution_list)
+        public IEnumerable<Solution> CreateInvar(Statement st, Solution solution)
         {
             IVariable lv = null;
             List<Expression> call_arguments = null;
@@ -33,22 +34,25 @@ namespace Tacny
             Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
             Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
 
-            ProcessArg(call_arguments[0], out formula);
-            Contract.Assert(formula != null);
 
-            invariant = new MaybeFreeExpression(formula);
-
-            AddLocal(lv, invariant);
-            solution_list.Add(new Solution(this.Copy()));
+            foreach (var forlumla in ProcessStmtArgument(call_arguments[0]))
+            {
+                Contract.Assert(formula != null);
+                invariant = new MaybeFreeExpression(formula);
+                var ac = this.Copy();
+                ac.AddLocal(lv, invariant);
+                yield return new Solution(this.Copy());
+            }
+            yield break;
         }
 
-        public void AddInvar(Statement st, ref List<Solution> solution_list)
+        public IEnumerable<Solution> AddInvar(Statement st, Solution solution)
         {
 
             List<Expression> call_arguments = null;
             MaybeFreeExpression invariant = null;
             MaybeFreeExpression[] invar_arr = null;
-            List<MaybeFreeExpression> invar = null; // HACK
+            List<MaybeFreeExpression> invar = null;
             UpdateStmt us = null;
 
             us = st as UpdateStmt;
@@ -57,28 +61,29 @@ namespace Tacny
             Contract.Assert(call_arguments != null);
             Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
 
-            object invar_obj;
-            ProcessArg(call_arguments[0], out invar_obj);
-            invariant = invar_obj as MaybeFreeExpression;
-            Contract.Assert(invar_obj != null, Util.Error.MkErr(st, 1, typeof(MaybeFreeExpression)));
-            WhileStmt nws = null;
+            foreach (var item in ProcessStmtArgument(call_arguments[0]))
+            {
+                invariant = item as MaybeFreeExpression;
+                Contract.Assert(invariant != null, Util.Error.MkErr(st, 1, typeof(MaybeFreeExpression)));
+                WhileStmt nws = null;
 
-            WhileStmt ws = FindWhileStmt(globalContext.tac_call, globalContext.md);
-            Contract.Assert(ws != null, Util.Error.MkErr(st, 11));
-            // if we already added new invariants to the statement, use the updated statement instead
-            nws = GetUpdated(ws) as WhileStmt;
+                WhileStmt ws = FindWhileStmt(staticContext.tac_call, staticContext.md);
+                Contract.Assert(ws != null, Util.Error.MkErr(st, 11));
+                // if we already added new invariants to the statement, use the updated statement instead
+                nws = GetUpdated(ws) as WhileStmt;
 
-            if (nws != null)
-                invar_arr = nws.Invariants.ToArray();
-            else
-                invar_arr = ws.Invariants.ToArray();
+                if (nws != null)
+                    invar_arr = nws.Invariants.ToArray();
+                else
+                    invar_arr = ws.Invariants.ToArray();
 
-            invar = new List<MaybeFreeExpression>(invar_arr);
-            invar.Add(invariant);
-            nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, invar, ws.Decreases, ws.Mod, ws.Body);
-            AddUpdated(ws, nws);
-
-            solution_list.Add(new Solution(this.Copy()));
+                invar = new List<MaybeFreeExpression>(invar_arr);
+                invar.Add(invariant);
+                nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, invar, ws.Decreases, ws.Mod, ws.Body);
+                AddUpdated(ws, nws);
+                yield return AddNewStatement<WhileStmt>(nws, nws);
+            }
+            yield break;
         }
     }
 }

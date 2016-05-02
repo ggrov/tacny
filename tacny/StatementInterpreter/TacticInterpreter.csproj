@@ -175,10 +175,12 @@
     <Compile Include="AtomicStatements\IfAtomic.cs" />
     <Compile Include="Contract.cs" />
     <Compile Include="LazyAtomicStatements\FailAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\FreshNameAtomic.cs" />
     <Compile Include="LazyAtomicStatements\GetMemberAtomic.cs" />
     <Compile Include="LazyAtomicStatements\GuardAtomic.cs" />
     <Compile Include="LazyAtomicStatements\IdAtomic.cs" />
     <Compile Include="LazyAtomicStatements\IfAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\InvariantAtomic.cs" />
     <Compile Include="LazyAtomicStatements\LemmasAtomic.cs" />
     <Compile Include="LazyAtomicStatements\MatchAtomic.cs" />
     <Compile Include="LazyAtomicStatements\MergeAtomic.cs">

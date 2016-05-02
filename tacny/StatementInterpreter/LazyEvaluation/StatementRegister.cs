@@ -47,6 +47,7 @@ namespace LazyTacny
             RETURNS,
             IS_DATATYPE,
             GET_MEMBER,
+            FRESH_LEM_NAME,
         };
 
         public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -77,14 +78,15 @@ namespace LazyTacny
             {"tryCatch", Atomic.TRY_CATCH},
             {"get_returns", Atomic.RETURNS},
             {"is_datatype", Atomic.IS_DATATYPE},
-            {"get_member", Atomic.GET_MEMBER }
+            {"get_member", Atomic.GET_MEMBER },
+            {"fresh_lem_name", Atomic.FRESH_LEM_NAME }
         };
 
         public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
         {
             //{Atomic.REPLACE_SINGLETON, typeof(SingletonAtomic)},
-            //{Atomic.CREATE_INVAR, typeof(InvariantAtomic)},
-            //{Atomic.ADD_INVAR, typeof(InvariantAtomic)},
+            {Atomic.CREATE_INVAR, typeof(InvariantAtomic)},
+            {Atomic.ADD_INVAR, typeof(InvariantAtomic)},
             {Atomic.ADD_MATCH, typeof(MatchAtomic)},
             //{Atomic.REPLACE_OP, typeof(OperatorAtomic)},
             {Atomic.EXTRACT_GUARD, typeof(GuardAtomic)},
@@ -110,6 +112,7 @@ namespace LazyTacny
             {Atomic.TRY_CATCH, typeof(TryCatchAtomic)},
             //{Atomic.RETURNS, typeof(ReturnAtomic)},
             //{Atomic.IS_DATATYPE, typeof(IsDatatypeAtomic)},
+            {Atomic.FRESH_LEM_NAME, typeof(FreshNameAtomic) },
         };
 
         /// <summary>

@@ -924,10 +924,17 @@ namespace LazyTacny
             return true;
         }
 
-        public Solution CreateSolution<T>(T oldValue, T newValue) where T : Statement
+        public Solution AddNewStatement<T>(T oldValue, T newValue) where T : Statement
         {
             var ac = this.Copy();
             ac.AddUpdated(oldValue, newValue);
+            return new Solution(ac);
+        }
+
+        public Solution AddNewLocal<T>(IVariable variable, T value) where T : class
+        {
+            var ac = this.Copy();
+            ac.AddLocal(variable, value);
             return new Solution(ac);
         }
 
