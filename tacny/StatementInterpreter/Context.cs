@@ -13,6 +13,9 @@ namespace Tacny
         public MemberDecl md;
         public UpdateStmt tac_call;
 
+        public Context()
+        { 
+        }
         public Context(MemberDecl md, UpdateStmt tac_call)
         {
             Contract.Requires(md != null && tac_call != null);
@@ -36,7 +39,10 @@ namespace Tacny
 
         private int tacCounter;
         public bool isPartialyResolved = false;
+        public DynamicContext()
+        {
 
+        }
         public DynamicContext(MemberDecl md, ITactic tac, UpdateStmt tac_call)
             : base(md, tac_call)
         {
@@ -85,16 +91,9 @@ namespace Tacny
             localDeclarations.Clear();
             ExprRhs er = (ExprRhs)tac_call.Rhss[0];
             List<Expression> exps = ((ApplySuffix)er.Expr).Args;
-            Tactic tac = tactic as Tactic;
-            if (tac != null)
-            {
-                Contract.Assert(exps.Count == tac.Ins.Count);
-                for (int i = 0; i < exps.Count; i++)
-                    localDeclarations.Add(tac.Ins[i], exps[i]);
-            } else
-            {
-                
-            }
+            Contract.Assert(exps.Count == tactic.Ins.Count);
+            for (int i = 0; i < exps.Count; i++)
+                localDeclarations.Add(tactic.Ins[i], exps[i]);
         }
 
         public bool HasLocalWithName(NameSegment ns)
@@ -260,7 +259,10 @@ namespace Tacny
         public MemberDecl newTarget = null;
         public Program program;
 
+        public StaticContext()
+        {
 
+        }
         public StaticContext(MemberDecl md, UpdateStmt tac_call, Program program)
             : base(md, tac_call)
         {

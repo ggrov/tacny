@@ -21,7 +21,7 @@ namespace LazyTacny
             InitArgs(st, out lv, out args);
             Dafny.LiteralExpr lit = new Dafny.LiteralExpr(st.Tok, false);
             var ac = this.Copy();
-            ac.dynamicContext.AddLocal(lv, lit);
+            ac.DynamicContext.AddLocal(lv, lit);
             yield return new Solution(ac);
             yield break;
         }

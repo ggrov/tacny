@@ -45,7 +45,7 @@ namespace LazyTacny
                 
                 foreach (var item in ResolveBody(whileStmt.Body))
                 {
-                    item.state.dynamicContext.isPartialyResolved = true;
+                    item.state.DynamicContext.isPartialyResolved = true;
                     yield return item;                  
                 }
             }

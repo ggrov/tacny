@@ -74,7 +74,7 @@ namespace LazyTacny
                         foreach (var arg in vars)
                         {
                             // get variable type
-                            Dafny.Type type = staticContext.GetVariableType(arg.Name);
+                            Dafny.Type type = StaticContext.GetVariableType(arg.Name);
                             if (type != null)
                             {
                                 if (type is UserDefinedType && item.Type is UserDefinedType)

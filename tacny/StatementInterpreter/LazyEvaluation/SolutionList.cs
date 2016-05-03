@@ -38,7 +38,7 @@ namespace LazyTacny
             List<Solution> tmp = new List<Solution>();
             foreach (var item in plist)
             {
-                if (item.state.dynamicContext.IsResolved())
+                if (item.state.DynamicContext.IsResolved())
                     tmp.Add(item);
             }
             plist.Clear();
@@ -84,7 +84,7 @@ namespace LazyTacny
                 AddFinal(plist);
                 plist.Clear();
             }
-                
+
         }
     }
 
@@ -111,42 +111,16 @@ namespace LazyTacny
             this.isFinal = isFinal;
             this.parent = parent;
         }
-        
+
         [Pure]
         public bool IsResolved()
         {
-            return state.dynamicContext.IsResolved();
+            return state.DynamicContext.IsResolved();
         }
 
-        public string GenerateProgram(ref Dafny.Program prog, bool isFinal = false)
-        {
-            Debug.WriteLine("Generating Dafny program");
-            Method method = null;
-            List<Dafny.Program> prog_list = new List<Dafny.Program>();
-            Atomic ac = state.Copy();
-            ac.Fin();
-            method = Tacny.Program.FindMember(prog, ac.dynamicContext.md.Name) as Method;
-            if (method == null)
-                throw new Exception("Method not found");
-            UpdateStmt tac_call = ac.GetTacticCall();
-            List<Statement> body = method.Body.Body;
-            body = InsertSolution(body, tac_call, ac.GetResolved());
-            if (body == null)
-                return null;
-            if (!isFinal)
-            {
-                for (int i = 0; i < body.Count; i++)
-                {
-                    if (body[i] is UpdateStmt)
-                    {
-                        if (state.staticContext.program.IsTacticCall(body[i] as UpdateStmt))
-                            body.RemoveAt(i);
-                    }
-                }
-            }
 
-            //URGENT TODO: function generation
-            var nMethod = GenerateMethod(method, body, ac.dynamicContext.newTarget as Method);
+        public Program GenerateProgram(Function func, Program prog)
+        {
             ClassDecl curDecl;
             for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++)
             {
@@ -156,14 +130,70 @@ namespace LazyTacny
                     // scan each member for tactic calls and resolve if found
                     for (int j = 0; j < curDecl.Members.Count; j++)
                     {
-                        Method old_m = curDecl.Members[j] as Method;
-                        if (old_m != null)
-                            if (old_m.Name == nMethod.Name)
-                                curDecl.Members[j] = nMethod;
-
+                        if (curDecl.Members[i].Name == func.Name)
+                            curDecl.Members[i] = func;
                     }
-      
-                        prog.DefaultModuleDef.TopLevelDecls[i] = RemoveTactics(curDecl);
+
+                    prog.DefaultModuleDef.TopLevelDecls[i] = RemoveTactics(curDecl);
+                }
+            }
+
+            return prog;
+        }
+
+        public string GenerateProgram(ref Dafny.Program prog, bool isFinal = false)
+        {
+            Debug.WriteLine("Generating Dafny program");
+            Method method = null;
+            List<Dafny.Program> prog_list = new List<Dafny.Program>();
+            Atomic ac = state;// state.Copy();
+            MemberDecl newMemberDecl = null;
+            ac.Fin();
+            if (!ac.IsFunction)
+            {
+                method = Tacny.Program.FindMember(prog, ac.DynamicContext.md.Name) as Method;
+                if (method == null)
+                    throw new Exception("Method not found");
+                UpdateStmt tac_call = ac.GetTacticCall();
+                List<Statement> body = method.Body.Body;
+                body = InsertSolution(body, tac_call, ac.GetResolved());
+                if (body == null)
+                    return null;
+                if (!isFinal)
+                {
+                    for (int i = 0; i < body.Count; i++)
+                    {
+                        if (body[i] is UpdateStmt)
+                        {
+                            if (state.StaticContext.program.IsTacticCall(body[i] as UpdateStmt))
+                                body.RemoveAt(i);
+                        }
+                    }
+                }
+
+                //URGENT TODO: function generation
+                newMemberDecl = GenerateMethod(method, body, ac.DynamicContext.newTarget as Method);
+            }
+            else
+            {
+                newMemberDecl = ac.GetNewTarget();
+            }
+            ClassDecl curDecl;
+            for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++)
+            {
+                curDecl = prog.DefaultModuleDef.TopLevelDecls[i] as ClassDecl;
+                if (curDecl != null)
+                {
+                    // scan each member for tactic calls and resolve if found
+                    for (int j = 0; j < curDecl.Members.Count; j++)
+                    {
+
+
+                        if (curDecl.Members[j].Name == newMemberDecl.Name)
+                            curDecl.Members[j] = newMemberDecl;
+                    }
+
+                    prog.DefaultModuleDef.TopLevelDecls[i] = RemoveTactics(curDecl);
                 }
             }
 
@@ -190,11 +220,11 @@ namespace LazyTacny
 
         public static void PrintSolution(Solution solution)
         {
-            Dafny.Program prog = solution.state.staticContext.program.ParseProgram();
+            Dafny.Program prog = solution.state.StaticContext.program.ParseProgram();
             solution.GenerateProgram(ref prog);
-            solution.state.staticContext.program.ClearBody(solution.state.dynamicContext.md);
-            Console.WriteLine(String.Format("Tactic call {0} in {1} results: ", solution.state.dynamicContext.tactic.Name, solution.state.dynamicContext.md.Name));
-            solution.state.staticContext.program.PrintMember(prog, solution.state.staticContext.md.Name);
+            solution.state.StaticContext.program.ClearBody(solution.state.DynamicContext.md);
+            Console.WriteLine(String.Format("Tactic call {0} in {1} results: ", solution.state.DynamicContext.tactic.Name, solution.state.DynamicContext.md.Name));
+            solution.state.StaticContext.program.PrintMember(prog, solution.state.StaticContext.md.Name);
         }
 
         private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)
@@ -305,7 +335,7 @@ namespace LazyTacny
         {
             List<MemberDecl> mdl = new List<MemberDecl>();
             foreach (MemberDecl md in cd.Members)
-                if (!(md is Tactic))
+                if (!(md is ITactic))
                     mdl.Add(md);
 
             return new ClassDecl(cd.tok, cd.Name, cd.Module, cd.TypeArgs, mdl, cd.Attributes, cd.TraitsTyp);
@@ -315,12 +345,12 @@ namespace LazyTacny
         private static TopLevelDecl ExtractContext(MemberDecl md, ClassDecl cd)
         {
             Dictionary<string, MemberDecl> context = new Dictionary<string, MemberDecl>();
-            if(md is Method)
+            if (md is Method)
             {
                 Method method = Util.Copy.CopyMethod(md as Method);
                 // check what member declarations are called in the pre condition
                 List<MaybeFreeExpression> lMfe = method.Req;
-                foreach(var mfe in lMfe)
+                foreach (var mfe in lMfe)
                 {
                     Expression exp = mfe.E;
                 }

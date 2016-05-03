@@ -32,7 +32,7 @@ namespace LazyTacny
 
             var nameLiteralExpr = callArguments[0] as StringLiteralExpr;
             Contract.Assert(nameLiteralExpr != null, Util.Error.MkErr(st, 1, "string"));
-            var count = staticContext.program.members.Keys.Count(x => x == nameLiteralExpr.AsStringLiteral());
+            var count = StaticContext.program.members.Keys.Count(x => x == nameLiteralExpr.AsStringLiteral());
             if(count == 0) {
                 yield return AddNewLocal<StringLiteralExpr>(lv, Util.Copy.CopyStringLiteralExpr(nameLiteralExpr));
             } else

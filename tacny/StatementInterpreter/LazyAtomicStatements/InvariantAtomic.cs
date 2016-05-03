@@ -67,7 +67,7 @@ namespace LazyTacny
                 Contract.Assert(invariant != null, Util.Error.MkErr(st, 1, typeof(MaybeFreeExpression)));
                 WhileStmt nws = null;
 
-                WhileStmt ws = FindWhileStmt(staticContext.tac_call, staticContext.md);
+                WhileStmt ws = FindWhileStmt(StaticContext.tac_call, StaticContext.md);
                 Contract.Assert(ws != null, Util.Error.MkErr(st, 11));
                 // if we already added new invariants to the statement, use the updated statement instead
                 nws = GetUpdated(ws) as WhileStmt;

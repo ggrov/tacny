@@ -44,7 +44,6 @@ namespace LazyTacny
                     }
                 }
             }
-
             // temp hack
             List<Solution> final = new List<Solution>();
             foreach (var solution in solution_list.GetFinal())
@@ -53,6 +52,7 @@ namespace LazyTacny
             Dafny.Program prog = tacnyProgram.ParseProgram();
             foreach (var solution in final)
             {
+                if(solution.state.IsFunction)
                 solution.GenerateProgram(ref prog);
             }
             tacnyProgram.dafnyProgram = prog;
@@ -60,7 +60,6 @@ namespace LazyTacny
             return prog;
 
         }
-
 
         private Solution LazyScanMemberBody(MemberDecl md)
         {
@@ -71,8 +70,19 @@ namespace LazyTacny
             {
                 var fun = md as Function;
                 Tacny.ExpressionTree expt = null;
-                if(fun.Body != null)
-                    expt = Tacny.ExpressionTree.ExpressionToTree(fun.Body);
+                if (fun.Body == null)
+                    return null;
+                 expt = Tacny.ExpressionTree.ExpressionToTree(fun.Body);
+                expt.FindAndResolveTacticApplication(tacnyProgram, fun);
+                var res = expt.TreeToExpression();
+                var newFun = new Function(fun.tok, fun.Name, fun.HasStaticKeyword, fun.IsProtected, fun.IsGhost, fun.TypeArgs, fun.Formals, fun.ResultType, fun.Req, fun.Reads, fun.Ens, fun.Decreases, res, fun.Attributes, fun.SignatureEllipsis);
+                var ac = new Atomic();
+                ac.IsFunction = true;
+                ac.DynamicContext.newTarget = newFun;
+                return new Solution(ac);
+                var p = new Dafny.Printer(Console.Out);
+                p.PrintFunction(newFun, 0 , false);
+
             }
             else if (md is Method)
             {

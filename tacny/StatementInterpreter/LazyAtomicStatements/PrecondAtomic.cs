@@ -37,7 +37,7 @@ namespace LazyTacny
             }
             else
             {
-                memberDecl = staticContext.md;
+                memberDecl = StaticContext.md;
             }
 
             Function fun = memberDecl as Function;

@@ -26,7 +26,7 @@ namespace LazyTacny
 
             try
             {
-                memberDecl = staticContext.program.members[memberName.AsStringLiteral()];
+                memberDecl = StaticContext.program.members[memberName.AsStringLiteral()];
             } catch (KeyNotFoundException e)
             {
                 Contract.Assert(false, Util.Error.MkErr(st, 20, memberName.AsStringLiteral()));

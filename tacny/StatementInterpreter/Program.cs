@@ -513,6 +513,13 @@ namespace Tacny
             return tactics.ContainsKey(name);
         }
 
+        public bool IsTacticCall(string name)
+        {
+            if (name == null)
+                return false;
+            return tactics.ContainsKey(name);
+        }
+
         public bool IsTacticFuntionCall(UpdateStmt us)
         {
             string name = GetSignature(us);

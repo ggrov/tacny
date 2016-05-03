@@ -40,7 +40,7 @@ namespace Tacny
             this.root = root;
         }
         [Pure]
-        public bool isLeaf()
+        public bool IsLeaf()
         {
             return lChild == null && rChild == null;
         }
@@ -52,7 +52,7 @@ namespace Tacny
 
         public int OccurrenceOf(Expression exp)
         {
-            if (!this.isLeaf())
+            if (!this.IsLeaf())
                 return lChild.OccurrenceOf(exp) + (rChild == null ? 0 : rChild.OccurrenceOf(exp));
 
             if (exp.GetType() == data.GetType())
@@ -89,7 +89,7 @@ namespace Tacny
 
         private ExpressionTree _CopyTree()
         {
-            if (isLeaf())
+            if (IsLeaf())
                 return new ExpressionTree(data, null, null, null);
 
             return new ExpressionTree(data, null, lChild._CopyTree(), (rChild == null ? null : rChild._CopyTree()));
@@ -123,7 +123,7 @@ namespace Tacny
          */
         private void SetParent()
         {
-            if (!isLeaf())
+            if (!IsLeaf())
             {
                 lChild.parent = this;
                 lChild.SetParent();
@@ -134,6 +134,36 @@ namespace Tacny
                 }
             }
 
+        }
+
+        public void FindAndResolveTacticApplication(Program tacnyProgram, Function fun)
+        {
+            if(IsLeaf())
+            {
+                var aps = data as ApplySuffix;
+                if (aps == null)
+                    return;
+                UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
+                if(tacnyProgram.IsTacticCall(us))
+               { 
+                    List<IVariable> variables = new List<IVariable>();
+                    ITactic tac = tacnyProgram.GetTactic(us);
+                    tacnyProgram.SetCurrent(tac, fun);
+                    variables.AddRange(fun.Formals);
+                    // get the resolved variables
+                    List<IVariable> resolved = new List<IVariable>();
+                    Console.Out.WriteLine(string.Format("Resolving {0} in {1}", tac.Name, fun.Name));
+                    resolved.AddRange(fun.Formals); // add input arguments as resolved variables
+                    Expression exp = LazyTacny.Atomic.ResolveTacticFunction(tac, us, fun, tacnyProgram, variables, resolved);
+                    tacnyProgram.currentDebug.Fin();
+                    data = exp;
+                }
+            } else
+            {
+                lChild.FindAndResolveTacticApplication(tacnyProgram, fun);
+                if(rChild != null)
+                    rChild.FindAndResolveTacticApplication(tacnyProgram, fun);
+            }
         }
 
         /**
@@ -158,7 +188,7 @@ namespace Tacny
             Contract.Ensures(Contract.Result<List<Expression>>() != null);
             List<Expression> leafs = new List<Expression>();
 
-            if (isLeaf())
+            if (IsLeaf())
                 leafs.Add(data);
             else
             {
@@ -173,7 +203,7 @@ namespace Tacny
         public Expression TreeToExpression()
         {
             Contract.Ensures(Contract.Result<Expression>() != null);
-            if (isLeaf())
+            if (IsLeaf())
                 return data;
             else
             {
@@ -222,7 +252,7 @@ namespace Tacny
         public void SetRoot()
         {
             root = FindRoot();
-            if (!isLeaf())
+            if (!IsLeaf())
             {
                 lChild.SetRoot();
                 if (rChild != null)

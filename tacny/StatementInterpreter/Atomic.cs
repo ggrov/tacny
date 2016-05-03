@@ -799,7 +799,7 @@ namespace Tacny
         protected Expression EvaluateExpression(ExpressionTree expt)
         {
             Contract.Requires(expt != null);
-            if (expt.isLeaf())
+            if (expt.IsLeaf())
             {
                 return EvaluateLeaf(expt) as Dafny.LiteralExpr;
             }
@@ -851,7 +851,7 @@ namespace Tacny
         {
             Contract.Requires(expt != null);
             // if the node is leaf, cast it to bool and return
-            if (expt.isLeaf())
+            if (expt.IsLeaf())
             {
                 Dafny.LiteralExpr lit = EvaluateLeaf(expt) as Dafny.LiteralExpr;
                 return lit.Value is bool ? (bool)lit.Value : false;
@@ -860,7 +860,7 @@ namespace Tacny
             else if (expt.lChild != null && expt.rChild == null)
                 return EvaluateEqualityExpression(expt.lChild);
             // if there is no more nesting resolve the expression
-            else if (expt.lChild.isLeaf() && expt.rChild.isLeaf())
+            else if (expt.lChild.IsLeaf() && expt.rChild.IsLeaf())
             {
                 Dafny.LiteralExpr lhs = null;
                 Dafny.LiteralExpr rhs = null;
@@ -919,7 +919,7 @@ namespace Tacny
         /// <returns></returns>
         protected Expression EvaluateLeaf(ExpressionTree expt)
         {
-            Contract.Requires(expt != null && expt.isLeaf());
+            Contract.Requires(expt != null && expt.IsLeaf());
             if (expt.data is NameSegment || expt.data is ApplySuffix)
             {
                 Expression result = null;
@@ -942,7 +942,7 @@ namespace Tacny
         protected void ResolveExpression(ExpressionTree guard)
         {
             Contract.Requires(guard != null);
-            if (guard.isLeaf())
+            if (guard.IsLeaf())
             {
                 // we only need to replace nameSegments
                 if (guard.data is NameSegment)

@@ -30,7 +30,7 @@ namespace LazyTacny
             Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
 
 
-            foreach (var member in staticContext.program.members.Values)
+            foreach (var member in StaticContext.program.members.Values)
             {
                 Lemma lem = member as Lemma;
                 FixpointLemma fl = member as FixpointLemma;

@@ -73,7 +73,7 @@ namespace LazyTacny
         {
             Contract.Requires(expt != null);
             // if the node is leaf, cast it to bool and return
-            if (expt.isLeaf())
+            if (expt.IsLeaf())
             {
                 Dafny.LiteralExpr lit = EvaluateLeaf(expt) as Dafny.LiteralExpr;
                 return lit.Value is bool ? (bool)lit.Value : false;
@@ -82,7 +82,7 @@ namespace LazyTacny
             else if (expt.lChild != null && expt.rChild == null)
                 return EvaluateGuardTree(expt.lChild);
               // if there is no more nesting resolve the expression
-            else if (expt.lChild.isLeaf() && expt.rChild.isLeaf())
+            else if (expt.lChild.IsLeaf() && expt.rChild.IsLeaf())
             {
                 Dafny.LiteralExpr lhs = null;
                 Dafny.LiteralExpr rhs = null;
