@@ -1120,6 +1120,7 @@ bool IsType(ref IToken pt) {
 		Expression body = null;
 		bool isPredicate = false; bool isIndPredicate = false; bool isCoPredicate = false;
 		bool isFunctionMethod = false;
+		bool isFunctionTactic = false;
 		IToken bodyStart = Token.NoToken;
 		IToken bodyEnd = Token.NoToken;
 		IToken signatureEllipsis = null;
@@ -1127,9 +1128,14 @@ bool IsType(ref IToken pt) {
 		
 		if (la.kind == 36) {
 			Get();
-			if (la.kind == 82) {
-				Get();
-				isFunctionMethod = true; 
+			if (la.kind == 58 || la.kind == 82) {
+				if (la.kind == 82) {
+					Get();
+					isFunctionMethod = true; 
+				} else {
+					Get();
+					isFunctionTactic = true; 
+				}
 			}
 			if (mmod.IsGhost) { SemErr(t, "functions cannot be declared 'ghost' (they are ghost by default)"); }
 			
@@ -1294,10 +1300,6 @@ bool IsType(ref IToken pt) {
 		case 58: {
 			Get();
 			isTactic = true; 
-			if (la.kind == 36) {
-				Get();
-				isTFunction = true; 
-			}
 			break;
 		}
 		case 39: {

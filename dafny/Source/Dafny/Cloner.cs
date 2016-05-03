@@ -671,6 +671,9 @@ namespace Microsoft.Dafny
       } else if (f is CoPredicate) {
         return new CoPredicate(Tok(f.tok), newName, f.HasStaticKeyword, f.IsProtected, tps, formals,
           req, reads, ens, body, CloneAttributes(f.Attributes), null);
+      } else if (f is TacticFunction) {
+        return new TacticFunction(Tok(f.tok), newName, f.HasStaticKeyword, f.IsProtected, f.IsGhost, tps, formals, CloneType(f.ResultType),
+            req, reads, ens, decreases, body, CloneAttributes(f.Attributes), null);
       } else {
         return new Function(Tok(f.tok), newName, f.HasStaticKeyword, f.IsProtected, f.IsGhost, tps, formals, CloneType(f.ResultType),
           req, reads, ens, decreases, body, CloneAttributes(f.Attributes), null);
@@ -701,15 +704,10 @@ namespace Microsoft.Dafny
       } else if (m is Lemma) {
         return new Lemma(Tok(m.tok), m.Name, m.HasStaticKeyword, tps, ins, m.Outs.ConvertAll(CloneFormal),
           req, mod, ens, decreases, body, CloneAttributes(m.Attributes), null);
-      }
-      else if(m is TacticFunction) {
-          return new TacticFunction(Tok(m.tok), m.Name, m.HasStaticKeyword, tps, ins, body, CloneAttributes(m.Attributes), null);
       } else if (m is Tactic) {
           return new Tactic(Tok(m.tok), m.Name, m.HasStaticKeyword, tps, ins, m.Outs.ConvertAll(CloneFormal),
               req, mod, ens, decreases, body, CloneAttributes(m.Attributes), null);
-      }
-      else
-      {
+      } else {
           return new Method(Tok(m.tok), m.Name, m.HasStaticKeyword, m.IsGhost, tps, ins, m.Outs.ConvertAll(CloneFormal),
             req, mod, ens, decreases, body, CloneAttributes(m.Attributes), null);
       }

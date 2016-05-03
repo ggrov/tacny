@@ -145,8 +145,8 @@ namespace LazyTacny
                 }
             }
 
-
-            Method nMethod = GenerateMethod(method, body, ac.dynamicContext.new_target);
+            //URGENT TODO: function generation
+            var nMethod = GenerateMethod(method, body, ac.dynamicContext.newTarget as Method);
             ClassDecl curDecl;
             for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++)
             {

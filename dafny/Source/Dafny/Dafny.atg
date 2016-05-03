@@ -959,10 +959,7 @@ MethodDecl<MemberModifiers mmod, bool allowConstructor, out Method/*!*/ m>
   .)
   SYNC
   ( "method"						
-  | ("tactic"						            (. isTactic = true; .)
-    [
-      "function"                      (. isTFunction = true; .)
-    ])
+  | "tactic"						            (. isTactic = true; .)
   | "lemma"                         (. isLemma = true; .)
   | "colemma"                       (. isCoLemma = true; .)
   | "comethod"                      (. isCoLemma = true;
@@ -1041,12 +1038,9 @@ MethodDecl<MemberModifiers mmod, bool allowConstructor, out Method/*!*/ m>
        m = new Lemma(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
                      req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
      }else if(isTactic) {
-     if(isTFunction) {
-       m = new TacticFunction(tok, id.val, mmod.IsStatic, typeArgs, ins, body, attrs, signatureEllipsis);;
-     } else {
 	     m = new Tactic(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
                      req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
-      }
+      
 	 } else {
        m = new Method(tok, id.val, mmod.IsStatic, mmod.IsGhost, typeArgs, ins, outs,
                       req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
@@ -1261,15 +1255,18 @@ FunctionDecl<MemberModifiers mmod, out Function/*!*/ f>
      Expression body = null;
      bool isPredicate = false; bool isIndPredicate = false; bool isCoPredicate = false;
      bool isFunctionMethod = false;
+     bool isFunctionTactic = false;
      IToken bodyStart = Token.NoToken;
      IToken bodyEnd = Token.NoToken;
      IToken signatureEllipsis = null;
      bool missingOpenParen;
   .)
   /* ----- function ----- */
-  ( "function"
-    [ "method"                 (. isFunctionMethod = true; .)
+  ( "function" 
+    [ "method"                 (. isFunctionMethod = true; .) |
+      "tactic"                 (. isFunctionTactic = true; .)
     ]
+
     (. if (mmod.IsGhost) { SemErr(t, "functions cannot be declared 'ghost' (they are ghost by default)"); }
     .)
     { Attribute<ref attrs> }
@@ -1346,7 +1343,11 @@ FunctionDecl<MemberModifiers mmod, out Function/*!*/ f>
      } else if (isCoPredicate) {
         f = new CoPredicate(tok, id.val, mmod.IsStatic, mmod.IsProtected, typeArgs, formals,
                             reqs, reads, ens, body, attrs, signatureEllipsis);
-     } else {
+     } else if(isFunctionTactic) {
+        f = new TacticFunction(tok, id.val, mmod.IsStatic, mmod.IsProtected, !isFunctionMethod, typeArgs, formals, returnType,
+                         reqs, reads, ens, new Specification<Expression>(decreases, null), body, attrs, signatureEllipsis);
+     }
+     else {
         f = new Function(tok, id.val, mmod.IsStatic, mmod.IsProtected, !isFunctionMethod, typeArgs, formals, returnType,
                          reqs, reads, ens, new Specification<Expression>(decreases, null), body, attrs, signatureEllipsis);
      }

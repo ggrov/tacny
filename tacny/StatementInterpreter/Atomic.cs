@@ -42,7 +42,7 @@ namespace Tacny
             this.globalContext = ac.globalContext;
         }
 
-        public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, Program program)
+        public Atomic(MemberDecl md, ITactic tac, UpdateStmt tac_call, Program program)
         {
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
@@ -51,7 +51,7 @@ namespace Tacny
             this.globalContext = new StaticContext(md, tac_call, program);
         }
 
-        public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, StaticContext globalContext)
+        public Atomic(MemberDecl md, ITactic tac, UpdateStmt tac_call, StaticContext globalContext)
         {
             this.localContext = new DynamicContext(md, tac, tac_call);
             this.globalContext = globalContext;
@@ -75,7 +75,7 @@ namespace Tacny
         }
 
 
-        public static void ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, List<IVariable> resolved, ref SolutionList result)
+        public static void ResolveTactic(ITactic tac, UpdateStmt tac_call, MemberDecl md, Program tacnyProgram, List<IVariable> variables, List<IVariable> resolved, ref SolutionList result)
         {
             Contract.Requires(tac != null);
             Contract.Requires(tac_call != null);
@@ -99,7 +99,7 @@ namespace Tacny
                 // update local and global contexts for each state
                 foreach (var sol in result.plist)
                 {
-                    MemberDecl target = sol.state.localContext.new_target == null ? md : sol.state.localContext.new_target;
+                    MemberDecl target = sol.state.localContext.newTarget == null ? md : sol.state.localContext.newTarget;
                     StaticContext gc = sol.state.globalContext;
                     gc.tac_call = tac_call;
                     gc.md = target;
@@ -291,7 +291,7 @@ namespace Tacny
                     else if (globalContext.program.IsTacticCall(us))
                     {
                         Atomic ac;
-                        Tactic tac = globalContext.program.GetTactic(us);
+                        Tactic tac = globalContext.program.GetTactic(us) as Tactic;
                         ac = new Atomic(localContext.md, tac, us, globalContext);
 
                         ExprRhs er = (ExprRhs)ac.localContext.tac_call.Rhss[0];
@@ -665,7 +665,7 @@ namespace Tacny
         {
             globalContext.resolved.Clear();
             globalContext.resolved.AddRange(localContext.generatedStatements.Values.ToArray());
-            globalContext.new_target = localContext.new_target;
+            globalContext.newTarget = localContext.newTarget;
         }
 
         public void AddLocal(IVariable lv, object value)
@@ -736,12 +736,12 @@ namespace Tacny
 
         public Method GetNewTarget()
         {
-            return localContext.new_target;
+            return localContext.newTarget as Method;
         }
 
         public void SetNewTarget(Method new_target)
         {
-            localContext.new_target = new_target;
+            localContext.newTarget = new_target;
         }
         /// <summary>
         /// Creates a new tactic from a given tactic body and updates the context
@@ -753,7 +753,7 @@ namespace Tacny
         protected Solution CreateTactic(List<Statement> newBody, bool decCounter = true)
         {
             Contract.Ensures(Contract.Result<Solution>() != null);
-            Tactic tac = localContext.tactic;
+            Tactic tac = localContext.tactic as Tactic;
             Tactic newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
                                         tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
                                         tac.Decreases, new BlockStmt(tac.Body.Tok, tac.Body.EndTok, newBody),

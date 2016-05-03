@@ -46,16 +46,16 @@ namespace LazyTacny
             this.searchStrat = ac.searchStrat;
         }
 
-        public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, Tacny.Program program)
+        public Atomic(MemberDecl md, ITactic tactic, UpdateStmt tac_call, Tacny.Program program)
         {
             Contract.Requires(md != null);
-            Contract.Requires(tac != null);
+            Contract.Requires(tactic != null);
 
-            this.dynamicContext = new DynamicContext(md, tac, tac_call);
+            this.dynamicContext = new DynamicContext(md, tactic, tac_call);
             this.staticContext = new StaticContext(md, tac_call, program);
         }
 
-        public Atomic(MemberDecl md, Tactic tac, UpdateStmt tac_call, StaticContext globalContext)
+        public Atomic(MemberDecl md, ITactic tac, UpdateStmt tac_call, StaticContext globalContext)
         {
             this.dynamicContext = new DynamicContext(md, tac, tac_call);
             this.staticContext = globalContext;
@@ -88,7 +88,7 @@ namespace LazyTacny
         }
 
 
-        public static Solution ResolveTactic(Tactic tac, UpdateStmt tac_call, MemberDecl md, Tacny.Program tacnyProgram, List<IVariable> variables, List<IVariable> resolved)//, SolutionList result)
+        public static Solution ResolveTactic(ITactic tac, UpdateStmt tac_call, MemberDecl md, Tacny.Program tacnyProgram, List<IVariable> variables, List<IVariable> resolved)//, SolutionList result)
         {
             Contract.Requires(tac != null);
             Contract.Requires(tac_call != null);
@@ -149,9 +149,8 @@ namespace LazyTacny
             Atomic ac = this.Copy();
             ac.dynamicContext.tacticBody = body.Body;
             ac.dynamicContext.ResetCounter();
-            foreach (var result in strat.Search(ac, false))
+            foreach (var item in strat.Search(ac, false))
             {
-                var item = new Solution(result.state.Copy());
                 item.state.dynamicContext.tacticBody = this.dynamicContext.tacticBody; // set the body 
                 item.state.dynamicContext.tac_call = this.dynamicContext.tac_call;
                 item.state.dynamicContext.SetCounter(this.dynamicContext.GetCounter());
@@ -597,7 +596,7 @@ namespace LazyTacny
         {
             staticContext.resolved.Clear();
             staticContext.resolved.AddRange(dynamicContext.generatedStatements.Values.ToArray());
-            staticContext.new_target = dynamicContext.new_target;
+            staticContext.newTarget = dynamicContext.newTarget;
         }
 
         public void AddLocal(IVariable lv, object value)
@@ -666,14 +665,14 @@ namespace LazyTacny
             return true;
         }
 
-        public Method GetNewTarget()
+        public MemberDecl GetNewTarget()
         {
-            return dynamicContext.new_target;
+            return dynamicContext.newTarget;
         }
 
-        public void SetNewTarget(Method new_target)
+        public void SetNewTarget(MemberDecl new_target)
         {
-            dynamicContext.new_target = new_target;
+            dynamicContext.newTarget = new_target;
         }
         /// <summary>
         /// Creates a new tactic from a given tactic body and updates the context
@@ -682,24 +681,24 @@ namespace LazyTacny
         /// <param name="newBody"></param>
         /// <param name="decCounter"></param>
         /// <returns></returns>
-        protected Solution CreateTactic(List<Statement> newBody, bool decCounter = true)
-        {
-            Contract.Ensures(Contract.Result<Solution>() != null);
-            Tactic tac = dynamicContext.tactic;
-            Tactic newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
-                                        tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
-                                        tac.Decreases, new BlockStmt(tac.Body.Tok, tac.Body.EndTok, newBody),
-                                        tac.Attributes, tac.SignatureEllipsis);
-            Atomic newAtomic = this.Copy();
-            newAtomic.dynamicContext.tactic = newTac;
-            newAtomic.dynamicContext.tacticBody = newBody;
-            /* HACK */
-            // decrase the tactic body counter
-            // so the interpreter would execute newly inserted atomic
-            if (decCounter)
-                newAtomic.dynamicContext.DecCounter();
-            return new Solution(newAtomic);
-        }
+        //protected Solution CreateTactic(List<Statement> newBody, bool decCounter = true)
+        //{
+        //    Contract.Ensures(Contract.Result<Solution>() != null);
+        //    Tactic tac = dynamicContext.tactic;
+        //    Tactic newTac = new Tactic(tac.tok, tac.Name, tac.HasStaticKeyword,
+        //                                tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
+        //                                tac.Decreases, new BlockStmt(tac.Body.Tok, tac.Body.EndTok, newBody),
+        //                                tac.Attributes, tac.SignatureEllipsis);
+        //    Atomic newAtomic = this.Copy();
+        //    newAtomic.dynamicContext.tactic = newTac;
+        //    newAtomic.dynamicContext.tacticBody = newBody;
+        //    /* HACK */
+        //    // decrase the tactic body counter
+        //    // so the interpreter would execute newly inserted atomic
+        //    if (decCounter)
+        //        newAtomic.dynamicContext.DecCounter();
+        //    return new Solution(newAtomic);
+        //}
 
         /// <summary>
         /// Replaces the statement at current body counter with a new statement

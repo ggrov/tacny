@@ -39,7 +39,8 @@ namespace Tacny
                 if (!globalContext.program.HasError())
                 {
                     // change back the context of the state
-                    sol.state.localContext.tacticBody = localContext.tactic.Body.Body;// sol.state.localContext.tac.Body.Body;
+                    if(localContext.tactic is Tactic)
+                        sol.state.localContext.tacticBody = ((Tactic)localContext.tactic).Body.Body;// sol.state.localContext.tac.Body.Body;
                     sol.state.localContext.tactic = localContext.tactic;
                     sol.state.localContext.SetCounter(localContext.GetCounter());
                     solution_list.Add(sol);
@@ -54,7 +55,8 @@ namespace Tacny
                 foreach (var sol in result)
                 {
                     // change back the context of the state
-                    sol.state.localContext.tacticBody = localContext.tactic.Body.Body;// sol.state.localContext.tac.Body.Body;
+                    if (localContext.tactic is Tactic)
+                        sol.state.localContext.tacticBody = ((Tactic)localContext.tactic).Body.Body;// sol.state.localContext.tac.Body.Body;
                     sol.state.localContext.tactic = localContext.tactic;
                     sol.state.localContext.SetCounter(localContext.GetCounter());
                     solution_list.Add(sol);

@@ -78,10 +78,11 @@ namespace LazyTacny
             yield break;
         }
 
-        public  static Strategy GetSearchStrategy(Tactic tac)
+        public  static Strategy GetSearchStrategy(ITactic tac)
         {
             Contract.Requires<ArgumentNullException>(tac != null);
-            Attributes attrs = tac.Attributes;
+            MemberDecl md = tac as MemberDecl;
+            Attributes attrs = md.Attributes;
             if (attrs != null)
             {
                 if (attrs.Name == "search")

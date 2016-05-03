@@ -28,27 +28,31 @@ namespace Tacny
     #region LocalContext
     public class DynamicContext : Context
     {
-        public Tactic tactic = null;  // The called tactic
+        public ITactic tactic = null;  // The called tactic
         public List<Statement> tacticBody = new List<Statement>(); // body of the currently worked tactic
         public Dictionary<Dafny.IVariable, object> localDeclarations = new Dictionary<Dafny.IVariable, object>();
         public Dictionary<Statement, Statement> generatedStatements = new Dictionary<Statement, Statement>();
-        public Method new_target = null;
+        public MemberDecl newTarget = null;
 
         private int tacCounter;
         public bool isPartialyResolved = false;
 
-        public DynamicContext(MemberDecl md, Tactic tac, UpdateStmt tac_call)
+        public DynamicContext(MemberDecl md, ITactic tac, UpdateStmt tac_call)
             : base(md, tac_call)
         {
             this.tactic = tac;
-            this.tacticBody = new List<Statement>(tac.Body.Body.ToArray());
+            if (tactic is Tactic)
+            {
+                var tmp = tactic as Tactic;
+                this.tacticBody = new List<Statement>(tmp.Body.Body.ToArray());
+            }
             this.tacCounter = 0;
             FillTacticInputs();
         }
 
-        public DynamicContext(MemberDecl md, Tactic tac, UpdateStmt tac_call,
-            List<Statement> tac_body, Dictionary<Dafny.IVariable, object> local_variables,
-            Dictionary<Statement, Statement> updated_statements, int tacCounter, Method old_target)
+        public DynamicContext(MemberDecl md, ITactic tac, UpdateStmt tac_call,
+            List<Statement> tac_body, Dictionary<IVariable, object> local_variables,
+            Dictionary<Statement, Statement> updated_statements, int tacCounter, MemberDecl old_target)
             : base(md, tac_call)
         {
             this.tactic = tac;
@@ -61,14 +65,14 @@ namespace Tacny
             this.generatedStatements = updated_statements;
 
             this.tacCounter = tacCounter;
-            this.new_target = old_target;
+            this.newTarget = old_target;
         }
 
         public DynamicContext Copy()
         {
-            Method newM = Util.Copy.CopyMember(md);
-            Tactic newTac = Util.Copy.CopyMember(tactic) as Tactic;
-            Method new_target = Util.Copy.CopyMember(this.new_target);
+            var newM = Util.Copy.CopyMember(md);
+            ITactic newTac = Util.Copy.CopyMember(tactic as MemberDecl) as ITactic;
+            var new_target = newTarget != null ? Util.Copy.CopyMember(this.newTarget) : null;
             return new DynamicContext(newM, newTac, tac_call, tacticBody, localDeclarations, Util.Copy.CopyStatementDict(generatedStatements), tacCounter, new_target);
         }
 
@@ -81,9 +85,16 @@ namespace Tacny
             localDeclarations.Clear();
             ExprRhs er = (ExprRhs)tac_call.Rhss[0];
             List<Expression> exps = ((ApplySuffix)er.Expr).Args;
-            Contract.Assert(exps.Count == tactic.Ins.Count);
-            for (int i = 0; i < exps.Count; i++)
-                localDeclarations.Add(tactic.Ins[i], exps[i]);
+            Tactic tac = tactic as Tactic;
+            if (tac != null)
+            {
+                Contract.Assert(exps.Count == tac.Ins.Count);
+                for (int i = 0; i < exps.Count; i++)
+                    localDeclarations.Add(tac.Ins[i], exps[i]);
+            } else
+            {
+                
+            }
         }
 
         public bool HasLocalWithName(NameSegment ns)
@@ -246,7 +257,7 @@ namespace Tacny
         public Dictionary<IVariable, Dafny.Type> variable_types = new Dictionary<IVariable, Dafny.Type>();
         //public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
         public List<Statement> resolved = new List<Statement>();
-        public Method new_target = null;
+        public MemberDecl newTarget = null;
         public Program program;
 
 

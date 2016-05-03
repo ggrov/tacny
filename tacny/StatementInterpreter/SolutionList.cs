@@ -143,7 +143,7 @@ namespace Tacny
             }
 
 
-            Method nMethod = GenerateMethod(method, body, ac.localContext.new_target);
+            Method nMethod = GenerateMethod(method, body, ac.localContext.newTarget as Method);
             ClassDecl curDecl;
             for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++)
             {

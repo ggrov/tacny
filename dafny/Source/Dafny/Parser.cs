@@ -1120,6 +1120,7 @@ bool IsType(ref IToken pt) {
 		Expression body = null;
 		bool isPredicate = false; bool isIndPredicate = false; bool isCoPredicate = false;
 		bool isFunctionMethod = false;
+		bool isFunctionTactic = false;
 		IToken bodyStart = Token.NoToken;
 		IToken bodyEnd = Token.NoToken;
 		IToken signatureEllipsis = null;
@@ -1127,9 +1128,14 @@ bool IsType(ref IToken pt) {
 		
 		if (la.kind == 36) {
 			Get();
-			if (la.kind == 82) {
-				Get();
-				isFunctionMethod = true; 
+			if (la.kind == 58 || la.kind == 82) {
+				if (la.kind == 82) {
+					Get();
+					isFunctionMethod = true; 
+				} else {
+					Get();
+					isFunctionTactic = true; 
+				}
 			}
 			if (mmod.IsGhost) { SemErr(t, "functions cannot be declared 'ghost' (they are ghost by default)"); }
 			
@@ -1246,7 +1252,11 @@ bool IsType(ref IToken pt) {
 		} else if (isCoPredicate) {
 		  f = new CoPredicate(tok, id.val, mmod.IsStatic, mmod.IsProtected, typeArgs, formals,
 		                      reqs, reads, ens, body, attrs, signatureEllipsis);
-		} else {
+		} else if(isFunctionTactic) {
+		  f = new TacticFunction(tok, id.val, mmod.IsStatic, mmod.IsProtected, !isFunctionMethod, typeArgs, formals, returnType,
+		                   reqs, reads, ens, new Specification<Expression>(decreases, null), body, attrs, signatureEllipsis);
+		}
+		else {
 		  f = new Function(tok, id.val, mmod.IsStatic, mmod.IsProtected, !isFunctionMethod, typeArgs, formals, returnType,
 		                   reqs, reads, ens, new Specification<Expression>(decreases, null), body, attrs, signatureEllipsis);
 		}
@@ -1294,10 +1304,6 @@ bool IsType(ref IToken pt) {
 		case 58: {
 			Get();
 			isTactic = true; 
-			if (la.kind == 36) {
-				Get();
-				isTFunction = true; 
-			}
 			break;
 		}
 		case 39: {
@@ -1413,12 +1419,9 @@ bool IsType(ref IToken pt) {
 		 m = new Lemma(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
 		               req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
 		}else if(isTactic) {
-		if(isTFunction) {
-		 m = new TacticFunction(tok, id.val, mmod.IsStatic, typeArgs, ins, body, attrs, signatureEllipsis);;
-		} else {
 		m = new Tactic(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
 		               req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
-		}
+		
 		} else {
 		 m = new Method(tok, id.val, mmod.IsStatic, mmod.IsGhost, typeArgs, ins, outs,
 		                req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);

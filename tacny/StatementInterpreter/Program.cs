@@ -12,46 +12,23 @@ using System.Linq;
 
 namespace Tacny
 {
+
+    public class TopLevelClassDeclaration
+    {
+        ClassDecl classDeclaration;
+        public readonly Dictionary<string, ITactic> tactics;
+        public readonly Dictionary<string, MemberDecl> members;
+        
+
+        public TopLevelClassDeclaration()
+        {
+            tactics = new Dictionary<string, ITactic>();
+            members = new Dictionary<string, MemberDecl>();
+            
+        }
+    }
     public class Program
     {
-        const bool DEBUG = true;
-        private IList<string> fileNames;
-        private string _programId;
-        public string programId
-        {
-            set
-            { _programId = value; }
-            get { return _programId; }
-        }
-        private readonly Dafny.Program _original;
-        private Dafny.Program _program;
-        public Dafny.Program dafnyProgram
-        {
-            set
-            {
-                resolved = false;
-                _program = value;
-                errorInfo = null;
-                stats = null;
-            }
-            get
-            {
-                return _program;
-            }
-
-        }
-        public Bpl.ErrorInformation errorInfo;
-        public List<Bpl.ErrorInformation> errList;
-        public PipelineOutcome po;
-        public Bpl.PipelineStatistics stats;
-        public bool resolved = false;
-
-        public readonly Dictionary<string, Tactic> tactics;
-        public readonly Dictionary<string, MemberDecl> members;
-        public readonly List<DatatypeDecl> globals;
-        public DebugData currentDebug;
-        public List<DebugData> debugDataList;
-
         public class DebugData
         {
             public string tactic = null;
@@ -68,7 +45,7 @@ namespace Tacny
             public int TimeAtBoogie = 0;
             public int TimeAtDafny = 0;
             private bool PrintHeader = true;
-          
+
             public DebugData(string tactic, string method)
             {
                 StartTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
@@ -117,7 +94,49 @@ namespace Tacny
                 Util.Printer.P.PrintCsvData(builder.ToString());
             }
         }
+        
+      
 
+        const bool DEBUG = true;
+        private IList<string> fileNames;
+        private string _programId;
+        public string programId
+        {
+            set
+            { _programId = value; }
+            get { return _programId; }
+        }
+        private readonly Dafny.Program _original;
+        private Dafny.Program _program;
+        public Dafny.Program dafnyProgram
+        {
+            set
+            {
+                resolved = false;
+                _program = value;
+                errorInfo = null;
+                stats = null;
+            }
+            get
+            {
+                return _program;
+            }
+
+        }
+        public ErrorInformation errorInfo;
+        public List<ErrorInformation> errList;
+        public PipelineOutcome po;
+        public PipelineStatistics stats;
+        public bool resolved = false;
+        public List<TopLevelClassDeclaration> topLevelClasses;
+        public TopLevelClassDeclaration currentTopLevelClass;
+        public Dictionary<string, ITactic> tactics { get { return currentTopLevelClass.tactics; } }
+        public Dictionary<string, MemberDecl> members { get { return currentTopLevelClass.members; } }
+        public List<DatatypeDecl> globals;
+        public DebugData currentDebug;
+        public List<DebugData> debugDataList;
+
+       
         public void PrintAllDebugData(bool isCsv = false)
         {
             bool printHeader = true;
@@ -190,7 +209,7 @@ namespace Tacny
             debugData.TimeAtDafny += time;
         }
 
-        public void SetCurrent(Tactic tac, MemberDecl md)
+        public void SetCurrent(ITactic tac, MemberDecl md)
         {
             Contract.Requires(tac != null);
             Contract.Requires(md != null);
@@ -219,7 +238,7 @@ namespace Tacny
                 throw new ArgumentException(err);
             dafnyProgram = ParseProgram();
 
-            Init(out tactics, out members, out globals);
+            Init();
         }
 
         public Program(IList<string> fileNames, string programId, Dafny.Program program)
@@ -228,29 +247,39 @@ namespace Tacny
             this.programId = programId;
             this._original = program;
             this.dafnyProgram = program;
-            Init(out tactics, out members, out globals);
+            Init();
         }
 
-        private void Init(out Dictionary<string, Tactic> tactics, out Dictionary<string, MemberDecl> members, out List<DatatypeDecl> globals)
+        private void Init()
         {
-            tactics = new Dictionary<string, Tactic>();
-            members = new Dictionary<string, MemberDecl>();
-            globals = new List<DatatypeDecl>();
             debugDataList = new List<DebugData>();
+            topLevelClasses = new List<TopLevelClassDeclaration>();
+            globals = new List<DatatypeDecl>();
 
             foreach (var item in dafnyProgram.DefaultModuleDef.TopLevelDecls)
             {
+
                 ClassDecl curDecl = item as ClassDecl;
                 if (curDecl != null)
                 {
+                    var temp = new TopLevelClassDeclaration();
+
                     foreach (var member in curDecl.Members)
                     {
                         Tactic tac = member as Tactic;
                         if (tac != null)
-                            tactics.Add(tac.Name, tac);
+                            temp.tactics.Add(tac.Name, tac);
                         else
-                            members.Add(member.Name, member);
+                        {
+                            var tacFun = member as TacticFunction;
+                            if (tacFun != null)
+                                temp.tactics.Add(tacFun.Name, tacFun);
+                            else
+                                temp.members.Add(member.Name, member);
+                        }
+                            
                     }
+                    topLevelClasses.Add(temp);
                 }
                 else
                 {
@@ -493,7 +522,7 @@ namespace Tacny
             
         }
 
-        public Tactic GetTactic(string name)
+        public ITactic GetTactic(string name)
         {
             if (!tactics.ContainsKey(name))
                 return null;
@@ -501,7 +530,7 @@ namespace Tacny
             return tactics[name];
         }
 
-        public Tactic GetTactic(UpdateStmt us)
+        public ITactic GetTactic(UpdateStmt us)
         {
             string name = GetSignature(us);
             if (name == null)
@@ -816,6 +845,14 @@ namespace Tacny
                 }
             }
 
+        }
+
+        public bool HasTacticApplications()
+        {
+            foreach (var item in topLevelClasses)
+                if (item.tactics.Count > 0)
+                    return true;
+            return false;
         }
     }
 }

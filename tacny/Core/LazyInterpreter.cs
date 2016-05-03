@@ -4,8 +4,7 @@ using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
 using System.Diagnostics.Contracts;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
+
 
 namespace LazyTacny
 {
@@ -22,33 +21,21 @@ namespace LazyTacny
             //Console.SetOut(System.IO.TextWriter.Null);
         }
 
-        public Dafny.Program ResolveProgram()
+        public Program ResolveProgram()
         {
-            
-            if (tacnyProgram.tactics.Count < 1)
+
+            if (!tacnyProgram.HasTacticApplications())
             {
                 return tacnyProgram.ParseProgram();
             }
-            if (Util.TacnyOptions.O.ParallelExecution)
+            foreach (var @class in tacnyProgram.topLevelClasses)
             {
-                Parallel.ForEach(tacnyProgram.members, (member) =>
-            {
-                if (Thread.CurrentThread.Name == null)
-                    Thread.CurrentThread.Name = member.Value.Name;
-                var res = LazyScanMemberBody(tacnyProgram.NewProgram(), member.Value);
-                if (res != null)
-                {
-
-                    solution_list.Add(res);
-                    solution_list.Fin();
-
-                }
-            });
-            }
-            else {
+                tacnyProgram.currentTopLevelClass = @class;
+                if (tacnyProgram.currentTopLevelClass.tactics.Count < 1)
+                    continue;
                 foreach (var member in tacnyProgram.members)
                 {
-                    var res = LazyScanMemberBody(tacnyProgram, member.Value);
+                    var res = LazyScanMemberBody(member.Value);
                     if (res != null)
                     {
                         solution_list.Add(res);
@@ -57,6 +44,7 @@ namespace LazyTacny
                     }
                 }
             }
+
             // temp hack
             List<Solution> final = new List<Solution>();
             foreach (var solution in solution_list.GetFinal())
@@ -68,59 +56,68 @@ namespace LazyTacny
                 solution.GenerateProgram(ref prog);
             }
             tacnyProgram.dafnyProgram = prog;
-            
+
             return prog;
 
         }
 
 
-        private Solution LazyScanMemberBody(Tacny.Program prog, MemberDecl md)
+        private Solution LazyScanMemberBody(MemberDecl md)
         {
             Contract.Requires(md != null);
 
             Debug.WriteLine(String.Format("Scanning member {0} body", md.Name));
-            Method m = md as Method;
-            if (m == null)
-                return null;
-            if (m.Body == null)
-                return null;
-
-            List<IVariable> variables = new List<IVariable>();
-
-            foreach (var st in m.Body.Body)
+            if (md is Function)
             {
-                // register local variables
-                VarDeclStmt vds = st as VarDeclStmt;
-                if (vds != null)
-                    variables.AddRange(vds.Locals);
+                var fun = md as Function;
+                Tacny.ExpressionTree expt = null;
+                if(fun.Body != null)
+                    expt = Tacny.ExpressionTree.ExpressionToTree(fun.Body);
+            }
+            else if (md is Method)
+            {
+                Method m = md as Method;
+                if (m == null)
+                    return null;
+                if (m.Body == null)
+                    return null;
+                List<IVariable> variables = new List<IVariable>();
 
-                UpdateStmt us = st as UpdateStmt;
-                if (us != null)
+                foreach (var st in m.Body.Body)
                 {
-                    if (tacnyProgram.IsTacticCall(us))
+                    // register local variables
+                    VarDeclStmt vds = st as VarDeclStmt;
+                    if (vds != null)
+                        variables.AddRange(vds.Locals);
+
+                    UpdateStmt us = st as UpdateStmt;
+                    if (us != null)
                     {
-                        Debug.WriteLine("Tactic call found");
-                        try
+                        if (this.tacnyProgram.IsTacticCall(us))
                         {
-                            Tactic tac = prog.GetTactic(us);
-                            prog.SetCurrent(tac, md);
-                            variables.AddRange(m.Ins);
-                            variables.AddRange(m.Outs);
-                            //sol_list.AddRange(solution_list.plist);
-                            // get the resolved variables
-                            List<IVariable> resolved = prog.GetResolvedVariables(md);
-                            Console.Out.WriteLine(String.Format("Resolving {0} in {1}", tac.Name, md.Name));
-                            resolved.AddRange(m.Ins); // add input arguments as resolved variables
-                            Solution result = Atomic.ResolveTactic(tac, us, md, prog, variables, resolved);
-                            Debug.IndentLevel = 0;
-//                            Solution.PrintSolution(result);
-                            tacnyProgram.currentDebug.Fin();
-                            return result;
-                        }
-                        catch (Exception e)
-                        {
-                            Util.Printer.Error(e.Message);
-                            return null;
+                            Debug.WriteLine("Tactic call found");
+                            try
+                            {
+                                ITactic tac = tacnyProgram.GetTactic(us);
+                                tacnyProgram.SetCurrent(tac, md);
+                                variables.AddRange(m.Ins);
+                                variables.AddRange(m.Outs);
+                                //sol_list.AddRange(solution_list.plist);
+                                // get the resolved variables
+                                List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
+                                Console.Out.WriteLine(string.Format("Resolving {0} in {1}", tac.Name, md.Name));
+                                resolved.AddRange(m.Ins); // add input arguments as resolved variables
+                                Solution result = Atomic.ResolveTactic(tac, us, md, tacnyProgram, variables, resolved);
+                                Debug.IndentLevel = 0;
+                                //                            Solution.PrintSolution(result);
+                                this.tacnyProgram.currentDebug.Fin();
+                                return result;
+                            }
+                            catch (Exception e)
+                            {
+                                Util.Printer.Error(e.Message);
+                                return null;
+                            }
                         }
                     }
                 }

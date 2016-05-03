@@ -236,19 +236,11 @@ namespace Util
                 oldTac.Attributes, oldTac.SignatureEllipsis);
         }
 
-        public static Method CopyMember(MemberDecl md)
+        public static MemberDecl CopyMember(MemberDecl md)
         {
-            if (md == null)
-                return null;
-            System.Type type = md.GetType();
-            if (type == typeof(Lemma))
-                return CopyLemma(md);
-            else if (type == typeof(CoLemma))
-                return CopyCoLemma(md);
-            else if (type == typeof(Tactic))
-                return CopyTactic(md);
-            else
-                return CopyMethod(md);
+            Contract.Requires(md != null);
+            Cloner cl = new Cloner();
+            return cl.CloneMember(md);
         }
 
         //todo test whether oldDict.values require deep copy

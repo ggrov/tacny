@@ -93,7 +93,7 @@ namespace Tacny
                         target.SignatureEllipsis);
                 
                 // register new method
-                this.localContext.new_target = result;
+                this.localContext.newTarget = result;
                 globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
             }
 

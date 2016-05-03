@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
 using Dafny = Microsoft.Dafny;
-using Microsoft.Boogie;
-using Bpl = Microsoft.Boogie;
+
 
 namespace Tacny
 {

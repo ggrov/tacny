@@ -25,10 +25,13 @@ namespace Tacny
             ResolveBody(stmt.Body, out result);
             foreach (var sol in result)
             {
-                if(sol.state.localContext.generatedStatements.Count > 0 || sol.state.localContext.new_target != null)
+                if(sol.state.localContext.generatedStatements.Count > 0 || sol.state.localContext.newTarget != null)
                 {
                     // change back the context of the state
-                    sol.state.localContext.tacticBody = localContext.tactic.Body.Body;// sol.state.localContext.tac.Body.Body;
+                    if (localContext.tactic is Tactic)
+                    {
+                        sol.state.localContext.tacticBody = ((Tactic)localContext.tactic).Body.Body;// sol.state.localContext.tac.Body.Body;
+                    }
                     sol.state.localContext.tactic = localContext.tactic;
                     sol.state.localContext.SetCounter(localContext.GetCounter());
                     solution_list.Add(sol);

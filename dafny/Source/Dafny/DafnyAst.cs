@@ -2588,6 +2588,11 @@ namespace Microsoft.Dafny
         /// </summary>
         bool InferredDecreases { get; set; }
     }
+    public interface ITactic
+    {
+        List<Formal> Ins { get; }
+        string Name { get; }
+    }
     public class DontUseICallable : ICallable
     {
         public bool IsGhost { get { throw new cce.UnreachableException(); } }
@@ -3783,9 +3788,14 @@ namespace Microsoft.Dafny
         }
     }
 
-    public class Tactic : Method
+    public class Tactic : Method, ITactic
     {
         public override string WhatKind { get { return "tactic"; } }
+
+        List<Formal> ITactic.Ins { get { return base.Ins; } }
+
+        public string Name { get { return base.Name; } }
+
         public Tactic(IToken tok, 
                      string name,
                      bool hasStaticKeyword,
@@ -3804,16 +3814,19 @@ namespace Microsoft.Dafny
         }
     }
 
-    public class TacticFunction : Tactic
+    public class TacticFunction : Function, ITactic
     {
         public override string WhatKind { get { return "tactic function"; } }
-        public TacticFunction(IToken tok, string name,
-                     bool hasStaticKeyword,
-                     [Captured] List<TypeParameter> typeArgs,
-                     [Captured] List<Formal> ins,
-                     [Captured] BlockStmt body,
-                     Attributes attributes, IToken signatureEllipsis)
-            : base(tok, name, hasStaticKeyword, typeArgs, ins, new List<Formal>(), new List<MaybeFreeExpression>(), new Specification<FrameExpression>(new List<FrameExpression>(), null), new List<MaybeFreeExpression>(), new Specification<Expression>(new List<Expression>(), null), body, attributes, signatureEllipsis) { }
+
+        public List<Formal> Ins { get { return base.Formals; } }
+        public string Name { get { return base.Name;  } }
+
+        public TacticFunction(IToken tok, string name, bool hasStaticKeyword, bool isProtected, bool isGhost,
+                        List<TypeParameter> typeArgs, List<Formal> formals, Type resultType,
+                        List<Expression> req, List<FrameExpression> reads, List<Expression> ens, Specification<Expression> decreases,
+                        Expression body, Attributes attributes, IToken signatureEllipsis)
+            : base(tok, name, hasStaticKeyword, isProtected, true, typeArgs, formals, new BoolType(),
+                   req, reads, ens, new Specification<Expression>(new List<Expression>(), null), body, attributes, signatureEllipsis) { }
     }
 
     public class Constructor : Method
