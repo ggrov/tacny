@@ -52,7 +52,6 @@ namespace LazyTacny
             Dafny.Program prog = tacnyProgram.ParseProgram();
             foreach (var solution in final)
             {
-                if(solution.state.IsFunction)
                 solution.GenerateProgram(ref prog);
             }
             tacnyProgram.dafnyProgram = prog;
@@ -79,9 +78,9 @@ namespace LazyTacny
                 var ac = new Atomic();
                 ac.IsFunction = true;
                 ac.DynamicContext.newTarget = newFun;
-                return new Solution(ac);
                 var p = new Dafny.Printer(Console.Out);
-                p.PrintFunction(newFun, 0 , false);
+                p.PrintFunction(newFun, 0, false);
+                return new Solution(ac);
 
             }
             else if (md is Method)
