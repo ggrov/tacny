@@ -142,6 +142,10 @@ bool IsAndOp() {
 bool IsOrOp() {
   return la.val == "||" || la.val == "\u2228";
 }
+
+bool IsTacnyOrOp() {
+  return la.val == "|||";
+}
 bool IsRelOp() {
   return la.val == "=="
       || la.val == "<"
@@ -2262,6 +2266,7 @@ ImpliesOp = "==>" | '\u21d2'.
 ExpliesOp = "<==" | '\u21d0'.
 AndOp = "&&" | '\u2227'.
 OrOp = "||" | '\u2228'.
+TacnyOrOp = "|||".
 
 NegOp = "!" | '\u00ac'.
 Forall = "forall" | '\u2200'.
@@ -2346,6 +2351,12 @@ LogicalExpression<out Expression e0, bool allowSemi, bool allowLambda>
       { IF(IsOrOp())  /* read a disjunction as far as possible */
         OrOp                                                  (. x = t; .)
         RelationalExpression<out e1, allowSemi, allowLambda>  (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.Or, e0, e1); .)
+      }
+    | TacnyOrOp /*  ########### TACNY OR ########## */        (. x = t; .)
+      RelationalExpression<out e1, allowSemi, allowLambda>    (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.TacnyOr, e0, e1); .)
+       { IF(IsTacnyOrOp())  /* read a disjunction as far as possible */
+        TacnyOrOp                                                  (. x = t; .)
+        RelationalExpression<out e1, allowSemi, allowLambda>  (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.TacnyOr, e0, e1); .)
       }
     )
   ]

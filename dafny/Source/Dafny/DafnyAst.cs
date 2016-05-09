@@ -7432,6 +7432,7 @@ namespace Microsoft.Dafny
             Exp, // turned into Imp during resolution
             And,
             Or,
+            TacnyOr,
             Eq,
             Neq,
             Lt,
@@ -7457,6 +7458,8 @@ namespace Microsoft.Dafny
             Imp,
             And,
             Or,
+            // logical Tacny operators
+            TacnyOr,
             // non-collection types
             EqCommon,
             NeqCommon,
@@ -7578,6 +7581,7 @@ namespace Microsoft.Dafny
                 case ResolvedOpcode.Imp: return Opcode.Imp;
                 case ResolvedOpcode.And: return Opcode.And;
                 case ResolvedOpcode.Or: return Opcode.Or;
+                case ResolvedOpcode.TacnyOr: return Opcode.TacnyOr;
 
                 case ResolvedOpcode.EqCommon:
                 case ResolvedOpcode.SetEq:
@@ -7680,6 +7684,8 @@ namespace Microsoft.Dafny
                     return "&&";
                 case Opcode.Or:
                     return "||";
+                case Opcode.TacnyOr:
+                    return "|||";
                 case Opcode.Eq:
                     return "==";
                 case Opcode.Lt:

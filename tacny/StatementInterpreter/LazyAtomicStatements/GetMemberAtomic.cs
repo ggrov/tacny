@@ -20,21 +20,24 @@ namespace LazyTacny
             List<Expression> call_arguments;
             InitArgs(st, out lv, out call_arguments);
             Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-            Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
+            Contract.Assert(call_arguments.Count <= 1, Util.Error.MkErr(st, 0, 1, call_arguments.Count));
             MemberDecl memberDecl = null;
-            var memberName = call_arguments[0] as StringLiteralExpr;
-
-            try
+            if (call_arguments.Count == 1)
             {
-                memberDecl = StaticContext.program.members[memberName.AsStringLiteral()];
-            } catch (KeyNotFoundException e)
+                var memberName = call_arguments[0] as StringLiteralExpr;
+                try
+                {
+                    memberDecl = StaticContext.program.members[memberName.AsStringLiteral()];
+                }
+                catch (KeyNotFoundException e)
+                {
+                    Contract.Assert(false, Util.Error.MkErr(st, 20, memberName.AsStringLiteral()));
+                }
+            } else
             {
-                Contract.Assert(false, Util.Error.MkErr(st, 20, memberName.AsStringLiteral()));
+                memberDecl = StaticContext.md;
             }
-
-            var ac = this.Copy();
-            ac.AddLocal(lv, memberDecl);
-            return new Solution(ac);
+            return AddNewLocal<MemberDecl>(lv, memberDecl);
         }
     }
 }

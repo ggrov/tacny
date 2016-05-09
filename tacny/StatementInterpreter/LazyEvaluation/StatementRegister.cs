@@ -6,17 +6,14 @@ using System.Linq;
 using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
 
-namespace LazyTacny
-{
+namespace LazyTacny {
     /**
      * TODO
      * clean up
      * 
      */
-    class StatementRegister
-    {
-        public enum Atomic
-        {
+    class StatementRegister {
+        public enum Atomic {
             UNDEFINED = 0,
             ADD_INVAR,
             CREATE_INVAR,
@@ -60,7 +57,7 @@ namespace LazyTacny
             {"replace_operator", Atomic.REPLACE_OP},
             {"is_valid", Atomic.IS_VALID},
             {"cases", Atomic.ADD_MATCH},
-            {"perm", Atomic.PERM},
+            {"explore", Atomic.PERM},
             {"||", Atomic.OR},
             {"id", Atomic.ID},
             {"fail", Atomic.FAIL},
@@ -79,7 +76,7 @@ namespace LazyTacny
             {"tryCatch", Atomic.TRY_CATCH},
             {"get_returns", Atomic.RETURNS},
             {"is_datatype", Atomic.IS_DATATYPE},
-            {"get_member", Atomic.GET_MEMBER },
+            {"member", Atomic.GET_MEMBER },
             {"fresh_lem_name", Atomic.FRESH_LEM_NAME },
             {"gen_bexp", Atomic.GEN_BEXP }
         };
@@ -123,8 +120,7 @@ namespace LazyTacny
         /// </summary>
         /// <param name="st">Statement to analyse</param>
         /// <returns>statement atomic type</returns>
-        public static Atomic GetAtomicType(object call)
-        {
+        public static Atomic GetAtomicType(object call) {
             Contract.Requires(call != null);
             Statement st;
             ApplySuffix aps;
@@ -137,8 +133,7 @@ namespace LazyTacny
         }
 
 
-        public static Atomic GetAtomicType(Statement st)
-        {
+        public static Atomic GetAtomicType(Statement st) {
             ExprRhs er;
             UpdateStmt us = null;
             TacnyBlockStmt tbs;
@@ -146,8 +141,7 @@ namespace LazyTacny
             VarDeclStmt vds;
             OrStmt os;
             IToken tok = null;
-            if ((tbs = st as TacnyBlockStmt) != null)
-            {
+            if ((tbs = st as TacnyBlockStmt) != null) {
                 TacnyCasesBlockStmt tcbs;
                 TacnySolvedBlockStmt tsbs;
                 TacnyChangedBlockStmt tchbs;
@@ -160,27 +154,20 @@ namespace LazyTacny
                     return atomic_signature[tchbs.WhatKind];
                 else if ((ttcbs = tbs as TacnyTryCatchBlockStmt) != null)
                     return atomic_signature[ttcbs.WhatKind];
-            }
-            else if (((os = st as OrStmt) != null))
-            {
+            } else if (((os = st as OrStmt) != null)) {
                 tok = os.Tok;
-            }
-            else if (st is IfStmt)
+            } else if (st is IfStmt)
                 return Atomic.IF;
             else if (st is WhileStmt)
                 return Atomic.WHILE;
-            else if ((us = st as UpdateStmt) != null) { }
-            else if ((vds = st as VarDeclStmt) != null)
-            {
+            else if ((us = st as UpdateStmt) != null) { } else if ((vds = st as VarDeclStmt) != null) {
                 AssignSuchThatStmt suchThat = vds.Update as AssignSuchThatStmt;
                 // check if declaration is such that
                 if (suchThat != null)
                     tok = suchThat.Tok;
                 else
                     us = vds.Update as UpdateStmt;
-            }
-            else if ((tvds = st as TacticVarDeclStmt) != null)
-            {
+            } else if ((tvds = st as TacticVarDeclStmt) != null) {
                 AssignSuchThatStmt suchThat = tvds.Update as AssignSuchThatStmt;
                 // check if declaration is such that
                 if (suchThat != null)
@@ -197,8 +184,7 @@ namespace LazyTacny
             er = (ExprRhs)us.Rhss[0];
             return GetAtomicType(er.Expr as ApplySuffix);
         }
-        public static Atomic GetAtomicType(ApplySuffix aps)
-        {
+        public static Atomic GetAtomicType(ApplySuffix aps) {
             if (aps == null)
                 return Atomic.UNDEFINED;
             return GetAtomicType(aps.Lhs.tok);
@@ -209,8 +195,7 @@ namespace LazyTacny
         /// </summary>
         /// <param name="name">string signature</param>
         /// <returns>Atomic type</returns>
-        public static Atomic GetAtomicType(IToken tok)
-        {
+        public static Atomic GetAtomicType(IToken tok) {
             Contract.Requires<ArgumentNullException>(tok != null);
             string name = tok.val;
             if (!atomic_signature.ContainsKey(name))
@@ -220,20 +205,17 @@ namespace LazyTacny
         }
 
 
-        public static System.Type GetStatementType(Statement st)
-        {
+        public static System.Type GetStatementType(Statement st) {
             Contract.Requires(st != null);
             return GetStatementType(GetAtomicType(st));
         }
 
-        public static System.Type GetStatementType(ApplySuffix aps)
-        {
+        public static System.Type GetStatementType(ApplySuffix aps) {
             Contract.Requires(aps != null);
             return GetStatementType(GetAtomicType(aps));
         }
 
-        public static System.Type GetStatementType(Atomic atomic)
-        {
+        public static System.Type GetStatementType(Atomic atomic) {
             if (!atomic_class.ContainsKey(atomic))
                 return null;
             return atomic_class[atomic];

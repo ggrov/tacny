@@ -6,38 +6,30 @@ using System.Diagnostics.Contracts;
 using System.Diagnostics;
 
 
-namespace LazyTacny
-{
-    public class Interpreter
-    {
+namespace LazyTacny {
+    public class Interpreter {
         private Tacny.Program tacnyProgram;
         private SolutionList solution_list = new SolutionList();
 
-        public Interpreter(Tacny.Program tacnyProgram)
-        {
+        public Interpreter(Tacny.Program tacnyProgram) {
             Contract.Requires(tacnyProgram != null);
             this.tacnyProgram = tacnyProgram;
             this.solution_list = new SolutionList();
             //Console.SetOut(System.IO.TextWriter.Null);
         }
 
-        public Program ResolveProgram()
-        {
+        public Program ResolveProgram() {
 
-            if (!tacnyProgram.HasTacticApplications())
-            {
+            if (!tacnyProgram.HasTacticApplications()) {
                 return tacnyProgram.ParseProgram();
             }
-            foreach (var @class in tacnyProgram.topLevelClasses)
-            {
+            foreach (var @class in tacnyProgram.topLevelClasses) {
                 tacnyProgram.currentTopLevelClass = @class;
                 if (tacnyProgram.currentTopLevelClass.tactics.Count < 1)
                     continue;
-                foreach (var member in tacnyProgram.members)
-                {
+                foreach (var member in tacnyProgram.members) {
                     var res = LazyScanMemberBody(member.Value);
-                    if (res != null)
-                    {
+                    if (res != null) {
                         solution_list.Add(res);
                         solution_list.Fin();
 
@@ -50,8 +42,7 @@ namespace LazyTacny
                 final.Add(solution[0]);
 
             Dafny.Program prog = tacnyProgram.ParseProgram();
-            foreach (var solution in final)
-            {
+            foreach (var solution in final) {
                 solution.GenerateProgram(ref prog);
             }
             tacnyProgram.dafnyProgram = prog;
@@ -60,18 +51,16 @@ namespace LazyTacny
 
         }
 
-        private Solution LazyScanMemberBody(MemberDecl md)
-        {
+        private Solution LazyScanMemberBody(MemberDecl md) {
             Contract.Requires(md != null);
 
             Debug.WriteLine(String.Format("Scanning member {0} body", md.Name));
-            if (md is Function)
-            {
+            if (md is Function) {
                 var fun = md as Function;
                 Tacny.ExpressionTree expt = null;
                 if (fun.Body == null)
                     return null;
-                 expt = Tacny.ExpressionTree.ExpressionToTree(fun.Body);
+                expt = Tacny.ExpressionTree.ExpressionToTree(fun.Body);
                 expt.FindAndResolveTacticApplication(tacnyProgram, fun);
                 var res = expt.TreeToExpression();
                 var newFun = new Function(fun.tok, fun.Name, fun.HasStaticKeyword, fun.IsProtected, fun.IsGhost, fun.TypeArgs, fun.Formals, fun.ResultType, fun.Req, fun.Reads, fun.Ens, fun.Decreases, res, fun.Attributes, fun.SignatureEllipsis);
@@ -82,9 +71,7 @@ namespace LazyTacny
                 p.PrintFunction(newFun, 0, false);
                 return new Solution(ac);
 
-            }
-            else if (md is Method)
-            {
+            } else if (md is Method) {
                 Method m = md as Method;
                 if (m == null)
                     return null;
@@ -92,21 +79,17 @@ namespace LazyTacny
                     return null;
                 List<IVariable> variables = new List<IVariable>();
 
-                foreach (var st in m.Body.Body)
-                {
+                foreach (var st in m.Body.Body) {
                     // register local variables
                     VarDeclStmt vds = st as VarDeclStmt;
                     if (vds != null)
                         variables.AddRange(vds.Locals);
 
                     UpdateStmt us = st as UpdateStmt;
-                    if (us != null)
-                    {
-                        if (this.tacnyProgram.IsTacticCall(us))
-                        {
+                    if (us != null) {
+                        if (this.tacnyProgram.IsTacticCall(us)) {
                             Debug.WriteLine("Tactic call found");
-                            try
-                            {
+                            try {
                                 ITactic tac = tacnyProgram.GetTactic(us);
                                 tacnyProgram.SetCurrent(tac, md);
                                 variables.AddRange(m.Ins);
@@ -121,9 +104,7 @@ namespace LazyTacny
                                 //                            Solution.PrintSolution(result);
                                 this.tacnyProgram.currentDebug.Fin();
                                 return result;
-                            }
-                            catch (Exception e)
-                            {
+                            } catch (Exception e) {
                                 Util.Printer.Error(e.Message);
                                 return null;
                             }

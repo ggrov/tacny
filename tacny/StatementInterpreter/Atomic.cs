@@ -990,7 +990,7 @@ namespace Tacny
         protected bool IsResolvable(ExpressionTree expt)
         {
             Contract.Requires(expt.isRoot());
-            List<Expression> leafs = expt.GetLeafs();
+            List<Expression> leafs = expt.GetLeafData();
 
             foreach (var leaf in leafs)
             {

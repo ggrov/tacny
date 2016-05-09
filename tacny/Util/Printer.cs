@@ -66,7 +66,10 @@ namespace Util
             if (!Directory.Exists(working_path))
                 Directory.CreateDirectory(working_path);
             debugWriter = new StreamWriter(Path.Combine(working_path, string.Format("{0}.{1}", FileName, DEBUG_SUFFIX)), true);
+        }
 
+        public Dafny.Printer GetConsolePrinter() {
+            return new Dafny.Printer(Console.Out);
         }
 
         private void InitializeCsvWriter()
