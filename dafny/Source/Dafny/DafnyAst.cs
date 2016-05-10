@@ -7423,6 +7423,57 @@ namespace Microsoft.Dafny
         }
     }
 
+    public class TacnyBinaryExpr : BinaryExpr {
+        public enum TacnyOpcode {
+            TacnyOr,
+        }
+
+        public enum TacnyResolvedOpcode {
+            TacnyOr,
+        }
+
+        public readonly TacnyOpcode Op;
+
+        public static TacnyOpcode ResolvedOp2SyntacticOp(TacnyResolvedOpcode rop) {
+            switch (rop) {
+                case TacnyResolvedOpcode.TacnyOr: return TacnyOpcode.TacnyOr;
+                default:
+                    Contract.Assert(false);  // unexpected ResolvedOpcode
+                    return TacnyOpcode.TacnyOr;  // please compiler
+            }
+        }
+
+    public static Opcode TacnyOp2DafnyOp(TacnyOpcode op) {
+      switch(op) {
+        case TacnyOpcode.TacnyOr: return Opcode.Or;
+        default:
+          Contract.Assert(false);  // unexpected ResolvedOpcode
+          return Opcode.Or;  // please compiler
+      }
+    }
+        public static string OpcodeString(TacnyOpcode op) {
+            Contract.Ensures(Contract.Result<string>() != null);
+
+            switch (op) {
+                case TacnyOpcode.TacnyOr: return "|||";
+                default:
+                    Contract.Assert(false);  // unexpected ResolvedOpcode
+                    return "";
+
+            }
+        }
+
+    public TacnyBinaryExpr(IToken tok, TacnyOpcode op, Expression e0, Expression e1)
+            : base(tok, TacnyOp2DafnyOp(op), e0, e1)
+        {
+      Contract.Requires(tok != null);
+      Contract.Requires(e0 != null);
+      Contract.Requires(e1 != null);
+      this.Op = op;
+     
+    }
+  }
+
     public class BinaryExpr : Expression
     {
         public enum Opcode
@@ -7432,7 +7483,6 @@ namespace Microsoft.Dafny
             Exp, // turned into Imp during resolution
             And,
             Or,
-            TacnyOr,
             Eq,
             Neq,
             Lt,
@@ -7458,8 +7508,6 @@ namespace Microsoft.Dafny
             Imp,
             And,
             Or,
-            // logical Tacny operators
-            TacnyOr,
             // non-collection types
             EqCommon,
             NeqCommon,
@@ -7556,7 +7604,6 @@ namespace Microsoft.Dafny
             }
         }
 
-        //#######################TACNY#############################
         public static bool IsEqualityOp(Opcode op)
         {
             switch (op)
@@ -7581,7 +7628,7 @@ namespace Microsoft.Dafny
                 case ResolvedOpcode.Imp: return Opcode.Imp;
                 case ResolvedOpcode.And: return Opcode.And;
                 case ResolvedOpcode.Or: return Opcode.Or;
-                case ResolvedOpcode.TacnyOr: return Opcode.TacnyOr;
+                
 
                 case ResolvedOpcode.EqCommon:
                 case ResolvedOpcode.SetEq:
@@ -7684,8 +7731,6 @@ namespace Microsoft.Dafny
                     return "&&";
                 case Opcode.Or:
                     return "||";
-                case Opcode.TacnyOr:
-                    return "|||";
                 case Opcode.Eq:
                     return "==";
                 case Opcode.Lt:

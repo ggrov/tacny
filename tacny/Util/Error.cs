@@ -103,6 +103,7 @@ namespace Util
                 case 18: s = "Atomic {0} does not implement {1} interface"; break;
                 case 19: s = "Unsuported search strategy: {0}"; break;
                 case 20: s = "Member {0} does not exist"; break;
+                case 21: s = "Only tactic function can be assigned as a value"; break;
                 default: s = "error" + n; break;
             }
 

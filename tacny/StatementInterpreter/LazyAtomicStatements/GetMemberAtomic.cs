@@ -31,6 +31,7 @@ namespace LazyTacny
                 }
                 catch (KeyNotFoundException e)
                 {
+                    System.Console.Out.WriteLine(e.Message);
                     Contract.Assert(false, Util.Error.MkErr(st, 20, memberName.AsStringLiteral()));
                 }
             } else

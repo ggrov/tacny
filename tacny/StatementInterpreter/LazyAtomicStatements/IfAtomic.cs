@@ -61,7 +61,7 @@ namespace LazyTacny
         {
             Contract.Requires(ifStmt != null);
 
-            ResolveExpression(this.guard);
+            ResolveExpression(ref this.guard);
             Expression guard = this.guard.TreeToExpression();
             
             // resolve 'if' block

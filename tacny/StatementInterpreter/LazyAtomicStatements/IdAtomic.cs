@@ -21,7 +21,6 @@ namespace LazyTacny
         /// <returns></returns>
         public IEnumerable<Solution> Resolve(Statement st, Solution solution)
         {
-            Contract.Requires(st is TacticVarDeclStmt);
             List<Expression> args = null;
             IVariable lv = null;
             InitArgs(st, out lv, out args);

@@ -79,6 +79,7 @@ namespace Tacny
             Contract.Assert(p);
         }
 
+        [Serializable]
         public class UnreachableException : Exception
         {
             public UnreachableException()

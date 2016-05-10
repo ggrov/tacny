@@ -1673,6 +1673,31 @@ namespace Microsoft.Dafny {
         PrintExpression(e.E, false);
         wr.Write(")");
 
+      } else if(expr is TacnyBinaryExpr) {
+          TacnyBinaryExpr e = (TacnyBinaryExpr)expr;
+          string op = TacnyBinaryExpr.OpcodeString(e.Op);
+          int opBindingStrength;
+          bool fragileLeftContext = false;  // false means "allow same binding power on left without parens"
+          bool fragileRightContext = false;  // false means "allow same binding power on right without parens"
+
+          switch(e.Op) {
+          case TacnyBinaryExpr.TacnyOpcode.TacnyOr:
+                opBindingStrength = 0x21; break;
+          default:
+            Contract.Assert(false); throw new cce.UnreachableException();  // unexpected binary operator
+        }
+        int opBS = opBindingStrength & 0xF8;
+        int ctxtBS = contextBindingStrength & 0xF8;
+        bool parensNeeded = opBS < ctxtBS ||
+          (opBS == ctxtBS && (opBindingStrength != contextBindingStrength || fragileContext));
+        if (parensNeeded) { wr.Write("("); }
+        var sem = !parensNeeded && isFollowedBySemicolon;
+        PrintExpr(e.E0, opBindingStrength, fragileLeftContext, false, sem, -1);
+        wr.Write(" {0} ", op);
+        PrintExpr(e.E1, opBindingStrength, fragileRightContext, parensNeeded || isRightmost, sem, -1);
+        if (parensNeeded) { wr.Write(")"); }
+
+
       } else if (expr is BinaryExpr) {
         BinaryExpr e = (BinaryExpr)expr;
         // determine if parens are needed

@@ -3458,7 +3458,7 @@ List<Expression/*!*/>/*!*/ decreases, ref Attributes decAttrs, ref Attributes mo
 	void LogicalExpression(out Expression e0, bool allowSemi, bool allowLambda) {
 		Contract.Ensures(Contract.ValueAtReturn(out e0) != null); IToken/*!*/ x;  Expression/*!*/ e1; 
 		RelationalExpression(out e0, allowSemi, allowLambda);
-		if (IsAndOp() || IsOrOp()) {
+		if (IsAndOp() || IsOrOp() || IsTacnyOrOp()) {
 			if (la.kind == 123 || la.kind == 124) {
 				AndOp();
 				x = t; 
@@ -3470,6 +3470,17 @@ List<Expression/*!*/>/*!*/ decreases, ref Attributes decAttrs, ref Attributes mo
 					RelationalExpression(out e1, allowSemi, allowLambda);
 					e0 = new BinaryExpr(x, BinaryExpr.Opcode.And, e0, e1); 
 				}
+			} else if (la.kind == 126) {
+				TacnyOrOp();
+				x = t; 
+				RelationalExpression(out e1, allowSemi, allowLambda);
+				e0 = new TacnyBinaryExpr(x, TacnyBinaryExpr.TacnyOpcode.TacnyOr, e0, e1); 
+				while (IsTacnyOrOp()) {
+					TacnyOrOp();
+					x = t; 
+					RelationalExpression(out e1, allowSemi, allowLambda);
+					e0 = new TacnyBinaryExpr(x, TacnyBinaryExpr.TacnyOpcode.TacnyOr, e0, e1); 
+				}
 			} else if (la.kind == 90 || la.kind == 125) {
 				OrOp();
 				x = t; 
@@ -3480,17 +3491,6 @@ List<Expression/*!*/>/*!*/ decreases, ref Attributes decAttrs, ref Attributes mo
 					x = t; 
 					RelationalExpression(out e1, allowSemi, allowLambda);
 					e0 = new BinaryExpr(x, BinaryExpr.Opcode.Or, e0, e1); 
-				}
-			} else if (la.kind == 126) {
-				TacnyOrOp();
-				x = t; 
-				RelationalExpression(out e1, allowSemi, allowLambda);
-				e0 = new BinaryExpr(x, BinaryExpr.Opcode.TacnyOr, e0, e1); 
-				while (IsTacnyOrOp()) {
-					TacnyOrOp();
-					x = t; 
-					RelationalExpression(out e1, allowSemi, allowLambda);
-					e0 = new BinaryExpr(x, BinaryExpr.Opcode.TacnyOr, e0, e1); 
 				}
 			} else SynErr(230);
 		}

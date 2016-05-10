@@ -56,7 +56,7 @@ namespace LazyTacny
         private IEnumerable<Solution> InsertLoop(WhileStmt whileStmt, Solution solution)
         {
             Contract.Requires(whileStmt != null);
-            ResolveExpression(this.guard);
+            ResolveExpression(ref this.guard);
             Expression guard = this.guard.TreeToExpression();
 
             foreach (var item in ResolveBody(whileStmt.Body))

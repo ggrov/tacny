@@ -341,8 +341,10 @@ namespace Microsoft.Dafny
       } else if (expr is ConversionExpr) {
         var e = (ConversionExpr)expr;
         return new ConversionExpr(Tok(e.tok), CloneExpr(e.E), CloneType(e.ToType));
-
-      } else if (expr is BinaryExpr) {
+      } else if(expr is TacnyBinaryExpr) {
+        var e = (TacnyBinaryExpr)expr;
+        return new TacnyBinaryExpr(Tok(e.tok), e.Op, CloneExpr(e.E0), CloneExpr(e.E1));
+        } else if (expr is BinaryExpr) {
         var e = (BinaryExpr)expr;
         return new BinaryExpr(Tok(e.tok), e.Op, CloneExpr(e.E0), CloneExpr(e.E1));
 

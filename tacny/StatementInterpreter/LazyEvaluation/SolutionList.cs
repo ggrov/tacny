@@ -111,7 +111,7 @@ namespace LazyTacny {
                             curDecl.Members[i] = func;
                     }
 
-                    prog.DefaultModuleDef.TopLevelDecls[i] = RemoveTactics(curDecl);
+                    prog.DefaultModuleDef.TopLevelDecls[i] = Tacny.Program.RemoveTactics(curDecl);
                 }
             }
 
@@ -160,7 +160,7 @@ namespace LazyTacny {
                             curDecl.Members[j] = newMemberDecl;
                     }
 
-                    prog.DefaultModuleDef.TopLevelDecls[i] = RemoveTactics(curDecl);
+                    prog.DefaultModuleDef.TopLevelDecls[i] = Tacny.Program.RemoveTactics(curDecl);
                 }
             }
 
@@ -280,16 +280,6 @@ namespace LazyTacny {
             }
             return -1;
         }
-
-        private static TopLevelDecl RemoveTactics(ClassDecl cd) {
-            List<MemberDecl> mdl = new List<MemberDecl>();
-            foreach (MemberDecl md in cd.Members)
-                if (!(md is ITactic))
-                    mdl.Add(md);
-
-            return new ClassDecl(cd.tok, cd.Name, cd.Module, cd.TypeArgs, mdl, cd.Attributes, cd.TraitsTyp);
-        }
-
 
         private static TopLevelDecl ExtractContext(MemberDecl md, ClassDecl cd) {
             Dictionary<string, MemberDecl> context = new Dictionary<string, MemberDecl>();

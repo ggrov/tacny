@@ -22,7 +22,6 @@ namespace Tacny
         /// <returns></returns>
         public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            Contract.Requires(st is TacticVarDeclStmt);
             List<Expression> args = null;
             IVariable lv = null;
             InitArgs(st, out lv, out args);

@@ -2339,12 +2339,18 @@ ImpliesExpression<out Expression e0, bool allowSemi, bool allowLambda>
 LogicalExpression<out Expression e0, bool allowSemi, bool allowLambda>
 = (. Contract.Ensures(Contract.ValueAtReturn(out e0) != null); IToken/*!*/ x;  Expression/*!*/ e1; .)
   RelationalExpression<out e0, allowSemi, allowLambda>
-  [ IF(IsAndOp() || IsOrOp())  /* read a LogicalExpression as far as possible */
+  [ IF(IsAndOp() || IsOrOp() || IsTacnyOrOp())  /* read a LogicalExpression as far as possible */
     ( AndOp                                                   (. x = t; .)
       RelationalExpression<out e1, allowSemi, allowLambda>    (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.And, e0, e1); .)
       { IF(IsAndOp())  /* read a conjunction as far as possible */
         AndOp                                                 (. x = t; .)
         RelationalExpression<out e1, allowSemi, allowLambda>  (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.And, e0, e1); .)
+      }
+    | TacnyOrOp /*  ########### TACNY OR ########## */        (. x = t; .)
+      RelationalExpression<out e1, allowSemi, allowLambda>    (. e0 = new TacnyBinaryExpr(x, TacnyBinaryExpr.TacnyOpcode.TacnyOr, e0, e1); .)
+       { IF(IsTacnyOrOp())  /* read a disjunction as far as possible */
+        TacnyOrOp                                                  (. x = t; .)
+        RelationalExpression<out e1, allowSemi, allowLambda>  (. e0 = new TacnyBinaryExpr(x, TacnyBinaryExpr.TacnyOpcode.TacnyOr, e0, e1); .)
       }
     | OrOp                                                    (. x = t; .)
       RelationalExpression<out e1, allowSemi, allowLambda>    (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.Or, e0, e1); .)
@@ -2352,12 +2358,7 @@ LogicalExpression<out Expression e0, bool allowSemi, bool allowLambda>
         OrOp                                                  (. x = t; .)
         RelationalExpression<out e1, allowSemi, allowLambda>  (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.Or, e0, e1); .)
       }
-    | TacnyOrOp /*  ########### TACNY OR ########## */        (. x = t; .)
-      RelationalExpression<out e1, allowSemi, allowLambda>    (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.TacnyOr, e0, e1); .)
-       { IF(IsTacnyOrOp())  /* read a disjunction as far as possible */
-        TacnyOrOp                                                  (. x = t; .)
-        RelationalExpression<out e1, allowSemi, allowLambda>  (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.TacnyOr, e0, e1); .)
-      }
+    
     )
   ]
   .

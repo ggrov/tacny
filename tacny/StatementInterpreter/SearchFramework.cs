@@ -187,7 +187,7 @@ namespace LazyTacny
             }
         }
 
-        public static new IEnumerable<Solution> SearchBlockStmt(BlockStmt body, Atomic atomic)
+        public static IEnumerable<Solution> SearchBlockStmt(BlockStmt body, Atomic atomic)
         {
             Atomic ac = atomic.Copy();
             ac.DynamicContext.tacticBody = body.Body;
@@ -283,7 +283,7 @@ namespace LazyTacny
 
         }
 
-        public static new IEnumerable<Solution> SearchBlockStmt(BlockStmt body, Atomic atomic)
+        public static IEnumerable<Solution> SearchBlockStmt(BlockStmt body, Atomic atomic)
         {
             Atomic ac = atomic.Copy();
             ac.DynamicContext.tacticBody = body.Body;

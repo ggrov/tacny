@@ -39,7 +39,6 @@ namespace LazyTacny
         {
             Contract.Requires<ArgumentNullException>(mfe != null);
             Expression expr = mfe.E;
-            Expression res = null;
 
             foreach (var item in atomic.ProcessStmtArgument(expr))
             {
