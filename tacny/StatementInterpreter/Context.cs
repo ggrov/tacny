@@ -106,11 +106,7 @@ namespace Tacny {
     public object GetLocalValueByName(string name) {
       Contract.Requires<ArgumentNullException>(name != null);
       List<Dafny.IVariable> ins = new List<Dafny.IVariable>(localDeclarations.Keys);
-      var key = ins.FirstOrDefault(i => i.Name == name);
-      if (key != null)
-        return localDeclarations[key];
-
-      return null;
+      return localDeclarations.FirstOrDefault(i => i.Key.Name == name).Value;
     }
 
     public IVariable GetLocalKeyByName(IVariable ns) {
