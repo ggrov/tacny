@@ -4762,7 +4762,7 @@ public class Errors {
 			case 101: s = "\"changed\" expected"; break;
 			case 102: s = "\"try\" expected"; break;
 			case 103: s = "\"catch\" expected"; break;
-			case 104: s = "\"cases\" expected"; break;
+			case 104: s = "\"tmatch\" expected"; break;
 			case 105: s = "\"while\" expected"; break;
 			case 106: s = "\"match\" expected"; break;
 			case 107: s = "\"assert\" expected"; break;

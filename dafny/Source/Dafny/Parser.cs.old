@@ -3474,12 +3474,12 @@ List<Expression/*!*/>/*!*/ decreases, ref Attributes decAttrs, ref Attributes mo
 				TacnyOrOp();
 				x = t; 
 				RelationalExpression(out e1, allowSemi, allowLambda);
-				e0 = new BinaryExpr(x, BinaryExpr.Opcode.TacnyOr, e0, e1); 
+				e0 = new TacnyBinaryExpr(x, TacnyBinaryExpr.TacnyOpcode.TacnyOr, e0, e1); 
 				while (IsTacnyOrOp()) {
 					TacnyOrOp();
 					x = t; 
 					RelationalExpression(out e1, allowSemi, allowLambda);
-					e0 = new BinaryExpr(x, BinaryExpr.Opcode.TacnyOr, e0, e1); 
+					e0 = new TacnyBinaryExpr(x, TacnyBinaryExpr.TacnyOpcode.TacnyOr, e0, e1); 
 				}
 			} else if (la.kind == 90 || la.kind == 125) {
 				OrOp();
