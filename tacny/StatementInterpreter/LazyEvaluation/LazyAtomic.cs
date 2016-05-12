@@ -238,7 +238,7 @@ namespace LazyTacny {
               Atomic action = this.Copy();
               action.SetNewTarget(solution.state.GetNewTarget());
               if (tactic is Tactic) {
-                foreach (var kvp in result.state.GetResult()) {
+                foreach (var kvp in result.state.GetResult()) { 
                   yield return AddNewStatement(kvp.Key, kvp.Value);
                   break;
                 }

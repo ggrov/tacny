@@ -1849,7 +1849,7 @@ TacnyCasesBlockStmt<out Statement/*!*/ tacnyCasesStmt>
      List<GuardedAlternative> alternatives;
      tacnyCasesStmt = dummyStmt;  // to please the compiler
   .)
-  "cases"                       (. x = t; .)
+  "tmatch"                       (. x = t; .)
   (
     IF(IsAlternative())
     AlternativeBlock<out alternatives, out endTok>

@@ -34,7 +34,7 @@ namespace LazyTacny {
           else if (rhsValue is IVariable)
             rhs = IVariableToExpression(rhsValue as IVariable);
           foreach (var op in ProcessStmtArgument(callArguments[1])) {
-           
+
             var opLiteral = op as StringLiteralExpr;
             var opString = opLiteral.Value.ToString();
             bexp = new BinaryExpr(st.Tok, ToOpCode(opString), lhs as Expression, rhs as Expression);
