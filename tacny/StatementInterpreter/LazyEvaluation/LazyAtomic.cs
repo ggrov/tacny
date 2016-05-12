@@ -118,15 +118,13 @@ namespace LazyTacny {
      */
     public static IEnumerable<Solution> ResolveTacticMethod(Atomic atomic, bool verify = true) {
       Contract.Requires(atomic.DynamicContext.tactic is Tactic);
-      if (atomic.DynamicContext.tactic is Tactic) {
-        ISearch searchStrategy = new SearchStrategy(atomic.SearchStrat);
-        foreach (var item in searchStrategy.Search(atomic, verify))
-          yield return item;
-      }
-      yield break;
+      TacnyContract.ValidateRequires(atomic);
+      ISearch searchStrategy = new SearchStrategy(atomic.SearchStrat);
+      return searchStrategy.Search(atomic, verify);
     }
 
     public static IEnumerable<Solution> ResolveTacticFunction(Atomic atomic) {
+      Contract.Requires(atomic.DynamicContext.tactic is TacticFunction);
       var tacFun = atomic.DynamicContext.tactic as TacticFunction;
       ExpressionTree expt = ExpressionTree.ExpressionToTree(tacFun.Body);
       foreach (var result in atomic.ResolveTacticFunction(expt)) {
@@ -164,10 +162,6 @@ namespace LazyTacny {
       Contract.Requires<ArgumentNullException>(solution != null);
       if (solution.state.DynamicContext.IsResolved())
         yield break;
-      // if no statements have been resolved, check the preconditions
-      if (solution.state.DynamicContext.IsFirstStatment())
-        TacnyContract.ValidateRequires(solution);
-      // foreach result yield
       foreach (var result in solution.state.CallAction(solution.state.DynamicContext.GetCurrentStatement(), solution)) {
 
         result.parent = solution;
@@ -294,12 +288,16 @@ namespace LazyTacny {
           }
         } else if (key.Type.ToString() == "Term") {
           // we only need to replace the term 
+          // is term only an application????
           var term = value as NameSegment;
           if (term != null) {
             var oldAps = ((ExprRhs)us.Rhss[0]).Expr as ApplySuffix;
             var newAps = new ApplySuffix(oldAps.tok, term, Util.Copy.CopyExpressionList(oldAps.Args));
             yield return AddNewExpression(newAps);
 
+          } else if (key.Type.ToString() == "Element") {
+            var element = value as NameSegment;
+            yield break;
           } else {
             Contract.Assert(false, Util.Error.MkErr(us, 1, typeof(NameSegment)));
           }
@@ -426,46 +424,59 @@ namespace LazyTacny {
               yield return new Solution(this.Copy());
             } else {
               var aps = exprRhs.Expr as ApplySuffix;
-              // if 
-              if (StaticContext.program.IsTacticCall(aps)) {
-                var tactic = StaticContext.program.GetTactic(aps);
-                foreach (var result in CallAction(aps, new Solution(this.Copy()))) {
-                  if (tactic is TacticFunction) {
-                    var resultExpressions = result.state.DynamicContext.generatedExpressions;
-                    if (resultExpressions.Count == 0)
-                      yield return AddNewLocal<object>(declaration.Locals[index], null);
-                    else {
-                      yield return AddNewLocal(declaration.Locals[index], resultExpressions[0]); // we only expect a function to return a single expression
-                    }
-                  } else if (tactic is Tactic) {
-                    var resultStatements = result.state.GetResolved();
-                    if (resultStatements.Count == 0)
-                      yield return AddNewLocal<object>(declaration.Locals[index], null);
-                    else {
-                      yield return AddNewLocal(declaration.Locals[index], resultStatements[0]); // we only expect a function to return a single expression
-                    }
-                  }
-                }
-              } else if (IsArgumentApplication(aps)) {
-                foreach (var result in CallAction(aps, new Solution(this.Copy()))) {
-                  // we don't know where the results are, thus let's look at both statements and expressions
-                  result.state.Fin();
-                  var resultExpressions = result.state.DynamicContext.generatedExpressions;
-                  var resultStatements = result.state.GetResolved();
-                  if (resultStatements.Count > 0)
-                    yield return AddNewLocal(declaration.Locals[index], resultStatements[0]); // we only expect a function to return a single expression
-                  else if (resultExpressions.Count > 0)
-                    yield return AddNewLocal(declaration.Locals[index], resultExpressions[0]); // we only expect a function to return a single expression
-                  else
-                    yield return AddNewLocal<object>(declaration.Locals[index], null);
+              foreach (var result in CallAction(aps, new Solution(this.Copy()))) {
+                // we don't know where the results are, thus let's look at both statements and expressions
+                result.state.Fin();
+                var resultExpressions = result.state.DynamicContext.generatedExpressions;
+                var resultStatements = result.state.GetResolved();
+                if (resultStatements.Count > 0)
+                  yield return AddNewLocal(declaration.Locals[index], resultStatements[0]); // we only expect a function to return a single expression
+                else if (resultExpressions.Count > 0)
+                  yield return AddNewLocal(declaration.Locals[index], resultExpressions[0]); // we only expect a function to return a single expression
+                else
+                  yield return AddNewLocal<object>(declaration.Locals[index], null);
 
-                }
-
-              } else {
-                foreach (var result in ResolveExpression(exprRhs.Expr)) {
-                  yield return AddNewLocal(declaration.Locals[index], result);
-                }
               }
+
+              //if (StaticContext.program.IsTacticCall(aps)) {
+              //  var tactic = StaticContext.program.GetTactic(aps);
+              //  foreach (var result in CallAction(aps, new Solution(this.Copy()))) {
+              //    if (tactic is TacticFunction) {
+              //      var resultExpressions = result.state.DynamicContext.generatedExpressions;
+              //      if (resultExpressions.Count == 0)
+              //        yield return AddNewLocal<object>(declaration.Locals[index], null);
+              //      else {
+              //        yield return AddNewLocal(declaration.Locals[index], resultExpressions[0]); // we only expect a function to return a single expression
+              //      }
+              //    } else if (tactic is Tactic) {
+              //      var resultStatements = result.state.GetResolved();
+              //      if (resultStatements.Count == 0)
+              //        yield return AddNewLocal<object>(declaration.Locals[index], null);
+              //      else {
+              //        yield return AddNewLocal(declaration.Locals[index], resultStatements[0]); // we only expect a function to return a single expression
+              //      }
+              //    }
+              //  }
+              //} else if (IsArgumentApplication(aps)) {
+              //  foreach (var result in CallAction(aps, new Solution(this.Copy()))) {
+              //    // we don't know where the results are, thus let's look at both statements and expressions
+              //    result.state.Fin();
+              //    var resultExpressions = result.state.DynamicContext.generatedExpressions;
+              //    var resultStatements = result.state.GetResolved();
+              //    if (resultStatements.Count > 0)
+              //      yield return AddNewLocal(declaration.Locals[index], resultStatements[0]); // we only expect a function to return a single expression
+              //    else if (resultExpressions.Count > 0)
+              //      yield return AddNewLocal(declaration.Locals[index], resultExpressions[0]); // we only expect a function to return a single expression
+              //    else
+              //      yield return AddNewLocal<object>(declaration.Locals[index], null);
+
+              //  }
+
+              //} else {
+              //  foreach (var result in ResolveExpression(exprRhs.Expr)) {
+              //    yield return AddNewLocal(declaration.Locals[index], result);
+              //  }
+              //}
             }
           }
         }

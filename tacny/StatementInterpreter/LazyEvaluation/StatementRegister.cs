@@ -109,7 +109,7 @@ namespace LazyTacny {
             {Atomic.PRE_COND, typeof(PrecondAtomic)},
             {Atomic.POST_COND, typeof(PostcondAtomic)},
             {Atomic.GET_MEMBER, typeof(GetMemberAtomic) },
-            //{Atomic.IS_INDUCTIVE, typeof(IsInductiveAtomic)},
+            {Atomic.IS_INDUCTIVE, typeof(IsInductiveAtomic)},
             {Atomic.TRY_CATCH, typeof(TryCatchAtomic)},
             //{Atomic.RETURNS, typeof(ReturnAtomic)},
             //{Atomic.IS_DATATYPE, typeof(IsDatatypeAtomic)},

@@ -183,6 +183,7 @@
     <Compile Include="LazyAtomicStatements\IdAtomic.cs" />
     <Compile Include="LazyAtomicStatements\IfAtomic.cs" />
     <Compile Include="LazyAtomicStatements\InvariantAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\IsInductiveAtomic.cs" />
     <Compile Include="LazyAtomicStatements\LemmasAtomic.cs" />
     <Compile Include="LazyAtomicStatements\MatchAtomic.cs" />
     <Compile Include="LazyAtomicStatements\MergeAtomic.cs">

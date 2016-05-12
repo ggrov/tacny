@@ -10,24 +10,26 @@ namespace LazyTacny {
   class TacnyContract {
     private readonly Atomic atomic;
 
-    public TacnyContract(Solution solution) {
-      Contract.Requires(solution != null);
+    public TacnyContract(Atomic state) {
+      Contract.Requires(state != null);
       // check if codeContracts for Tacny are enabled
-      if (Util.TacnyOptions.O.Contracts)
-        this.atomic = solution.state;
+      this.atomic = state;
     }
 
-    public static void ValidateRequires(Solution solution) {
-      Contract.Requires(solution != null);
-      TacnyContract tc = new TacnyContract(solution);
+    public static void ValidateRequires(Atomic state) {
+      Contract.Requires(state != null);
+      TacnyContract tc = new TacnyContract(state);
       tc.ValidateRequires();
     }
 
 
     protected void ValidateRequires() {
-      //    if (atomic != null)
-      //        foreach (var req in atomic.dynamicContext.tactic.Req)
-      //            ValidateOne(req);
+      if (atomic == null)
+        return;
+      // for  now support only tactics
+      var tactic = atomic.DynamicContext.tactic as Tactic;
+      foreach (var req in tactic.Req)
+        ValidateOne(req);
     }
 
     protected void ValidateOne(MaybeFreeExpression mfe) {
