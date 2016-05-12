@@ -67,7 +67,7 @@ namespace Tacny
 
             if (formula.IsLeaf())
             {
-                if (formula.data.GetType() == old_singleton.GetType() && formula.was_replaced == false)
+                if (formula.data.GetType() == old_singleton.GetType() && formula.modified == false)
                 {
                     if (formula.data is NameSegment)
                     {

@@ -25,8 +25,8 @@ namespace LazyTacny {
       Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
       Contract.Assert(tcce.OfSize(call_arguments, 2), Util.Error.MkErr(st, 0, 2, call_arguments.Count));
 
-      foreach (var arg1 in ProcessStmtArgument(call_arguments[0])) {
-        foreach (var arg2 in ProcessStmtArgument(call_arguments[1])) {
+      foreach (var arg1 in ResolveExpression(call_arguments[0])) {
+        foreach (var arg2 in ResolveExpression(call_arguments[1])) {
           // valdiate the argument types
           System.Type type1 = arg1.GetType().GetGenericArguments().Single();
           System.Type type2 = arg2.GetType().GetGenericArguments().Single();

@@ -30,7 +30,7 @@ namespace LazyTacny {
       Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
 
 
-      foreach (var forlumla in ProcessStmtArgument(call_arguments[0])) {
+      foreach (var forlumla in ResolveExpression(call_arguments[0])) {
         Contract.Assert(formula != null);
         invariant = new MaybeFreeExpression(formula);
         var ac = this.Copy();
@@ -54,7 +54,7 @@ namespace LazyTacny {
       Contract.Assert(call_arguments != null);
       Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
 
-      foreach (var item in ProcessStmtArgument(call_arguments[0])) {
+      foreach (var item in ResolveExpression(call_arguments[0])) {
         invariant = item as MaybeFreeExpression;
         Contract.Assert(invariant != null, Util.Error.MkErr(st, 1, typeof(MaybeFreeExpression)));
         WhileStmt nws = null;

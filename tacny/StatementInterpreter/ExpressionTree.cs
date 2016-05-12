@@ -14,7 +14,7 @@ namespace Tacny {
     public ExpressionTree lChild;
     public ExpressionTree rChild;
     public Expression data;
-    public bool was_replaced = false;
+    public bool modified = false;
     public ExpressionTree root;
 
     public ExpressionTree(Expression data)
@@ -161,8 +161,9 @@ namespace Tacny {
           Console.Out.WriteLine(string.Format("Resolving {0} in {1}", tac.Name, fun.Name));
           resolved.AddRange(fun.Formals); // add input arguments as resolved variables
           var result = LazyTacny.Atomic.ResolveTactic(tac, us, fun, tacnyProgram, variables, resolved);
-          data = result.state.DynamicContext.generatedExpressions[0];
+          this.data = result.state.DynamicContext.generatedExpressions[0];
           tacnyProgram.currentDebug.Fin();
+          this.modified = true;
         }
       } else {
         lChild.FindAndResolveTacticApplication(tacnyProgram, fun);

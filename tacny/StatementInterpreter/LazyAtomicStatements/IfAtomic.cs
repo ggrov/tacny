@@ -54,7 +54,7 @@ namespace LazyTacny {
     private IEnumerable<Solution> InsertIf(IfStmt ifStmt) {
 
       // resolve the if statement guard
-      foreach (var result in ProcessStmtArgument(ifStmt.Guard)) {
+      foreach (var result in ResolveExpression(ifStmt.Guard)) {
         var resultExpression = result is IVariable ? IVariableToExpression(result as IVariable) : result as Expression;
         // resolve 'if' block
         var ifStmtEnum = ResolveBody(ifStmt.Thn);

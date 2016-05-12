@@ -9532,7 +9532,7 @@ namespace Microsoft.Dafny
     /// Ensures that the set returned has no aliases.
     /// </summary>
     static ISet<IVariable> FreeVariables(Expression expr) {
-      Contract.Requires(expr != null);
+      aContract.Requires(expr != null);
       Contract.Ensures(expr.Type != null);
 
       if (expr is IdentifierExpr) {

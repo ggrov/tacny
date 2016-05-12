@@ -21,19 +21,19 @@ namespace LazyTacny {
       List<Expression> callArguments = null;
       InitArgs(st, out lv, out callArguments);
       BinaryExpr bexp = null;
-      foreach (var lhsValue in ProcessStmtArgument(callArguments[0])) {
+      foreach (var lhsValue in ResolveExpression(callArguments[0])) {
         Expression lhs = null;
         if (lhsValue is Expression)
           lhs = lhsValue as Expression;
         else if (lhsValue is IVariable)
           lhs = IVariableToExpression(lhsValue as IVariable);
-        foreach (var rhsValue in ProcessStmtArgument(callArguments[2])) {
+        foreach (var rhsValue in ResolveExpression(callArguments[2])) {
           Expression rhs = null;
           if (rhsValue is Expression)
             rhs = rhsValue as Expression;
           else if (rhsValue is IVariable)
             rhs = IVariableToExpression(rhsValue as IVariable);
-          foreach (var op in ProcessStmtArgument(callArguments[1])) {
+          foreach (var op in ResolveExpression(callArguments[1])) {
 
             var opLiteral = op as StringLiteralExpr;
             var opString = opLiteral.Value.ToString();

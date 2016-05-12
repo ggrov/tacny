@@ -199,9 +199,9 @@ namespace LazyTacny {
       Statement st = null;
       ApplySuffix aps = null;
       UpdateStmt us = null;
-      if ((st = call as Statement) != null)
+      if ((st = call as Statement) != null) {
         type = StatementRegister.GetStatementType(st);
-      else {
+      } else {
         if ((aps = call as ApplySuffix) != null) {
           type = StatementRegister.GetStatementType(aps);
           // convert applySuffix to an updateStmt
@@ -211,118 +211,130 @@ namespace LazyTacny {
 
       if (type != null) {
         Debug.WriteLine(String.Format("Resolving statement {0}", type.ToString()));
-        var qq = Activator.CreateInstance(type, new object[] { this }) as IAtomicLazyStmt;
-        if (qq != null) {
-          foreach (var res in qq.Resolve(st, solution)) {
-            yield return res;
-          }
+        var resolverInstance = Activator.CreateInstance(type, new object[] { this }) as IAtomicLazyStmt;
+        if (resolverInstance != null) {
+          return resolverInstance.Resolve(st, solution);
         } else {
           Contract.Assert(false, Util.Error.MkErr(st, 18, type.ToString(), typeof(IAtomicLazyStmt)));
         }
-      } else { // could not determine the statement type, check if it's a nested tactic call
+      } else {
 
         Debug.WriteLine("Could not determine statement type");
         if (call is TacticVarDeclStmt) {
           Debug.WriteLine("Found tactic variable declaration");
-          foreach (var item in (RegisterLocalVariable(call as TacticVarDeclStmt)))
-            yield return item;
+          return RegisterLocalVariable(call as TacticVarDeclStmt);
         } else if ((us = st as UpdateStmt) != null) {
-          // if the statement is nested tactic call
+
           if (StaticContext.program.IsTacticCall(us)) {
             Debug.WriteLine("Found nested tactic call");
-
-            var tactic = StaticContext.program.GetTactic(us);
-            // TODO fix nested tactic calls
-            ExprRhs er = us.Rhss[0] as ExprRhs;
-            foreach (var result in ResolveNestedTacticCall(tactic, er.Expr as ApplySuffix)) {
-              Atomic action = this.Copy();
-              action.SetNewTarget(solution.state.GetNewTarget());
-              if (tactic is Tactic) {
-                foreach (var kvp in result.state.GetResult()) { 
-                  yield return AddNewStatement(kvp.Key, kvp.Value);
-                  break;
-                }
-              } else if (tactic is TacticFunction) {
-                foreach (var value in result.state.DynamicContext.generatedExpressions) {
-                  yield return AddNewExpression(value);
-                  break;
-                }
-              }
-            }
-          } else if (IsLocalAssignment(us)) { // if the updatestmt is asignment
-
-            foreach (var result in UpdateLocalVariable(us)) {
-              yield return result;
-            }
-          } else if (IsArgumentApplication(us)) { // true when tactic is passed as an argument
-            var name = GetNameSegment(us);
-            var key = GetLocalKeyByName(name);
-            var dafnyFormal = key as Dafny.Formal;
-            if (dafnyFormal != null) {
-              if (key.Type.ToString() == "Tactic") {
-                var value = GetLocalValueByName(name);
-                var application = value as ApplySuffix;
-                // this may cause problems when resolved tactic returns an ApplySuffix
-                if (application != null) {
-                  var newUpdateStmt = new UpdateStmt(us.Tok, us.EndTok, us.Lhss, new List<AssignmentRhs>() { new ExprRhs(application) });
-                  var ac = this.Copy();
-                  foreach (var argument in application.Args) {
-                    var ns = argument as NameSegment;
-                    if (StaticContext.HasGlobalVariable(ns.Name)) {
-                      var temp = StaticContext.GetGlobalVariable(ns.Name);
-                      ac.DynamicContext.AddLocal(new Dafny.Formal(ns.tok, ns.Name, temp.Type, true, temp.IsGhost), ns);
-                    }
-                  }
-                  foreach (var item in ac.CallAction(newUpdateStmt, solution)) {
-                    yield return item;
-                  }
-                } else {
-                  if (value is Dafny.LiteralExpr) {
-                    yield return new Solution(this.Copy());
-                  }
-
-                }
-              } else if (key.Type.ToString() == "ResolvedTactic") {
-              }
-              /* other types go here */
-            } else {
-              var value = GetLocalValueByName(name);
-              aps = ((ExprRhs)us.Rhss[0]).Expr as ApplySuffix;
-              var member = value as MemberDecl;
-              if (member != null) {
-                var newNs = new NameSegment(name.tok, member.Name, null);
-                var expressionList = new List<Expression>();
-                foreach (var arg in aps.Args) {
-                  foreach (var result in ProcessStmtArgument(arg)) {
-                    if (result is Expression)
-                      expressionList.Add(result as Expression);
-                    else if (result is IVariable)
-                      expressionList.Add(IVariableToExpression(result as IVariable));
-                    else {
-                      Contract.Assert(false, "Sum tin wong");
-                      break; // we assume that the the call returns only one expression
-                    }
-                  }
-                }
-                aps = new ApplySuffix(aps.tok, newNs, expressionList);
-                Util.Printer.P.GetConsolePrinter().PrintExpression(aps, true);
-                var newUs = new UpdateStmt(us.Tok, us.EndTok, us.Lhss, new List<AssignmentRhs>() { new ExprRhs(aps) });
-                yield return AddNewStatement<UpdateStmt>(us, newUs);
-              }
-
-            }
-          } else // insert the statement as is
-            {
-            yield return CallDefaultAction(st);
+            return ResolveNestedTacticCall(us);
+          } else if (IsLocalAssignment(us)) {
+            Debug.WriteLine("Found local assignment");
+            return UpdateLocalVariable(us);
+          } else if (IsArgumentApplication(us)) {
+            Debug.WriteLine("Found argument applicaiton");
+            return ResolveArgumentApplication(us);
           }
-        } else {
-          yield return CallDefaultAction(st);
+        } else if (call is PredicateStmt) {
+          var predicate = call as PredicateStmt;
+          return ResolvePredicateStmt(predicate);
+
         }
       }
+      // insert the statement "as is"
+      return CallDefaultAction(st);
+    }
+
+    private IEnumerable<Solution> ResolvePredicateStmt(PredicateStmt p) {
+
+      PredicateStmt newPredicate = null;
+      foreach (var result in ResolveExpression(p.Expr)) {
+        var resultExpression = result is IVariable ? IVariableToExpression(result as IVariable) : result as Expression;
+        Util.Printer.P.GetConsolePrinter().PrintExpression(resultExpression, true);
+        if (p is AssertStmt) {
+          newPredicate = new AssertStmt(p.Tok, p.EndTok, resultExpression, p.Attributes);
+        } else {
+          newPredicate = new AssumeStmt(p.Tok, p.EndTok, resultExpression, p.Attributes);
+        }
+        yield return AddNewStatement(p, newPredicate);
+      }
+    }
+
+    private IEnumerable<Solution> ResolveArgumentApplication(UpdateStmt us) {
+      Contract.Requires<ArgumentNullException>(us != null);
+      ApplySuffix aps = null;
+      var name = GetNameSegment(us);
+      var key = GetLocalKeyByName(name);
+      var dafnyFormal = key as Dafny.Formal;
+      // if the application is passed as an argument
+      if (dafnyFormal != null) {
+        var value = GetLocalValueByName(name);
+        if (key.Type.ToString() == "Tactic") {
+          var application = value as ApplySuffix;
+          // this may cause problems when resolved tactic returns an ApplySuffix
+          if (application != null) {
+            var newUpdateStmt = new UpdateStmt(us.Tok, us.EndTok, us.Lhss, new List<AssignmentRhs>() { new ExprRhs(application) });
+            var ac = this.Copy();
+            foreach (var argument in application.Args) {
+              var ns = argument as NameSegment;
+              if (StaticContext.HasGlobalVariable(ns.Name)) {
+                var temp = StaticContext.GetGlobalVariable(ns.Name);
+                ac.DynamicContext.AddLocal(new Dafny.Formal(ns.tok, ns.Name, temp.Type, true, temp.IsGhost), ns);
+              }
+            }
+            // let's resolve the tactic applicaiton
+            foreach (var item in ac.CallAction(newUpdateStmt, new Solution(this.Copy()))) {
+              yield return item;
+            }
+          } else {
+            if (value is Dafny.LiteralExpr) {
+              yield return new Solution(this.Copy());
+            }
+
+          }
+        } else if (key.Type.ToString() == "Term") {
+          // we only need to replace the term 
+          var term = value as NameSegment;
+          if (term != null) {
+            var oldAps = ((ExprRhs)us.Rhss[0]).Expr as ApplySuffix;
+            var newAps = new ApplySuffix(oldAps.tok, term, Util.Copy.CopyExpressionList(oldAps.Args));
+            yield return AddNewExpression(newAps);
+
+          } else {
+            Contract.Assert(false, Util.Error.MkErr(us, 1, typeof(NameSegment)));
+          }
+        }
+        /* other types go here */
+      } else {
+        var value = GetLocalValueByName(name);
+        aps = ((ExprRhs)us.Rhss[0]).Expr as ApplySuffix;
+        var member = value as MemberDecl;
+        if (member != null) {
+          var newNs = new NameSegment(name.tok, member.Name, null);
+          var expressionList = new List<Expression>();
+          foreach (var arg in aps.Args) {
+            foreach (var result in ResolveExpression(arg)) {
+              if (result is Expression)
+                expressionList.Add(result as Expression);
+              else if (result is IVariable)
+                expressionList.Add(IVariableToExpression(result as IVariable));
+              else {
+                Contract.Assert(false, "Sum tin wong");
+                break; // we assume that the the call returns only one expression
+              }
+            }
+          }
+          aps = new ApplySuffix(aps.tok, newNs, expressionList);
+          Util.Printer.P.GetConsolePrinter().PrintExpression(aps, true);
+          var newUs = new UpdateStmt(us.Tok, us.EndTok, us.Lhss, new List<AssignmentRhs>() { new ExprRhs(aps) });
+          yield return AddNewStatement<UpdateStmt>(us, newUs);
+        }
+      }
+
       yield break;
     }
 
-    public IEnumerable<object> ProcessStmtArgument(Expression argument) {
+    public IEnumerable<object> ResolveExpression(Expression argument) {
       Contract.Requires<ArgumentNullException>(argument != null);
       NameSegment ns = null;
       ApplySuffix aps = null;
@@ -349,7 +361,7 @@ namespace LazyTacny {
             // rewrite the application
             var argsList = new List<Expression>();
             foreach (var arg in aps.Args) {
-              foreach (var result in ProcessStmtArgument(arg)) {
+              foreach (var result in ResolveExpression(arg)) {
                 if (result is Expression)
                   argsList.Add(result as Expression);
                 else
@@ -360,28 +372,20 @@ namespace LazyTacny {
             yield return new ApplySuffix(aps.tok, aps.Lhs, argsList);
 
           } else if (aps.Lhs is ExprDotName) {
-            foreach (var solution in ProcessStmtArgument(aps.Lhs)) {
+            foreach (var solution in ResolveExpression(aps.Lhs)) {
               yield return new ApplySuffix(aps.tok, solution as Expression, aps.Args);
             }
           } else { yield return argument; }
         }
-        //UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
-        //// create a unique local variable
-        //Dafny.LocalVariable lv = new Dafny.LocalVariable(aps.tok, aps.tok, aps.Lhs.tok.val, new BoolType(), false);
-        //TacticVarDeclStmt tvds = new TacticVarDeclStmt(us.Tok, us.EndTok, new List<Dafny.LocalVariable>() { lv }, us);
-        //foreach (var item in CallAction(tvds, new Solution(this.Copy()))) {
-        //    var res = item.state.DynamicContext.localDeclarations[lv];
-        //    item.state.DynamicContext.localDeclarations.Remove(lv);
-        //    yield return res;
-        //}
+
       } else if (argument is TacnyBinaryExpr) {
         var newAps = new ApplySuffix(CreateToken("TacnyBinaryExpr", 0, 0), argument, new List<Expression>()); // create a wrapper for the TacnyBinaryExpr
         foreach (var result in CallAction(newAps, new Solution(this.Copy()))) {
           yield return result.state.DynamicContext.generatedExpressions[0]; // we assume that BinaryExpr only generates one expression
         }
-      } else if (argument is BinaryExpr || argument is ParensExpression) {
+      } else if (argument is BinaryExpr || argument is ParensExpression || argument is Dafny.QuantifierExpr) {
         ExpressionTree expt = ExpressionTree.ExpressionToTree(argument);
-        foreach (var result in ResolveExpression(expt)) {
+        foreach (var result in ResolveExpressionTree(expt)) {
           //if (IsResolvable(expt))
           //  yield return EvaluateExpression(expt);
           //else
@@ -408,7 +412,9 @@ namespace LazyTacny {
       if (declaration.Update != null) {
         UpdateStmt rhs = declaration.Update as UpdateStmt;
         // if statement is of type var q;
-        if (rhs == null) { /* leave the statement */ } else {
+        if (rhs == null) {
+          /* leave the statement as is  */
+        } else {
           foreach (var item in rhs.Rhss) {
             int index = rhs.Rhss.IndexOf(item);
             Contract.Assert(declaration.Locals.ElementAtOrDefault(index) != null, Util.Error.MkErr(declaration, 8));
@@ -420,31 +426,15 @@ namespace LazyTacny {
               yield return new Solution(this.Copy());
             } else {
               var aps = exprRhs.Expr as ApplySuffix;
-              // if apply suffix is an atomic
-              if (StaticContext.program.IsTacticCall(aps) || IsArgumentApplication(aps)) {
-                ITactic tactic = null;
-                if (IsArgumentApplication(aps)) {
-                  var name = GetNameSegment(aps);
-                  var value = GetLocalKeyByName(name) as IVariable;
-
-                  if (value.Type.ToString() == "Tactic") {
-                    var originalAps = GetLocalValueByName(value) as ApplySuffix;
-                    tactic = StaticContext.program.GetTactic(originalAps);
-                    aps = originalAps;
-                  }
-
-                } else {
-                  tactic = StaticContext.program.GetTactic(aps);
-                }
-                // resolve the nested tactic call
-                foreach (var result in ResolveNestedTacticCall(tactic, aps)) {
+              // if 
+              if (StaticContext.program.IsTacticCall(aps)) {
+                var tactic = StaticContext.program.GetTactic(aps);
+                foreach (var result in CallAction(aps, new Solution(this.Copy()))) {
                   if (tactic is TacticFunction) {
                     var resultExpressions = result.state.DynamicContext.generatedExpressions;
                     if (resultExpressions.Count == 0)
                       yield return AddNewLocal<object>(declaration.Locals[index], null);
                     else {
-                      Util.Printer.P.GetConsolePrinter().PrintExpression(resultExpressions[0], false);
-                      Console.Out.WriteLine("");
                       yield return AddNewLocal(declaration.Locals[index], resultExpressions[0]); // we only expect a function to return a single expression
                     }
                   } else if (tactic is Tactic) {
@@ -452,15 +442,27 @@ namespace LazyTacny {
                     if (resultStatements.Count == 0)
                       yield return AddNewLocal<object>(declaration.Locals[index], null);
                     else {
-                      Util.Printer.P.GetConsolePrinter().PrintStatement(resultStatements[0], 0);
-                      Console.Out.WriteLine("");
                       yield return AddNewLocal(declaration.Locals[index], resultStatements[0]); // we only expect a function to return a single expression
                     }
                   }
                 }
+              } else if (IsArgumentApplication(aps)) {
+                foreach (var result in CallAction(aps, new Solution(this.Copy()))) {
+                  // we don't know where the results are, thus let's look at both statements and expressions
+                  result.state.Fin();
+                  var resultExpressions = result.state.DynamicContext.generatedExpressions;
+                  var resultStatements = result.state.GetResolved();
+                  if (resultStatements.Count > 0)
+                    yield return AddNewLocal(declaration.Locals[index], resultStatements[0]); // we only expect a function to return a single expression
+                  else if (resultExpressions.Count > 0)
+                    yield return AddNewLocal(declaration.Locals[index], resultExpressions[0]); // we only expect a function to return a single expression
+                  else
+                    yield return AddNewLocal<object>(declaration.Locals[index], null);
+
+                }
 
               } else {
-                foreach (var result in ProcessStmtArgument(exprRhs.Expr)) {
+                foreach (var result in ResolveExpression(exprRhs.Expr)) {
                   yield return AddNewLocal(declaration.Locals[index], result);
                 }
               }
@@ -476,8 +478,30 @@ namespace LazyTacny {
       yield break;
     }
 
-    private IEnumerable<Solution> ResolveNestedTacticCall(ITactic tactic, ApplySuffix aps) {
+    private IEnumerable<Solution> ResolveNestedTacticCall(UpdateStmt us) {
+      Contract.Requires<ArgumentNullException>(us != null);
 
+      var tactic = StaticContext.program.GetTactic(us);
+      ExprRhs er = us.Rhss[0] as ExprRhs;
+      foreach (var result in ResolveNestedTacticCall(tactic, er.Expr as ApplySuffix)) {
+        Atomic action = this.Copy();
+        action.SetNewTarget(this.GetNewTarget());
+        if (tactic is Tactic) {
+          foreach (var kvp in result.state.GetResult()) {
+            yield return AddNewStatement(kvp.Key, kvp.Value);
+            break;
+          }
+        } else if (tactic is TacticFunction) {
+          foreach (var value in result.state.DynamicContext.generatedExpressions) {
+            yield return AddNewExpression(value);
+            break;
+          }
+        }
+      }
+    }
+
+    private IEnumerable<Solution> ResolveNestedTacticCall(ITactic tactic, ApplySuffix aps) {
+      Contract.Requires<ArgumentNullException>(tactic != null && aps != null);
       UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
       var atomic = new Atomic(DynamicContext.md, tactic, us, StaticContext);
       //// register local variables
@@ -485,7 +509,7 @@ namespace LazyTacny {
       Contract.Assert(exps.Count == atomic.DynamicContext.tactic.Ins.Count);
       atomic.SetNewTarget(GetNewTarget());
       for (int i = 0; i < exps.Count; i++) {
-        foreach (var result in ProcessStmtArgument(exps[i])) {
+        foreach (var result in ResolveExpression(exps[i])) {
           atomic.AddLocal(atomic.DynamicContext.tactic.Ins[i], result);
         }
       }
@@ -494,7 +518,6 @@ namespace LazyTacny {
 
     private IEnumerable<Solution> UpdateLocalVariable(UpdateStmt updateStmt) {
       Contract.Requires(updateStmt != null);
-      Debug.WriteLine("Updating local variable");
       // if statement is of type var q;
       Contract.Assert(updateStmt.Lhss.Count == updateStmt.Rhss.Count, Util.Error.MkErr(updateStmt, 8));
       for (int i = 0; i < updateStmt.Lhss.Count; i++) {
@@ -513,7 +536,7 @@ namespace LazyTacny {
               AddLocal(local, litVal);
               yield return new Solution(this.Copy());
             } else { // otherwise process the expression
-              foreach (var result in ProcessStmtArgument(exprRhs.Expr)) {
+              foreach (var result in ResolveExpression(exprRhs.Expr)) {
                 AddLocal(local, result);
                 yield return new Solution(this.Copy());
               }
@@ -584,12 +607,12 @@ namespace LazyTacny {
 
     }
 
-    private Solution CallDefaultAction(Statement st) {
+    private IEnumerable<Solution> CallDefaultAction(Statement st) {
       Contract.Requires(st != null);
 
       Atomic state = this.Copy();
       state.AddUpdated(st, st);
-      return new Solution(state, null);
+      yield return new Solution(state, null);
     }
 
     /// <summary>
@@ -714,8 +737,8 @@ namespace LazyTacny {
       return DynamicContext.newTarget;
     }
     #endregion
-    public void SetNewTarget(MemberDecl new_target) {
-      DynamicContext.newTarget = new_target;
+    public void SetNewTarget(MemberDecl newTarget) {
+      DynamicContext.newTarget = newTarget;
     }
     /// <summary>
     /// Creates a new tactic from a given tactic body and updates the context
@@ -873,18 +896,18 @@ namespace LazyTacny {
       var leafs = body.TreeToList();
       var leafResolvers = new Dictionary<ExpressionTree, IEnumerable<object>>();
 
-      leafResolvers.Add(body, ProcessStmtArgument(body.TreeToExpression()));
+      leafResolvers.Add(body, ResolveExpression(body.TreeToExpression()));
 
       return GenerateExpressionTree(body, leafResolvers);
     }
 
 
 
-    protected IEnumerable<ExpressionTree> ResolveExpression(ExpressionTree expression) {
+    protected IEnumerable<ExpressionTree> ResolveExpressionTree(ExpressionTree expression) {
       var leafs = expression.GetLeafs();
       var leafResolvers = new Dictionary<ExpressionTree, IEnumerable<object>>();
       foreach (var leaf in leafs)
-        leafResolvers.Add(leaf, ProcessStmtArgument(leaf.TreeToExpression()));
+        leafResolvers.Add(leaf, ResolveExpression(leaf.TreeToExpression()));
 
       return GenerateExpressionTree(expression, leafResolvers);
     }
@@ -915,9 +938,6 @@ namespace LazyTacny {
         var newLeaf = ExpressionTree.ExpressionToTree(newValue);
         var newTree = ExpressionTree.FindAndReplaceNode(tree, newLeaf, kvp.Key);
 
-        //Util.Printer.P.GetConsolePrinter().PrintExpression(newTree.TreeToExpression(), false);
-
-
         foreach (var result in GenerateExpressionTree(newTree, leafResolvers))
           yield return result;
       }
@@ -935,7 +955,7 @@ namespace LazyTacny {
       Contract.Requires(expt != null && expt.IsLeaf());
       if (expt.data is NameSegment || expt.data is ApplySuffix) {
         // fix me
-        foreach (var item in ProcessStmtArgument(expt.data))
+        foreach (var item in ResolveExpression(expt.data))
           return item;
       } else if (expt.data is Dafny.LiteralExpr)
         return expt.data;

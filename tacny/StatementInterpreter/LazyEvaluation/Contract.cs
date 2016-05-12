@@ -34,7 +34,7 @@ namespace LazyTacny {
       Contract.Requires<ArgumentNullException>(mfe != null);
       Expression expr = mfe.E;
 
-      foreach (var item in atomic.ProcessStmtArgument(expr)) {
+      foreach (var item in atomic.ResolveExpression(expr)) {
         Dafny.LiteralExpr result = item as Dafny.LiteralExpr;
         Contract.Assert(result != null, Util.Error.MkErr(expr, 1, "Boolean Expression"));
         Contract.Assert((bool)result.Value, Util.Error.MkErr(expr, 14));

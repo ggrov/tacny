@@ -113,11 +113,12 @@ namespace LazyTacny {
 
       //local solution list
       List<Solution> result = atomic == null ? new List<Solution>() : new List<Solution>() { new Solution(atomic) };
-
+      Solution lastFinalSolution = null;
       while (true) {
         List<Solution> Interm = new List<Solution>();
         if (result.Count == 0) {
-
+          Util.Printer.Warning("COuld not find the valid solution. Returning last generated solution");
+          yield return lastFinalSolution;
           yield break;
         }
         // iterate every solution
@@ -127,6 +128,7 @@ namespace LazyTacny {
             // validate result
             if (solution.IsResolved()) {
               if (verify) {
+                lastFinalSolution = solution;
                 if (VerifySolution(solution)) { yield return solution; yield break; } else { continue; }
               } else { yield return solution; }
             } else if (solution.state.DynamicContext.isPartialyResolved) {

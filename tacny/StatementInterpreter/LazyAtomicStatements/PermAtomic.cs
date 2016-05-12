@@ -39,7 +39,7 @@ namespace LazyTacny {
       InitArgs(st, out call_arguments);
       Contract.Assert(tcce.OfSize(call_arguments, 2), Util.Error.MkErr(st, 0, 2, call_arguments.Count));
 
-      foreach (var member in ProcessStmtArgument(call_arguments[0])) {
+      foreach (var member in ResolveExpression(call_arguments[0])) {
         Contract.Assert(member != null, Util.Error.MkErr(call_arguments[0], 1, typeof(Method)));
 
         md = member as MemberDecl;
@@ -53,7 +53,7 @@ namespace LazyTacny {
         else
           Contract.Assert(false, Util.Error.MkErr(call_arguments[0], 1, String.Format("{0} or {1}", typeof(Method), typeof(Dafny.Function))));
 
-        foreach (var ovars in ProcessStmtArgument(call_arguments[1])) {
+        foreach (var ovars in ResolveExpression(call_arguments[1])) {
           Contract.Assert(ovars != null, Util.Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
 
           List<IVariable> vars = ovars as List<IVariable>;

@@ -24,7 +24,7 @@ namespace LazyTacny {
 
       switch (bexp.Op) {
         case TacnyBinaryExpr.TacnyOpcode.TacnyOr:
-          foreach (var result in ProcessStmtArgument(bexp.E0)) {
+          foreach (var result in ResolveExpression(bexp.E0)) {
             var ac = this.Copy();
             if (result is Expression)
               ac.DynamicContext.generatedExpressions.Add(result as Expression);
@@ -34,7 +34,7 @@ namespace LazyTacny {
               Contract.Assert(false, "Sum tin wong");
             yield return new Solution(ac);
           }
-          foreach (var result in ProcessStmtArgument(bexp.E1)) {
+          foreach (var result in ResolveExpression(bexp.E1)) {
             var ac = this.Copy();
             if (result is Expression)
               ac.DynamicContext.generatedExpressions.Add(result as Expression);

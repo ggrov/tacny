@@ -51,7 +51,7 @@ namespace LazyTacny {
             NameSegment var = bexp.E0 as NameSegment;
             Contract.Assert(var != null, Util.Error.MkErr(bexp, 6, declaration.Name));
             Contract.Assert(var.Name == declaration.Name, Util.Error.MkErr(bexp, 6, var.Name));
-            foreach (var result in ProcessStmtArgument(bexp.E1)) {
+            foreach (var result in ResolveExpression(bexp.E1)) {
               if (result is IEnumerable) {
                 dynamic resultList = result;
                 foreach (var item in resultList) {
@@ -67,7 +67,7 @@ namespace LazyTacny {
               Atomic copy = this.Copy();
               copy.AddLocal(declaration, item);
               // resolve the rhs expression
-              foreach (var res in copy.ProcessStmtArgument(bexp.E1)) {
+              foreach (var res in copy.ResolveExpression(bexp.E1)) {
                 Dafny.LiteralExpr lit = res as Dafny.LiteralExpr;
                 // sanity check
                 Contract.Assert(lit != null, Util.Error.MkErr(expr, 17));

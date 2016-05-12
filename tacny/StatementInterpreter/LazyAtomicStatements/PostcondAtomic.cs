@@ -24,7 +24,7 @@ namespace LazyTacny {
       Contract.Assert(call_arguments.Count <= 1, Util.Error.MkErr(st, 0, 0, call_arguments.Count));
       MemberDecl memberDecl = null;
       if (call_arguments.Count > 0) {
-        foreach (var member in ProcessStmtArgument(call_arguments[0])) {
+        foreach (var member in ResolveExpression(call_arguments[0])) {
           memberDecl = member as MemberDecl;
           if (memberDecl == null)
             Contract.Assert(false, Util.Error.MkErr(st, 1, "Function, [Ghost] Method, Declaration"));
