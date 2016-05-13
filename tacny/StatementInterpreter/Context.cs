@@ -32,7 +32,8 @@ namespace Tacny {
     public Dictionary<Statement, Statement> generatedStatements = new Dictionary<Statement, Statement>();
     public List<Expression> generatedExpressions = new List<Expression>();
     public MemberDecl newTarget = null;
-
+    public DatatypeCtor activeCtor = null;
+    public DatatypeDecl activeDatatype = null;
     private int tacCounter;
     public bool isPartialyResolved = false;
     public DynamicContext() {
@@ -70,7 +71,10 @@ namespace Tacny {
       var newM = Util.Copy.CopyMember(md);
       ITactic newTac = Util.Copy.CopyMember(tactic as MemberDecl) as ITactic;
       var new_target = newTarget != null ? Util.Copy.CopyMember(this.newTarget) : null;
-      return new DynamicContext(newM, newTac, tac_call, tacticBody, localDeclarations, Util.Copy.CopyStatementDict(generatedStatements), tacCounter, new_target);
+      var newContext = new DynamicContext(newM, newTac, tac_call, tacticBody, localDeclarations, Util.Copy.CopyStatementDict(generatedStatements), tacCounter, new_target);
+      newContext.activeCtor = this.activeCtor;
+      newContext.activeDatatype = this.activeDatatype;
+      return newContext;
     }
 
 
@@ -239,7 +243,7 @@ namespace Tacny {
 
     public DatatypeDecl GetGlobal(string name) {
       Contract.Requires<ArgumentNullException>(name != null);
-      return datatypes[name];
+      return ContainsGlobalKey(name) ? datatypes[name] : null;
     }
 
     // register global variables and their asociated types

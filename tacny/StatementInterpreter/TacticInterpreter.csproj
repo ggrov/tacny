@@ -174,10 +174,12 @@
     <Compile Include="AtomicStatements\GuardAtomic.cs" />
     <Compile Include="AtomicStatements\IfAtomic.cs" />
     <Compile Include="Contract.cs" />
+    <Compile Include="LazyAtomicStatements\DeleteAtomic.cs" />
     <Compile Include="LazyAtomicStatements\ExpressionAtomic.cs" />
     <Compile Include="LazyAtomicStatements\FailAtomic.cs" />
     <Compile Include="LazyAtomicStatements\FreshNameAtomic.cs" />
     <Compile Include="LazyAtomicStatements\GenBexpAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\GetConstructorAtomic.cs" />
     <Compile Include="LazyAtomicStatements\GetMemberAtomic.cs" />
     <Compile Include="LazyAtomicStatements\GuardAtomic.cs" />
     <Compile Include="LazyAtomicStatements\IdAtomic.cs" />

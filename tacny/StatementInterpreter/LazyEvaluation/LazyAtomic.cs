@@ -1029,9 +1029,6 @@ namespace LazyTacny {
           if (leaf is ApplySuffix) {
             if (StaticContext.program.IsTacticCall(leaf as ApplySuffix) || IsArgumentApplication(leaf as ApplySuffix)) {
               return false;
-              //foreach (var result in ProcessStmtArgument(leaf)) {
-              //  Util.Printer.P.GetConsolePrinter().PrintExpression(result as Expression, false);
-              //}
             }
           }
         } else {
@@ -1080,14 +1077,15 @@ namespace LazyTacny {
 
 
     /// <summary>
-    /// Register datatype ctor vars as locals
+    /// Register datatype ctor vars as locals and set active ctor in the context
     /// </summary>
     /// <param name="datatype"></param>
     /// <param name="index"></param>
     public void RegisterLocals(DatatypeDecl datatype, int index, Dictionary<string, Dafny.Type> ctorTypes = null) {
       Contract.Requires(datatype != null);
       Contract.Requires(index + 1 <= datatype.Ctors.Count);
-
+      datatype.Ctors[index].EnclosingDatatype = datatype;
+      DynamicContext.activeCtor = datatype.Ctors[index];
       foreach (var formal in datatype.Ctors[index].Formals) {
         // register globals as name segments
         // registed the ctor argument with the correct type
@@ -1117,6 +1115,7 @@ namespace LazyTacny {
     public void RemoveLocals(DatatypeDecl datatype, int index) {
       Contract.Requires(datatype != null);
       Contract.Requires(index + 1 <= datatype.Ctors.Count);
+      DynamicContext.activeCtor = null;
       foreach (var formal in datatype.Ctors[index].Formals) {
         // register globals as name segments
         StaticContext.RemoveGlobalVariable(formal);
@@ -1174,6 +1173,21 @@ namespace LazyTacny {
       int num = this.DynamicContext.localDeclarations.Count<KeyValuePair<IVariable, object>>(i => i.Key.Name == ns.Name);
       return new Dafny.LocalVariable(ns.tok, ns.tok, string.Format("{0}_{1}", ns.Name, num), new ObjectType(), true);
     }
+
+    protected string GetArgumentType(NameSegment ns) {
+      Contract.Requires(ns != null);
+      var original = GetLocalKeyByName(ns) as IVariable;
+      if (original == null)
+        return null;
+      try {
+        return original.Type.ToString();
+      } catch {
+        // argument is LocalVariable, thus we don't have a type name
+        return null;
+      }
+    }
+
+
 
   }
 }

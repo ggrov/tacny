@@ -184,7 +184,8 @@ namespace LazyTacny {
     private Solution GenerateVerifiedStmt(DatatypeDecl datatype, NameSegment casesGuard, TacnyCasesBlockStmt st) {
       bool[] ctorFlags = null;
       int ctor = 0; // current active match case
-
+      // register active datatype
+      DynamicContext.activeDatatype = datatype;
       InitCtorFlags(datatype, out ctorFlags);
       List<Solution> ctorBodies = RepeatedDefault<Solution>(datatype.Ctors.Count);
       // find the first failing case 
@@ -235,6 +236,8 @@ namespace LazyTacny {
       }
 
       ms = GenerateMatchStmt(DynamicContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
+      // clean up
+      DynamicContext.activeDatatype = null;
       return CreateSolution(this, ms);
     }
 

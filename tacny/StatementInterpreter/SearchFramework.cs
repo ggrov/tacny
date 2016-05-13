@@ -58,8 +58,9 @@ namespace LazyTacny {
           break;
       }
       // return a fresh copy of the atomic
-      foreach (var item in enumerable)
+      foreach (var item in enumerable) {
         yield return new Solution(item.state.Copy());
+      }
       yield break;
     }
 
@@ -67,29 +68,22 @@ namespace LazyTacny {
       Contract.Requires<ArgumentNullException>(tac != null);
       MemberDecl md = tac as MemberDecl;
       Attributes attrs = md.Attributes;
-      if (attrs != null) {
-        if (attrs.Name == "search") {
-          Expression expr = attrs.Args.FirstOrDefault();
-          if (expr != null) {
-            // the search strategy is expected to be a name segment
-            var ns = expr as NameSegment;
-            if (ns != null) {
-              switch (ns.Name.ToUpper()) {
-                case "BFS":
-                  return Strategy.BFS;
-                case "DFS":
-                  return Strategy.DFS;
-                default:
-                  Contract.Assert(false, (Util.Error.MkErr(expr, 19, ns.Name)));
-                  return Strategy.BFS;
 
-              }
-            }
-          }
-        }
+
+      if (attrs?.Name != "search")
+        return Strategy.BFS;
+
+      Expression expr = attrs.Args.FirstOrDefault();
+      var name = (expr as NameSegment)?.Name;
+      switch (name?.ToUpper()) {
+        case "BFS":
+          return Strategy.BFS;
+        case "DFS":
+          return Strategy.DFS;
+        default:
+          Contract.Assert(false, (Util.Error.MkErr(expr, 19, name)));
+          return Strategy.BFS;
       }
-      // default search strategy  
-      return Strategy.BFS;
     }
 
 

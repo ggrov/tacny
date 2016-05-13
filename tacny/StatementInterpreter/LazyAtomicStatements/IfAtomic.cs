@@ -18,10 +18,7 @@ namespace LazyTacny {
        * 
        * Check if the loop guard can be resolved localy
        */
-      if (IsResolvable())
-        return ExecuteIf(st as IfStmt);
-      else
-        return InsertIf(st as IfStmt);
+      return IsResolvable() ? ExecuteIf(st as IfStmt) : InsertIf(st as IfStmt);
     }
 
     private IEnumerable<Solution> ExecuteIf(IfStmt ifStmt) {
@@ -31,14 +28,11 @@ namespace LazyTacny {
       // if the guard has been resolved to true resolve if body
       if (guard_res) {
         return ResolveBody(ifStmt.Thn);
-
-      } else if (!guard_res && ifStmt.Els != null) // if else statement exists
-        {
+      } else if (!guard_res && ifStmt.Els != null) { // if else statement exists
         // if it a block statement resolve the body
         if (ifStmt.Els is BlockStmt)
           return ResolveBody(ifStmt.Els as BlockStmt);
-        else // otherwise it is 'else if' block, resolve recursively
-        {
+        else { // otherwise it is 'else if' block, resolve recursively
           return ExecuteIf(ifStmt.Els as IfStmt);
         }
       } else
