@@ -212,10 +212,11 @@ namespace LazyTacny {
 
         // if nothing was generated for the cases body move on to the next one
         foreach (var result in ResolveBody(st.Body)) {
-          //Solution.PrintSolution(result);
+          
           ctorBodies[ctor] = result;
           ms = GenerateMatchStmt(DynamicContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
           solution = CreateSolution(this, ms);
+          Solution.PrintSolution(solution);
           // if the program fails tro resolve skip
           if (!ResolveAndVerify(solution))
             continue;

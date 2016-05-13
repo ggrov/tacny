@@ -1,6 +1,7 @@
 ﻿using Microsoft.Dafny;
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Diagnostics.Contracts;
 using System.Diagnostics;
 using System.Linq;
@@ -351,7 +352,7 @@ namespace LazyTacny {
           TacticVarDeclStmt tvds = new TacticVarDeclStmt(us.Tok, us.EndTok, new List<Dafny.LocalVariable>() { lv }, us);
           foreach (var item in CallAction(tvds, new Solution(this.Copy()))) {
             var res = item.state.DynamicContext.localDeclarations[lv];
-            item.state.DynamicContext.localDeclarations.Remove(lv);
+            DynamicContext.localDeclarations.Remove(lv);
             yield return res;
           }
         } else {
@@ -384,10 +385,10 @@ namespace LazyTacny {
       } else if (argument is BinaryExpr || argument is ParensExpression || argument is Dafny.QuantifierExpr) {
         ExpressionTree expt = ExpressionTree.ExpressionToTree(argument);
         foreach (var result in ResolveExpressionTree(expt)) {
-          //if (IsResolvable(expt))
-          //  yield return EvaluateExpression(expt);
-          //else
-          yield return expt.TreeToExpression();
+          if (IsResolvable(result))
+            yield return EvaluateExpression(expt);
+          else
+            yield return result.TreeToExpression();
         }
       } else if (argument is ExprDotName) {
         var edn = argument as ExprDotName;
@@ -397,6 +398,21 @@ namespace LazyTacny {
           yield return new ExprDotName(edn.tok, newLhs as Expression, edn.SuffixName, edn.OptTypeArguments);
         } else {
           yield return edn;
+        }
+      } else if (argument is UnaryOpExpr) {
+        var unaryOp = argument as UnaryOpExpr;
+        foreach (var result in ResolveExpression(unaryOp.E)) {
+          switch (unaryOp.Op) {
+            case UnaryOpExpr.Opcode.Cardinality:
+              if (!(result is IEnumerable))
+                Contract.Assert(false, "Cardinality works with enumerable types");
+              var @enum = result as IList;
+              yield return new Dafny.LiteralExpr(unaryOp.tok, new BigInteger(@enum.Count));
+              yield break;
+            default:
+              Contract.Assert(false, "Unsupported Unary Operator");
+              yield break;
+          }
         }
       } else {
         yield return argument;
@@ -435,48 +451,7 @@ namespace LazyTacny {
                   yield return AddNewLocal(declaration.Locals[index], resultExpressions[0]); // we only expect a function to return a single expression
                 else
                   yield return AddNewLocal<object>(declaration.Locals[index], null);
-
               }
-
-              //if (StaticContext.program.IsTacticCall(aps)) {
-              //  var tactic = StaticContext.program.GetTactic(aps);
-              //  foreach (var result in CallAction(aps, new Solution(this.Copy()))) {
-              //    if (tactic is TacticFunction) {
-              //      var resultExpressions = result.state.DynamicContext.generatedExpressions;
-              //      if (resultExpressions.Count == 0)
-              //        yield return AddNewLocal<object>(declaration.Locals[index], null);
-              //      else {
-              //        yield return AddNewLocal(declaration.Locals[index], resultExpressions[0]); // we only expect a function to return a single expression
-              //      }
-              //    } else if (tactic is Tactic) {
-              //      var resultStatements = result.state.GetResolved();
-              //      if (resultStatements.Count == 0)
-              //        yield return AddNewLocal<object>(declaration.Locals[index], null);
-              //      else {
-              //        yield return AddNewLocal(declaration.Locals[index], resultStatements[0]); // we only expect a function to return a single expression
-              //      }
-              //    }
-              //  }
-              //} else if (IsArgumentApplication(aps)) {
-              //  foreach (var result in CallAction(aps, new Solution(this.Copy()))) {
-              //    // we don't know where the results are, thus let's look at both statements and expressions
-              //    result.state.Fin();
-              //    var resultExpressions = result.state.DynamicContext.generatedExpressions;
-              //    var resultStatements = result.state.GetResolved();
-              //    if (resultStatements.Count > 0)
-              //      yield return AddNewLocal(declaration.Locals[index], resultStatements[0]); // we only expect a function to return a single expression
-              //    else if (resultExpressions.Count > 0)
-              //      yield return AddNewLocal(declaration.Locals[index], resultExpressions[0]); // we only expect a function to return a single expression
-              //    else
-              //      yield return AddNewLocal<object>(declaration.Locals[index], null);
-
-              //  }
-
-              //} else {
-              //  foreach (var result in ResolveExpression(exprRhs.Expr)) {
-              //    yield return AddNewLocal(declaration.Locals[index], result);
-              //  }
-              //}
             }
           }
         }
@@ -964,14 +939,13 @@ namespace LazyTacny {
     /// <returns></returns>
     protected object EvaluateLeaf(ExpressionTree expt) {
       Contract.Requires(expt != null && expt.IsLeaf());
-      if (expt.data is NameSegment || expt.data is ApplySuffix) {
-        // fix me
+      if (expt.data is Dafny.LiteralExpr)
+        return expt.data;
+      else {
         foreach (var item in ResolveExpression(expt.data))
           return item;
-      } else if (expt.data is Dafny.LiteralExpr)
-        return expt.data;
-
-      return null;
+        return null;
+      }
     }
 
     /// <summary>
@@ -1031,8 +1005,6 @@ namespace LazyTacny {
               return false;
             }
           }
-        } else {
-          return false;
         }
       }
       return true;

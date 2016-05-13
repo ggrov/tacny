@@ -27,16 +27,25 @@ namespace LazyTacny {
       guard_res = EvaluateGuard();
       // if the guard has been resolved to true resolve if body
       if (guard_res) {
-        return ResolveBody(ifStmt.Thn);
+        foreach(var item in ResolveBody(ifStmt.Thn)) {
+          if(item.state.DynamicContext.isPartialyResolved) {
+            yield return item;
+          }
+        }
       } else if (!guard_res && ifStmt.Els != null) { // if else statement exists
         // if it a block statement resolve the body
         if (ifStmt.Els is BlockStmt)
-          return ResolveBody(ifStmt.Els as BlockStmt);
-        else { // otherwise it is 'else if' block, resolve recursively
-          return ExecuteIf(ifStmt.Els as IfStmt);
+          foreach (var item in ResolveBody(ifStmt.Els as BlockStmt)) {
+            yield return item;
+          } else { // otherwise it is 'else if' block, resolve recursively
+          foreach (var item in ExecuteIf(ifStmt.Els as IfStmt)) {
+            if (item.state.DynamicContext.isPartialyResolved) {
+              yield return item;
+            }
+          }
         }
       } else
-        return default(IEnumerable<Solution>);
+        yield return default(Solution);
     }
 
     /// <summary>

@@ -74,6 +74,7 @@ namespace Tacny {
       var newContext = new DynamicContext(newM, newTac, tac_call, tacticBody, localDeclarations, Util.Copy.CopyStatementDict(generatedStatements), tacCounter, new_target);
       newContext.activeCtor = this.activeCtor;
       newContext.activeDatatype = this.activeDatatype;
+      newContext.isPartialyResolved = this.isPartialyResolved;
       return newContext;
     }
 

@@ -18,18 +18,13 @@ namespace LazyTacny {
 
     public IEnumerable<Solution> Resolve(Statement st, Solution solution) {
       Contract.Assert(ExtractGuard(st) != null, Util.Error.MkErr(st, 2));
-
       /**
        * Check if the loop guard can be resolved localy
        */
       if (IsResolvable())
-        foreach (var item in ExecuteLoop(st as WhileStmt, solution))
-          yield return item;
+        return ExecuteLoop(st as WhileStmt, solution);
       else
-        foreach (var item in InsertLoop(st as WhileStmt, solution))
-          yield return item;
-
-      yield break;
+        return InsertLoop(st as WhileStmt, solution);
     }
 
     private IEnumerable<Solution> ExecuteLoop(WhileStmt whileStmt, Solution solution) {
@@ -39,6 +34,8 @@ namespace LazyTacny {
       if (guard_res) {
 
         foreach (var item in ResolveBody(whileStmt.Body)) {
+          Console.WriteLine("While statement result: ");
+          Solution.PrintSolution(item);
           item.state.DynamicContext.isPartialyResolved = true;
           yield return item;
         }

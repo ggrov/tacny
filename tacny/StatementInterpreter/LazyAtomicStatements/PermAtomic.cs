@@ -97,10 +97,7 @@ namespace LazyTacny {
             List<Expression> new_list = Util.Copy.CopyExpressionList(result.Cast<Expression>().ToList());
             ApplySuffix aps = new ApplySuffix(call_arguments[0].tok, new NameSegment(call_arguments[0].tok, md.Name, null), new_list);
             UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
-            Atomic ac = this.Copy();
-            ac.AddUpdated(us, us);
-            Solution.PrintSolution(new Solution(ac));
-            yield return new Solution(ac);
+            yield return AddNewStatement(us, us);
           }
         }
       }

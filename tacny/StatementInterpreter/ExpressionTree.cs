@@ -310,8 +310,7 @@ namespace Tacny {
         node.rChild = ExpressionToTree(e.E1);
         node.lChild.parent = node;
         node.rChild.parent = node;
-      }
-      if (exp is BinaryExpr) {
+      } if (exp is BinaryExpr) {
         var e = (BinaryExpr)exp;
         node = new ExpressionTree(e);
         node.lChild = ExpressionToTree(e.E0);
