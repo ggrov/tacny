@@ -38,25 +38,31 @@ namespace LazyTacny {
           dynamic darg1 = arg1;
           dynamic darg2 = arg2;
 
-          System.Type listType = typeof(List<>).MakeGenericType(new[] { type1 });
-          result = (IList)Activator.CreateInstance(listType);
+          result = MergeLists(darg1, darg2, type1);
+          yield return AddNewLocal(lv, result);
+        }
+      }
+      yield break;
+    }
 
-          foreach (var t in darg1) {
-            if (result.Cast<IVariable>().Count(x => x.Name == t.Name) == 0)
-              result.Add(t);
-          }
 
-          foreach (var t in darg2) {
-            if (result.Cast<IVariable>().Count(x => x.Name == t.Name) == 0)
-              result.Add(t);
-          }
-          AddLocal(lv, result);
-          yield return new Solution(this.Copy());
+    private static IList  MergeLists(dynamic l1, dynamic l2, System.Type type) {
+      System.Type listType = typeof(List<>).MakeGenericType(new[] { type });
+      var result = (IList)Activator.CreateInstance(listType);
+      foreach (var t in l1) {
+        result.Add(t);
+      }
+
+      foreach (var t in l2) {
+        if (type == typeof(IVariable)) {
+          if (result.Cast<IVariable>().Count(x => x.Name == t.Name) == 0)
+            result.Add(t);
+        } else {
+          result.Add(t);
         }
       }
 
-
-      yield break;
+      return result;
     }
 
   }

@@ -31,13 +31,14 @@ namespace LazyTacny {
       BinaryExpr bexp = suchThat.Expr as BinaryExpr;
       Contract.Assert(bexp != null, Util.Error.MkErr(st, 5, typeof(BinaryExpr), suchThat.Expr.GetType()));
 
-
-      foreach (var item in ResolveExpression(bexp, tvds.Locals[0])) {
-        AddLocal(tvds.Locals[0], item);
-        yield return new Solution(this.Copy());
-
+      // this will cause issues when multiple variables are used
+      // as the variables are updated one at a time
+      foreach (var local in tvds.Locals) {
+        foreach (var item in ResolveExpression(bexp, local)) {
+          yield return AddNewLocal(local, item);
+        }
       }
-      yield break;
+      
     }
 
     private IEnumerable<object> ResolveExpression(Expression expr, IVariable declaration) {
@@ -60,7 +61,6 @@ namespace LazyTacny {
               }
             }
             yield break;
-
           case BinaryExpr.Opcode.And:
             // for each item in the resolved lhs of the expression
             foreach (var item in ResolveExpression(bexp.E0, declaration)) {

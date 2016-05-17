@@ -49,6 +49,7 @@ namespace LazyTacny {
       TACNY_BEXP,
       GET_CTOR,
       DELETE,
+      IF_GUARD,
     };
 
     public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -85,6 +86,7 @@ namespace LazyTacny {
       {"|||", Atomic.TACNY_BEXP },
       {"get_constructor", Atomic.GET_CTOR },
       {"delete", Atomic.DELETE },
+      { "if_guard", Atomic.IF_GUARD }
         };
 
     public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -122,6 +124,7 @@ namespace LazyTacny {
       {Atomic.TACNY_BEXP, typeof(ExpressionAtomic) },
       {Atomic.GET_CTOR, typeof(GetConstructorAtomic) },
       {Atomic.DELETE, typeof(DeleteAtomic) },
+      {Atomic.IF_GUARD, typeof(IfGuardAtomic) }
   };
 
     /// <summary>

@@ -160,7 +160,7 @@ namespace Tacny {
           List<IVariable> resolved = new List<IVariable>();
           Console.Out.WriteLine(string.Format("Resolving {0} in {1}", tac.Name, fun.Name));
           resolved.AddRange(fun.Formals); // add input arguments as resolved variables
-          var result = LazyTacny.Atomic.ResolveTactic(tac, us, fun, tacnyProgram, variables, resolved);
+          var result = LazyTacny.Atomic.ResolveTactic( us, fun, tacnyProgram, variables, resolved);
           this.data = result.state.DynamicContext.generatedExpressions[0];
           tacnyProgram.currentDebug.Fin();
           this.modified = true;

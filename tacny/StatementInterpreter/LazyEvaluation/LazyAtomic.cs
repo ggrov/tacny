@@ -80,16 +80,20 @@ namespace LazyTacny {
     }
 
 
-    public static Solution ResolveTactic(ITactic tac, UpdateStmt tac_call, MemberDecl md, Tacny.Program tacnyProgram, List<IVariable> variables, List<IVariable> resolved) {
-      Contract.Requires(tac != null);
-      Contract.Requires(tac_call != null);
+    public static Solution ResolveTactic(UpdateStmt tacticCall, MemberDecl md, Tacny.Program tacnyProgram, List<IVariable> variables, List<IVariable> resolved, WhileStmt ws = null) {
+      Contract.Requires(tacticCall != null);
       Contract.Requires(md != null);
       Contract.Requires(tacnyProgram != null);
       Contract.Requires(tcce.NonNullElements<IVariable>(variables));
       Contract.Requires(tcce.NonNullElements<IVariable>(resolved));
 
-      Atomic atomic = new Atomic(md, tac, tac_call, tacnyProgram);
+      var tactic = tacnyProgram.GetTactic(tacticCall);
+      tacnyProgram.SetCurrent(tactic, md);
+      Console.Out.WriteLine(string.Format("Resolving {0} in {1}", tactic.Name, md.Name));
+
+      Atomic atomic = new Atomic(md, tactic, tacticCall, tacnyProgram);
       atomic.StaticContext.RegsiterGlobalVariables(variables, resolved);
+      atomic.DynamicContext.whileStmt = ws;
       foreach (var result in ResolveTactic(atomic))
         return result;
 
@@ -404,20 +408,76 @@ namespace LazyTacny {
         foreach (var result in ResolveExpression(unaryOp.E)) {
           switch (unaryOp.Op) {
             case UnaryOpExpr.Opcode.Cardinality:
-              if (!(result is IEnumerable))
-                Contract.Assert(false, "Cardinality works with enumerable types");
-              var @enum = result as IList;
-              yield return new Dafny.LiteralExpr(unaryOp.tok, new BigInteger(@enum.Count));
+              if (!(result is IEnumerable)) {
+                var resultExp = result is IVariable ? IVariableToExpression(result as IVariable) : result as Expression;
+                yield return new UnaryOpExpr(unaryOp.tok, unaryOp.Op, resultExp);
+              } else {
+                var @enum = result as IList;
+                yield return new Dafny.LiteralExpr(unaryOp.tok, new BigInteger(@enum.Count));
+              }
+              yield break;
+            case UnaryOpExpr.Opcode.Not:
+              if (result is Dafny.LiteralExpr) {
+                var lit = result as Dafny.LiteralExpr;
+                if (lit.Value is bool) {
+                  // inverse the bool value
+                  yield return new Dafny.LiteralExpr(unaryOp.tok, !(bool)lit.Value);
+                } else {
+                  Contract.Assert(false, Util.Error.MkErr(argument, 1, "boolean"));
+                }
+              } else {
+                var resultExp = result is IVariable ? IVariableToExpression(result as IVariable) : result as Expression;
+                yield return new UnaryOpExpr(unaryOp.tok, unaryOp.Op, resultExp);
+              }
               yield break;
             default:
               Contract.Assert(false, "Unsupported Unary Operator");
               yield break;
           }
         }
-      } else {
-        yield return argument;
-      }
+      } else if (argument is DisplayExpression) {
+        var list = argument as DisplayExpression;
+        foreach (var item in ResolveDisplayExpression(list)) {
+          yield return item;
+        }
+      } else { yield return argument; }
       yield break;
+    }
+
+
+    private IEnumerable<IList<Expression>> ResolveDisplayExpression(DisplayExpression list) {
+      Contract.Requires(list != null);
+      var dict = new Dictionary<Expression, IEnumerable<object>>();
+      foreach (var element in list.Elements) {
+        dict.Add(element, ResolveExpression(element));
+      }
+
+      return GenerateList(null, dict);
+    }
+
+
+    private IEnumerable<IList<Expression>> GenerateList(IList<Expression> list, Dictionary<Expression, IEnumerable<Object>> elements) {
+      Contract.Requires(elements != null);
+
+      var tmp = list;
+      if (tmp == null) {
+        tmp = new List<Expression>();
+      }
+      var kvp = elements.FirstOrDefault();
+      if (kvp.Equals(default(KeyValuePair<Expression, IEnumerable<Object>>))) {
+        yield return list;
+        yield break;
+      } else {
+
+        elements.Remove(kvp.Key);
+        foreach (var result in kvp.Value) {
+          var resultExpr = result is IVariable ? IVariableToExpression(result as IVariable) : result as Expression;
+          tmp.Add(resultExpr);
+          foreach (var value in GenerateList(tmp, elements)) {
+            yield return value;
+          }
+        }
+      }
     }
 
     private IEnumerable<Solution> RegisterLocalVariable(TacticVarDeclStmt declaration) {
@@ -601,33 +661,6 @@ namespace LazyTacny {
       yield return new Solution(state, null);
     }
 
-    /// <summary>
-    /// Find closest while statement to the tactic call
-    /// </summary>
-    /// <param name="tac_stmt">Tactic call</param>
-    /// <param name="member">Method</param>
-    /// <returns>WhileStmt</returns>
-    protected static WhileStmt FindWhileStmt(Statement tac_stmt, MemberDecl member) {
-      Contract.Requires(tac_stmt != null);
-      Contract.Requires(member != null);
-
-      Method m = (Method)member;
-
-      int index = m.Body.Body.IndexOf(tac_stmt);
-      if (index <= 0)
-        return null;
-
-      while (index >= 0) {
-        Statement stmt = m.Body.Body[index];
-
-        WhileStmt ws = stmt as WhileStmt;
-        if (ws != null)
-          return ws;
-
-        index--;
-      }
-      return null;
-    }
     #region getters
     protected static List<Expression> GetCallArguments(UpdateStmt us) {
       Contract.Requires(us != null);
@@ -1004,6 +1037,8 @@ namespace LazyTacny {
             if (StaticContext.program.IsTacticCall(leaf as ApplySuffix) || IsArgumentApplication(leaf as ApplySuffix)) {
               return false;
             }
+          } else {
+            return false;
           }
         }
       }

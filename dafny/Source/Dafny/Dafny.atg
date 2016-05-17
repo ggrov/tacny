@@ -1893,12 +1893,13 @@ WhileStmt<out Statement stmt>
      Attributes decAttrs = null;
      Attributes modAttrs = null;
      List<FrameExpression> mod = null;
-
+  
      BlockStmt body = null;  IToken bodyEllipsis = null;
      IToken bodyStart = null, bodyEnd = null, endTok = Token.NoToken;
      List<GuardedAlternative> alternatives;
      stmt = dummyStmt;  // to please the compiler
      bool isDirtyLoop = true;
+     Statement tacAps = null;
   .)
   "while"                    (. x = t; .)
   (
@@ -1910,6 +1911,7 @@ WhileStmt<out Statement stmt>
     ( Guard<out guard>           (. Contract.Assume(guard == null || cce.Owner.None(guard)); .)
     | "..."                      (. guardEllipsis = t; .)
     )
+    [ UpdateStmt<out tacAps> ]
     { LoopSpec<invariants, decreases, ref mod, ref decAttrs, ref modAttrs> }
     ( IF(la.kind == _lbrace)      /* if there's an open brace, claim it as the beginning of the loop body (as opposed to a BlockStmt following the loop) */
       BlockStmt<out body, out bodyStart, out bodyEnd>  (. endTok = body.EndTok; isDirtyLoop = false; .)
@@ -1926,6 +1928,9 @@ WhileStmt<out Statement stmt>
           body = new BlockStmt(x, endTok, new List<Statement>());
         }
         stmt = new WhileStmt(x, endTok, guard, invariants, new Specification<Expression>(decreases, decAttrs), new Specification<FrameExpression>(null, null), body);
+        var ws = stmt as WhileStmt;
+        ws.TacAps = tacAps;
+        stmt = ws;
         stmt = new SkeletonStatement(stmt, guardEllipsis, bodyEllipsis);
       } else {
         // The following statement protects against crashes in case of parsing errors
@@ -1933,10 +1938,15 @@ WhileStmt<out Statement stmt>
           body = new BlockStmt(x, endTok, new List<Statement>());
         }
         stmt = new WhileStmt(x, endTok, guard, invariants, new Specification<Expression>(decreases, decAttrs), new Specification<FrameExpression>(mod, modAttrs), body);
+        var ws = stmt as WhileStmt;
+        ws.TacAps = tacAps;
+        stmt = ws;
+
       }
     .)
   )
   .
+
 LoopSpec<.List<MaybeFreeExpression> invariants, List<Expression> decreases, ref List<FrameExpression> mod, ref Attributes decAttrs, ref Attributes modAttrs.>
 = (. Expression e; FrameExpression fe;
      bool isFree = false; Attributes attrs = null;

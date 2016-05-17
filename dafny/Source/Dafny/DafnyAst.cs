@@ -5276,6 +5276,7 @@ namespace Microsoft.Dafny
     public class WhileStmt : LoopStmt
     {
         public readonly Expression Guard;
+        public  Statement TacAps; // tacny tactic application
         public readonly BlockStmt Body;
 
         public WhileStmt(IToken tok, IToken endTok, Expression guard,

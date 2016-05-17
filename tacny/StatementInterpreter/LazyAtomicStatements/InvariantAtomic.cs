@@ -56,10 +56,12 @@ namespace LazyTacny {
 
       foreach (var item in ResolveExpression(call_arguments[0])) {
         invariant = item as MaybeFreeExpression;
-        Contract.Assert(invariant != null, Util.Error.MkErr(st, 1, typeof(MaybeFreeExpression)));
+        if(invariant == null) {
+          invariant = new MaybeFreeExpression(item as Expression);
+        }
         WhileStmt nws = null;
 
-        WhileStmt ws = FindWhileStmt(StaticContext.tac_call, StaticContext.md);
+        WhileStmt ws = DynamicContext.whileStmt;
         Contract.Assert(ws != null, Util.Error.MkErr(st, 11));
         // if we already added new invariants to the statement, use the updated statement instead
         nws = GetUpdated(ws) as WhileStmt;
@@ -72,8 +74,7 @@ namespace LazyTacny {
         invar = new List<MaybeFreeExpression>(invar_arr);
         invar.Add(invariant);
         nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, invar, ws.Decreases, ws.Mod, ws.Body);
-        AddUpdated(ws, nws);
-        yield return AddNewStatement<WhileStmt>(nws, nws);
+        yield return AddNewStatement<WhileStmt>(ws, nws);
       }
       yield break;
     }

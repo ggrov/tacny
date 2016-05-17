@@ -33,7 +33,7 @@ namespace Tacny {
     public List<Expression> generatedExpressions = new List<Expression>();
     public MemberDecl newTarget = null;
     public DatatypeCtor activeCtor = null;
-    public DatatypeDecl activeDatatype = null;
+    public WhileStmt whileStmt = null;
     private int tacCounter;
     public bool isPartialyResolved = false;
     public DynamicContext() {
@@ -73,8 +73,8 @@ namespace Tacny {
       var new_target = newTarget != null ? Util.Copy.CopyMember(this.newTarget) : null;
       var newContext = new DynamicContext(newM, newTac, tac_call, tacticBody, localDeclarations, Util.Copy.CopyStatementDict(generatedStatements), tacCounter, new_target);
       newContext.activeCtor = this.activeCtor;
-      newContext.activeDatatype = this.activeDatatype;
       newContext.isPartialyResolved = this.isPartialyResolved;
+      newContext.whileStmt = this.whileStmt;
       return newContext;
     }
 
@@ -194,7 +194,7 @@ namespace Tacny {
     }
 
     public Statement GetUpdated(Statement key) {
-      Contract.Ensures(Contract.Result<Statement>() != null);
+      Contract.Requires(key != null);
       if (generatedStatements.ContainsKey(key))
         return generatedStatements[key];
       return null;

@@ -72,53 +72,61 @@ namespace LazyTacny {
         var ac = new Atomic();
         ac.IsFunction = true;
         ac.DynamicContext.newTarget = newFun;
-        var p = new Dafny.Printer(Console.Out);
-        p.PrintFunction(newFun, 0, false);
         return new Solution(ac);
 
       } else if (md is Method) {
         Method m = md as Method;
-        if (m == null)
-          return null;
         if (m.Body == null)
           return null;
+
         List<IVariable> variables = new List<IVariable>();
+        List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
+        variables.AddRange(m.Ins);
+        variables.AddRange(m.Outs);
+        resolved.AddRange(m.Ins); // add input arguments as resolved variables
 
+        // does not work for multiple tactic applications
         foreach (var st in m.Body.Body) {
+          UpdateStmt us = null;
+          WhileStmt ws = null;
           // register local variables
-          VarDeclStmt vds = st as VarDeclStmt;
-          if (vds != null)
+          if (st is VarDeclStmt) {
+            VarDeclStmt vds = st as VarDeclStmt;
             variables.AddRange(vds.Locals);
-
-          UpdateStmt us = st as UpdateStmt;
-          if (us != null) {
-            if (this.tacnyProgram.IsTacticCall(us)) {
-              Debug.WriteLine("Tactic call found");
-              try {
-                ITactic tac = tacnyProgram.GetTactic(us);
-                tacnyProgram.SetCurrent(tac, md);
-                variables.AddRange(m.Ins);
-                variables.AddRange(m.Outs);
-                //sol_list.AddRange(solution_list.plist);
-                // get the resolved variables
-                List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
-                Console.Out.WriteLine(string.Format("Resolving {0} in {1}", tac.Name, md.Name));
-                resolved.AddRange(m.Ins); // add input arguments as resolved variables
-                Solution result = Atomic.ResolveTactic(tac, us, md, tacnyProgram, variables, resolved);
-                Solution.PrintSolution(result);
-                Debug.IndentLevel = 0;
-                //                            Solution.PrintSolution(result);
-                this.tacnyProgram.currentDebug.Fin();
-                return result;
-              } catch (Exception e) {
-                Util.Printer.Error(e.Message);
-                return null;
+          } else if (st is UpdateStmt) {
+            us = st as UpdateStmt;
+          } else if (st is WhileStmt) {
+            ws = st as WhileStmt;
+            us = ws.TacAps as UpdateStmt;
+            foreach (var wst in ws.Body.Body) {
+              if (st is VarDeclStmt) {
+                VarDeclStmt vds = st as VarDeclStmt;
+                variables.AddRange(vds.Locals);
               }
             }
+          }
+          if (us != null && this.tacnyProgram.IsTacticCall(us)) {
+            Debug.WriteLine("Tactic call found");
+            return ResolveTactic(variables, resolved, us, md, ws);
           }
         }
       }
       return null;
+    }
+
+    private Solution ResolveTactic(List<IVariable> variables, List<IVariable> resolved, UpdateStmt us, MemberDecl md, WhileStmt ws = null) {
+      try {
+
+        Solution result = Atomic.ResolveTactic(us, md, tacnyProgram, variables, resolved, ws);
+        Solution.PrintSolution(result);
+        Debug.IndentLevel = 0;
+        //Solution.PrintSolution(result);
+        this.tacnyProgram.currentDebug.Fin();
+        return result;
+      } catch (Exception e) {
+        Util.Printer.Error(e.Message);
+        return null;
+      }
     }
   }
 }

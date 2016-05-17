@@ -96,6 +96,7 @@ namespace Util {
         case 20: s = "Member {0} does not exist"; break;
         case 21: s = "Only tactic function can be assigned as a value"; break;
         case 22: s = "The expression can only be called from a tmatch statement"; break;
+        case 23: s = "Unsupported tactic caller type, expected {0}"; break;
         default: s = "error" + n; break;
       }
 

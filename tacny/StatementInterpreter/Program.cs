@@ -143,39 +143,48 @@ namespace Tacny {
 
 
     private void IncBadBranchCount(DebugData debugData) {
-      debugData.BadBranchCount++;
+      if (debugData != null)
+        debugData.BadBranchCount++;
     }
 
     private void IncGoodBranchCount(DebugData debugData) {
-      debugData.GoodBranchCount++;
+      if (debugData != null)
+        debugData.GoodBranchCount++;
     }
 
     public void IncTotalBranchCount(DebugData debugData) {
-      debugData.TotalBranchCount++;
+      if (debugData != null)
+        debugData.TotalBranchCount++;
     }
 
     private void IncVerificationFailure(DebugData debugData) {
-      debugData.VerificationFailure++;
+      if (debugData != null)
+        debugData.VerificationFailure++;
     }
 
     private void IncVerificationSuccess(DebugData debugData) {
-      debugData.VerificationSucc++;
+      if (debugData != null)
+        debugData.VerificationSucc++;
     }
 
     private void IncCallsToBoogie(DebugData debugData) {
-      debugData.CallsToBoogie++;
+      if (debugData != null)
+        debugData.CallsToBoogie++;
     }
 
     private void IncCallsToDafny(DebugData debugData) {
-      debugData.CallsToDafny++;
+      if(debugData != null)
+        debugData.CallsToDafny++;
     }
 
     private void IncTimeAtBoogie(DebugData debugData, int time) {
-      debugData.TimeAtBoogie += time;
+      if (debugData != null)
+        debugData.TimeAtBoogie += time;
     }
 
     private void IncTimeAtDafny(DebugData debugData, int time) {
-      debugData.TimeAtDafny += time;
+      if (debugData != null)
+        debugData.TimeAtDafny += time;
     }
 
     public void SetCurrent(ITactic tac, MemberDecl md) {

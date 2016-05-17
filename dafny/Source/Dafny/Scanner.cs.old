@@ -574,7 +574,7 @@ public class Scanner {
 			case "changed": t.kind = 101; break;
 			case "try": t.kind = 102; break;
 			case "catch": t.kind = 103; break;
-			case "cases": t.kind = 104; break;
+			case "tmatch": t.kind = 104; break;
 			case "while": t.kind = 105; break;
 			case "match": t.kind = 106; break;
 			case "assert": t.kind = 107; break;

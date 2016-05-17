@@ -143,7 +143,6 @@ namespace LazyTacny {
           }
         }
 
-        //URGENT TODO: function generation
         newMemberDecl = GenerateMethod(method, body, ac.DynamicContext.newTarget as Method);
       } else {
         newMemberDecl = ac.GetNewTarget();
@@ -193,92 +192,40 @@ namespace LazyTacny {
     }
 
     private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution) {
-      WhileStmt ws = null;
-      BlockStmt bs = null;
       int index = FindTacCall(body, tac_call);
       if (index == -1)
         return null;
 
-      List<Statement> newBody = new List<Statement>();
-      if (index == 0) {
-        Statement[] tmp = body.ToArray();
-        newBody = new List<Statement>(tmp);
-        newBody.RemoveAt(index);
-        newBody.InsertRange(0, solution);
-        return newBody;
-      }
+      var newBody = new List<Statement>();
+      var tmp = body.ToArray();
+      newBody = new List<Statement>(tmp);
+      newBody.RemoveAt(index);
+      newBody.InsertRange(index, solution);
 
-      // check where from tac_call has been made
-      int i = index + 1;
-      while (i < body.Count) {
-        Statement stmt = body[i];
-        bs = stmt as BlockStmt;
-        // if we found a block statement check behind to find the asociated while statement
-        if (bs != null) {
-          int j = index;
-          while (j >= 0) {
-            Statement stmt_2 = body[j];
-            ws = stmt_2 as WhileStmt;
-            if (ws != null)
-              break;
-
-            else if (!(stmt_2 is UpdateStmt))
-              return null;
-
-            j--;
-          }
-          break;
-        } else if (!(stmt is UpdateStmt))
-          return null;
-
-        i++;
-      }
-      //// tactic called from a while statement
-      if (ws != null && bs != null) {
-        Statement[] tmp = body.ToArray();
-        int l_bound = body.IndexOf(ws);
-        int u_boud = body.IndexOf(bs);
-        // tactic called in a while statement should 
-        //  return only a single solution item which is a WhileStmt
-        if (solution.Count > 0) {
-          WhileStmt mod_ws = (WhileStmt)solution[0];
-          mod_ws = new WhileStmt(mod_ws.Tok, mod_ws.EndTok, mod_ws.Guard, mod_ws.Invariants,
-              mod_ws.Decreases, mod_ws.Mod, bs);
-          tmp[l_bound] = mod_ws;
-        } else {
-          ws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, ws.Invariants, ws.Decreases, ws.Mod, bs);
-          tmp[l_bound] = ws;
-        }
-        l_bound++;
-
-
-        // for now remove everything between while stmt and block stmt
-        while (l_bound <= u_boud) {
-          tmp[l_bound] = null;
-          l_bound++;
-        }
-
-        foreach (Statement st in tmp)
-          if (st != null)
-            newBody.Add(st);
-      } else {
-        Statement[] tmp = body.ToArray();
-        newBody = new List<Statement>(tmp);
-        newBody.RemoveAt(index);
-        newBody.InsertRange(index, solution);
-      }
 
       return newBody;
     }
 
     private static int FindTacCall(List<Statement> body, UpdateStmt tac_call) {
       for (int j = 0; j < body.Count; j++) {
-        UpdateStmt us = body[j] as UpdateStmt;
-        if (us != null)
-          if (us.Tok.line == tac_call.Tok.line && us.Tok.col == tac_call.Tok.col)
+        
+        if (body[j] is UpdateStmt) {
+          var us = body[j] as UpdateStmt;
+          if (CompareUpdateStmt(us, tac_call))
             return j;
+        } else if (body[j] is WhileStmt) {
+          var us = ((WhileStmt)body[j]).TacAps as UpdateStmt;
+          if (CompareUpdateStmt(us, tac_call))
+            return j;
+        }
       }
       return -1;
+    }
+
+    private static bool CompareUpdateStmt(UpdateStmt st1, UpdateStmt st2) {
+      if (st1 == null || st2 == null)
+        return false;
+      return st1.Tok.line == st2.Tok.line && st1.Tok.col == st2.Tok.col;
     }
 
     private static TopLevelDecl ExtractContext(MemberDecl md, ClassDecl cd) {
