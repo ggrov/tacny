@@ -309,6 +309,11 @@ namespace Tacny {
       return null;
     }
 
+    public Dafny.Type GetVariableType(NameSegment ns) {
+      Contract.Requires(ns != null);
+      return GetVariableType(ns.Name);
+    }
+
     public Dafny.Type GetVariableType(string name) {
       Contract.Requires(name != null);
       if (Util.TacnyOptions.O.EvalAnalysis)

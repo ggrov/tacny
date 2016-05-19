@@ -23,8 +23,7 @@ namespace LazyTacny {
       Contract.Assert(callArgs.Count == 2, Util.Error.MkErr(st, 0, 2, callArgs.Count));
       foreach (var arg1 in ResolveExpression(callArgs[0])) {
         var expression = arg1 as BinaryExpr;
-        if (expression == null)
-          break;
+        Contract.Assert(expression != null, Util.Error.MkErr(st, 1, "Expression"));
         foreach (var arg2 in ResolveExpression(callArgs[1])) {
           var litVal = arg2 as LiteralExpr;
           Contract.Assert(litVal != null);

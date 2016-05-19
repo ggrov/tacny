@@ -198,6 +198,7 @@
     <Compile Include="LazyAtomicStatements\PermAtomic.cs" />
     <Compile Include="LazyAtomicStatements\PostcondAtomic.cs" />
     <Compile Include="LazyAtomicStatements\PrecondAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\ReplaceConstantAtomic.cs" />
     <Compile Include="LazyAtomicStatements\SplitAtomic.cs" />
     <Compile Include="LazyAtomicStatements\SuchThatAtomic.cs" />
     <Compile Include="LazyAtomicStatements\TryCatchAtomic.cs" />

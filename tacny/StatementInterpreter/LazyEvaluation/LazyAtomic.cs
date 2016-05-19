@@ -1184,7 +1184,7 @@ namespace LazyTacny {
       int num = this.DynamicContext.localDeclarations.Count<KeyValuePair<IVariable, object>>(i => i.Key.Name == ns.Name);
       return new Dafny.LocalVariable(ns.tok, ns.tok, string.Format("{0}_{1}", ns.Name, num), new ObjectType(), true);
     }
-
+    [Pure]
     protected string GetArgumentType(NameSegment ns) {
       Contract.Requires(ns != null);
       var original = GetLocalKeyByName(ns) as IVariable;
@@ -1198,6 +1198,7 @@ namespace LazyTacny {
       }
     }
 
+    [Pure]
     protected BinaryExpr.Opcode StringToOp(string op) {
       foreach (BinaryExpr.Opcode code in Enum.GetValues(typeof(BinaryExpr.Opcode))) {
         try {
@@ -1208,6 +1209,16 @@ namespace LazyTacny {
         }
       }
       throw new ArgumentException("Invalid argument; Expected binary operator, received " + op);
+    }
+
+    [Pure]
+    protected static bool ExprDotEquality(Expression a, ExprDotName b) {
+      var dotName = a as ExprDotName;
+      if (dotName == null || b == null)
+        return false;
+      var nsA = dotName.Lhs as NameSegment;
+      var nsB = b.Lhs as NameSegment;
+      return nsA.Name == nsB.Name && dotName.AsStringLiteral() == b.AsStringLiteral();
     }
   }
 }

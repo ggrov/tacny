@@ -13,11 +13,11 @@ namespace LazyTacny {
     public ConstantsAtomic(Atomic atomic) : base(atomic) { }
 
     public IEnumerable<Solution> Resolve(Statement st, Solution solution) {
-      throw new NotImplementedException();
+      yield return Constants(st);
     }
 
 
-    private IEnumerable<Solution> Constants(Statement st) {
+    private Solution Constants(Statement st) {
       IVariable lv = null;
       List<Expression> callArgs;
       var result = new List<Expression>();
@@ -27,7 +27,7 @@ namespace LazyTacny {
 
       foreach(var arg1 in ResolveExpression(callArgs[0])) {
         var expression = arg1 as Expression;
-        Contract.Assert(expression != null, Util.Error.MkErr(st, 1, "Expression"));
+        Contract.Assert(expression != null, Util.Error.MkErr(st, 1, "Term"));
         var expt = ExpressionTree.ExpressionToTree(expression);
         var leafs = expt.GetLeafData();
         foreach(var leaf in leafs) {
@@ -36,10 +36,8 @@ namespace LazyTacny {
               result.Add(leaf);
             }
           } else if(leaf is ExprDotName) {
-            
             var edn = leaf as ExprDotName;
-            var ns = edn.Lhs as NameSegment;
-            if (result.Exists(j => ExprDotEquality(j, edn))) {
+            if (!result.Exists(j => ExprDotEquality(j, edn))) {
               result.Add(leaf);
             }
           }
@@ -47,17 +45,10 @@ namespace LazyTacny {
 
       }
 
-      yield return AddNewLocal(lv, result);
+      return AddNewLocal(lv, result);
     }
 
 
-    private static bool ExprDotEquality(Expression a, ExprDotName b) {
-      var dotName = a as ExprDotName;
-      if (dotName == null)
-        return false;
-      var nsA = dotName.Lhs as NameSegment;
-      var nsB = b.Lhs as NameSegment;
-      return nsA.Name == nsB.Name && dotName.AsStringLiteral() == b.AsStringLiteral();
-    }
+   
   }
 }
