@@ -82,7 +82,7 @@ namespace LazyTacny {
       {"tryCatch", Atomic.TRY_CATCH},
       {"get_returns", Atomic.RETURNS},
       {"is_datatype", Atomic.IS_DATATYPE},
-      {"member", Atomic.GET_MEMBER },
+      {"caller", Atomic.GET_MEMBER },
       {"fresh_lem_name", Atomic.FRESH_LEM_NAME },
       {"gen_bexp", Atomic.GEN_BEXP },
       {"|||", Atomic.TACNY_BEXP },
