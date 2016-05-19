@@ -94,8 +94,9 @@ namespace LazyTacny {
       Atomic atomic = new Atomic(md, tactic, tacticCall, tacnyProgram);
       atomic.StaticContext.RegsiterGlobalVariables(variables, resolved);
       atomic.DynamicContext.whileStmt = ws;
+      atomic.ResolveTacticArguments();
       foreach (var result in ResolveTactic(atomic))
-        return result;
+          return result;
 
       return null;
     }
@@ -272,24 +273,26 @@ namespace LazyTacny {
           var application = value as ApplySuffix;
           // this may cause problems when resolved tactic returns an ApplySuffix
           if (application != null) {
-            var newUpdateStmt = new UpdateStmt(us.Tok, us.EndTok, us.Lhss, new List<AssignmentRhs>() { new ExprRhs(application) });
-            var ac = this.Copy();
-            foreach (var argument in application.Args) {
-              var ns = argument as NameSegment;
-              if (StaticContext.HasGlobalVariable(ns.Name)) {
-                var temp = StaticContext.GetGlobalVariable(ns.Name);
-                ac.DynamicContext.AddLocal(new Dafny.Formal(ns.tok, ns.Name, temp.Type, true, temp.IsGhost), ns);
+            
+              Debug.WriteLine("Argument application is tactic");
+              var newUpdateStmt = new UpdateStmt(us.Tok, us.EndTok, us.Lhss, new List<AssignmentRhs>() { new ExprRhs(application) });
+              var ac = this.Copy();
+              foreach (var argument in application.Args) {
+                var ns = argument as NameSegment;
+                if (StaticContext.HasGlobalVariable(ns.Name)) {
+                  var temp = StaticContext.GetGlobalVariable(ns.Name);
+                  ac.DynamicContext.AddLocal(new Dafny.Formal(ns.tok, ns.Name, temp.Type, true, temp.IsGhost), ns);
+                }
               }
-            }
-            // let's resolve the tactic applicaiton
-            foreach (var item in ac.CallAction(newUpdateStmt, new Solution(this.Copy()))) {
-              yield return item;
-            }
+              // let's resolve the tactic applicaiton
+              foreach (var item in ac.CallAction(newUpdateStmt, new Solution(this.Copy()))) {
+                yield return item;
+              }
+            
           } else {
             if (value is Dafny.LiteralExpr) {
               yield return new Solution(this.Copy());
             }
-
           }
         } else if (key.Type.ToString() == "Term") {
           // we only need to replace the term 
@@ -531,7 +534,7 @@ namespace LazyTacny {
       var tactic = StaticContext.program.GetTactic(us);
       ExprRhs er = us.Rhss[0] as ExprRhs;
       foreach (var result in ResolveNestedTacticCall(tactic, er.Expr as ApplySuffix)) {
-        
+
         if (tactic is Tactic) {
           foreach (var kvp in result.state.GetResult()) {
             yield return AddNewStatement(kvp.Key, kvp.Value);
@@ -549,7 +552,7 @@ namespace LazyTacny {
     private IEnumerable<Solution> ResolveNestedTacticCall(ITactic tactic, ApplySuffix aps) {
       Contract.Requires<ArgumentNullException>(tactic != null && aps != null);
       UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
-      var atomic =  new Atomic(DynamicContext.md, tactic, us, StaticContext);
+      var atomic = new Atomic(DynamicContext.md, tactic, us, StaticContext);
       atomic.DynamicContext.generatedExpressions = this.DynamicContext.generatedExpressions;
       atomic.DynamicContext.generatedStatements = this.DynamicContext.generatedStatements;
       // transfer while stmt info
@@ -558,14 +561,25 @@ namespace LazyTacny {
       List<Expression> exps = aps.Args;
       Contract.Assert(exps.Count == atomic.DynamicContext.tactic.Ins.Count);
       atomic.SetNewTarget(GetNewTarget());
-      for (int i = 0; i < exps.Count; i++) {
-        foreach (var result in ResolveExpression(exps[i])) {
-          atomic.AddLocal(atomic.DynamicContext.tactic.Ins[i], result);
-        }
-      }
+      atomic.ResolveTacticArguments();
+      //for (int i = 0; i < exps.Count; i++) {
+      //  foreach (var result in ResolveExpression(exps[i])) {
+      //    atomic.AddLocal(atomic.DynamicContext.tactic.Ins[i], result);
+      //  }
+      //}
       return ResolveTactic(atomic, false);
     }
 
+    private void ResolveTacticArguments() {
+      var aps = ((ExprRhs)GetTacticCall().Rhss[0]).Expr as ApplySuffix;
+      List<Expression> exps = aps.Args;
+      Contract.Assert(exps.Count == DynamicContext.tactic.Ins.Count);
+      for (int i = 0; i < exps.Count; i++) {
+        foreach (var result in ResolveExpression(exps[i])) {
+          AddLocal(DynamicContext.tactic.Ins[i], result);
+        }
+      }
+    }
     private IEnumerable<Solution> UpdateLocalVariable(UpdateStmt updateStmt) {
       Contract.Requires(updateStmt != null);
       // if statement is of type var q;
