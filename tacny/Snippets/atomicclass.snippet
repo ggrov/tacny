@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+      <Title>Atomic Class</Title>
+      <Author>Vytautas Tumas</Author>
+      <Description>Insert a class for atomic statement</Description>
+      <HelpUrl>
+      </HelpUrl>
+      <Shortcut>atomclass</Shortcut>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal Editable="true">
+          <ID>classname</ID>
+          <ToolTip>Class name</ToolTip>
+          <Default>NewAtomic</Default>
+          <Function>
+          </Function>
+        </Literal>
+        <Literal Editable="true">
+          <ID>namespace</ID>
+          <ToolTip>Namespace</ToolTip>
+          <Default>LazyTacny</Default>
+          <Function>
+          </Function>
+        </Literal>
+        <Literal Editable="true">
+          <ID>ctor</ID>
+          <ToolTip>Constructor</ToolTip>
+          <Default>NewAtomic</Default>
+          <Function>ClassName()</Function>
+        </Literal>
+      </Declarations>
+      <Imports>
+        <Import>
+          <Namespace>Microsoft.Dafny</Namespace>
+        </Import>
+        <Import>
+          <Namespace>System</Namespace>
+        </Import>
+        <Import>
+          <Namespace>Tacny</Namespace>
+        </Import>
+        <Import>
+          <Namespace>System.Diagnostics.Contracts</Namespace>
+        </Import>
+        <Import>
+          <Namespace>System.Collections.Generic</Namespace>
+        </Import>
+      </Imports>
+      <Code Language="csharp" Delimiter="$" Kind="method decl"><![CDATA[
+
+          namespace $namespace$ {
+
+            public class $classname$ : Atomic, IAtomicLazyStmt {
+              
+          
+              public $classname$(Atomic atomic) : base(atomic) { }
+
+              public IEnumerable<Solution> Resolve(Statement st, Solution solution) {
+                    throw new NotImplementedException();
+              }
+            }
+          }
+        ]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

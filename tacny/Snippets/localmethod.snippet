@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+      <Title>Local Method</Title>
+      <Author>Vytautas Tumas</Author>
+      <Description>Create a method for local variable declaration</Description>
+      <HelpUrl>
+      </HelpUrl>
+      <Shortcut>localmethod</Shortcut>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal Editable="true">
+          <ID>name</ID>
+          <ToolTip>Method name</ToolTip>
+          <Default>Method</Default>
+          <Function>
+          </Function>
+        </Literal>
+        <Literal Editable="true">
+          <ID>argscount</ID>
+          <ToolTip>Argument count</ToolTip>
+          <Default>0</Default>
+          <Function>
+          </Function>
+        </Literal>
+      </Declarations>
+      <Code Language="csharp" Delimiter="$" Kind="method decl"><![CDATA[
+        private IEnumerable<Solution> $name$(Statement st) {
+              IVariable lv = null;
+              List<Expression> callArgs;
+              object result = null;
+              InitArgs(st, out lv, out callArgs);
+              Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
+              Contract.Assert(callArgs.Count == $argscount$, Util.Error.MkErr(st, 0, $argscount$, callArgs.Count));
+
+              
+              yield return AddNewLocal(lv, result);
+            }
+        ]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>
