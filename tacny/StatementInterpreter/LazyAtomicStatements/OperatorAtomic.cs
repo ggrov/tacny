@@ -2,93 +2,68 @@
 using System.Collections.Generic;
 using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
-namespace Tacny
-{
-    class OperatorAtomic : Atomic, IAtomicStmt
-    {
-        public OperatorAtomic(Atomic atomic) : base(atomic) { }
+using Tacny;
 
-        public void Resolve(Statement st, ref List<Solution> solution_list)
-        {
-            ReplaceOperator(st, ref solution_list);
-        }
-        
-        public void ReplaceOperator(Statement st, ref List<Solution> solution_list)
-        {
-            IVariable lv = null;
-            List<Expression> call_arguments = null;
-            StringLiteralExpr old_operator = null;
-            StringLiteralExpr new_operator = null;
-            Expression formula = null;
-            BinaryExpr.Opcode old_op;
-            BinaryExpr.Opcode new_op;
+namespace LazyTacny {
+  class OperatorAtomic : Atomic, IAtomicLazyStmt {
+    public OperatorAtomic(Atomic atomic) : base(atomic) { }
 
-            InitArgs(st, out lv, out call_arguments);
-            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-            Contract.Assert(tcce.OfSize(call_arguments, 3), Util.Error.MkErr(st, 0, 3, call_arguments.Count));
 
-            old_operator = (StringLiteralExpr)call_arguments[0];
-            new_operator = (StringLiteralExpr)call_arguments[1];
-            ProcessArg(call_arguments[2], out formula);
-            Contract.Assert(formula != null, Util.Error.MkErr(st, 10));
-            
-            old_op = ToOpCode((string)old_operator.Value);
-            new_op = ToOpCode((string)new_operator.Value);
-            
-            ExpressionTree et = ExpressionTree.ExpressionToTree(formula);
-            List<Expression> exp_list = new List<Expression>();
-
-            ReplaceOp(old_op, new_op, et, ref exp_list);
-
-            if (exp_list.Count == 0)
-                exp_list.Add(formula);
-
-           
-            // smells like unnecessary branching if no replacement happened.
-            for (int i = 0; i < exp_list.Count; i++)
-            {
-                AddLocal(lv, exp_list[i]);     
-                solution_list.Add(new Solution(this.Copy()));
-            }
-        }
-
-        protected Expression ReplaceOp(BinaryExpr.Opcode old_op, BinaryExpr.Opcode new_op, ExpressionTree formula, ref List<Expression> nexp)
-        {
-            Contract.Requires(nexp != null);
-            if (formula == null)
-                return null;
-
-            if (formula.data is BinaryExpr)
-            {
-                if (((BinaryExpr)formula.data).Op == old_op)
-                {
-                    ExpressionTree nt = formula.Copy();
-                    nt.data = new BinaryExpr(formula.data.tok, new_op, ((BinaryExpr)formula.data).E0, ((BinaryExpr)formula.data).E1);
-                    nexp.Add(nt.root.TreeToExpression());
-                    return null;
-                }
-            }
-            ReplaceOp(old_op, new_op, formula.lChild, ref nexp);
-            ReplaceOp(old_op, new_op, formula.rChild, ref nexp);
-            return null;
-        }
-
-        protected BinaryExpr.Opcode ToOpCode(string op)
-        {
-            foreach (BinaryExpr.Opcode code in Enum.GetValues(typeof(BinaryExpr.Opcode)))
-            {
-                try
-                {
-                    if (BinaryExpr.OpcodeString(code) == op)
-                        return code;
-                }
-                catch (cce.UnreachableException)
-                {
-                    throw new ArgumentException("Invalid argument; Expected binary operator, received " + op);
-                }
-
-            }
-            throw new ArgumentException("Invalid argument; Expected binary operator, received " + op);
-        }
+    public IEnumerable<Solution> Resolve(Statement st, Solution solution) {
+      return ReplaceOperator(st);
     }
+
+    private IEnumerable<Solution> ReplaceOperator(Statement st) {
+      IVariable lv = null;
+      List<Expression> call_arguments = null;
+
+      InitArgs(st, out lv, out call_arguments);
+      Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
+      Contract.Assert(tcce.OfSize(call_arguments, 2), Util.Error.MkErr(st, 0, 3, call_arguments.Count));
+
+      foreach (var arg1 in ResolveExpression(call_arguments[0])) {
+        var expression = arg1 as Expression;
+        Contract.Assert(expression != null, Util.Error.MkErr(st, 1, "Expression"));
+        foreach (var arg2 in ResolveExpression(call_arguments[1])) {
+          var operatorMap = arg2 as MapDisplayExpr;
+          Contract.Assert(operatorMap != null, Util.Error.MkErr(st, 1, "Map"));
+          ExpressionTree et = ExpressionTree.ExpressionToTree(expression);
+          List<Expression> exp_list = new List<Expression>();
+          var opcodeMap = new Dictionary<BinaryExpr.Opcode, BinaryExpr.Opcode>();
+          foreach (var pair in operatorMap.Elements) {
+            var op1String = pair.A as LiteralExpr;
+            Contract.Assert(op1String != null);
+            var op2String = pair.B as LiteralExpr;
+            Contract.Assert(op2String != null);
+            opcodeMap.Add(StringToOp(op1String.Value.ToString()), StringToOp(op2String.Value.ToString()));
+          }
+          foreach (var result in ReplaceOp(opcodeMap, et)) {
+            yield return AddNewLocal(lv, result);
+          }
+        }
+      }
+    }
+
+    protected IEnumerable<Expression> ReplaceOp(Dictionary<BinaryExpr.Opcode, BinaryExpr.Opcode> opCodeMap, ExpressionTree formula) {
+
+      if (formula == null || formula.IsLeaf())
+        yield break;
+
+      var expt = formula;
+      if (formula.data is BinaryExpr) {
+        var bexp = formula.data as BinaryExpr;
+        if (opCodeMap.ContainsKey(bexp.Op)) {
+          expt = expt.Copy();
+
+          expt.data = new BinaryExpr(formula.data.tok, opCodeMap[bexp.Op], bexp.E0, bexp.E1);
+          expt = expt.root;
+          yield return expt.root.TreeToExpression();
+        }
+      }
+      foreach (var item in ReplaceOp(opCodeMap, expt.lChild))
+        yield return item;
+      foreach (var item in ReplaceOp(opCodeMap, expt.rChild))
+        yield return item;
+    }
+  }
 }

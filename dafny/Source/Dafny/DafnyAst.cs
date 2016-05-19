@@ -4513,8 +4513,69 @@ namespace Microsoft.Dafny
         }
     }
 
+  public abstract class TacticPredicateStmt : Statement {
 
-    public class TacticVarDeclStmt : Statement
+    public readonly Expression Expr;
+    public bool IsObjectLevel = false;
+    [ContractInvariantMethod]
+    void ObjectInvariant() {
+      Contract.Invariant(Expr != null);
+    }
+
+    public TacticPredicateStmt(IToken tok, IToken endTok, Expression expr, Attributes attrs, bool objectLevel)
+        : base(tok, endTok, attrs) {
+      Contract.Requires(tok != null);
+      Contract.Requires(endTok != null);
+      Contract.Requires(expr != null);
+      this.Expr = expr;
+      this.IsObjectLevel = objectLevel;
+    }
+
+    public TacticPredicateStmt(IToken tok, IToken endTok, Expression expr, bool objectLevel)
+        : this(tok, endTok, expr, null, objectLevel) {
+      Contract.Requires(tok != null);
+      Contract.Requires(endTok != null);
+      Contract.Requires(expr != null);
+      this.Expr = expr;
+      this.IsObjectLevel = objectLevel;
+    }
+    public override IEnumerable<Expression> SubExpressions {
+      get {
+        foreach (var e in base.SubExpressions) { yield return e; }
+        yield return Expr;
+      }
+    }
+  }
+
+  public class TacticAssertStmt : TacticPredicateStmt {
+    public TacticAssertStmt(IToken tok, IToken endTok, Expression expr, Attributes attrs, bool objectLevel)
+        : base(tok, endTok, expr, attrs, objectLevel) {
+      Contract.Requires(tok != null);
+      Contract.Requires(endTok != null);
+      Contract.Requires(expr != null);
+    }
+  }
+
+  public class TacticAssumeStmt : TacticPredicateStmt {
+    public TacticAssumeStmt(IToken tok, IToken endTok, Expression expr, Attributes attrs, bool objectLevel)
+        : base(tok, endTok, expr, attrs, objectLevel) {
+      Contract.Requires(tok != null);
+      Contract.Requires(endTok != null);
+      Contract.Requires(expr != null);
+    }
+  }
+
+  public class TacticInvariantStmt : TacticPredicateStmt {
+    public TacticInvariantStmt(IToken tok, IToken endTok, Expression expr, Attributes attrs, bool objectLevel)
+        : base(tok, endTok, expr, attrs, objectLevel) {
+      Contract.Requires(tok != null);
+      Contract.Requires(endTok != null);
+      Contract.Requires(expr != null);
+    }
+  }
+
+
+  public class TacticVarDeclStmt : Statement
     {
         public readonly List<LocalVariable> Locals;
         public readonly ConcreteUpdateStatement Update;

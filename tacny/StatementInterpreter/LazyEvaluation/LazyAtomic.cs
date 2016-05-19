@@ -496,9 +496,8 @@ namespace LazyTacny {
             // if the declaration is literal expr (e.g. tvar q := 1)
             Dafny.LiteralExpr litExpr = exprRhs.Expr as Dafny.LiteralExpr;
             if (litExpr != null) {
-              AddLocal(declaration.Locals[index], litExpr);
-              yield return new Solution(this.Copy());
-            } else {
+              yield return AddNewLocal(declaration.Locals[index], litExpr);
+            } else if (exprRhs.Expr is ApplySuffix) {
               var aps = exprRhs.Expr as ApplySuffix;
               foreach (var result in CallAction(aps, new Solution(this.Copy()))) {
                 // we don't know where the results are, thus let's look at both statements and expressions
@@ -512,6 +511,8 @@ namespace LazyTacny {
                 else
                   yield return AddNewLocal<object>(declaration.Locals[index], null);
               }
+            } else {
+              yield return AddNewLocal(declaration.Locals[index], exprRhs.Expr);
             }
           }
         }
@@ -530,8 +531,7 @@ namespace LazyTacny {
       var tactic = StaticContext.program.GetTactic(us);
       ExprRhs er = us.Rhss[0] as ExprRhs;
       foreach (var result in ResolveNestedTacticCall(tactic, er.Expr as ApplySuffix)) {
-        Atomic action = this.Copy();
-        action.SetNewTarget(this.GetNewTarget());
+        
         if (tactic is Tactic) {
           foreach (var kvp in result.state.GetResult()) {
             yield return AddNewStatement(kvp.Key, kvp.Value);
@@ -549,7 +549,11 @@ namespace LazyTacny {
     private IEnumerable<Solution> ResolveNestedTacticCall(ITactic tactic, ApplySuffix aps) {
       Contract.Requires<ArgumentNullException>(tactic != null && aps != null);
       UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
-      var atomic = new Atomic(DynamicContext.md, tactic, us, StaticContext);
+      var atomic =  new Atomic(DynamicContext.md, tactic, us, StaticContext);
+      atomic.DynamicContext.generatedExpressions = this.DynamicContext.generatedExpressions;
+      atomic.DynamicContext.generatedStatements = this.DynamicContext.generatedStatements;
+      // transfer while stmt info
+      atomic.DynamicContext.whileStmt = DynamicContext.whileStmt;
       //// register local variables
       List<Expression> exps = aps.Args;
       Contract.Assert(exps.Count == atomic.DynamicContext.tactic.Ins.Count);
@@ -1071,9 +1075,9 @@ namespace LazyTacny {
       Dafny.Program prog = StaticContext.program.ParseProgram();
       solution.GenerateProgram(ref prog);
       StaticContext.program.ClearBody(DynamicContext.md);
-#if !DEBUG
-            staticContext.program.PrintMember(prog, solution.state.staticContext.md.Name);
-#endif
+
+      StaticContext.program.PrintMember(prog, solution.state.StaticContext.md.Name);
+
       if (!StaticContext.program.ResolveProgram())
         return false;
       StaticContext.program.VerifyProgram();
@@ -1194,7 +1198,16 @@ namespace LazyTacny {
       }
     }
 
-
-
+    protected BinaryExpr.Opcode StringToOp(string op) {
+      foreach (BinaryExpr.Opcode code in Enum.GetValues(typeof(BinaryExpr.Opcode))) {
+        try {
+          if (BinaryExpr.OpcodeString(code) == op)
+            return code;
+        } catch (cce.UnreachableException) {
+          throw new ArgumentException("Invalid argument; Expected binary operator, received " + op);
+        }
+      }
+      throw new ArgumentException("Invalid argument; Expected binary operator, received " + op);
+    }
   }
 }

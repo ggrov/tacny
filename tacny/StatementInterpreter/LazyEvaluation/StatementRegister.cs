@@ -15,8 +15,7 @@ namespace LazyTacny {
   class StatementRegister {
     public enum Atomic {
       UNDEFINED = 0,
-      ADD_INVAR,
-      CREATE_INVAR,
+      INVAR,
       REPLACE_SINGLETON,
       EXTRACT_GUARD,
       REPLACE_OP,
@@ -50,13 +49,15 @@ namespace LazyTacny {
       GET_CTOR,
       DELETE,
       IF_GUARD,
+      SPLIT,
+      CONSTS,
     };
 
     public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
     {
       {"replace_singleton", Atomic.REPLACE_SINGLETON},
-      {"create_invariant", Atomic.CREATE_INVAR},
-      {"add_invariant", Atomic.ADD_INVAR},
+      //{"create_invariant", Atomic.CREATE_INVAR},
+      //{"add_invariant", Atomic.ADD_INVAR},
       {"loop_guard", Atomic.EXTRACT_GUARD},
       {"replace_operator", Atomic.REPLACE_OP},
       {"is_valid", Atomic.IS_VALID},
@@ -86,16 +87,17 @@ namespace LazyTacny {
       {"|||", Atomic.TACNY_BEXP },
       {"get_constructor", Atomic.GET_CTOR },
       {"delete", Atomic.DELETE },
-      { "if_guard", Atomic.IF_GUARD }
-        };
+      { "if_guard", Atomic.IF_GUARD },
+      {"split", Atomic.SPLIT },
+      { "consts", Atomic.CONSTS }
+    };
 
     public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
     {
       //{Atomic.REPLACE_SINGLETON, typeof(SingletonAtomic)},
-      {Atomic.CREATE_INVAR, typeof(InvariantAtomic)},
-      {Atomic.ADD_INVAR, typeof(InvariantAtomic)},
+      {Atomic.INVAR, typeof(InvariantAtomic)},
       {Atomic.ADD_MATCH, typeof(MatchAtomic)},
-      //{Atomic.REPLACE_OP, typeof(OperatorAtomic)},
+      {Atomic.REPLACE_OP, typeof(OperatorAtomic)},
       {Atomic.EXTRACT_GUARD, typeof(GuardAtomic)},
       {Atomic.PERM, typeof(PermAtomic)},
       //{Atomic.OR, typeof(OrAtomic)},
@@ -124,7 +126,9 @@ namespace LazyTacny {
       {Atomic.TACNY_BEXP, typeof(ExpressionAtomic) },
       {Atomic.GET_CTOR, typeof(GetConstructorAtomic) },
       {Atomic.DELETE, typeof(DeleteAtomic) },
-      {Atomic.IF_GUARD, typeof(IfGuardAtomic) }
+      {Atomic.IF_GUARD, typeof(IfGuardAtomic) },
+      {Atomic.SPLIT, typeof(SplitAtomic) },
+      {Atomic.CONSTS, typeof(ConstantsAtomic) }
   };
 
     /// <summary>
@@ -186,7 +190,10 @@ namespace LazyTacny {
           tok = suchThat.Tok;
         else
           us = tvds.Update as UpdateStmt;
+      } else if (st is TacticInvariantStmt) {
+        return Atomic.INVAR;
       }
+
       if (tok != null)
         return GetAtomicType(tok);
 

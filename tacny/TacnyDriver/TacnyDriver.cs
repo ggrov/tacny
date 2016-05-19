@@ -39,14 +39,13 @@ namespace Main {
     /// <returns></returns>
     public static int ExecuteTacny(string[] args) {
       Contract.Requires(tcce.NonNullElements(args));
-      Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
       Debug.Listeners.Clear();
+      Debug.Listeners.Add(new TextWriterTraceListener(System.Console.Out));
       Debug.AutoFlush = true;
       // install Dafny and Boogie commands
       var options = new Util.TacnyOptions();
       options.VerifySnapshots = 2;
       Util.TacnyOptions.Install(options);
-
       printer = new TacnyConsolePrinter();
       ExecutionEngine.printer = new ConsolePrinter();
 

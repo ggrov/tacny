@@ -119,7 +119,6 @@ namespace LazyTacny {
 
         Solution result = Atomic.ResolveTactic(us, md, tacnyProgram, variables, resolved, ws);
         Solution.PrintSolution(result);
-        Debug.IndentLevel = 0;
         //Solution.PrintSolution(result);
         this.tacnyProgram.currentDebug.Fin();
         return result;

@@ -94,7 +94,6 @@ namespace Tacny {
 
     public ExpressionTree FindNode(ExpressionTree node) {
       Contract.Requires(node != null);
-      Contract.Ensures(Contract.Result<ExpressionTree>() != null);
       if (data.Equals(node.data))
         return this;
       if (lChild != null) {

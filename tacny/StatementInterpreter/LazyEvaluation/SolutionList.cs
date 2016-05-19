@@ -184,11 +184,11 @@ namespace LazyTacny {
     }
 
     public static void PrintSolution(Solution solution) {
-      Dafny.Program prog = solution.state.StaticContext.program.ParseProgram();
-      solution.GenerateProgram(ref prog);
-      solution.state.StaticContext.program.ClearBody(solution.state.DynamicContext.md);
-      Console.WriteLine(String.Format("Tactic call {0} in {1} results: ", solution.state.DynamicContext.tactic.Name, solution.state.DynamicContext.md.Name));
-      solution.state.StaticContext.program.PrintMember(prog, solution.state.StaticContext.md.Name);
+      Dafny.Program prog = solution?.state.StaticContext.program.ParseProgram();
+      solution?.GenerateProgram(ref prog);
+      solution?.state.StaticContext.program.ClearBody(solution.state.DynamicContext.md);
+      Console.WriteLine(String.Format("Tactic call {0} in {1} results: ", solution?.state.DynamicContext.tactic.Name, solution?.state.DynamicContext.md.Name));
+      solution?.state.StaticContext.program.PrintMember(prog, solution.state.StaticContext.md.Name);
     }
 
     private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution) {

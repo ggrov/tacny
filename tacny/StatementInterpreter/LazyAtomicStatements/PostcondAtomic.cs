@@ -9,22 +9,22 @@ namespace LazyTacny {
     public PostcondAtomic(Atomic atomic) : base(atomic) { }
 
     public IEnumerable<Solution> Resolve(Statement st, Solution solution) {
-      yield return Postcond(st, solution);
-      yield break;
+      yield return Postcond(st);
     }
 
 
-    private Solution Postcond(Statement st, Solution solution) {
+    private Solution Postcond(Statement st) {
       IVariable lv = null;
-      List<Expression> call_arguments; // we don't care about this
-      List<Expression> ensures = null;
-      InitArgs(st, out lv, out call_arguments);
+      List<Expression> callArgs; // we don't care about this
+      List<Expression> ensures = new List<Expression>();
+      InitArgs(st, out lv, out callArgs);
       Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
 
-      Contract.Assert(call_arguments.Count <= 1, Util.Error.MkErr(st, 0, 0, call_arguments.Count));
+      Contract.Assert(callArgs.Count <= 1, Util.Error.MkErr(st, 0, 0, callArgs.Count));
+
       MemberDecl memberDecl = null;
-      if (call_arguments.Count > 0) {
-        foreach (var member in ResolveExpression(call_arguments[0])) {
+      if (callArgs.Count > 0) {
+        foreach (var member in ResolveExpression(callArgs[0])) {
           memberDecl = member as MemberDecl;
           if (memberDecl == null)
             Contract.Assert(false, Util.Error.MkErr(st, 1, "Function, [Ghost] Method, Declaration"));
@@ -48,9 +48,7 @@ namespace LazyTacny {
           Contract.Assert(false, Util.Error.MkErr(st, 1, "Function, [Ghost] Method, Declaration"));
         }
       }
-      var ac = this.Copy();
-      ac.AddLocal(lv, ensures);
-      return new Solution(ac);
+      return AddNewLocal(lv, ensures);
     }
   }
 }

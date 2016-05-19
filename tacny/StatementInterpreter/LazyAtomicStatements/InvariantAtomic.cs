@@ -9,13 +9,13 @@ namespace LazyTacny {
     public InvariantAtomic(Atomic atomic) : base(atomic) { }
 
     public IEnumerable<Solution> Resolve(Statement st, Solution solution) {
-      switch (StatementRegister.GetAtomicType(st)) {
-        case StatementRegister.Atomic.ADD_INVAR:
-          return AddInvar(st, solution);
-        case StatementRegister.Atomic.CREATE_INVAR:
-          return CreateInvar(st, solution);
-        default:
-          throw new cce.UnreachableException();
+
+      var temp = st as TacticInvariantStmt;
+
+      if(temp.IsObjectLevel) {
+        return AddInvar(temp, solution);
+      } else {
+        throw new NotImplementedException();
       }
     }
 
@@ -40,21 +40,13 @@ namespace LazyTacny {
       yield break;
     }
 
-    public IEnumerable<Solution> AddInvar(Statement st, Solution solution) {
-
-      List<Expression> call_arguments = null;
+    public IEnumerable<Solution> AddInvar(TacticInvariantStmt st, Solution solution) {
       MaybeFreeExpression invariant = null;
       MaybeFreeExpression[] invar_arr = null;
       List<MaybeFreeExpression> invar = null;
-      UpdateStmt us = null;
-
-      us = st as UpdateStmt;
-
-      InitArgs(st, out call_arguments);
-      Contract.Assert(call_arguments != null);
-      Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
-
-      foreach (var item in ResolveExpression(call_arguments[0])) {
+      
+      
+      foreach (var item in ResolveExpression(st.Expr)) {
         invariant = item as MaybeFreeExpression;
         if(invariant == null) {
           invariant = new MaybeFreeExpression(item as Expression);

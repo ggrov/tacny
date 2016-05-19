@@ -1021,7 +1021,7 @@ MethodDecl<MemberModifiers mmod, bool allowConstructor, out Method/*!*/ m>
   | "..."                                       (. signatureEllipsis = t; .)
   )
   { MethodSpec<req, mod, ens, dec, ref decAttrs, ref modAttrs> }
-  [ BlockStmt<out body, out bodyStart, out bodyEnd>
+  [ BlockStmt<out body, out bodyStart, out bodyEnd, isTactic>
   ]
   (.
      if (DafnyOptions.O.DisallowSoundnessCheating && body == null && ens.Count > 0 && !Attributes.Contains(attrs, "axiom") && !Attributes.Contains(attrs, "imported") && !Attributes.Contains(attrs, "decl") && theVerifyThisFile) {
@@ -1430,7 +1430,7 @@ FunctionBody<out Expression/*!*/ e, out IToken bodyStart, out IToken bodyEnd>
   "}"                         (. bodyEnd = t; .)
   .
 /*------------------------------------------------------------------------*/
-BlockStmt<out BlockStmt/*!*/ block, out IToken bodyStart, out IToken bodyEnd>
+BlockStmt<out BlockStmt/*!*/ block, out IToken bodyStart, out IToken bodyEnd, bool isTactic = false>
 = (. Contract.Ensures(Contract.ValueAtReturn(out block) != null);
      List<Statement/*!*/> body = new List<Statement/*!*/>();
      List<Statement/*!*/> orStmtRhs = new List<Statement/*!*/>();
@@ -1438,7 +1438,7 @@ BlockStmt<out BlockStmt/*!*/ block, out IToken bodyStart, out IToken bodyEnd>
      Expression or = null;
   .)
   "{"                                  (. bodyStart = t; .)
-  { Stmt<body>
+  { Stmt<body, isTactic>
   }
   "}"                                  (. bodyEnd = t; .)
   
@@ -1447,7 +1447,7 @@ BlockStmt<out BlockStmt/*!*/ block, out IToken bodyStart, out IToken bodyEnd>
     "||"                          (. bodyStart = t; .)
       (
         "{"      
-         { Stmt<orStmtRhs>
+         { Stmt<orStmtRhs, isTactic>
          }
         "}"                                  (. endTok = t; .)
         |
@@ -1466,12 +1466,12 @@ BlockStmt<out BlockStmt/*!*/ block, out IToken bodyStart, out IToken bodyEnd>
 
   .)
   .
-Stmt<.List<Statement/*!*/>/*!*/ ss.>
+Stmt<.List<Statement/*!*/>/*!*/ ss,  bool isTactic = false.>
 = (. Statement/*!*/ s;
   .)
-  OneStmt<out s>                                (. ss.Add(s); .)
+  OneStmt<out s, isTactic>                                (. ss.Add(s); .)
   .
-OneStmt<out Statement/*!*/ s>
+OneStmt<out Statement/*!*/ s, bool isTactic = false>
 = (. Contract.Ensures(Contract.ValueAtReturn(out s) != null); IToken/*!*/ x;  IToken/*!*/ id;  string label = null;
      s = dummyStmt;  /* to please the compiler */
      BlockStmt bs;
@@ -1486,16 +1486,20 @@ OneStmt<out Statement/*!*/ s>
   | UpdateStmt<out s>
   | VarDeclStatement<out s>
   | IfStmt<out s>
-  | TacnyCasesBlockStmt<out s>
-  | TacnySolvedBlockStmt<out s>
-  | TacnyChangedBlockStmt<out s>
-  | TacnyTryCatchBlockStmt<out s>
+  | IF(isTactic)
+      ( TacnyCasesBlockStmt<out s>
+        | TacnySolvedBlockStmt<out s>
+        | TacnyChangedBlockStmt<out s>
+        | TacnyTryCatchBlockStmt<out s>
+        | TacticVarDeclStmt<out s>
+        | TacticInvariantStmt<out s>
+        | TacticAssertStmt<out s>
+      )
   | WhileStmt<out s>
   | MatchStmt<out s>
   | ForallStmt<out s>
   | CalcStmt<out s>
   | ModifyStmt<out s>
-  | TacticVarDeclStmt<out s>
   | "label"                            (. x = t; .)
     NoUSIdent<out id> ":"
     OneStmt<out s>                     (. s.Labels = new LList<Label>(new Label(x, id.val), s.Labels); .)
@@ -2062,6 +2066,45 @@ AssertStmt<out Statement/*!*/ s>
        s = new AssertStmt(x, t, e, attrs);
      }
   .)
+  .
+TacticInvariantStmt<out Statement/*!*/ s>
+= (. Contract.Ensures(Contract.ValueAtReturn(out s) != null); IToken/*!*/ x;
+     Expression e = dummyExpr; Attributes attrs = null;
+     bool isObject = true;
+  .)
+  (
+
+    "invariant"                                     
+    | ( 
+        "tactic" "invariant"                            
+      | "tinvariant"
+      )                                             (. isObject = false; .)
+  )                                                 (. x = t; .)
+  
+  { IF(IsAttribute()) Attribute<ref attrs> } 
+  ( Expression<out e, false, true>)
+  ";"
+  
+  (. s = new TacticInvariantStmt(x, t, e, attrs, isObject); .)
+  .
+TacticAssertStmt<out Statement/*!*/ s>
+= (. Contract.Ensures(Contract.ValueAtReturn(out s) != null); IToken/*!*/ x;
+     Expression e = dummyExpr; Attributes attrs = null;
+     bool isObject = true;
+  .)
+  (
+    "assert"                                     
+    | ( 
+        "tactic" "assert"                            
+      | "tassert"
+      )                                             (. isObject = false; .)
+  )                                                 (. x = t; .)
+  
+  { IF(IsAttribute()) Attribute<ref attrs> } 
+  ( Expression<out e, false, true>)
+  ";"
+  
+  (. s = new TacticAssertStmt(x, t, e, attrs, isObject); .)
   .
 AssumeStmt<out Statement/*!*/ s>
 = (. Contract.Ensures(Contract.ValueAtReturn(out s) != null); IToken/*!*/ x;

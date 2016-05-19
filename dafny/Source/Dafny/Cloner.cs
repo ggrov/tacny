@@ -493,6 +493,12 @@ namespace Microsoft.Dafny
         var s = (AssumeStmt)stmt;
         r = new AssumeStmt(Tok(s.Tok), Tok(s.EndTok), CloneExpr(s.Expr), null);
 
+      } else if (stmt is TacticInvariantStmt) {
+        var s = (TacticInvariantStmt)stmt;
+        r = new TacticInvariantStmt(Tok(s.Tok), Tok(s.EndTok), CloneExpr(s.Expr), null, s.IsObjectLevel);
+      } else if (stmt is TacticAssertStmt) {
+        var s = (TacticAssertStmt)stmt;
+        r = new TacticAssertStmt(Tok(s.Tok), Tok(s.EndTok), CloneExpr(s.Expr), null, s.IsObjectLevel);
       } else if (stmt is PrintStmt) {
         var s = (PrintStmt)stmt;
         r = new PrintStmt(Tok(s.Tok), Tok(s.EndTok), s.Args.ConvertAll(CloneExpr));
@@ -542,8 +548,8 @@ namespace Microsoft.Dafny
         r = new ForallStmt(Tok(s.Tok), Tok(s.EndTok), s.BoundVars.ConvertAll(CloneBoundVar), null, CloneExpr(s.Range), s.Ens.ConvertAll(CloneMayBeFreeExpr), CloneStmt(s.Body));
 
       } else if (stmt is CalcStmt) {
-          var s = (CalcStmt)stmt;
-          r = new CalcStmt(Tok(s.Tok), Tok(s.EndTok), CloneCalcOp(s.Op), s.Lines.ConvertAll(CloneExpr), s.Hints.ConvertAll(CloneBlockStmt), s.StepOps.ConvertAll(CloneCalcOp), CloneCalcOp(s.ResultOp));
+        var s = (CalcStmt)stmt;
+        r = new CalcStmt(Tok(s.Tok), Tok(s.EndTok), CloneCalcOp(s.Op), s.Lines.ConvertAll(CloneExpr), s.Hints.ConvertAll(CloneBlockStmt), s.StepOps.ConvertAll(CloneCalcOp), CloneCalcOp(s.ResultOp));
 
       } else if (stmt is MatchStmt) {
         var s = (MatchStmt)stmt;
@@ -569,42 +575,33 @@ namespace Microsoft.Dafny
         var body = s.Body == null ? null : CloneBlockStmt(s.Body);
         r = new ModifyStmt(Tok(s.Tok), Tok(s.EndTok), mod.Expressions, mod.Attributes, body);
 
-      }
-      else if (stmt is TacnyCasesBlockStmt) {
-          var s = (TacnyCasesBlockStmt)stmt;
-          var guard = CloneExpr(s.Guard);
-          var body = s.Body == null ? null : CloneBlockStmt(s.Body);
-          r = new TacnyCasesBlockStmt(Tok(s.Tok), Tok(s.EndTok), guard, body);
-      }
-      else if (stmt is TacnyChangedBlockStmt) {
-          var s = (TacnyChangedBlockStmt)stmt;
-          var body = s.Body == null ? null : CloneBlockStmt(s.Body);
-          r = new TacnyChangedBlockStmt(Tok(s.Tok), Tok(s.EndTok), body);
-      }
-      else if (stmt is TacnySolvedBlockStmt) {
-          var s = (TacnySolvedBlockStmt)stmt;
-          var body = s.Body == null ? null : CloneBlockStmt(s.Body);
-          r = new TacnySolvedBlockStmt(Tok(s.Tok), Tok(s.EndTok), body);
-      }
-      else if (stmt is TacnyTryCatchBlockStmt) { 
-          var s = (TacnyTryCatchBlockStmt)stmt;
-          var body = s.Body == null ? null : CloneBlockStmt(s.Body);
-          var c = s.Ctch == null ? null : CloneBlockStmt(s.Ctch);
-          r = new TacnyTryCatchBlockStmt(Tok(s.Tok), Tok(s.EndTok), body, c); 
-      }
-      else if (stmt is TacticVarDeclStmt) {
-          var s = (TacticVarDeclStmt)stmt;
-          var lhss = s.Locals.ConvertAll(c => new LocalVariable(Tok(c.Tok), Tok(c.EndTok), c.Name, CloneType(c.OptionalType), c.IsGhost));
-          r = new TacticVarDeclStmt(Tok(s.Tok), Tok(s.EndTok), lhss, (ConcreteUpdateStatement)CloneStmt(s.Update));
-      }
-      else if (stmt is OrStmt)
-      {
-          // OrStmt requires a rework, don't copy
-          r = (OrStmt)stmt;
-      }
-      else
-      {
-          Contract.Assert(false); throw new cce.UnreachableException();  // unexpected statement
+      } else if (stmt is TacnyCasesBlockStmt) {
+        var s = (TacnyCasesBlockStmt)stmt;
+        var guard = CloneExpr(s.Guard);
+        var body = s.Body == null ? null : CloneBlockStmt(s.Body);
+        r = new TacnyCasesBlockStmt(Tok(s.Tok), Tok(s.EndTok), guard, body);
+      } else if (stmt is TacnyChangedBlockStmt) {
+        var s = (TacnyChangedBlockStmt)stmt;
+        var body = s.Body == null ? null : CloneBlockStmt(s.Body);
+        r = new TacnyChangedBlockStmt(Tok(s.Tok), Tok(s.EndTok), body);
+      } else if (stmt is TacnySolvedBlockStmt) {
+        var s = (TacnySolvedBlockStmt)stmt;
+        var body = s.Body == null ? null : CloneBlockStmt(s.Body);
+        r = new TacnySolvedBlockStmt(Tok(s.Tok), Tok(s.EndTok), body);
+      } else if (stmt is TacnyTryCatchBlockStmt) {
+        var s = (TacnyTryCatchBlockStmt)stmt;
+        var body = s.Body == null ? null : CloneBlockStmt(s.Body);
+        var c = s.Ctch == null ? null : CloneBlockStmt(s.Ctch);
+        r = new TacnyTryCatchBlockStmt(Tok(s.Tok), Tok(s.EndTok), body, c);
+      } else if (stmt is TacticVarDeclStmt) {
+        var s = (TacticVarDeclStmt)stmt;
+        var lhss = s.Locals.ConvertAll(c => new LocalVariable(Tok(c.Tok), Tok(c.EndTok), c.Name, CloneType(c.OptionalType), c.IsGhost));
+        r = new TacticVarDeclStmt(Tok(s.Tok), Tok(s.EndTok), lhss, (ConcreteUpdateStatement)CloneStmt(s.Update));
+      } else if (stmt is OrStmt) {
+        // OrStmt requires a rework, don't copy
+        r = (OrStmt)stmt;
+      } else {
+        Contract.Assert(false); throw new cce.UnreachableException();  // unexpected statement
       }
 
       // add labels to the cloned statement
