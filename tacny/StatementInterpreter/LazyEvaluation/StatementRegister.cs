@@ -51,7 +51,8 @@ namespace LazyTacny {
       IF_GUARD,
       SPLIT,
       CONSTS,
-      REPLACE_CONST
+      REPLACE_CONST,
+      SUBST,
     };
 
     public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -91,7 +92,8 @@ namespace LazyTacny {
       { "if_guard", Atomic.IF_GUARD },
       {"split", Atomic.SPLIT },
       { "consts", Atomic.CONSTS },
-      { "replace_constants", Atomic.REPLACE_CONST }
+      { "replace_constants", Atomic.REPLACE_CONST },
+      { "subst", Atomic.SUBST },
     };
 
     public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -131,7 +133,8 @@ namespace LazyTacny {
       {Atomic.IF_GUARD, typeof(IfGuardAtomic) },
       {Atomic.SPLIT, typeof(SplitAtomic) },
       {Atomic.CONSTS, typeof(ConstantsAtomic) },
-      {Atomic.REPLACE_CONST, typeof(ReplaceConstantAtomic) }
+      {Atomic.REPLACE_CONST, typeof(ReplaceConstantAtomic) },
+      {Atomic.SUBST, typeof(OperatorAtomic) },
   };
 
     /// <summary>

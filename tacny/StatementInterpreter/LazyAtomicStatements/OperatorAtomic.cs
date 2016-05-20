@@ -82,7 +82,7 @@ namespace LazyTacny {
           varMap.Add(key, tempList);
         }
       }
-      return null;
+      return ReplaceVar(varMap, formula);
     }
 
     private IEnumerable<Expression> ReplaceVar(Dictionary<Expression, List<Expression>> vars, ExpressionTree expression) {
@@ -96,7 +96,7 @@ namespace LazyTacny {
           if (SingletonEquality(expression.data, kvp.Key)) {
             foreach (var var in kvp.Value) {
               //if (!ValidateType(var, expression.parent.TreeToExpression() as BinaryExpr))
-             //   continue;
+              //   continue;
               var newVal = ExpressionTree.ExpressionToTree(var);
               var copy = expression.root.Copy();
               var newTree = ExpressionTree.FindAndReplaceNode(copy, newVal, expression.Copy());
@@ -154,12 +154,15 @@ namespace LazyTacny {
     private MapType GetMapType(MapDisplayExpr mde) {
       var element = mde.Elements[0];
 
-      if (element.A.GetType() == element.B.GetType() && element.B.GetType() == typeof(LiteralExpr))
+      if (element.A.GetType() != element.B.GetType())
+        return MapType.UNDEFINED;
+      else if (element.A.GetType() == typeof(StringLiteralExpr))
         return MapType.OP;
-      else if (element.A.GetType() == element.B.GetType() && element.B.GetType() == typeof(NameSegment))
+      else if (element.A.GetType() == typeof(NameSegment))
         return MapType.VAR;
       else
         return MapType.UNDEFINED;
+
     }
 
     private bool HasExpression(Expression constant, List<Expression> constants) {
