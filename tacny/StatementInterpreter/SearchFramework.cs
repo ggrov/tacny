@@ -111,8 +111,6 @@ namespace LazyTacny {
       while (true) {
         List<Solution> Interm = new List<Solution>();
         if (result.Count == 0) {
-          Util.Printer.Warning("COuld not find the valid solution. Returning last generated solution");
-         // yield return lastFinalSolution;
           yield break;
         }
         // iterate every solution

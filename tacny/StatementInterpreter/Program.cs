@@ -34,37 +34,37 @@ namespace Tacny {
       public int TotalBranchCount = 0;    // total number of branches
       public int CallsToBoogie = 0;       // number of calls made to Boogie during tactic resolution
       public int CallsToDafny = 0;        // number of calls to Dafny resolver
-      public int StartTime = 0;           // Unix timestamp when the tactic resolution begins
-      public int EndTime = 0;             // Unix timestamp when the tactic resolution finishes
-      public int TimeAtBoogie = 0;
-      public int TimeAtDafny = 0;
+      public double StartTime = 0;           // Unix timestamp when the tactic resolution begins
+      public double EndTime = 0;             // Unix timestamp when the tactic resolution finishes
+      public double TimeAtBoogie = 0;
+      public double TimeAtDafny = 0;
       private bool PrintHeader = true;
 
       public DebugData(string tactic, string method) {
-        StartTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+        StartTime = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
         this.tactic = tactic;
         this.method = method;
       }
 
       public void Fin() {
         if (EndTime == 0)
-          EndTime = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+          EndTime = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       }
       public void PrintDebugData() {
         Fin();
         System.Text.StringBuilder builder = new System.Text.StringBuilder();
         builder.AppendLine(string.Format("Method: {0}", method));
         builder.AppendLine(string.Format("Tactic: {0}", tactic));
-        builder.AppendLine(string.Format("Execution time: {0} seconds", EndTime - StartTime));
+        builder.AppendLine(string.Format("Execution time: {0} ms", EndTime - StartTime));
         builder.AppendLine(string.Format("Generated branches: {0}", TotalBranchCount));
         builder.AppendLine(string.Format("Generated invalid branches: {0}", BadBranchCount));
         builder.AppendLine(string.Format("Generated valid branches: {0}", GoodBranchCount));
         builder.AppendLine(string.Format("Verification failed {0} times", VerificationFailure));
         builder.AppendLine(string.Format("Verification succeeded {0} times", VerificationSucc));
         builder.AppendLine(string.Format("Times Boogie was called: {0}", CallsToBoogie));
-        builder.AppendLine(string.Format("Total time at Boogie: {0}", TimeAtBoogie));
-        builder.AppendLine(string.Format("Times Dafny was called: {0}", CallsToDafny));
-        builder.AppendLine(string.Format("Total time at Dafny: {0}", CallsToDafny));
+        builder.AppendLine(string.Format("Time waited for Boogie: {0} ms", TimeAtBoogie));
+        builder.AppendLine(string.Format("Times Dafny was called: {0} ms", CallsToDafny));
+        builder.AppendLine(string.Format("Time waited for Dafny: {0}ms", CallsToDafny));
         Util.Printer.P.PrintDebugMessage(builder.ToString());
       }
 
@@ -177,12 +177,12 @@ namespace Tacny {
         debugData.CallsToDafny++;
     }
 
-    private void IncTimeAtBoogie(DebugData debugData, int time) {
+    private void IncTimeAtBoogie(DebugData debugData, double time) {
       if (debugData != null)
         debugData.TimeAtBoogie += time;
     }
 
-    private void IncTimeAtDafny(DebugData debugData, int time) {
+    private void IncTimeAtDafny(DebugData debugData, double time) {
       if (debugData != null)
         debugData.TimeAtDafny += time;
     }
@@ -290,9 +290,9 @@ namespace Tacny {
       //disable Dafny output
       var cOut = Console.Out;
       Console.SetOut(TextWriter.Null);
-      var start = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+      var start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       po = Pipeline.VerifyProgram(prog, fileNames, programId, out stats, out errList, out errorInfo);
-      var end = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+      var end = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       Console.SetOut(cOut);
       IncTimeAtBoogie(currentDebug, end - start);
       if (stats.ErrorCount == 0) {
@@ -319,9 +319,9 @@ namespace Tacny {
       var cOut = Console.Out;
       Console.SetOut(TextWriter.Null);
       Dafny.Resolver r = new Dafny.Resolver(program);
-      var start = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+      var start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       r.ResolveProgram(program);
-      var end = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+      var end = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       Console.SetOut(cOut);
       IncTimeAtDafny(currentDebug, end - start);
       if (r.ErrorCount != 0) {

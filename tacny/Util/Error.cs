@@ -97,6 +97,7 @@ namespace Util {
         case 21: s = "Only tactic function can be assigned as a value"; break;
         case 22: s = "The expression can only be called from a tmatch statement"; break;
         case 23: s = "Unsupported tactic caller type, expected {0}"; break;
+        case 24: s = "Could not determine variable type";break;
         default: s = "error" + n; break;
       }
 

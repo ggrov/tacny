@@ -217,7 +217,8 @@ namespace Tacny
         {
             Contract.Requires<ArgumentNullException>(body != null);
             Contract.Ensures(Contract.ValueAtReturn(out result) != null);
-            //result = null;
+      // THIS WILL CAUSE ISSUES COMMENT@!!!
+      result = null;
             Atomic atomic = this.Copy();
             atomic.localContext.tacticBody = body.Body;
             atomic.localContext.ResetCounter();

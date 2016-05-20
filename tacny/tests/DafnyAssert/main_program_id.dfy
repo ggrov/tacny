@@ -1,0 +1,17 @@
+lemma P54()
+  ensures forall m, n :: minus(add(m, n), n) == m
+{
+  macro1(minus);
+}
+
+lemma P67()
+  ensures forall m, n :: leq(n, add(m, n)) == True
+{
+  macro1(leq);
+}
+
+tactic macro1(t: Term)
+{
+  assert forall m, n :: t(n, add(n, m)) == True;
+  assert forall m, n :: add(m, n) == add(n, m);
+}

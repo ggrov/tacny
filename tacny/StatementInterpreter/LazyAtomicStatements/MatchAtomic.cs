@@ -214,7 +214,6 @@ namespace LazyTacny {
           ctorBodies[ctor] = result;
           ms = GenerateMatchStmt(DynamicContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
           solution = CreateSolution(this, ms);
-          Solution.PrintSolution(solution);
           // if the program fails tro resolve skip
           if (!ResolveAndVerify(solution))
             continue;

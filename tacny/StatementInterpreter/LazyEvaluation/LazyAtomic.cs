@@ -94,9 +94,9 @@ namespace LazyTacny {
       Atomic atomic = new Atomic(md, tactic, tacticCall, tacnyProgram);
       atomic.StaticContext.RegsiterGlobalVariables(variables, resolved);
       atomic.DynamicContext.whileStmt = ws;
-      atomic.ResolveTacticArguments();
+      atomic.ResolveTacticArguments(atomic);
       foreach (var result in ResolveTactic(atomic))
-          return result;
+        return result;
 
       return null;
     }
@@ -273,22 +273,22 @@ namespace LazyTacny {
           var application = value as ApplySuffix;
           // this may cause problems when resolved tactic returns an ApplySuffix
           if (application != null) {
-            
-              Debug.WriteLine("Argument application is tactic");
-              var newUpdateStmt = new UpdateStmt(us.Tok, us.EndTok, us.Lhss, new List<AssignmentRhs>() { new ExprRhs(application) });
-              var ac = this.Copy();
-              foreach (var argument in application.Args) {
-                var ns = argument as NameSegment;
-                if (StaticContext.HasGlobalVariable(ns.Name)) {
-                  var temp = StaticContext.GetGlobalVariable(ns.Name);
-                  ac.DynamicContext.AddLocal(new Dafny.Formal(ns.tok, ns.Name, temp.Type, true, temp.IsGhost), ns);
-                }
+
+            Debug.WriteLine("Argument application is tactic");
+            var newUpdateStmt = new UpdateStmt(us.Tok, us.EndTok, us.Lhss, new List<AssignmentRhs>() { new ExprRhs(application) });
+            var ac = this.Copy();
+            foreach (var argument in application.Args) {
+              var ns = argument as NameSegment;
+              if (StaticContext.HasGlobalVariable(ns.Name)) {
+                var temp = StaticContext.GetGlobalVariable(ns.Name);
+                ac.DynamicContext.AddLocal(new Dafny.Formal(ns.tok, ns.Name, temp.Type, true, temp.IsGhost), ns);
               }
-              // let's resolve the tactic applicaiton
-              foreach (var item in ac.CallAction(newUpdateStmt, new Solution(this.Copy()))) {
-                yield return item;
-              }
-            
+            }
+            // let's resolve the tactic applicaiton
+            foreach (var item in ac.CallAction(newUpdateStmt, new Solution(this.Copy()))) {
+              yield return item;
+            }
+
           } else {
             if (value is Dafny.LiteralExpr) {
               yield return new Solution(this.Copy());
@@ -561,7 +561,7 @@ namespace LazyTacny {
       List<Expression> exps = aps.Args;
       Contract.Assert(exps.Count == atomic.DynamicContext.tactic.Ins.Count);
       atomic.SetNewTarget(GetNewTarget());
-      atomic.ResolveTacticArguments();
+      ResolveTacticArguments(atomic);
       //for (int i = 0; i < exps.Count; i++) {
       //  foreach (var result in ResolveExpression(exps[i])) {
       //    atomic.AddLocal(atomic.DynamicContext.tactic.Ins[i], result);
@@ -570,13 +570,13 @@ namespace LazyTacny {
       return ResolveTactic(atomic, false);
     }
 
-    private void ResolveTacticArguments() {
-      var aps = ((ExprRhs)GetTacticCall().Rhss[0]).Expr as ApplySuffix;
+    private void ResolveTacticArguments(Atomic atomic) {
+      var aps = ((ExprRhs)atomic.GetTacticCall().Rhss[0]).Expr as ApplySuffix;
       List<Expression> exps = aps.Args;
-      Contract.Assert(exps.Count == DynamicContext.tactic.Ins.Count);
+      Contract.Assert(exps.Count == atomic.DynamicContext.tactic.Ins.Count);
       for (int i = 0; i < exps.Count; i++) {
         foreach (var result in ResolveExpression(exps[i])) {
-          AddLocal(DynamicContext.tactic.Ins[i], result);
+          atomic.AddLocal(atomic.DynamicContext.tactic.Ins[i], result);
         }
       }
     }
@@ -1163,7 +1163,8 @@ namespace LazyTacny {
     protected bool IsArgumentApplication(ApplySuffix aps) {
       Contract.Requires(aps != null);
       var nameSegment = GetNameSegment(aps);
-      return this.IsArgumentApplication(nameSegment);
+
+      return nameSegment == null ? IsArgumentApplication(nameSegment) : false;
     }
 
     [Pure]
@@ -1190,7 +1191,11 @@ namespace LazyTacny {
 
     [Pure]
     protected static NameSegment GetNameSegment(ApplySuffix aps) {
-      return ((aps != null) ? (aps.Lhs as NameSegment) : null);
+      if (aps.Lhs is ExprDotName) {
+        var edn = aps.Lhs as ExprDotName;
+        return edn.Lhs as NameSegment;
+      } else
+        return ((aps != null) ? (aps.Lhs as NameSegment) : null);
     }
 
     [Pure]
@@ -1225,14 +1230,70 @@ namespace LazyTacny {
       throw new ArgumentException("Invalid argument; Expected binary operator, received " + op);
     }
 
+
     [Pure]
-    protected static bool ExprDotEquality(Expression a, ExprDotName b) {
-      var dotName = a as ExprDotName;
-      if (dotName == null || b == null)
+    protected static bool SingletonEquality(Expression a, Expression b) {
+      if (!a.GetType().Equals(b.GetType()))
         return false;
-      var nsA = dotName.Lhs as NameSegment;
-      var nsB = b.Lhs as NameSegment;
-      return nsA.Name == nsB.Name && dotName.AsStringLiteral() == b.AsStringLiteral();
+      if (a is NameSegment) {
+        var nsA = a as NameSegment;
+        var nsB = b as NameSegment;
+        return nsA.Name == nsB.Name;
+      } else if (a is ExprDotName) {
+        var nsA = ((ExprDotName)a).Lhs as NameSegment;
+        var nsB = ((ExprDotName)b).Lhs as NameSegment;
+        return nsA.Name == nsB.Name && ((ExprDotName)a).SuffixName == ((ExprDotName)b).SuffixName;
+      } else if (a is Dafny.LiteralExpr) {
+        var litA = a as Dafny.LiteralExpr;
+        var litB = b as Dafny.LiteralExpr;
+        return litA.Value == litB.Value;
+      } else {
+        return false;
+      }
+    }
+
+    [Pure]
+    protected bool ValidateType(IVariable variable, BinaryExpr expression) {
+      if (expression == null) {
+        return true;
+      }
+      var type = StaticContext.GetVariableType(IVariableToExpression(variable) as NameSegment);
+      if (type == null)
+        return true;
+
+      switch (expression.Op) {
+        case BinaryExpr.Opcode.Iff:
+        case BinaryExpr.Opcode.Imp:
+        case BinaryExpr.Opcode.Exp:
+        case BinaryExpr.Opcode.And:
+        case BinaryExpr.Opcode.Or:
+          return type is BoolType;
+        case BinaryExpr.Opcode.Eq:
+        case BinaryExpr.Opcode.Neq:
+        case BinaryExpr.Opcode.Lt:
+        case BinaryExpr.Opcode.Le:
+        case BinaryExpr.Opcode.Ge:
+        case BinaryExpr.Opcode.Gt:
+          if (type is CharType)
+            return true;
+          if (!(type is IntType || type is RealType))
+            return false;
+          goto case BinaryExpr.Opcode.Add;
+        case BinaryExpr.Opcode.Add:
+        case BinaryExpr.Opcode.Sub:
+        case BinaryExpr.Opcode.Mul:
+        case BinaryExpr.Opcode.Div:
+        case BinaryExpr.Opcode.Mod:
+          return type is IntType || type is RealType;
+        case BinaryExpr.Opcode.Disjoint:
+        case BinaryExpr.Opcode.In:
+        case BinaryExpr.Opcode.NotIn:
+          return type is CollectionType;
+        default:
+          Contract.Assert(false, "Unsupported Binary Operator");
+          return false;
+      }
     }
   }
 }
+

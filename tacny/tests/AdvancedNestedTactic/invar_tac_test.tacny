@@ -1,0 +1,45 @@
+predicate even(n : nat){
+  if n == 0 then true
+  else if n == 1 then false
+  else !odd(n-1)
+}
+
+predicate odd(n : nat){
+  if n == 1 then true
+  else if n == 0 then false
+  else !even(n-1)
+}
+
+lemma even_or_odd(n : nat)
+ ensures even(n) || odd(n);
+ {
+  simple_ind_tac();
+ }
+
+ 
+
+ tactic ifI(c:Tactic,tif:Tactic,telse:Tactic)
+ {
+   if c() {
+     tif();
+   } else {
+     telse();
+   }
+ }
+
+ tactic selfcall(z : Element) {
+   tvar m := caller();
+   m(z-1);  
+ }
+
+ tactic simple_ind_tac()
+ {
+   tvar x :| x in params();
+
+   ifI(condtac(x), id(), selfcall(x));
+ }
+
+ function tactic condtac(t:variable) : expression
+ {
+   t == 0 ||| (t == 0 || t == 1)
+ }

@@ -85,53 +85,7 @@ namespace LazyTacny {
       if (!(constant is LiteralExpr || constant is ExprDotName))
         return false;
 
-      return constants.Exists(j => (j as LiteralExpr)?.Value.ToString() == (constant as LiteralExpr)?.Value.ToString() || ExprDotEquality(j, constant as ExprDotName));
-    }
-
-
-
-    private bool ValidateType(IVariable variable, BinaryExpr expression) {
-      if (expression == null) {
-        return true;
-      }
-      var type = StaticContext.GetVariableType(IVariableToExpression(variable) as NameSegment);
-      if (type == null)
-        return true;
-
-      switch (expression.Op) {
-        case BinaryExpr.Opcode.Iff:
-        case BinaryExpr.Opcode.Imp:
-        case BinaryExpr.Opcode.Exp:
-        case BinaryExpr.Opcode.And:
-        case BinaryExpr.Opcode.Or:
-          return type is BoolType;
-        case BinaryExpr.Opcode.Eq:
-        case BinaryExpr.Opcode.Neq:
-        case BinaryExpr.Opcode.Lt:
-        case BinaryExpr.Opcode.Le:
-        case BinaryExpr.Opcode.Ge:
-        case BinaryExpr.Opcode.Gt:
-          if (type is CharType)
-            return true;
-          if (!(type is IntType || type is RealType))
-            return false;
-          goto case BinaryExpr.Opcode.Add;
-        case BinaryExpr.Opcode.Add:
-        case BinaryExpr.Opcode.Sub:
-        case BinaryExpr.Opcode.Mul:
-        case BinaryExpr.Opcode.Div:
-        case BinaryExpr.Opcode.Mod:
-          return type is IntType || type is RealType;
-        case BinaryExpr.Opcode.Disjoint:
-        case BinaryExpr.Opcode.In:
-        case BinaryExpr.Opcode.NotIn:
-          return type is CollectionType;
-        default:
-          Contract.Assert(false, "Unsupported Binary Operator");
-          return false;
-      }
-
-
+      return constants.Exists(j => (j as LiteralExpr)?.Value.ToString() == (constant as LiteralExpr)?.Value.ToString() || SingletonEquality(j, constant as ExprDotName));
     }
   }
 }

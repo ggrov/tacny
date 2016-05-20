@@ -47,7 +47,7 @@ namespace Util {
         }
 
         [ContractInvariantMethod]
-        protected void ObjectInvariant() {
+        private void ObjectInvariant() {
             Contract.Invariant(wr != null);
         }
 

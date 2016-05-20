@@ -37,7 +37,7 @@ namespace LazyTacny {
             }
           } else if(leaf is ExprDotName) {
             var edn = leaf as ExprDotName;
-            if (!result.Exists(j => ExprDotEquality(j, edn))) {
+            if (!result.Exists(j => SingletonEquality(j, edn))) {
               result.Add(leaf);
             }
           }
