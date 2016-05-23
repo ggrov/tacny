@@ -118,8 +118,6 @@ namespace LazyTacny {
       try {
 
         Solution result = Atomic.ResolveTactic(us, md, tacnyProgram, variables, resolved, ws);
-        Solution.PrintSolution(result);
-        //Solution.PrintSolution(result);
         this.tacnyProgram.currentDebug.Fin();
         return result;
       } catch (Exception e) {

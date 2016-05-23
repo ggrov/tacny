@@ -1052,9 +1052,10 @@ namespace LazyTacny {
             return false;
         } else if (!(leaf is Dafny.LiteralExpr)) {
           if (leaf is ApplySuffix) {
-            if (StaticContext.program.IsTacticCall(leaf as ApplySuffix) || IsArgumentApplication(leaf as ApplySuffix)) {
-              return false;
-            }
+            return false;
+            //if (StaticContext.program.IsTacticCall(leaf as ApplySuffix) || IsArgumentApplication(leaf as ApplySuffix)) {
+            //  return false;
+            //}
           } else {
             return false;
           }
@@ -1164,7 +1165,7 @@ namespace LazyTacny {
       Contract.Requires(aps != null);
       var nameSegment = GetNameSegment(aps);
 
-      return nameSegment == null ? IsArgumentApplication(nameSegment) : false;
+      return nameSegment != null ? IsArgumentApplication(nameSegment) : false;
     }
 
     [Pure]

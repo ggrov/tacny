@@ -41,7 +41,7 @@ namespace Main {
       Contract.Requires(tcce.NonNullElements(args));
       Debug.Listeners.Clear();
       Debug.Listeners.Add(new TextWriterTraceListener(System.Console.Out));
-      Debug.Listeners.Clear();
+      //Debug.Listeners.Clear();
       Debug.AutoFlush = true;
       // install Dafny and Boogie commands
       var options = new Util.TacnyOptions();

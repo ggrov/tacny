@@ -1486,15 +1486,6 @@ OneStmt<out Statement/*!*/ s, bool isTactic = false>
   | UpdateStmt<out s>
   | VarDeclStatement<out s>
   | IfStmt<out s>
-  | IF(isTactic)
-      ( TacnyCasesBlockStmt<out s>
-        | TacnySolvedBlockStmt<out s>
-        | TacnyChangedBlockStmt<out s>
-        | TacnyTryCatchBlockStmt<out s>
-        | TacticVarDeclStmt<out s>
-        | TacticInvariantStmt<out s>
-        | TacticAssertStmt<out s>
-      )
   | WhileStmt<out s>
   | MatchStmt<out s>
   | ForallStmt<out s>
@@ -1511,7 +1502,15 @@ OneStmt<out Statement/*!*/ s, bool isTactic = false>
     SYNC
     ";"                                (. s = label != null ? new BreakStmt(x, t, label) : new BreakStmt(x, t, breakCount); .)
   | ReturnStmt<out s>
-  | SkeletonStmt<out s>
+  | SkeletonStmt<out s>  
+  | TacnyCasesBlockStmt<out s>
+  | TacnySolvedBlockStmt<out s>
+  | TacnyChangedBlockStmt<out s>
+  | TacnyTryCatchBlockStmt<out s>
+  | TacticVarDeclStmt<out s>
+  | TacticInvariantStmt<out s>
+  | TacticAssertStmt<out s>
+
   )
   .
 
@@ -1585,7 +1584,7 @@ UpdateStmt<out Statement/*!*/ s>
         "assume"                   (. suchThatAssume = t; .)
       ]
       Expression<out suchThat, false, true>
-    | "||"                          (. x = t; .)
+    /*| "||"                          (. x = t; .)
       (
         "{"      
           (. body = new List<Statement/*!*/>(); .)                            
@@ -1594,6 +1593,7 @@ UpdateStmt<out Statement/*!*/ s>
         |
         Expression<out or, false, true>
       )
+      */
     )
     ";"                            (. endTok = t; .)
   | ":"                            (. SemErr(t, "invalid statement (did you forget the 'label' keyword?)"); .)
@@ -1853,6 +1853,7 @@ TacnyCasesBlockStmt<out Statement/*!*/ tacnyCasesStmt>
      List<GuardedAlternative> alternatives;
      tacnyCasesStmt = dummyStmt;  // to please the compiler
   .)
+
   "tmatch"                       (. x = t; .)
   (
     IF(IsAlternative())
