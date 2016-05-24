@@ -93,8 +93,12 @@ namespace LazyTacny {
 
       if (expression.IsLeaf()) {
         foreach (var kvp in vars) {
+          
           if (SingletonEquality(expression.data, kvp.Key)) {
             foreach (var var in kvp.Value) {
+              // safeguard against infinite loop
+              if (SingletonEquality(kvp.Key, var))
+                continue;
               //if (!ValidateType(var, expression.parent.TreeToExpression() as BinaryExpr))
               //   continue;
               var newVal = ExpressionTree.ExpressionToTree(var);

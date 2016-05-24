@@ -32,10 +32,9 @@ namespace LazyTacny {
       guard_res = EvaluateGuard();
       // if the guard has been resolved to true resolve then body
       if (guard_res) {
-
+        // reset the PartialyResolved
+        this.DynamicContext.isPartialyResolved = false;
         foreach (var item in ResolveBody(whileStmt.Body)) {
-          Console.WriteLine("While statement result: ");
-          Solution.PrintSolution(item);
           item.state.DynamicContext.isPartialyResolved = true;
           yield return item;
         }

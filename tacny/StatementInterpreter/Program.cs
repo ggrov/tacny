@@ -289,7 +289,7 @@ namespace Tacny {
       IncCallsToBoogie(currentDebug);
       //disable Dafny output
       var cOut = Console.Out;
-      Console.SetOut(TextWriter.Null);
+    //  Console.SetOut(TextWriter.Null);
       var start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       po = Pipeline.VerifyProgram(prog, fileNames, programId, out stats, out errList, out errorInfo);
       var end = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;

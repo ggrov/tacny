@@ -23,7 +23,11 @@ namespace LazyTacny {
 
     private IEnumerable<Solution> SuchThat(Statement st, Solution solution) {
       TacticVarDeclStmt tvds = st as TacticVarDeclStmt;
-      Contract.Assert(tvds != null, Util.Error.MkErr(st, 5, typeof(TacticVarDeclStmt), st.GetType()));
+      // statement must be object level, thus include as is
+      if (tvds == null) {
+        yield return AddNewStatement(st, st);
+        yield break;
+      }
 
       AssignSuchThatStmt suchThat = tvds.Update as AssignSuchThatStmt;
       Contract.Assert(suchThat != null, Util.Error.MkErr(st, 5, typeof(AssignSuchThatStmt), tvds.Update.GetType()));

@@ -57,7 +57,9 @@ namespace LazyTacny {
           Contract.Assert(ovars != null, Util.Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
 
           List<IVariable> vars = ovars as List<IVariable>;
-          Contract.Assert(vars != null, Util.Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
+          if (vars == null)
+            vars = new List<IVariable>();
+          //Contract.Assert(vars != null, Util.Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
 
 
 

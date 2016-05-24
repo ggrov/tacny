@@ -29,7 +29,7 @@ namespace Main {
       thread.Start();
       thread.Join();
 
-      return ret;
+        return ret;
     }
 
     /// <summary>
@@ -137,25 +137,11 @@ namespace Main {
 
         if (!CommandLineOptions.Clo.NoResolve && !CommandLineOptions.Clo.NoTypecheck && DafnyOptions.O.DafnyVerify) {
 
-          if (!Util.TacnyOptions.O.LazyEval) {
-            Debug.WriteLine("Starting eager tactic evaluation");
-            Tacny.Interpreter r = new Tacny.Interpreter(tacnyProgram);
-
-            err = r.ResolveProgram();
-            if (err != null) {
-              exitValue = ExitValue.DAFNY_ERROR;
-              printer.ErrorWriteLine(Console.Out, err);
-            } else {
-              tacnyProgram.PrintProgram();
-            }
-            Debug.WriteLine("Fnished eager tactic evaluation");
-          } else {
-            Debug.WriteLine("Starting lazy tactic evaluation");
-            LazyTacny.Interpreter r = new LazyTacny.Interpreter(tacnyProgram);
-            var prog = r.ResolveProgram();
-            tacnyProgram.PrintProgram(prog);
-            Debug.WriteLine("Fnished lazy tactic evaluation");
-          }
+          Debug.WriteLine("Starting lazy tactic evaluation");
+          LazyTacny.Interpreter r = new LazyTacny.Interpreter(tacnyProgram);
+          var prog = r.ResolveProgram();
+          tacnyProgram.PrintProgram(prog);
+          Debug.WriteLine("Fnished lazy tactic evaluation");
         }
         tacnyProgram.PrintAllDebugData(Util.TacnyOptions.O.PrintCsv);
       }

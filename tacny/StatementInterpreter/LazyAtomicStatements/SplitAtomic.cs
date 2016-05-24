@@ -23,7 +23,9 @@ namespace LazyTacny {
       Contract.Assert(callArgs.Count == 2, Util.Error.MkErr(st, 0, 2, callArgs.Count));
       foreach (var arg1 in ResolveExpression(callArgs[0])) {
         var expression = arg1 as BinaryExpr;
-        Contract.Assert(expression != null, Util.Error.MkErr(st, 1, "Expression"));
+        if (expression == null)
+          continue;
+        //Contract.Assert(expression != null, Util.Error.MkErr(st, 1, "Expression"));
         foreach (var arg2 in ResolveExpression(callArgs[1])) {
           var litVal = arg2 as LiteralExpr;
           Contract.Assert(litVal != null);
@@ -39,8 +41,10 @@ namespace LazyTacny {
 
       if (!expression.Op.Equals(op)) {
         expList.Add(expression);
-      } else if (IsChained(expression) && op.Equals(BinaryExpr.Opcode.And)) {
+      } else if (IsChained(expression)) {
         expList.Add(expression);
+        expList.AddRange(SplitExpression(op, expression.E0 as BinaryExpr));
+        expList.AddRange(SplitExpression(op, expression.E1 as BinaryExpr));
       } else {
         if (!(expression.E0 is BinaryExpr))
           expList.Add(expression.E0);

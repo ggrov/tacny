@@ -53,6 +53,7 @@ namespace LazyTacny {
       CONSTS,
       REPLACE_CONST,
       SUBST,
+      PREDICATES,
     };
 
     public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
@@ -94,6 +95,7 @@ namespace LazyTacny {
       { "consts", Atomic.CONSTS },
       { "replace_constants", Atomic.REPLACE_CONST },
       { "subst", Atomic.SUBST },
+      { "predicates", Atomic.PREDICATES }
     };
 
     public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
@@ -135,6 +137,7 @@ namespace LazyTacny {
       {Atomic.CONSTS, typeof(ConstantsAtomic) },
       {Atomic.REPLACE_CONST, typeof(ReplaceConstantAtomic) },
       {Atomic.SUBST, typeof(OperatorAtomic) },
+      {Atomic.PREDICATES, typeof(PredicateAtomic) }
   };
 
     /// <summary>

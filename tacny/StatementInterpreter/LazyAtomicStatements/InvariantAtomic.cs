@@ -18,28 +18,6 @@ namespace LazyTacny {
         throw new NotImplementedException();
       }
     }
-
-    public IEnumerable<Solution> CreateInvar(Statement st, Solution solution) {
-      IVariable lv = null;
-      List<Expression> call_arguments = null;
-      Expression formula = null;
-      MaybeFreeExpression invariant = null;
-
-      InitArgs(st, out lv, out call_arguments);
-      Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-      Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
-
-
-      foreach (var forlumla in ResolveExpression(call_arguments[0])) {
-        Contract.Assert(formula != null);
-        invariant = new MaybeFreeExpression(formula);
-        var ac = this.Copy();
-        ac.AddLocal(lv, invariant);
-        yield return new Solution(this.Copy());
-      }
-      yield break;
-    }
-
     public IEnumerable<Solution> AddInvar(TacticInvariantStmt st, Solution solution) {
       MaybeFreeExpression invariant = null;
       MaybeFreeExpression[] invar_arr = null;
@@ -47,9 +25,16 @@ namespace LazyTacny {
       
       
       foreach (var item in ResolveExpression(st.Expr)) {
-        invariant = item as MaybeFreeExpression;
-        if(invariant == null) {
-          invariant = new MaybeFreeExpression(item as Expression);
+        if (item is UpdateStmt) {
+          var us = item as UpdateStmt;
+          var aps = ((ExprRhs)us.Rhss[0]).Expr as ApplySuffix;
+          if (aps != null)
+            invariant = new MaybeFreeExpression(aps);
+        } else {
+          invariant = item as MaybeFreeExpression;
+          if (invariant == null) {
+            invariant = new MaybeFreeExpression(item as Expression);
+          }
         }
         WhileStmt nws = null;
 
