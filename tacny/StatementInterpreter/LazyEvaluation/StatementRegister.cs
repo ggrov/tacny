@@ -59,8 +59,6 @@ namespace LazyTacny {
     public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
     {
       {"replace_singleton", Atomic.REPLACE_SINGLETON},
-      //{"create_invariant", Atomic.CREATE_INVAR},
-      //{"add_invariant", Atomic.ADD_INVAR},
       {"loop_guard", Atomic.EXTRACT_GUARD},
       {"replace_operator", Atomic.REPLACE_OP},
       {"is_valid", Atomic.IS_VALID},
@@ -125,7 +123,7 @@ namespace LazyTacny {
       {Atomic.GET_MEMBER, typeof(GetMemberAtomic) },
       {Atomic.IS_INDUCTIVE, typeof(IsInductiveAtomic)},
       {Atomic.TRY_CATCH, typeof(TryCatchAtomic)},
-      //{Atomic.RETURNS, typeof(ReturnAtomic)},
+      {Atomic.RETURNS, typeof(ReturnAtomic)},
       //{Atomic.IS_DATATYPE, typeof(IsDatatypeAtomic)},
       {Atomic.FRESH_LEM_NAME, typeof(FreshNameAtomic) },
       {Atomic.GEN_BEXP, typeof(GenBexpAtomic) },

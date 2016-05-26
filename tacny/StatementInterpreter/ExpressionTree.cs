@@ -17,6 +17,8 @@ namespace Tacny {
     public bool modified = false;
     public ExpressionTree root;
 
+
+    public ExpressionTree() { }
     public ExpressionTree(Expression data)
         : this(data, null) { }
 
@@ -278,7 +280,11 @@ namespace Tacny {
 
         } else if (data is NegationExpression) {
           return new NegationExpression(data.tok, lChild.TreeToExpression());
+        } else if(data is SeqSelectExpr) {
+          var e = (SeqSelectExpr)data;
+          return new SeqSelectExpr(e.tok, e.SelectOne, e.Seq, lChild.TreeToExpression(), rChild != null ? rChild.TreeToExpression() : null);
         }
+
         return data;
       }
     }
@@ -299,47 +305,58 @@ namespace Tacny {
     }
 
     public static ExpressionTree ExpressionToTree(Expression exp) {
+      var expt = new ExpressionTree().ExptToTree(exp);
+      expt.SetRoot();
+      return expt;
+    }
+
+     public ExpressionTree ExptToTree(Expression exp) {
       Contract.Requires(exp != null);
       Contract.Ensures(Contract.Result<ExpressionTree>() != null);
-      ExpressionTree node;
+      ExpressionTree node = null;
       if (exp is TacnyBinaryExpr) {
         var e = (TacnyBinaryExpr)exp;
         node = new ExpressionTree(e);
         node.lChild = ExpressionToTree(e.E0);
         node.rChild = ExpressionToTree(e.E1);
-        node.lChild.parent = node;
-        node.rChild.parent = node;
       } if (exp is BinaryExpr) {
         var e = (BinaryExpr)exp;
         node = new ExpressionTree(e);
         node.lChild = ExpressionToTree(e.E0);
         node.rChild = ExpressionToTree(e.E1);
-        node.lChild.parent = node;
-        node.rChild.parent = node;
+        
       } else if (exp is Dafny.QuantifierExpr) {
         var e = (Dafny.QuantifierExpr)exp;
         node = new ExpressionTree(e);
         node.lChild = ExpressionToTree(e.Term);
-        node.lChild.parent = node;
       } else if (exp is ParensExpression) {
         var e = (ParensExpression)exp;
         node = new ExpressionTree(e);
         node.lChild = ExpressionToTree(e.E);
-        node.lChild.parent = node;
       } else if (exp is ChainingExpression) {
         var e = (ChainingExpression)exp;
         node = new ExpressionTree(e);
         node.lChild = ExpressionToTree(e.E);
-        node.lChild.parent = node;
       } else if (exp is NegationExpression) {
         var e = (NegationExpression)exp;
         node = new ExpressionTree(e);
         node.lChild = ExpressionToTree(e.E);
-        node.lChild.parent = node;
-      } else // if (exp is NameSegment || exp is Dafny.LiteralExpr)
-        {
+      } else if (exp is SeqSelectExpr) {
+        var e = (SeqSelectExpr)exp;
+        node = new ExpressionTree(e);
+        node.lChild = ExpressionToTree(e.E0);
+        if (e.E1 != null) {
+          node.rChild = ExpressionToTree(e.E1);
+        }
+        
+      } else {
         node = new ExpressionTree(exp);
       }
+
+      if (node.lChild != null)
+        node.lChild.parent = node;
+      if (node.rChild != null)
+        node.rChild.parent = node;
       return node;
     }
   }

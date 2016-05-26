@@ -93,7 +93,7 @@ namespace LazyTacny {
 
       if (expression.IsLeaf()) {
         foreach (var kvp in vars) {
-          
+
           if (SingletonEquality(expression.data, kvp.Key)) {
             foreach (var var in kvp.Value) {
               // safeguard against infinite loop
@@ -101,7 +101,7 @@ namespace LazyTacny {
                 continue;
               //if (!ValidateType(var, expression.parent.TreeToExpression() as BinaryExpr))
               //   continue;
-              var newVal = ExpressionTree.ExpressionToTree(var);
+              ExpressionTree newVal = RewriteExpression(expression, kvp.Key, var);
               var copy = expression.root.Copy();
               var newTree = ExpressionTree.FindAndReplaceNode(copy, newVal, expression.Copy());
               yield return newTree.root.TreeToExpression();
@@ -177,5 +177,26 @@ namespace LazyTacny {
       return constants.Exists(j => SingletonEquality(j, constant));
     }
 
+
+
+    private ExpressionTree RewriteExpression(ExpressionTree expt, Expression key, Expression value) {
+      if (key is LiteralExpr)
+        return new ExpressionTree(value);
+      else if (key is NameSegment) {
+        var expr = expt.TreeToExpression();
+        var ac = this.Copy();
+        ac.AddLocal(new LocalVariable(key.tok, key.tok, (key as NameSegment).Name, new ObjectType(), true), value);
+        foreach (var item in ac.ResolveExpression(expr)) {
+          if (item is Expression) {
+            return new ExpressionTree(item as Expression);// ExpressionTree.ExpressionToTree(item as Expression);
+          } else {
+            return expt;
+          }
+        }
+      }
+      // could not rewrite the value return default
+      return expt;
+    }
   }
 }
+

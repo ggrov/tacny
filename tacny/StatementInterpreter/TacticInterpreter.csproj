@@ -245,6 +245,7 @@
     <Compile Include="LazyAtomicStatements\PrecondAtomic.cs" />
     <Compile Include="LazyAtomicStatements\PredicatesAtomic.cs" />
     <Compile Include="LazyAtomicStatements\ReplaceConstantAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\ReturnAtomic.cs" />
     <Compile Include="LazyAtomicStatements\SplitAtomic.cs" />
     <Compile Include="LazyAtomicStatements\SuchThatAtomic.cs" />
     <Compile Include="LazyAtomicStatements\TryCatchAtomic.cs" />

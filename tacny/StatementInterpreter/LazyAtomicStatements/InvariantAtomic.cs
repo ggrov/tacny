@@ -49,7 +49,8 @@ namespace LazyTacny {
           invar_arr = ws.Invariants.ToArray();
 
         invar = new List<MaybeFreeExpression>(invar_arr);
-        invar.Add(invariant);
+        invar.Insert(0, invariant);
+        //invar.Add(invariant);
         nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, invar, ws.Decreases, ws.Mod, ws.Body);
         yield return AddNewStatement<WhileStmt>(ws, nws);
       }
