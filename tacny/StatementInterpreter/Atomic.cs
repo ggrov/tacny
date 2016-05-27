@@ -1,13 +1,17 @@
-using Microsoft.Dafny;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Linq;
-using Dafny = Microsoft.Dafny;
-using Microsoft.Boogie;
 using System.Numerics;
+using System.Threading.Tasks;
+using Microsoft.Boogie;
+using Microsoft.Dafny;
+using Util;
+using Formal = Microsoft.Dafny.Formal;
+using LiteralExpr = Microsoft.Dafny.LiteralExpr;
+using LocalVariable = Microsoft.Dafny.LocalVariable;
+using Printer = Util.Printer;
+using Type = System.Type;
 
 namespace Tacny
 {
@@ -25,7 +29,7 @@ namespace Tacny
         public void Resolve(Statement st, ref List<Solution> solution_list)
         {
             Contract.Requires<ArgumentNullException>(st != null);
-            Contract.Requires(tcce.NonNullElements<Solution>(solution_list));
+            Contract.Requires(tcce.NonNullElements(solution_list));
         }
     }
     
@@ -38,8 +42,8 @@ namespace Tacny
         {
             Contract.Requires(ac != null);
 
-            this.localContext = ac.localContext;
-            this.globalContext = ac.globalContext;
+            localContext = ac.localContext;
+            globalContext = ac.globalContext;
         }
 
         public Atomic(MemberDecl md, ITactic tac, UpdateStmt tac_call, Program program)
@@ -47,13 +51,13 @@ namespace Tacny
             Contract.Requires(md != null);
             Contract.Requires(tac != null);
 
-            this.localContext = new DynamicContext(md, tac, tac_call);
-            this.globalContext = new StaticContext(md, tac_call, program);
+            localContext = new DynamicContext(md, tac, tac_call);
+            globalContext = new StaticContext(md, tac_call, program);
         }
 
         public Atomic(MemberDecl md, ITactic tac, UpdateStmt tac_call, StaticContext globalContext)
         {
-            this.localContext = new DynamicContext(md, tac, tac_call);
+            localContext = new DynamicContext(md, tac, tac_call);
             this.globalContext = globalContext;
 
         }
@@ -81,8 +85,8 @@ namespace Tacny
             Contract.Requires(tac_call != null);
             Contract.Requires(md != null);
             Contract.Requires(tacnyProgram != null);
-            Contract.Requires(tcce.NonNullElements<IVariable>(variables));
-            Contract.Requires(tcce.NonNullElements<IVariable>(resolved));
+            Contract.Requires(tcce.NonNullElements(variables));
+            Contract.Requires(tcce.NonNullElements(resolved));
             Contract.Requires(result != null);
             List<Solution> res = null;
 
@@ -154,7 +158,7 @@ namespace Tacny
 
             if (result == null)
                 result = new List<Solution>();
-            if (Util.TacnyOptions.O.ParallelExecution)
+            if (TacnyOptions.O.ParallelExecution)
             {
                 List<Solution> temp = result;
                 Parallel.ForEach(solution_list, (solution =>
@@ -219,11 +223,11 @@ namespace Tacny
             Contract.Ensures(Contract.ValueAtReturn(out result) != null);
       // THIS WILL CAUSE ISSUES COMMENT@!!!
       result = null;
-            Atomic atomic = this.Copy();
+            Atomic atomic = Copy();
             atomic.localContext.tacticBody = body.Body;
             atomic.localContext.ResetCounter();
             if (result == null || result.Count == 0)
-                result = new List<Solution>() { new Solution(atomic) };
+                result = new List<Solution> { new Solution(atomic) };
             while (true)
             {
 
@@ -264,7 +268,7 @@ namespace Tacny
 
         protected void CallAction(object call, ref List<Solution> solution_list)
         {
-            System.Type type = null;
+            Type type = null;
             Statement st = call as Statement;
             ApplySuffix aps;
             if (st != null)
@@ -275,7 +279,7 @@ namespace Tacny
                 if (aps != null)
                 {
                     type = StatementRegister.GetStatementType(StatementRegister.GetAtomicType(aps.Lhs.tok.val));
-                    st = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
+                    st = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs> { new ExprRhs(aps) });
                 }
             }
             if (type == null)
@@ -313,7 +317,7 @@ namespace Tacny
                          */
                         foreach (var solution in sol_list)
                         {
-                            Atomic action = this.Copy();
+                            Atomic action = Copy();
                             action.SetNewTarget(solution.state.GetNewTarget());
                             foreach (KeyValuePair<Statement, Statement> kvp in solution.state.GetResult())
                                 action.AddUpdated(kvp.Key, kvp.Value);
@@ -338,7 +342,7 @@ namespace Tacny
             }
             else
             {
-                var qq = Activator.CreateInstance(type, new object[] { this }) as IAtomicStmt;
+                var qq = Activator.CreateInstance(type, this) as IAtomicStmt;
                 if (qq == null)
                     CallDefaultAction(st, ref solution_list);
                 else
@@ -366,12 +370,12 @@ namespace Tacny
                         Contract.Assert(index >= 0);
                         if (declaration.Locals.Count < index)
                         {
-                            Util.Printer.Error(declaration, "Not all declared variables have an assigned value");
+                            Printer.Error(declaration, "Not all declared variables have an assigned value");
                             return;
                         }
                         ExprRhs exprRhs = item as ExprRhs;
                         // if the declaration is literal expr (e.g. var q := 1)
-                        Dafny.LiteralExpr litExpr = exprRhs.Expr as Dafny.LiteralExpr;
+                        LiteralExpr litExpr = exprRhs.Expr as LiteralExpr;
                         if (litExpr != null)
                             AddLocal(declaration.Locals[index], litExpr);
                         else
@@ -386,10 +390,10 @@ namespace Tacny
             else
             {
                 foreach (var item in declaration.Locals)
-                    AddLocal(item as IVariable, null);
+                    AddLocal(item, null);
             }
             //AddLocal(declaration.Locals[0], val);
-            result = new Solution(this.Copy());
+            result = new Solution(Copy());
         }
 
         /**
@@ -407,25 +411,25 @@ namespace Tacny
                 int index = updateStmt.Rhss.IndexOf(item);
                 if (updateStmt.Lhss.Count < index)
                 {
-                    Util.Printer.Error(updateStmt, "Not all variables have an assigned value");
+                    Printer.Error(updateStmt, "Not all variables have an assigned value");
                     return;
                 }
                 // check if lhs is declared
                 NameSegment lhs = updateStmt.Lhss[index] as NameSegment;
                 if (lhs == null)
                 {
-                    Util.Printer.Error(updateStmt, "Unexpected declaration type, expected NameSegment, received {0}", updateStmt.Lhss[index].GetType());
+                    Printer.Error(updateStmt, "Unexpected declaration type, expected NameSegment, received {0}", updateStmt.Lhss[index].GetType());
                     return;
                 }
                 IVariable local = GetLocalKeyByName(lhs);
                 if (local == null)
                 {
-                    Util.Printer.Error(updateStmt, "Local variable {0} is not declared", lhs.Name);
+                    Printer.Error(updateStmt, "Local variable {0} is not declared", lhs.Name);
                     return;
                 }
                 ExprRhs exprRhs = item as ExprRhs;
                 // if the declaration is literal expr (e.g. var q := 1)
-                Dafny.LiteralExpr litExpr = exprRhs.Expr as Dafny.LiteralExpr;
+                LiteralExpr litExpr = exprRhs.Expr as LiteralExpr;
                 if (litExpr != null)
                     AddLocal(local, litExpr);
                 else
@@ -436,7 +440,7 @@ namespace Tacny
                 }
             }
 
-            result = new Solution(this.Copy());
+            result = new Solution(Copy());
         }
 
         /// <summary>
@@ -450,7 +454,7 @@ namespace Tacny
         protected void InitArgs(Statement st, out List<Expression> call_arguments)
         {
             Contract.Requires(st != null);
-            Contract.Ensures(Contract.ValueAtReturn<List<Expression>>(out call_arguments) != null);
+            Contract.Ensures(Contract.ValueAtReturn(out call_arguments) != null);
             IVariable lv;
             InitArgs(st, out lv, out call_arguments);
         }
@@ -465,7 +469,7 @@ namespace Tacny
         protected void InitArgs(Statement st, out IVariable lv, out List<Expression> call_arguments)
         {
             Contract.Requires(st != null);
-            Contract.Ensures(Contract.ValueAtReturn<List<Expression>>(out call_arguments) != null);
+            Contract.Ensures(Contract.ValueAtReturn(out call_arguments) != null);
             lv = null;
             call_arguments = null;
             TacticVarDeclStmt tvds = null;
@@ -473,7 +477,7 @@ namespace Tacny
             TacnyBlockStmt tbs = null;
             // tacny variables should be declared as tvar or tactic var
             if (st is VarDeclStmt)
-                Contract.Assert(false, Util.Error.MkErr(st, 13));
+                Contract.Assert(false, Error.MkErr(st, 13));
 
             if ((tvds = st as TacticVarDeclStmt) != null)
             {
@@ -494,26 +498,26 @@ namespace Tacny
                         call_arguments = GetCallArguments(us);
                     }
                     else
-                        Util.Printer.Error(st, "Local variable {0} is not declared", ns.Name);
+                        Printer.Error(st, "Local variable {0} is not declared", ns.Name);
                 }
             }
             else if ((tbs = st as TacnyBlockStmt) != null)
             {
                 ParensExpression pe = tbs.Guard as ParensExpression;
                 if (pe != null)
-                    call_arguments = new List<Expression>() { pe.E };
+                    call_arguments = new List<Expression> { pe.E };
                 else
-                    call_arguments = new List<Expression>() { tbs.Guard };
+                    call_arguments = new List<Expression> { tbs.Guard };
             }
             else
-                Util.Printer.Error(st, "Wrong number of method result arguments; Expected {0} got {1}", 1, 0);
+                Printer.Error(st, "Wrong number of method result arguments; Expected {0} got {1}", 1, 0);
 
         }
 
         public void ProcessArg(Expression argument, out Expression result)
         {
             Contract.Requires<ArgumentNullException>(argument != null);
-            Contract.Ensures(Contract.ValueAtReturn<Expression>(out result) != null);
+            Contract.Ensures(Contract.ValueAtReturn(out result) != null);
             object tmp;
             ProcessArg(argument, out tmp);
             result = (Expression)tmp;
@@ -528,17 +532,17 @@ namespace Tacny
             ApplySuffix aps = null;
             if ((nameSegment = argument as NameSegment) != null)
             {
-                Contract.Assert(HasLocalWithName(nameSegment), Util.Error.MkErr(argument, 6, nameSegment.Name));
+                Contract.Assert(HasLocalWithName(nameSegment), Error.MkErr(argument, 6, nameSegment.Name));
                 result = GetLocalValueByName(nameSegment.Name);
             }
             else if ((aps = argument as ApplySuffix) != null)
             {
                 // create a VarDeclStmt
                 // first create an UpdateStmt
-                UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
+                UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs> { new ExprRhs(aps) });
                 // create a unique local variable
-                Dafny.LocalVariable lv = new Dafny.LocalVariable(aps.tok, aps.tok, aps.Lhs.tok.val, new BoolType(), false);
-                TacticVarDeclStmt tvds = new TacticVarDeclStmt(us.Tok, us.EndTok, new List<Dafny.LocalVariable>() { lv }, us);
+                LocalVariable lv = new LocalVariable(aps.tok, aps.tok, aps.Lhs.tok.val, new BoolType(), false);
+                TacticVarDeclStmt tvds = new TacticVarDeclStmt(us.Tok, us.EndTok, new List<LocalVariable> { lv }, us);
                 List<Solution> sol_list = new List<Solution>();
                 CallAction(tvds, ref sol_list); // change
 
@@ -584,7 +588,7 @@ namespace Tacny
                 return;
 
             }
-            Atomic state = this.Copy();
+            Atomic state = Copy();
             state.AddUpdated(st, st);
             solution_list.Add(new Solution(state, null));
         }
@@ -672,7 +676,7 @@ namespace Tacny
         public void AddLocal(IVariable lv, object value)
         {
             Contract.Requires<ArgumentNullException>(lv != null);
-            globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
+            globalContext.program.IncTotalBranchCount(globalContext.program.CurrentDebug);
             localContext.AddLocal(lv, value);
         }
 
@@ -696,7 +700,7 @@ namespace Tacny
         public void AddUpdated(Statement key, Statement value)
         {
             Contract.Requires(key != null && value != null);
-            globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
+            globalContext.program.IncTotalBranchCount(globalContext.program.CurrentDebug);
             localContext.AddUpdated(key, value);
         }
 
@@ -759,7 +763,7 @@ namespace Tacny
                                         tac.TypeArgs, tac.Ins, tac.Outs, tac.Req, tac.Mod, tac.Ens,
                                         tac.Decreases, new BlockStmt(tac.Body.Tok, tac.Body.EndTok, newBody),
                                         tac.Attributes, tac.SignatureEllipsis);
-            Atomic newAtomic = this.Copy();
+            Atomic newAtomic = Copy();
             newAtomic.localContext.tactic = newTac;
             newAtomic.localContext.tacticBody = newBody;
             /* HACK */
@@ -802,45 +806,40 @@ namespace Tacny
             Contract.Requires(expt != null);
             if (expt.IsLeaf())
             {
-                return EvaluateLeaf(expt) as Dafny.LiteralExpr;
+                return EvaluateLeaf(expt) as LiteralExpr;
             }
-            else
-            {
-                BinaryExpr bexp = tcce.NonNull<BinaryExpr>(expt.data as BinaryExpr);
-                if (BinaryExpr.IsEqualityOp(bexp.Op))
-                {
-                    var boolVal = EvaluateEqualityExpression(expt);
-                    return new Dafny.LiteralExpr(new Token(), boolVal);
-                }
-                else {
-                    Dafny.LiteralExpr lhs = EvaluateExpression(expt.lChild) as Dafny.LiteralExpr;
-                    Dafny.LiteralExpr rhs = EvaluateExpression(expt.rChild) as Dafny.LiteralExpr;
-                    // for now asume lhs and rhs are integers
-                    BigInteger l = (BigInteger)lhs.Value;
-                    BigInteger r = (BigInteger)rhs.Value;
+          BinaryExpr bexp = tcce.NonNull(expt.Data as BinaryExpr);
+          if (BinaryExpr.IsEqualityOp(bexp.Op))
+          {
+            var boolVal = EvaluateEqualityExpression(expt);
+            return new LiteralExpr(new Token(), boolVal);
+          }
+          LiteralExpr lhs = EvaluateExpression(expt.LChild) as LiteralExpr;
+          LiteralExpr rhs = EvaluateExpression(expt.RChild) as LiteralExpr;
+          // for now asume lhs and rhs are integers
+          BigInteger l = (BigInteger)lhs.Value;
+          BigInteger r = (BigInteger)rhs.Value;
 
-                    BigInteger res = 0;
+          BigInteger res = 0;
 
 
-                    switch (bexp.Op)
-                    {
-                        case BinaryExpr.Opcode.Sub:
-                            res = BigInteger.Subtract(l, r);
-                            break;
-                        case BinaryExpr.Opcode.Add:
-                            res = BigInteger.Add(l, r);
-                            break;
-                        case BinaryExpr.Opcode.Mul:
-                            res = BigInteger.Multiply(l, r);
-                            break;
-                        case BinaryExpr.Opcode.Div:
-                            res = BigInteger.Divide(l, r);
-                            break;
-                    }
+          switch (bexp.Op)
+          {
+            case BinaryExpr.Opcode.Sub:
+              res = BigInteger.Subtract(l, r);
+              break;
+            case BinaryExpr.Opcode.Add:
+              res = BigInteger.Add(l, r);
+              break;
+            case BinaryExpr.Opcode.Mul:
+              res = BigInteger.Multiply(l, r);
+              break;
+            case BinaryExpr.Opcode.Div:
+              res = BigInteger.Divide(l, r);
+              break;
+          }
 
-                    return new Dafny.LiteralExpr(lhs.tok, res);
-                }
-            }
+          return new LiteralExpr(lhs.tok, res);
         }
 
         /// <summary>
@@ -854,62 +853,62 @@ namespace Tacny
             // if the node is leaf, cast it to bool and return
             if (expt.IsLeaf())
             {
-                Dafny.LiteralExpr lit = EvaluateLeaf(expt) as Dafny.LiteralExpr;
+                LiteralExpr lit = EvaluateLeaf(expt) as LiteralExpr;
                 return lit.Value is bool ? (bool)lit.Value : false;
             }
             // left branch only
-            else if (expt.lChild != null && expt.rChild == null)
-                return EvaluateEqualityExpression(expt.lChild);
-            // if there is no more nesting resolve the expression
-            else if (expt.lChild.IsLeaf() && expt.rChild.IsLeaf())
+          if (expt.LChild != null && expt.RChild == null)
+            return EvaluateEqualityExpression(expt.LChild);
+          // if there is no more nesting resolve the expression
+          if (expt.LChild.IsLeaf() && expt.RChild.IsLeaf())
+          {
+            LiteralExpr lhs = null;
+            LiteralExpr rhs = null;
+            lhs = EvaluateLeaf(expt.LChild) as LiteralExpr;
+            rhs = EvaluateLeaf(expt.RChild) as LiteralExpr;
+            if (!lhs.GetType().Equals(rhs.GetType()))
+              return false;
+            BinaryExpr bexp = tcce.NonNull(expt.Data as BinaryExpr);
+            int res = -1;
+            if (lhs.Value is BigInteger)
             {
-                Dafny.LiteralExpr lhs = null;
-                Dafny.LiteralExpr rhs = null;
-                lhs = EvaluateLeaf(expt.lChild) as Dafny.LiteralExpr;
-                rhs = EvaluateLeaf(expt.rChild) as Dafny.LiteralExpr;
-                if (!lhs.GetType().Equals(rhs.GetType()))
-                    return false;
-                BinaryExpr bexp = tcce.NonNull<BinaryExpr>(expt.data as BinaryExpr);
-                int res = -1;
-                if (lhs.Value is BigInteger)
-                {
-                    BigInteger l = (BigInteger)lhs.Value;
-                    BigInteger r = (BigInteger)rhs.Value;
-                    res = l.CompareTo(r);
-                }
-                else if (lhs.Value is string)
-                {
-                    string l = lhs.Value as string;
-                    string r = rhs.Value as string;
-                    res = l.CompareTo(r);
-                }
-                else if (lhs.Value is bool)
-                {
-                    res = ((bool)lhs.Value).CompareTo((bool)rhs.Value);
-                }
+              BigInteger l = (BigInteger)lhs.Value;
+              BigInteger r = (BigInteger)rhs.Value;
+              res = l.CompareTo(r);
+            }
+            else if (lhs.Value is string)
+            {
+              string l = lhs.Value as string;
+              string r = rhs.Value as string;
+              res = l.CompareTo(r);
+            }
+            else if (lhs.Value is bool)
+            {
+              res = ((bool)lhs.Value).CompareTo((bool)rhs.Value);
+            }
 
-                if (bexp.Op == BinaryExpr.Opcode.Eq)
-                    return res == 0;
-                else if (bexp.Op == BinaryExpr.Opcode.Neq)
-                    return res != 0;
-                else if (bexp.Op == BinaryExpr.Opcode.Ge)
-                    return res >= 0;
-                else if (bexp.Op == BinaryExpr.Opcode.Gt)
-                    return res > 0;
-                else if (bexp.Op == BinaryExpr.Opcode.Le)
-                    return res <= 0;
-                else if (bexp.Op == BinaryExpr.Opcode.Lt)
-                    return res < 0;
-            }
-            else // evaluate a nested expression
-            {
-                BinaryExpr bexp = tcce.NonNull<BinaryExpr>(expt.data as BinaryExpr);
-                if (bexp.Op == BinaryExpr.Opcode.And)
-                    return EvaluateEqualityExpression(expt.lChild) && EvaluateEqualityExpression(expt.rChild);
-                else if (bexp.Op == BinaryExpr.Opcode.Or)
-                    return EvaluateEqualityExpression(expt.lChild) || EvaluateEqualityExpression(expt.rChild);
-            }
-            return false;
+            if (bexp.Op == BinaryExpr.Opcode.Eq)
+              return res == 0;
+            if (bexp.Op == BinaryExpr.Opcode.Neq)
+              return res != 0;
+            if (bexp.Op == BinaryExpr.Opcode.Ge)
+              return res >= 0;
+            if (bexp.Op == BinaryExpr.Opcode.Gt)
+              return res > 0;
+            if (bexp.Op == BinaryExpr.Opcode.Le)
+              return res <= 0;
+            if (bexp.Op == BinaryExpr.Opcode.Lt)
+              return res < 0;
+          }
+          else // evaluate a nested expression
+          {
+            BinaryExpr bexp = tcce.NonNull(expt.Data as BinaryExpr);
+            if (bexp.Op == BinaryExpr.Opcode.And)
+              return EvaluateEqualityExpression(expt.LChild) && EvaluateEqualityExpression(expt.RChild);
+            if (bexp.Op == BinaryExpr.Opcode.Or)
+              return EvaluateEqualityExpression(expt.LChild) || EvaluateEqualityExpression(expt.RChild);
+          }
+          return false;
         }
 
         /// <summary>
@@ -921,17 +920,17 @@ namespace Tacny
         protected Expression EvaluateLeaf(ExpressionTree expt)
         {
             Contract.Requires(expt != null && expt.IsLeaf());
-            if (expt.data is NameSegment || expt.data is ApplySuffix)
+            if (expt.Data is NameSegment || expt.Data is ApplySuffix)
             {
                 Expression result = null;
-                ProcessArg(expt.data, out result);
+                ProcessArg(expt.Data, out result);
                 Contract.Assert(result != null);
                 return result;
             }
-            else if (expt.data is Dafny.LiteralExpr)
-                return expt.data;
+          if (expt.Data is LiteralExpr)
+            return expt.Data;
 
-            return null;
+          return null;
         }
 
         /// <summary>
@@ -946,20 +945,20 @@ namespace Tacny
             if (guard.IsLeaf())
             {
                 // we only need to replace nameSegments
-                if (guard.data is NameSegment)
+                if (guard.Data is NameSegment)
                 {
                     Expression newNs; // potential encapsulation problems
                     object result;
-                    ProcessArg(guard.data, out result);
+                    ProcessArg(guard.Data, out result);
                     Contract.Assert(result != null);
                     if (result is MemberDecl)
                     {
                         MemberDecl md = result as MemberDecl;
-                        newNs = new Dafny.StringLiteralExpr(new Token(), md.Name, true);
+                        newNs = new StringLiteralExpr(new Token(), md.Name, true);
                     }
-                    else if (result is Dafny.Formal)
+                    else if (result is Formal)
                     {
-                        var tmp = result as Dafny.Formal;
+                        var tmp = result as Formal;
                         newNs = new NameSegment(tmp.tok, tmp.Name, null);
                     }
                     else if (result is NameSegment)
@@ -968,17 +967,17 @@ namespace Tacny
                     }
                     else
                     {
-                        newNs = result as Dafny.LiteralExpr;
+                        newNs = result as LiteralExpr;
                     }
-                    guard.data = newNs;
+                    guard.Data = newNs;
                 }
 
             }
             else
             {
-                ResolveExpression(guard.lChild);
-                if (guard.rChild != null)
-                    ResolveExpression(guard.rChild);
+                ResolveExpression(guard.LChild);
+                if (guard.RChild != null)
+                    ResolveExpression(guard.RChild);
             }
         }
         /// <summary>
@@ -990,7 +989,7 @@ namespace Tacny
         [Pure]
         protected bool IsResolvable(ExpressionTree expt)
         {
-            Contract.Requires(expt.isRoot());
+            Contract.Requires(expt.IsRoot());
             List<Expression> leafs = expt.GetLeafData();
 
             foreach (var leaf in leafs)
@@ -999,12 +998,11 @@ namespace Tacny
                 {
                     NameSegment ns = leaf as NameSegment;
                     object local = GetLocalValueByName(ns);
-                    if (!(local is Dafny.LiteralExpr))
+                    if (!(local is LiteralExpr))
                         return false;
                 }
-                else if (leaf is Dafny.LiteralExpr || leaf is ApplySuffix)
+                else if (leaf is LiteralExpr || leaf is ApplySuffix)
                 {
-                    continue;
                 }
                 else
                 {
@@ -1020,7 +1018,7 @@ namespace Tacny
         protected bool GenerateAndVerify(Solution solution)
         {
             Contract.Requires<ArgumentNullException>(solution != null);
-            Dafny.Program prog = globalContext.program.ParseProgram();
+            Microsoft.Dafny.Program prog = globalContext.program.ParseProgram();
             solution.GenerateProgram(ref prog);
             globalContext.program.ClearBody(localContext.md);
             globalContext.program.PrintMember(prog, solution.state.localContext.md.Name);

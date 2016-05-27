@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
-using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
-
 
 namespace Tacny
 {
@@ -83,7 +77,7 @@ namespace Tacny
         private UpdateStmt GenUpdateStmt(ApplySuffix aps)
         {
             Contract.Requires(aps != null);
-            return new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
+            return new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs> { new ExprRhs(aps) });
         }
     }
 }

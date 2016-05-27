@@ -1,19 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
 using Util;
-using System;
 
 namespace LazyTacny {
-  class IfAtomic : BlockAtomic, IAtomicLazyStmt {
+  public class IfAtomic : BlockAtomic, IAtomicLazyStmt {
 
 
     public IfAtomic(Atomic atomic) : base(atomic) { }
 
     public IEnumerable<Solution> Resolve(Statement st, Solution solution) {
-      Contract.Assert(ExtractGuard(st) != null, Util.Error.MkErr(st, 2));
+      Contract.Assert(ExtractGuard(st) != null, Error.MkErr(st, 2));
       /**
        * 
        * Check if the loop guard can be resolved localy
@@ -23,23 +20,24 @@ namespace LazyTacny {
 
     private IEnumerable<Solution> ExecuteIf(IfStmt ifStmt) {
       Contract.Requires(ifStmt != null);
-      bool guard_res = false;
-      guard_res = EvaluateGuard();
+      bool guardRes = EvaluateGuard();
       // if the guard has been resolved to true resolve if body
-      if (guard_res) {
-        foreach(var item in ResolveBody(ifStmt.Thn)) {
-          if(item.state.DynamicContext.isPartialyResolved) {
+      if (guardRes) {
+        foreach (var item in ResolveBody(ifStmt.Thn)) {
+          if (item.State.DynamicContext.isPartialyResolved) {
             yield return item;
           }
         }
-      } else if (!guard_res && ifStmt.Els != null) { // if else statement exists
+      } else if (ifStmt.Els != null) {
+        // if else statement exists
         // if it a block statement resolve the body
-        if (ifStmt.Els is BlockStmt)
-          foreach (var item in ResolveBody(ifStmt.Els as BlockStmt)) {
+        var els = ifStmt.Els as BlockStmt;
+        if (els != null)
+          foreach (var item in ResolveBody(els)) {
             yield return item;
           } else { // otherwise it is 'else if' block, resolve recursively
           foreach (var item in ExecuteIf(ifStmt.Els as IfStmt)) {
-            if (item.state.DynamicContext.isPartialyResolved) {
+            if (item.State.DynamicContext.isPartialyResolved) {
               yield return item;
             }
           }
@@ -52,40 +50,34 @@ namespace LazyTacny {
     /// Insert the if statement into dafny code
     /// </summary>
     /// <param name="ifStmt"></param>
-    /// <param name="solution_list"></param>
     /// <returns></returns>
     private IEnumerable<Solution> InsertIf(IfStmt ifStmt) {
 
       // resolve the if statement guard
       foreach (var result in ResolveExpression(ifStmt.Guard)) {
-        var resultExpression = result is IVariable ? IVariableToExpression(result as IVariable) : result as Expression;
+        var resultExpression = result is IVariable ? VariableToExpression(result as IVariable) : result as Expression;
         // resolve 'if' block
         var ifStmtEnum = ResolveBody(ifStmt.Thn);
         IEnumerable<Solution> elseStmtEnum = null;
 
         if (ifStmt.Els != null) {
           // resovle else block
-          if (ifStmt.Els is BlockStmt)
-            elseStmtEnum = ResolveBody(ifStmt.Els as BlockStmt);
-          else // resolve 'else if' block
-            elseStmtEnum = InsertIf(ifStmt.Els as IfStmt);
+          var stmt = ifStmt.Els as BlockStmt;
+          elseStmtEnum = stmt != null ? ResolveBody(stmt) : InsertIf(ifStmt.Els as IfStmt);
         }
-
         foreach (var statement in GenerateIfStmt(ifStmt, resultExpression, ifStmtEnum, elseStmtEnum)) {
           yield return statement;
         }
       }
-
-      yield break;
     }
 
     private IEnumerable<Solution> GenerateIfStmt(IfStmt original, Expression guard, IEnumerable<Solution> ifStmtEnum, IEnumerable<Solution> elseStmtEnum) {
       foreach (var @if in ifStmtEnum) {
-        List<Statement> bodyList = @if.state.GetAllUpdated();
+        var bodyList = @if.State.GetAllUpdated();
         var ifBody = new BlockStmt(original.Thn.Tok, original.Thn.EndTok, bodyList);
         if (elseStmtEnum != null) {
           foreach (var @else in elseStmtEnum) {
-            List<Statement> elseList = @else.state.GetAllUpdated();
+            var elseList = @else.State.GetAllUpdated();
             Statement elseBody = null;
             // if original body was a plain else block
             if (original.Els is BlockStmt)
@@ -93,10 +85,10 @@ namespace LazyTacny {
             else // otherwise it was a 'else if' and the solution list should only contain one if stmt
               elseBody = elseList[0];
 
-            yield return AddNewStatement<IfStmt>(original, new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(ifBody), elseBody));
+            yield return AddNewStatement(original, new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(ifBody), elseBody));
           }
         } else {
-          yield return AddNewStatement<IfStmt>(original, new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(ifBody), null));
+          yield return AddNewStatement(original, new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(ifBody), null));
         }
       }
     }

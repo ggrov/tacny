@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
+using Util;
+
 namespace Tacny
 {
     class OperatorAtomic : Atomic, IAtomicStmt
@@ -24,13 +26,13 @@ namespace Tacny
             BinaryExpr.Opcode new_op;
 
             InitArgs(st, out lv, out call_arguments);
-            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-            Contract.Assert(tcce.OfSize(call_arguments, 3), Util.Error.MkErr(st, 0, 3, call_arguments.Count));
+            Contract.Assert(lv != null, Error.MkErr(st, 8));
+            Contract.Assert(tcce.OfSize(call_arguments, 3), Error.MkErr(st, 0, 3, call_arguments.Count));
 
             old_operator = (StringLiteralExpr)call_arguments[0];
             new_operator = (StringLiteralExpr)call_arguments[1];
             ProcessArg(call_arguments[2], out formula);
-            Contract.Assert(formula != null, Util.Error.MkErr(st, 10));
+            Contract.Assert(formula != null, Error.MkErr(st, 10));
             
             old_op = ToOpCode((string)old_operator.Value);
             new_op = ToOpCode((string)new_operator.Value);
@@ -48,7 +50,7 @@ namespace Tacny
             for (int i = 0; i < exp_list.Count; i++)
             {
                 AddLocal(lv, exp_list[i]);     
-                solution_list.Add(new Solution(this.Copy()));
+                solution_list.Add(new Solution(Copy()));
             }
         }
 
@@ -58,18 +60,18 @@ namespace Tacny
             if (formula == null)
                 return null;
 
-            if (formula.data is BinaryExpr)
+            if (formula.Data is BinaryExpr)
             {
-                if (((BinaryExpr)formula.data).Op == old_op)
+                if (((BinaryExpr)formula.Data).Op == old_op)
                 {
                     ExpressionTree nt = formula.Copy();
-                    nt.data = new BinaryExpr(formula.data.tok, new_op, ((BinaryExpr)formula.data).E0, ((BinaryExpr)formula.data).E1);
-                    nexp.Add(nt.root.TreeToExpression());
+                    nt.Data = new BinaryExpr(formula.Data.tok, new_op, ((BinaryExpr)formula.Data).E0, ((BinaryExpr)formula.Data).E1);
+                    nexp.Add(nt.Root.TreeToExpression());
                     return null;
                 }
             }
-            ReplaceOp(old_op, new_op, formula.lChild, ref nexp);
-            ReplaceOp(old_op, new_op, formula.rChild, ref nexp);
+            ReplaceOp(old_op, new_op, formula.LChild, ref nexp);
+            ReplaceOp(old_op, new_op, formula.RChild, ref nexp);
             return null;
         }
 

@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using Microsoft.Dafny;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System;
-using Tacny;
+using Microsoft.Dafny;
+using Util;
 
 namespace LazyTacny {
   class InvariantAtomic : Atomic, IAtomicLazyStmt {
@@ -12,18 +12,15 @@ namespace LazyTacny {
 
       var temp = st as TacticInvariantStmt;
 
-      if(temp.IsObjectLevel) {
+      if(temp != null && temp.IsObjectLevel) {
         return AddInvar(temp, solution);
-      } else {
-        throw new NotImplementedException();
       }
+      throw new NotImplementedException();
     }
     public IEnumerable<Solution> AddInvar(TacticInvariantStmt st, Solution solution) {
       MaybeFreeExpression invariant = null;
-      MaybeFreeExpression[] invar_arr = null;
-      List<MaybeFreeExpression> invar = null;
-      
-      
+
+
       foreach (var item in ResolveExpression(st.Expr)) {
         if (item is UpdateStmt) {
           var us = item as UpdateStmt;
@@ -31,30 +28,22 @@ namespace LazyTacny {
           if (aps != null)
             invariant = new MaybeFreeExpression(aps);
         } else {
-          invariant = item as MaybeFreeExpression;
-          if (invariant == null) {
-            invariant = new MaybeFreeExpression(item as Expression);
-          }
+          invariant = item as MaybeFreeExpression ?? new MaybeFreeExpression(item as Expression);
         }
         WhileStmt nws = null;
 
-        WhileStmt ws = DynamicContext.whileStmt;
-        Contract.Assert(ws != null, Util.Error.MkErr(st, 11));
+        var ws = DynamicContext.whileStmt;
+        Contract.Assert(ws != null, Error.MkErr(st, 11));
         // if we already added new invariants to the statement, use the updated statement instead
         nws = GetUpdated(ws) as WhileStmt;
 
-        if (nws != null)
-          invar_arr = nws.Invariants.ToArray();
-        else
-          invar_arr = ws.Invariants.ToArray();
+        var invarArr = nws?.Invariants.ToArray() ?? ws.Invariants.ToArray();
 
-        invar = new List<MaybeFreeExpression>(invar_arr);
-        invar.Insert(0, invariant);
-        //invar.Add(invariant);
+        var invar = new List<MaybeFreeExpression>(invarArr) {invariant};
+        //invar.Insert(0, invariant);
         nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, invar, ws.Decreases, ws.Mod, ws.Body);
-        yield return AddNewStatement<WhileStmt>(ws, nws);
+        yield return AddNewStatement(ws, nws);
       }
-      yield break;
     }
   }
 }

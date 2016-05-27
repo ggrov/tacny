@@ -1,69 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
-using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
 using Util;
-using System.Diagnostics;
-using Tacny;
 
 namespace LazyTacny {
-  class WhileAtomic : BlockAtomic, IAtomicLazyStmt {
+  public class WhileAtomic : BlockAtomic, IAtomicLazyStmt {
     public WhileAtomic(Atomic atomic) : base(atomic) { }
 
 
 
     public IEnumerable<Solution> Resolve(Statement st, Solution solution) {
-      Contract.Assert(ExtractGuard(st) != null, Util.Error.MkErr(st, 2));
+      Contract.Assert(ExtractGuard(st) != null, Error.MkErr(st, 2));
       /**
        * Check if the loop guard can be resolved localy
        */
-      if (IsResolvable())
-        return ExecuteLoop(st as WhileStmt, solution);
-      else
-        return InsertLoop(st as WhileStmt, solution);
+      return IsResolvable() ? ExecuteLoop(st as WhileStmt) : InsertLoop(st as WhileStmt);
     }
 
-    private IEnumerable<Solution> ExecuteLoop(WhileStmt whileStmt, Solution solution) {
-      bool guard_res = false;
-      guard_res = EvaluateGuard();
+    private IEnumerable<Solution> ExecuteLoop(WhileStmt whileStmt) {
+      bool guardRes = EvaluateGuard();
       // if the guard has been resolved to true resolve then body
-      if (guard_res) {
-        // reset the PartialyResolved
-        this.DynamicContext.isPartialyResolved = false;
-        foreach (var item in ResolveBody(whileStmt.Body)) {
-          item.state.DynamicContext.isPartialyResolved = true;
-          yield return item;
-        }
+      if (!guardRes) yield break;
+      // reset the PartialyResolved
+      DynamicContext.isPartialyResolved = false;
+      foreach (var item in ResolveBody(whileStmt.Body)) {
+        item.State.DynamicContext.isPartialyResolved = true;
+        yield return item;
       }
-
-      yield break;
     }
 
-    private IEnumerable<Solution> InsertLoop(WhileStmt whileStmt, Solution solution) {
+    private IEnumerable<Solution> InsertLoop(WhileStmt whileStmt) {
       Contract.Requires(whileStmt != null);
-      ResolveExpression(ref this.guard);
-      Expression guard = this.guard.TreeToExpression();
+      ResolveExpression(ref Guard);
+      var guard = Guard.TreeToExpression();
 
       foreach (var item in ResolveBody(whileStmt.Body)) {
         var result = GenerateWhileStmt(whileStmt, guard, item);
-        Atomic ac = this.Copy();
-        ac.AddUpdated(result, result);
-        yield return new Solution(ac);
+        yield return AddNewStatement(result, result);
       }
-      yield break;
-    }
-
-    private static WhileStmt ReplaceGuard(WhileStmt stmt, Expression new_guard) {
-      return new WhileStmt(stmt.Tok, stmt.EndTok, new_guard, stmt.Invariants, stmt.Decreases, stmt.Mod, stmt.Body);
     }
 
     private static WhileStmt GenerateWhileStmt(WhileStmt original, Expression guard, Solution body) {
-      List<Statement> bodyList = body.state.GetAllUpdated();
-      BlockStmt thenBody = new BlockStmt(original.Body.Tok, original.Body.EndTok, bodyList);
+      var bodyList = body.State.GetAllUpdated();
+      var thenBody = new BlockStmt(original.Body.Tok, original.Body.EndTok, bodyList);
       return new WhileStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), original.Invariants, original.Decreases, original.Mod, Util.Copy.CopyBlockStmt(thenBody));
     }
   }

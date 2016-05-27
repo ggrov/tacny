@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Text;
-using Microsoft.Boogie;
 using Microsoft.Dafny;
+
 /// <summary>
 /// A class containing static methods to extend the functionality of Code Contracts
 /// </summary>
@@ -38,9 +37,9 @@ namespace Tacny
             return collection != null && NonNullElements(collection.Values);
         }
         [Pure]
-        public static bool NonNullElements<T>(Microsoft.Dafny.Graph<T> collection) where T : class
+        public static bool NonNullElements<T>(Graph<T> collection) where T : class
         {
-            return collection != null && tcce.NonNullElements(collection.TopologicallySortedComponents());
+            return collection != null && NonNullElements(collection.TopologicallySortedComponents());
         }
         [Pure]
         public static void BeginExpose(object o)
@@ -82,46 +81,43 @@ namespace Tacny
         [Serializable]
         public class UnreachableException : Exception
         {
-            public UnreachableException()
-            {
-            }
         }
     }
 
-    public class PeerAttribute : System.Attribute
+    public class PeerAttribute : Attribute
     {
     }
-    public class RepAttribute : System.Attribute
+    public class RepAttribute : Attribute
     {
     }
-    public class CapturedAttribute : System.Attribute
+    public class CapturedAttribute : Attribute
     {
     }
-    public class NotDelayedAttribute : System.Attribute
+    public class NotDelayedAttribute : Attribute
     {
     }
-    public class NoDefaultContractAttribute : System.Attribute
+    public class NoDefaultContractAttribute : Attribute
     {
     }
-    public class VerifyAttribute : System.Attribute
+    public class VerifyAttribute : Attribute
     {
         public VerifyAttribute(bool b)
         {
 
         }
     }
-    public class StrictReadonlyAttribute : System.Attribute
+    public class StrictReadonlyAttribute : Attribute
     {
     }
-    public class AdditiveAttribute : System.Attribute
+    public class AdditiveAttribute : Attribute
     {
     }
-    public class ReadsAttribute : System.Attribute
+    public class ReadsAttribute : Attribute
     {
         public enum Reads
         {
-            Nothing,
-        };
+            Nothing
+        }
         public ReadsAttribute(object o)
         {
         }

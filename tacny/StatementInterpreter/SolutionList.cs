@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
-using Microsoft.Boogie;
 using Bpl = Microsoft.Boogie;
-using Tacny;
+using Type = System.Type;
 
 namespace Tacny
 {
@@ -26,7 +23,7 @@ namespace Tacny
         public SolutionList(Solution solution)
         {
             Contract.Requires(solution != null);
-            plist = new List<Solution>() { solution };
+            plist = new List<Solution> { solution };
             final = new List<List<Solution>>();
         }
 
@@ -91,14 +88,14 @@ namespace Tacny
     public class Solution
     {
         public Atomic state;
-        private Solution _parent = null;
+        private Solution _parent;
         public Solution parent
         {
             set { _parent = value; }
             get { return _parent; }
         }
 
-        public bool isFinal = false;
+        public bool isFinal;
 
         public Solution(Atomic state, Solution parent = null)
             : this(state, false, parent)
@@ -116,10 +113,10 @@ namespace Tacny
             return state.localContext.IsResolved();
         }
 
-        public string GenerateProgram(ref Dafny.Program prog, bool isFinal = false)
+        public string GenerateProgram(ref Microsoft.Dafny.Program prog, bool isFinal = false)
         {
             Method method = null;
-            List<Dafny.Program> prog_list = new List<Dafny.Program>();
+            List<Microsoft.Dafny.Program> prog_list = new List<Microsoft.Dafny.Program>();
             Atomic ac = state.Copy();   
             ac.Fin();
             method = Program.FindMember(prog, ac.localContext.md.Name) as Method;
@@ -168,10 +165,10 @@ namespace Tacny
 
         public static void PrintSolution(Solution solution)
         {
-            Dafny.Program prog = solution.state.globalContext.program.ParseProgram();
+            Microsoft.Dafny.Program prog = solution.state.globalContext.program.ParseProgram();
             solution.GenerateProgram(ref prog);
             solution.state.globalContext.program.ClearBody(solution.state.localContext.md);
-            Console.WriteLine(String.Format("Tactic call {0} in {1} results: ", solution.state.localContext.tactic.Name, solution.state.localContext.md.Name));
+            Console.WriteLine("Tactic call {0} in {1} results: ", solution.state.localContext.tactic.Name, solution.state.localContext.md.Name);
             solution.state.globalContext.program.PrintMember(prog, solution.state.globalContext.md.Name);
         }
 
@@ -179,17 +176,16 @@ namespace Tacny
         {
             Method src = source == null ? oldMd : source;
             BlockStmt mdBody = new BlockStmt(src.Body.Tok, src.Body.EndTok, body);
-            System.Type type = src.GetType();
+            Type type = src.GetType();
             if(type == typeof(Lemma))
                 return new Lemma(src.tok, src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
                 src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
-            else if(type == typeof(CoLemma))
-                return new CoLemma(src.tok, src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
-                src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
-            else
-            return new Method(src.tok, src.Name, src.HasStaticKeyword, src.IsGhost,
-                src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod, src.Ens, src.Decreases,
-                mdBody, src.Attributes, src.SignatureEllipsis);
+          if(type == typeof(CoLemma))
+            return new CoLemma(src.tok, src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
+              src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
+          return new Method(src.tok, src.Name, src.HasStaticKeyword, src.IsGhost,
+            src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod, src.Ens, src.Decreases,
+            mdBody, src.Attributes, src.SignatureEllipsis);
         }
 
         private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution)
@@ -227,17 +223,17 @@ namespace Tacny
                         if (ws != null)
                             break;
 
-                        else if (!(stmt_2 is UpdateStmt))
-                            return null;
+                      if (!(stmt_2 is UpdateStmt))
+                        return null;
 
-                        j--;
+                      j--;
                     }
                     break;
                 }
-                else if (!(stmt is UpdateStmt))
-                    return null;
+              if (!(stmt is UpdateStmt))
+                return null;
 
-                i++;
+              i++;
             }
             //// tactic called from a while statement
             if (ws != null && bs != null)

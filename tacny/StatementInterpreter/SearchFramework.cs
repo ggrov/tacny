@@ -3,22 +3,23 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Text;
 using Microsoft.Dafny;
+using Util;
 
 namespace LazyTacny {
-  [ContractClass(typeof(ISearchContract))]
+
+  [ContractClass(typeof(SearchContract))]
   public interface ISearch {
-    IEnumerable<LazyTacny.Solution> Search(Atomic atomic, bool verify = true);
+    IEnumerable<Solution> Search(Atomic atomic, bool verify = true);
     //  IEnumerable<Solution> SearchBlockStmt(BlockStmt body, Atomic ac);
   }
   public enum Strategy {
-    BFS = 0,
-    DFS
+    Bfs = 0,
+    Dfs
   }
   [ContractClassFor(typeof(ISearch))]
   // Validate the input before execution
-  public abstract class ISearchContract : ISearch {
+  public abstract class SearchContract : ISearch {
     public IEnumerable<Solution> Search(Atomic atomic, bool verify = true) {
       Contract.Requires(atomic != null);
 
@@ -27,16 +28,16 @@ namespace LazyTacny {
   }
 
   public class SearchStrategy : ISearch {
-    private Strategy ActiveStrategy = Strategy.BFS;
+    private Strategy _activeStrategy = Strategy.Bfs;
     public SearchStrategy(Strategy strategy) {
-      if (Util.TacnyOptions.O.EnableSearch >= 0) {
+      if (TacnyOptions.O.EnableSearch >= 0) {
         try {
-          ActiveStrategy = (Strategy)Util.TacnyOptions.O.EnableSearch;
+          _activeStrategy = (Strategy)TacnyOptions.O.EnableSearch;
         } catch {
-          ActiveStrategy = Strategy.BFS;
+          _activeStrategy = Strategy.Bfs;
         }
       } else
-        ActiveStrategy = strategy;
+        _activeStrategy = strategy;
 
     }
 
@@ -46,11 +47,11 @@ namespace LazyTacny {
 
     public IEnumerable<Solution> Search(Atomic atomic, bool verify = true) {
       IEnumerable<Solution> enumerable;
-      switch (ActiveStrategy) {
-        case Strategy.BFS:
+      switch (_activeStrategy) {
+        case Strategy.Bfs:
           enumerable = BreadthFirstSeach.Search(atomic, verify);
           break;
-        case Strategy.DFS:
+        case Strategy.Dfs:
           enumerable = DepthFirstSeach.Search(atomic, verify);
           break;
         default:
@@ -59,57 +60,53 @@ namespace LazyTacny {
       }
       // return a fresh copy of the atomic
       foreach (var item in enumerable) {
-        yield return new Solution(item.state.Copy());
+        yield return new Solution(item.State.Copy());
       }
-      yield break;
     }
 
     public static Strategy GetSearchStrategy(ITactic tac) {
       Contract.Requires<ArgumentNullException>(tac != null);
       MemberDecl md = tac as MemberDecl;
-      Attributes attrs = md.Attributes;
+      Attributes attrs = md?.Attributes;
 
 
       if (attrs?.Name != "search")
-        return Strategy.BFS;
+        return Strategy.Bfs;
 
       Expression expr = attrs.Args.FirstOrDefault();
       var name = (expr as NameSegment)?.Name;
       switch (name?.ToUpper()) {
         case "BFS":
-          return Strategy.BFS;
+          return Strategy.Bfs;
         case "DFS":
-          return Strategy.DFS;
+          return Strategy.Dfs;
         default:
-          Contract.Assert(false, (Util.Error.MkErr(expr, 19, name)));
-          return Strategy.BFS;
+          Contract.Assert(false, (Error.MkErr(expr, 19, name)));
+          return Strategy.Bfs;
       }
     }
 
 
     internal static bool VerifySolution(Solution solution) {
-      if (!solution.state.StaticContext.program.HasError()) {
+      if (!solution.State.StaticContext.program.HasError()) {
         // return the valid solution and terminate
         return true;
-      } else {  // if verifies break else continue to the next solution
-        if (solution.state.ResolveAndVerify(solution)) {
-          return solution.state.StaticContext.program.HasError() ? false : true;
-        } else {
-          return false;
-        }
+      } // if verifies break else continue to the next solution
+      if (solution.State.ResolveAndVerify(solution)) {
+        return !solution.State.StaticContext.program.HasError();
       }
+      return false;
     }
   }
 
   internal class BreadthFirstSeach : SearchStrategy {
-    public static new IEnumerable<Solution> Search(Atomic atomic, bool verify = true) {
-      Debug.WriteLine(String.Format("Resolving tactic {0}", atomic.DynamicContext.tactic));
+    public new static IEnumerable<Solution> Search(Atomic atomic, bool verify = true) {
+      Debug.WriteLine($"Resolving tactic {atomic.DynamicContext.tactic}");
 
       //local solution list
-      List<Solution> result = atomic == null ? new List<Solution>() : new List<Solution>() { new Solution(atomic) };
-      Solution lastFinalSolution = null;
+      var result = atomic == null ? new List<Solution>() : new List<Solution> { new Solution(atomic) };
       while (true) {
-        List<Solution> Interm = new List<Solution>();
+        var interm = new List<Solution>();
         if (result.Count == 0) {
           yield break;
         }
@@ -118,22 +115,28 @@ namespace LazyTacny {
           // lazily resolve a statement in the solution
           foreach (var solution in Atomic.ResolveStatement(item)) {
             // validate result
-            if (solution.IsResolved()) {
+            if (solution.IsResolved())
+            {
               if (verify) {
-                lastFinalSolution = solution;
-                if (VerifySolution(solution)) { yield return solution; yield break; } else { continue; }
-              } else { yield return solution; }
-            } else if (solution.state.DynamicContext.isPartialyResolved) {
-              if (verify) {
-                if (VerifySolution(solution)) { yield return solution; yield break; } else { Interm.Add(solution); continue; }
-              } else { Interm.Add(solution); yield return solution; }
+                if (!VerifySolution(solution)) continue;
+                yield return solution; yield break;
+              }
+              yield return solution;
+            }
+            else if (solution.State.DynamicContext.isPartialyResolved) {
+              if (verify)
+              {
+                if (VerifySolution(solution)) { yield return solution; yield break; }
+                interm.Add(solution);
+              }
+              else { interm.Add(solution); yield return solution; }
             } else {
-              Interm.Add(solution);
+              interm.Add(solution);
             }
           }
         }
         result.Clear();
-        result.AddRange(Interm);
+        result.AddRange(interm);
       }
     }
 
@@ -141,7 +144,7 @@ namespace LazyTacny {
       Atomic ac = atomic.Copy();
       ac.DynamicContext.tacticBody = body.Body;
       ac.DynamicContext.ResetCounter();
-      List<Solution> result = new List<Solution>() { new Solution(ac) };
+      List<Solution> result = new List<Solution> { new Solution(ac) };
       // search strategy for body goes here
       while (true) {
         List<Solution> interm = new List<Solution>();
@@ -149,10 +152,10 @@ namespace LazyTacny {
           break;
         foreach (var solution in result) {
           foreach (var item in Atomic.ResolveStatement(solution)) {
-            if (item.state.DynamicContext.isPartialyResolved) {
+            if (item.State.DynamicContext.isPartialyResolved) {
               { interm.Add(item); }
               yield return item;
-            } else if (item.state.DynamicContext.GetCurrentStatement() == null) { yield return item; } else { interm.Add(item); }
+            } else if (item.State.DynamicContext.GetCurrentStatement() == null) { yield return item; } else { interm.Add(item); }
           }
         }
 
@@ -163,7 +166,7 @@ namespace LazyTacny {
   }
 
   internal class DepthFirstSeach : SearchStrategy {
-    public static new IEnumerable<Solution> Search(Atomic atomic, bool verify = true) {
+    public new static IEnumerable<Solution> Search(Atomic atomic, bool verify = true) {
 
       Stack<IEnumerator<Solution>> solutionStack = new Stack<IEnumerator<Solution>>();
 
@@ -186,17 +189,17 @@ namespace LazyTacny {
         solutionStack.Push(solutionEnum);
         if (solution.IsResolved()) {
           if (verify) {
-            if (VerifySolution(solution)) { yield return solution; yield break; } else { continue; }
+            if (VerifySolution(solution)) { yield return solution; yield break; }
           } else {
             yield return solution;
           }
-        } else if (solution.state.DynamicContext.isPartialyResolved) {
-          if (verify) {
-            if (VerifySolution(solution)) { yield return solution; yield break; } else {
-              solutionStack.Push(Atomic.ResolveStatement(solution).GetEnumerator());
-              continue;
-            }
-          } else {
+        } else if (solution.State.DynamicContext.isPartialyResolved) {
+          if (verify)
+          {
+            if (VerifySolution(solution)) { yield return solution; yield break; }
+            solutionStack.Push(Atomic.ResolveStatement(solution).GetEnumerator());
+          }
+          else {
             solutionStack.Push(Atomic.ResolveStatement(solution).GetEnumerator());
             yield return solution;
           }
@@ -231,10 +234,10 @@ namespace LazyTacny {
         var solution = solutionEnum.Current;
 
         solutionStack.Push(solutionEnum);
-        if (solution.state.DynamicContext.isPartialyResolved) {
+        if (solution.State.DynamicContext.isPartialyResolved) {
           solutionStack.Push(Atomic.ResolveStatement(solution).GetEnumerator());
           yield return solution;
-        } else if (solution.state.DynamicContext.GetCurrentStatement() == null) {
+        } else if (solution.State.DynamicContext.GetCurrentStatement() == null) {
           yield return solution;
         } else { solutionStack.Push(Atomic.ResolveStatement(solution).GetEnumerator()); }
 

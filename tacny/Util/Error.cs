@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Diagnostics.Contracts;
-using Microsoft.Dafny;
+﻿using System.Diagnostics.Contracts;
+using System.IO;
 using Microsoft.Boogie;
+using Microsoft.Dafny;
+using Declaration = Microsoft.Dafny.Declaration;
 
 namespace Util {
   public static class Error {
@@ -17,9 +15,8 @@ namespace Util {
     /// <returns>Error message</returns>
     public static string MkErr(IToken tok, int n, params object[] args) {
       Contract.Requires(tok != null);
-      return string.Format("{0}({1},{2}): Error: {3}",
-          DafnyOptions.Clo.UseBaseNameForFileName ? System.IO.Path.GetFileName(tok.filename) : tok.filename, tok.line, tok.col - 1,
-          string.Format(GetErrorString(n), args));
+      return
+        $"{(CommandLineOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(tok.filename) : tok.filename)}({tok.line},{tok.col - 1}): Error: {string.Format(GetErrorString(n), args)}";
     }
     /// <summary>
     /// Create an error message 
@@ -28,7 +25,7 @@ namespace Util {
     /// <param name="n">error index</param>
     /// <param name="args">Optional string formating params</param>
     /// <returns>Error message</returns>
-    public static string MkErr(Microsoft.Dafny.Declaration d, int n, params object[] args) {
+    public static string MkErr(Declaration d, int n, params object[] args) {
       Contract.Requires(d != null);
       return MkErr(d.tok, n, args);
     }
@@ -98,6 +95,8 @@ namespace Util {
         case 22: s = "The expression can only be called from a tmatch statement"; break;
         case 23: s = "Unsupported tactic caller type, expected {0}"; break;
         case 24: s = "Could not determine variable type";break;
+        case 25: s = "Could not resolve the expression"; break;
+        case 26: s = "Assertion violation"; break;
         default: s = "error" + n; break;
       }
 

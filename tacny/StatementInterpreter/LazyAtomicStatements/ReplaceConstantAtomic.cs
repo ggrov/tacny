@@ -1,9 +1,8 @@
-﻿using Microsoft.Dafny;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
 using Tacny;
-using System.Linq;
+using Util;
 
 namespace LazyTacny {
 
@@ -21,25 +20,25 @@ namespace LazyTacny {
       IVariable lv = null;
       List<Expression> callArgs;
       InitArgs(st, out lv, out callArgs);
-      Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-      Contract.Assert(callArgs.Count == 3, Util.Error.MkErr(st, 0, 3, callArgs.Count));
+      Contract.Assert(lv != null, Error.MkErr(st, 8));
+      Contract.Assert(callArgs.Count == 3, Error.MkErr(st, 0, 3, callArgs.Count));
       var varLists = new List<List<IVariable>>();
       var constLists = new List<List<Expression>>();
 
       foreach (var arg2 in ResolveExpression(callArgs[1])) {
         var tmp = arg2 as List<Expression>;
-        Contract.Assert(tmp != null, Util.Error.MkErr(st, 1, "Term Seq"));
+        Contract.Assert(tmp != null, Error.MkErr(st, 1, "Term Seq"));
         constLists.Add(tmp);
       }
       foreach (var arg2 in ResolveExpression(callArgs[2])) {
         var tmp = arg2 as List<IVariable>;
-        Contract.Assert(tmp != null, Util.Error.MkErr(st, 1, "Term Seq"));
+        Contract.Assert(tmp != null, Error.MkErr(st, 1, "Term Seq"));
         varLists.Add(tmp);
       }
 
       foreach (var arg1 in ResolveExpression(callArgs[0])) {
         var expression = arg1 as Expression;
-        Contract.Assert(expression != null, Util.Error.MkErr(st, 1, "Term"));
+        Contract.Assert(expression != null, Error.MkErr(st, 1, "Term"));
         foreach (var varList in varLists) {
           foreach (var constList in constLists) {
             foreach (var item in ReplaceConstants(ExpressionTree.ExpressionToTree(expression), constList, varList)) {
@@ -48,33 +47,32 @@ namespace LazyTacny {
           }
         }
       }
-      yield break;
     }
 
 
     private IEnumerable<Expression> ReplaceConstants(ExpressionTree expression, List<Expression> constants, List<IVariable> vars) {
       if (expression == null)
         yield break;
-      if (expression.root == null)
+      if (expression.Root == null)
         expression.SetRoot();
 
       if (expression.IsLeaf()) {
-        if (HasConstant(expression.data, constants)) {
+        if (HasConstant(expression.Data, constants)) {
           foreach (var var in vars) {
-            if (!ValidateType(var, expression.parent.TreeToExpression() as BinaryExpr))
+            if (!ValidateType(var, expression.Parent.TreeToExpression() as BinaryExpr))
               continue;
-            var newVal = ExpressionTree.ExpressionToTree(IVariableToExpression(var));
-            var copy = expression.root.Copy();
+            var newVal = ExpressionTree.ExpressionToTree(VariableToExpression(var));
+            var copy = expression.Root.Copy();
             var newTree = ExpressionTree.FindAndReplaceNode(copy, newVal, expression.Copy());
-            yield return newTree.root.TreeToExpression();
-            foreach (var item in ReplaceConstants(newTree.root, constants, vars))
+            yield return newTree.Root.TreeToExpression();
+            foreach (var item in ReplaceConstants(newTree.Root, constants, vars))
               yield return item;
           }
         }
       } else {
-        foreach (var item in ReplaceConstants(expression.lChild, constants, vars))
+        foreach (var item in ReplaceConstants(expression.LChild, constants, vars))
           yield return item;
-        foreach (var item in ReplaceConstants(expression.rChild, constants, vars))
+        foreach (var item in ReplaceConstants(expression.RChild, constants, vars))
           yield return item;
       }
 

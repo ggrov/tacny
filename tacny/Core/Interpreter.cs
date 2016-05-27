@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
 using System.Diagnostics.Contracts;
-using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Dafny;
+using Util;
+using Printer = Util.Printer;
 
 namespace Tacny
 {
@@ -17,7 +17,7 @@ namespace Tacny
         {
             Contract.Requires(tacnyProgram != null);
             this.tacnyProgram = tacnyProgram;
-            this.solution_list = new SolutionList();
+            solution_list = new SolutionList();
             //Console.SetOut(System.IO.TextWriter.Null);
         }
 
@@ -25,9 +25,9 @@ namespace Tacny
         {
             string err = null;
 
-            if (tacnyProgram.tactics.Count > 0)
+            if (tacnyProgram.Tactics.Count > 0)
             {
-                foreach (var member in tacnyProgram.members)
+                foreach (var member in tacnyProgram.Members)
                 {
                     err = ScanMemberBody(member.Value);
                     solution_list.Fin();
@@ -56,7 +56,7 @@ namespace Tacny
         private void VerifySolutionList()
         {
             List<Solution> final = new List<Solution>(); // list of verified solutions
-            Dafny.Program program;
+            Microsoft.Dafny.Program program;
             foreach (var list in solution_list.GetFinal())
             {
                 int index = 0;
@@ -108,9 +108,9 @@ namespace Tacny
             variables.AddRange(m.Outs);
             SolutionList sol_list = new SolutionList();
             sol_list.AddRange(solution_list.plist);
-            if (Util.TacnyOptions.O.ParallelExecution)
+            if (TacnyOptions.O.ParallelExecution)
             {
-                Parallel.ForEach(m.Body.Body, (st) =>
+                Parallel.ForEach(m.Body.Body, st =>
                     {
                         // register local variables
                         VarDeclStmt vds = st as VarDeclStmt;
@@ -129,13 +129,13 @@ namespace Tacny
                                     List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
                                     resolved.AddRange(m.Ins); // add input arguments as resolved variables
                                     Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, resolved, ref sol_list);
-                                    tacnyProgram.currentDebug.Fin();
+                                    tacnyProgram.CurrentDebug.Fin();
                                 }
                                 catch (AggregateException e)
                                 {
                                     foreach (var err in e.Data)
                                     {
-                                        Util.Printer.Error(err.ToString());
+                                        Printer.Error(err.ToString());
                                     }
                                 }
                             }
@@ -163,7 +163,7 @@ namespace Tacny
                                 List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
                                 resolved.AddRange(m.Ins); // add input arguments as resolved variables
                                 Atomic.ResolveTactic(tacnyProgram.GetTactic(us), us, md, tacnyProgram, variables, resolved, ref sol_list);
-                                tacnyProgram.currentDebug.Fin();
+                                tacnyProgram.CurrentDebug.Fin();
                             }
                             catch (Exception e)
                             {

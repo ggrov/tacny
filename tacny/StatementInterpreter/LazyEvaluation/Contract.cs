@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
 using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
+using Util;
 
 namespace LazyTacny {
   class TacnyContract {
@@ -13,7 +10,7 @@ namespace LazyTacny {
     public TacnyContract(Atomic state) {
       Contract.Requires(state != null);
       // check if codeContracts for Tacny are enabled
-      this.atomic = state;
+      atomic = state;
     }
 
     public static void ValidateRequires(Atomic state) {
@@ -37,9 +34,9 @@ namespace LazyTacny {
       Expression expr = mfe.E;
 
       foreach (var item in atomic.ResolveExpression(expr)) {
-        Dafny.LiteralExpr result = item as Dafny.LiteralExpr;
-        Contract.Assert(result != null, Util.Error.MkErr(expr, 1, "Boolean Expression"));
-        Contract.Assert((bool)result.Value, Util.Error.MkErr(expr, 14));
+        LiteralExpr result = item as LiteralExpr;
+        Contract.Assert(result != null, Error.MkErr(expr, 1, "Boolean Expression"));
+        Contract.Assert((bool)result.Value, Error.MkErr(expr, 14));
       }
     }
   }

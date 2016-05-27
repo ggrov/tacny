@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
-using System.Diagnostics.Contracts;
 
 namespace LazyTacny {
   class TryCatchAtomic : Atomic, IAtomicLazyStmt {

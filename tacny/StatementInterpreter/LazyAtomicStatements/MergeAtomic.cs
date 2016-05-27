@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections;
-using Microsoft.Dafny;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Reflection;
+using Microsoft.Dafny;
 using Tacny;
-using System.Diagnostics;
+using Util;
+using Type = System.Type;
+
 namespace LazyTacny {
   class MergeAtomic : Atomic, IAtomicLazyStmt {
     public MergeAtomic(Atomic atomic) : base(atomic) { }
@@ -22,18 +23,18 @@ namespace LazyTacny {
       List<Expression> call_arguments;
       IList result = null;
       InitArgs(st, out lv, out call_arguments);
-      Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-      Contract.Assert(tcce.OfSize(call_arguments, 2), Util.Error.MkErr(st, 0, 2, call_arguments.Count));
+      Contract.Assert(lv != null, Error.MkErr(st, 8));
+      Contract.Assert(tcce.OfSize(call_arguments, 2), Error.MkErr(st, 0, 2, call_arguments.Count));
 
       foreach (var arg1 in ResolveExpression(call_arguments[0])) {
         foreach (var arg2 in ResolveExpression(call_arguments[1])) {
           // valdiate the argument types
-          System.Type type1 = arg1.GetType().GetGenericArguments().Single();
-          System.Type type2 = arg2.GetType().GetGenericArguments().Single();
-          Contract.Assert(type1.Equals(type2), Util.Error.MkErr(st, 1, type1));
+          Type type1 = arg1.GetType().GetGenericArguments().Single();
+          Type type2 = arg2.GetType().GetGenericArguments().Single();
+          Contract.Assert(type1.Equals(type2), Error.MkErr(st, 1, type1));
 
           if (!(arg1 is IEnumerable) || !(arg2 is IEnumerable))
-            Contract.Assert(false, Util.Error.MkErr(st, 1, typeof(IEnumerable)));
+            Contract.Assert(false, Error.MkErr(st, 1, typeof(IEnumerable)));
 
           dynamic darg1 = arg1;
           dynamic darg2 = arg2;
@@ -42,12 +43,11 @@ namespace LazyTacny {
           yield return AddNewLocal(lv, result);
         }
       }
-      yield break;
     }
 
 
-    private static IList  MergeLists(dynamic l1, dynamic l2, System.Type type) {
-      System.Type listType = typeof(List<>).MakeGenericType(new[] { type });
+    private static IList  MergeLists(dynamic l1, dynamic l2, Type type) {
+      Type listType = typeof(List<>).MakeGenericType(type);
       var result = (IList)Activator.CreateInstance(listType);
       foreach (var t in l1) {
         result.Add(t);

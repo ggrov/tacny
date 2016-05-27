@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
-using System.Diagnostics.Contracts;
 
 namespace Tacny
 {
@@ -27,7 +22,7 @@ namespace Tacny
             foreach (var sol in result)
             {
                 //Atomic ac = this.Copy();
-                Dafny.Program dprog = globalContext.program.ParseProgram();
+                Microsoft.Dafny.Program dprog = globalContext.program.ParseProgram();
                 sol.GenerateProgram(ref dprog);
                 globalContext.program.ClearBody(localContext.md);
                 //program.MaybePrintProgram(dprog, null);

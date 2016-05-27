@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
+using Util;
 
 namespace Tacny
 {
@@ -22,18 +23,18 @@ namespace Tacny
             List<MaybeFreeExpression> pre_conditions = new List<MaybeFreeExpression>();
 
             InitArgs(st, out lv, out call_arguments);
-            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-            Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
+            Contract.Assert(lv != null, Error.MkErr(st, 8));
+            Contract.Assert(tcce.OfSize(call_arguments, 0), Error.MkErr(st, 0, 0, call_arguments.Count));
 
             Method method = globalContext.md as Method;
-            Contract.Assert(method != null, Util.Error.MkErr(st, 15, "preconditions"));
+            Contract.Assert(method != null, Error.MkErr(st, 15, "preconditions"));
             foreach(var pre in method.Req)
             {
                 pre_conditions.Add(Util.Copy.CopyMaybeFreeExpression(pre));
 
             }
             AddLocal(lv, pre_conditions);
-            solution_list.Add(new Solution(this.Copy()));
+            solution_list.Add(new Solution(Copy()));
         }
     }
 }

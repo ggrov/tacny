@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Dafny;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
+using Microsoft.Dafny;
 using Tacny;
+using Util;
 
 namespace LazyTacny {
   class DeleteAtomic : Atomic, IAtomicLazyStmt {
@@ -13,7 +12,7 @@ namespace LazyTacny {
       IVariable lv = null;
       List<Expression> callArgs = null;
       InitArgs(st, out lv, out callArgs);
-      Contract.Assert(tcce.OfSize(callArgs, 2), Util.Error.MkErr(st, 0, 2, callArgs.Count));
+      Contract.Assert(tcce.OfSize(callArgs, 2), Error.MkErr(st, 0, 2, callArgs.Count));
 
       foreach (var ns in ResolveExpression(callArgs[0])) {
         var toRemove = ns as NameSegment;

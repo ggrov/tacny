@@ -1,28 +1,25 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Diagnostics.Contracts;
-using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
+using System.Linq;
 using Microsoft.Boogie;
-using System.Diagnostics;
+using Microsoft.Dafny;
+using Util;
+using Formal = Microsoft.Dafny.Formal;
+using Type = Microsoft.Dafny.Type;
+
 // todo cases multiple tac calls, cases within cases, tac calls from cases etc.
 // update 
 
 namespace LazyTacny {
   class MatchAtomic : Atomic, IAtomicLazyStmt {
 
-    private Token oldToken = null;
-    private Dictionary<string, Dafny.Type> ctorTypes = null;
+    private Token _oldToken;
+    private Dictionary<string, Type> _ctorTypes;
 
     public MatchAtomic(Atomic atomic) : base(atomic) { }
 
     public IEnumerable<Solution> Resolve(Statement st, Solution solution) {
-
-      foreach (var item in GenerateMatch(st as TacnyCasesBlockStmt, solution)) {
-        yield return item;
-      }
-
-      yield break;
+      return GenerateMatch(st as TacnyCasesBlockStmt);
     }
 
     /*
@@ -45,60 +42,53 @@ namespace LazyTacny {
     /// <returns></returns>
     public bool ErrorChanged(Token errorToken, MatchStmt ms, int ctor) {
       // check if error has been generated
-      if (oldToken == null || errorToken == null)
+      if (_oldToken == null || errorToken == null)
         return true;
 
       /**
        * Check if the error originates in the current cases statement
        */
-      if (oldToken.line <= ms.Cases[ctor].tok.line + ms.Cases[ctor].Body.Count || errorToken.line == ms.Cases[ctor].tok.line) {
+      if (_oldToken.line <= ms.Cases[ctor].tok.line + ms.Cases[ctor].Body.Count || errorToken.line == ms.Cases[ctor].tok.line) {
         // if the error occurs in the last cases element
-        if (ctor + 1 == ms.Cases.Count) {
+        if (ctor + 1 == ms.Cases.Count)
+        {
           // check if the error resides anywhere in the last case body
-          if (errorToken.line > oldToken.line && errorToken.line <= (ms.Cases[ctor].tok.line + ms.Cases[ctor].Body.Count))
-            return true;
-          return false;
-        } else {
-          if (errorToken.line > oldToken.line && errorToken.line <= ms.Cases[ctor + 1].tok.line)
-            return true;
-          return false;
+          return errorToken.line > _oldToken.line && errorToken.line <= (ms.Cases[ctor].tok.line + ms.Cases[ctor].Body.Count);
         }
+        return errorToken.line > _oldToken.line && errorToken.line <= ms.Cases[ctor + 1].tok.line;
       }
       // the error must have changed
       return true;
     }
 
-    private IEnumerable<Solution> GenerateMatch(TacnyCasesBlockStmt st, Solution sol) {
-      DatatypeDecl datatype = null;
-      ParensExpression guard = null;
-      NameSegment casesGuard = null;
+    private IEnumerable<Solution> GenerateMatch(TacnyCasesBlockStmt st) {
+      NameSegment casesGuard;
       UserDefinedType datatypeType = null;
-      string datatypeName = null;
-      bool isElement = false;
+      var isElement = false;
 
-      guard = st.Guard as ParensExpression;
+      var guard = st.Guard as ParensExpression;
 
       if (guard == null)
         casesGuard = st.Guard as NameSegment;
       else
         casesGuard = guard.E as NameSegment;
 
-      Contract.Assert(casesGuard != null, Util.Error.MkErr(st, 2));
+      Contract.Assert(casesGuard != null, Error.MkErr(st, 2));
 
-      IVariable tac_input = GetLocalKeyByName(casesGuard) as IVariable;
-      Contract.Assert(tac_input != null, Util.Error.MkErr(st, 9, casesGuard.Name));
+      IVariable tacInput = GetLocalKeyByName(casesGuard);
+      Contract.Assert(tacInput != null, Error.MkErr(st, 9, casesGuard.Name));
 
 
-      if (!(tac_input is Dafny.Formal)) {
-        tac_input = GetLocalValueByName(casesGuard) as IVariable;
-        Contract.Assert(tac_input != null, Util.Error.MkErr(st, 9, casesGuard.Name));
+      if (!(tacInput is Formal)) {
+        tacInput = GetLocalValueByName(casesGuard) as IVariable;
+        Contract.Assert(tacInput != null, Error.MkErr(st, 9, casesGuard.Name));
         // the original
-        casesGuard = new NameSegment(tac_input.Tok, tac_input.Name, null);
+        if (tacInput != null) casesGuard = new NameSegment(tacInput.Tok, tacInput.Name, null);
       } else {
         // get the original declaration inside the method
-        casesGuard = GetLocalValueByName(tac_input) as NameSegment;
+        casesGuard = GetLocalValueByName(tacInput) as NameSegment;
       }
-      datatypeName = tac_input.Type.ToString();
+      string datatypeName = tacInput?.Type.ToString();
       /**
        * TODO cleanup
        * if datatype is Element lookup the formal in global variable registry
@@ -106,35 +96,34 @@ namespace LazyTacny {
 
       if (datatypeName == "Element") {
         isElement = true;
-        object val = GetLocalValueByName(tac_input.Name);
-        NameSegment decl = val as NameSegment;
-        Contract.Assert(decl != null, Util.Error.MkErr(st, 9, tac_input.Name));
+        var val = GetLocalValueByName(tacInput.Name);
+        var decl = val as NameSegment;
+        Contract.Assert(decl != null, Error.MkErr(st, 9, tacInput.Name));
 
-        IVariable original_decl = StaticContext.GetGlobalVariable(decl.Name);
-        if (original_decl != null) {
-          datatypeType = original_decl.Type as UserDefinedType;
-          if (datatypeType != null) {
-            datatypeName = datatypeType.Name;
-          } else
-            datatypeName = original_decl.Type.ToString();
-        } else
-          Contract.Assert(false, Util.Error.MkErr(st, 9, tac_input.Name));
+        var originalDecl = StaticContext.GetGlobalVariable(decl?.Name);
+        if (originalDecl != null)
+        {
+          datatypeType = originalDecl.Type as UserDefinedType;
+          datatypeName = datatypeType != null ? datatypeType.Name : originalDecl.Type.ToString();
+        }
+        else
+          Contract.Assert(false, Error.MkErr(st, 9, tacInput.Name));
       }
 
       if (!StaticContext.ContainsGlobalKey(datatypeName)) {
-        Contract.Assert(false, Util.Error.MkErr(st, 12, datatypeName));
+        Contract.Assert(false, Error.MkErr(st, 12, datatypeName));
       }
 
-      datatype = StaticContext.GetGlobal(datatypeName);
+      var datatype = StaticContext.GetGlobal(datatypeName);
 
       if (datatype.TypeArgs != null) {
-        ctorTypes = new Dictionary<string, Microsoft.Dafny.Type>();
+        _ctorTypes = new Dictionary<string, Type>();
 
         if (datatype.TypeArgs.Count == datatypeType.TypeArgs.Count) {
           for (int i = 0; i < datatype.TypeArgs.Count; i++) {
             var genericType = datatype.TypeArgs[i];
             var definedType = datatypeType.TypeArgs[i];
-            ctorTypes.Add(genericType.Name, definedType);
+            _ctorTypes.Add(genericType.Name, definedType);
 
           }
         }
@@ -146,8 +135,6 @@ namespace LazyTacny {
         foreach (var item in GenerateStmt(datatype, casesGuard, st))
           yield return item;
       }
-
-      yield break;
     }
 
     /// <summary>
@@ -160,8 +147,7 @@ namespace LazyTacny {
     private IEnumerable<Solution> GenerateStmt(DatatypeDecl datatype, NameSegment casesGuard, TacnyCasesBlockStmt st) {
       List<List<Solution>> allCtorBodies = Repeated(new List<Solution>(), datatype.Ctors.Count);
       int ctor = 0;
-      List<Solution> ctorBodies = RepeatedDefault<Solution>(datatype.Ctors.Count);
-
+      
       foreach (var list in allCtorBodies) {
         list.Add(null);
 
@@ -177,13 +163,12 @@ namespace LazyTacny {
       foreach (var stmt in GenerateAllMatchStmt(DynamicContext.tac_call.Tok.line, 0, Util.Copy.CopyNameSegment(casesGuard), datatype, allCtorBodies, new List<Solution>())) {
         yield return CreateSolution(this, stmt);
       }
-      yield break;
     }
 
 
     private Solution GenerateVerifiedStmt(DatatypeDecl datatype, NameSegment casesGuard, TacnyCasesBlockStmt st) {
-      bool[] ctorFlags = null;
-      int ctor = 0; // current active match case
+      bool[] ctorFlags;
+      int ctor; // current active match case
       InitCtorFlags(datatype, out ctorFlags);
       List<Solution> ctorBodies = RepeatedDefault<Solution>(datatype.Ctors.Count);
       // find the first failing case 
@@ -199,18 +184,17 @@ namespace LazyTacny {
           return CreateSolution(this, ms);
         }
         ctorFlags[ctor] = true;
-        this.oldToken = StaticContext.program.GetErrorToken();
+        _oldToken = StaticContext.program.GetErrorToken();
       }
-      List<Solution> interm = new List<Solution>() { new Solution(this) };
       while (ctor < datatype.Ctors.Count) {
 
         if (!StaticContext.program.HasError())
           break;
-        RegisterLocals(datatype, ctor, ctorTypes);
+        RegisterLocals(datatype, ctor, _ctorTypes);
 
         // if nothing was generated for the cases body move on to the next one
         foreach (var result in ResolveBody(st.Body)) {
-          
+
           ctorBodies[ctor] = result;
           ms = GenerateMatchStmt(DynamicContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(casesGuard), datatype, ctorBodies);
           solution = CreateSolution(this, ms);
@@ -272,17 +256,14 @@ namespace LazyTacny {
         foreach (var item in GenerateAllMatchStmt(line_index, depth + 1, ns, datatype, bodies, tmp))
           yield return item;
       }
-
-      yield break;
     }
 
     private void GenerateMatchCaseStmt(int line, DatatypeCtor dtc, Solution solution, out MatchCaseStmt mcs) {
       Contract.Requires(dtc != null);
-      Contract.Ensures(Contract.ValueAtReturn<MatchCaseStmt>(out mcs) != null);
+      Contract.Ensures(Contract.ValueAtReturn(out mcs) != null);
       List<CasePattern> casePatterns = new List<CasePattern>();
-      mcs = null;
       dtc = new DatatypeCtor(dtc.tok, dtc.Name, dtc.Formals, dtc.Attributes);
-      foreach (Dafny.Formal formal in dtc.Formals) {
+      foreach (var formal in dtc.Formals) {
         CasePattern cp;
         GenerateCasePattern(line, formal, out cp);
         casePatterns.Add(cp);
@@ -290,15 +271,15 @@ namespace LazyTacny {
 
       List<Statement> body = new List<Statement>();
       if (solution != null) {
-        Atomic ac = solution.state.Copy();
+        Atomic ac = solution.State.Copy();
         body = ac.GetAllUpdated();
       }
       mcs = new MatchCaseStmt(CreateToken("cases", line, 0), dtc.CompileName, casePatterns, body);
     }
 
-    private void GenerateCasePattern(int line, Dafny.Formal formal, out CasePattern cp) {
+    private void GenerateCasePattern(int line, Formal formal, out CasePattern cp) {
       Contract.Requires(formal != null);
-      formal = new Dafny.Formal(formal.tok, formal.Name, formal.Type, formal.InParam, formal.IsGhost);
+      formal = new Formal(formal.tok, formal.Name, formal.Type, formal.InParam, formal.IsGhost);
 
       cp = new CasePattern(CreateToken(formal.Name, line, 0),
                               new BoundVar(CreateToken(formal.Name, line, 0), formal.Name, new InferredTypeProxy()));
@@ -311,34 +292,21 @@ namespace LazyTacny {
       }
     }
 
-    private static void InitSolFlags(bool[] flags) {
-      for (int i = 0; i < flags.Length; i++)
-        flags[i] = true;
-    }
-
-    private static bool ValidateSolFlags(bool[] flags) {
-      for (int i = 0; i < flags.Length; i++) {
-        if (flags[i])
-          return true;
-      }
-      return false;
-    }
-
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
     private bool CheckError(MatchStmt ms, ref bool[] ctorFlags, int ctor) {
       // hack for termination
-      if (StaticContext.program.errorInfo.Msg == "cannot prove termination; try supplying a decreases clause")
+      if (StaticContext.program.ErrorInfo.Msg == "cannot prove termination; try supplying a decreases clause")
         return false;
       // if the error token has not changed since last iteration
       if (!ErrorChanged(StaticContext.program.GetErrorToken(), ms, ctor))
         return false;
 
-      this.oldToken = StaticContext.program.GetErrorToken();
-      if (oldToken != null) {
-        int index = GetErrorIndex(oldToken, ms);
+      _oldToken = StaticContext.program.GetErrorToken();
+      if (_oldToken != null) {
+        int index = GetErrorIndex(_oldToken, ms);
         // the verification error is not caused by the match stmt
         if (index == -1)
           return false;

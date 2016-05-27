@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Dafny;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
 using Tacny;
+using Util;
 
 namespace LazyTacny {
   class IfGuardAtomic : Atomic, IAtomicLazyStmt {
@@ -14,8 +12,8 @@ namespace LazyTacny {
       IVariable lv = null;
       List<Expression> callArgs = null;
       InitArgs(st, out lv, out callArgs);
-      Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-      Contract.Assert(tcce.OfSize(callArgs, 0), Util.Error.MkErr(st, 0, 0, callArgs.Count));
+      Contract.Assert(lv != null, Error.MkErr(st, 8));
+      Contract.Assert(tcce.OfSize(callArgs, 0), Error.MkErr(st, 0, 0, callArgs.Count));
       List<Expression> guards = null;
       // was called from a ws tactic
       if (DynamicContext.whileStmt != null) {

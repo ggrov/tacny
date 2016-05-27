@@ -1,22 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
 using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
 using Bpl = Microsoft.Boogie;
 namespace Util
 {
     public class TacnyOptions : DafnyOptions
     {
-        public TacnyOptions()
-            : base()
-        {
-
-        }
-
-        private static TacnyOptions clo;
+      private static TacnyOptions clo;
         public static new TacnyOptions O
         {
             get { return clo; }
@@ -29,11 +19,11 @@ namespace Util
         }
         public bool Contracts = true;
         public bool EvalAnalysis = true;
-        public bool ParallelExecution = false;
+        public bool ParallelExecution;
         public bool LazyEval = true;
-        public bool PrintCsv = false;
+        public bool PrintCsv;
         public int EnableSearch = -1;
-        protected override bool ParseOption(string name, Bpl.CommandLineOptionEngine.CommandLineParseState ps)
+        protected override bool ParseOption(string name, CommandLineParseState ps)
         {
             var args = ps.args;
             switch (name)
@@ -41,33 +31,33 @@ namespace Util
                 case "contracts":
                     int i = 0;
                     if (ps.GetNumericArgument(ref i, 2))
-                        this.Contracts = i == 1;
+                        Contracts = i == 1;
                     return true;
                 case "evalAnalysis":
                     int j = 0;
                     if (ps.GetNumericArgument(ref j, 2))
-                        this.EvalAnalysis = j == 1;
+                        EvalAnalysis = j == 1;
                     return true;
                 case "parallel":
                     int k = 0;
                     if (ps.GetNumericArgument(ref k, 2))
-                        this.ParallelExecution = k == 1;
+                        ParallelExecution = k == 1;
                     return true;
                 case "lazy":
                     int l = 0;
                     if (ps.GetNumericArgument(ref l, 2))
-                        this.LazyEval = l == 1;
+                        LazyEval = l == 1;
                     return true;
                 case "printCsv":
                     int m = 0;
                     if (ps.GetNumericArgument(ref m, 2))
-                        this.PrintCsv = m == 1;
+                        PrintCsv = m == 1;
                     return true;
                 case "search":
                     int s = -1;
 
                     if (ps.GetNumericArgument(ref s, 2))
-                        this.EnableSearch = s;
+                        EnableSearch = s;
                     return true;
 
                 default:

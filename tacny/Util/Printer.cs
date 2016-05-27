@@ -1,13 +1,14 @@
 ﻿using System;
-using System.IO;
-using System.Diagnostics.Contracts;
-using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
+using System.IO;
 using Microsoft.Boogie;
+using Microsoft.Dafny;
+using Declaration = Microsoft.Dafny.Declaration;
+using Program = Microsoft.Dafny.Program;
 
 namespace Util {
-    public class Printer : Dafny.Printer {
+    public class Printer : Microsoft.Dafny.Printer {
         // Print the program
         private TextWriter wr;
         private TextWriter debugWriter; // debug writer
@@ -17,7 +18,7 @@ namespace Util {
         const string DEBUG_SUFFIX = "data";
         const string FILENAME = "tacny";
         const string DEBUG_FOLDER = "Debug";
-        private string FileName = null;
+        private string FileName;
         private static Printer p;
         public static Printer P { get { return p; } }
 
@@ -32,7 +33,7 @@ namespace Util {
             if (fn.LastIndexOf(".") >= 0)
                 fn = fn.Substring(0, fn.LastIndexOf("."));
             try {
-                var tw = new System.IO.StreamWriter(fn + ".dfy");
+                var tw = new StreamWriter(fn + ".dfy");
                 p = new Printer(tw, fn, TacnyOptions.O.PrintMode);
             } catch (IOException e) {
                 Debug.WriteLine(e.Message);
@@ -41,8 +42,8 @@ namespace Util {
             }
         }
         protected Printer(TextWriter tw, string filename, DafnyOptions.PrintModes printMode = DafnyOptions.PrintModes.Everything) : base(tw, printMode) {
-            this.FileName = filename;
-            this.wr = tw;
+            FileName = filename;
+            wr = tw;
             this.printMode = printMode;
         }
 
@@ -60,8 +61,8 @@ namespace Util {
             debugWriter = new StreamWriter(Path.Combine(working_path, string.Format("{0}.{1}", FileName, DEBUG_SUFFIX)), true);
         }
 
-        public Dafny.Printer GetConsolePrinter() {
-            return new Dafny.Printer(Console.Out);
+        public Microsoft.Dafny.Printer GetConsolePrinter() {
+            return new Microsoft.Dafny.Printer(Console.Out);
         }
 
         private void InitializeCsvWriter() {
@@ -80,10 +81,10 @@ namespace Util {
             tw = null;
         }
 
-        new public void PrintProgram(Dafny.Program prog) {
+        new public void PrintProgram(Program prog) {
             Contract.Requires(prog != null);
-            wr = new System.IO.StreamWriter(prog.FullName + ".dfy");
-            var printer = new Dafny.Printer(wr, DafnyOptions.PrintModes.Everything);
+            wr = new StreamWriter(prog.FullName + ".dfy");
+            var printer = new Microsoft.Dafny.Printer(wr, DafnyOptions.PrintModes.Everything);
             printer.PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, prog.FullName);
             //printer.PrintProgram(prog);// PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, Path.GetFullPath(prog.FullName));
             wr.Flush();
@@ -92,7 +93,7 @@ namespace Util {
         public void PrintDebugMessage(string message, params object[] args) {
             if (debugWriter == null)
                 InitializeDebugWriter();
-            debugWriter.WriteLine(string.Format(message, args));
+            debugWriter.WriteLine(message, args);
             debugWriter.Flush();
         }
 
@@ -109,7 +110,7 @@ namespace Util {
             Contract.Requires(msg != null);
             ConsoleColor col = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(string.Format(msg, args));
+            Console.WriteLine(msg, args);
             Console.ForegroundColor = col;
         }
 
@@ -117,11 +118,11 @@ namespace Util {
             Contract.Requires(tok != null);
             Contract.Requires(msg != null);
             Error("{0}({1},{2}): Error: {3}",
-                DafnyOptions.Clo.UseBaseNameForFileName ? System.IO.Path.GetFileName(tok.filename) : tok.filename, tok.line, tok.col - 1,
+                DafnyOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(tok.filename) : tok.filename, tok.line, tok.col - 1,
                 string.Format(msg, args));
         }
 
-        public static void Error(Dafny.Declaration d, string msg, params object[] args) {
+        public static void Error(Declaration d, string msg, params object[] args) {
             Contract.Requires(d != null);
             Contract.Requires(msg != null);
             Error(d.tok, msg, args);
@@ -151,7 +152,7 @@ namespace Util {
             ConsoleColor col = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Warning("{0}({1},{2}): Warning: {3}",
-                DafnyOptions.Clo.UseBaseNameForFileName ? System.IO.Path.GetFileName(tok.filename) : tok.filename, tok.line, tok.col - 1,
+                DafnyOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(tok.filename) : tok.filename, tok.line, tok.col - 1,
                 string.Format(msg, args));
             Console.ForegroundColor = col;
         }
@@ -160,7 +161,7 @@ namespace Util {
             Contract.Requires(msg != null);
             ConsoleColor col = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine(string.Format(msg, args));
+            Console.WriteLine(msg, args);
             Console.ForegroundColor = col;
         }
 

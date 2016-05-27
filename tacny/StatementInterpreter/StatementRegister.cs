@@ -1,10 +1,9 @@
-﻿using Microsoft.Dafny;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
+using Microsoft.Dafny;
+using Type = System.Type;
 
 namespace Tacny
 {
@@ -45,10 +44,10 @@ namespace Tacny
             IS_INDUCTIVE,
             TRY_CATCH,
             RETURNS,
-            IS_DATATYPE,
-        };
+            IS_DATATYPE
+        }
 
-        public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
+        public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>
         {
             {"replace_singleton", Atomic.REPLACE_SINGLETON},
             {"create_invariant", Atomic.CREATE_INVAR},
@@ -75,11 +74,11 @@ namespace Tacny
             {"is_inductive", Atomic.IS_INDUCTIVE},
             {"tryCatch", Atomic.TRY_CATCH},
             {"get_returns", Atomic.RETURNS},
-            {"is_datatype", Atomic.IS_DATATYPE},
+            {"is_datatype", Atomic.IS_DATATYPE}
            
         };
         
-        public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
+        public static Dictionary<Atomic, Type> atomic_class = new Dictionary<Atomic, Type>
         {
             {Atomic.REPLACE_SINGLETON, typeof(SingletonAtomic)},
             {Atomic.CREATE_INVAR, typeof(InvariantAtomic)},
@@ -107,7 +106,7 @@ namespace Tacny
             {Atomic.IS_INDUCTIVE, typeof(IsInductiveAtomic)},
             {Atomic.TRY_CATCH, typeof(TryCatchAtomic)},
             {Atomic.RETURNS, typeof(ReturnAtomic)},
-            {Atomic.IS_DATATYPE, typeof(IsDatatypeAtomic)},
+            {Atomic.IS_DATATYPE, typeof(IsDatatypeAtomic)}
         };
 
         /// <summary>
@@ -122,10 +121,10 @@ namespace Tacny
             ApplySuffix aps;
             if ((st = call as Statement) != null)
                 return GetAtomicType(st);
-            else if((aps = call as ApplySuffix) != null)
-                return GetAtomicType(aps);
-            
-            return Atomic.UNDEFINED;
+          if((aps = call as ApplySuffix) != null)
+            return GetAtomicType(aps);
+
+          return Atomic.UNDEFINED;
         }
         
 
@@ -146,12 +145,12 @@ namespace Tacny
                 TacnyTryCatchBlockStmt ttcbs;
                 if ((tcbs = tbs as TacnyCasesBlockStmt) != null)
                     return atomic_signature[tcbs.WhatKind];
-                else if ((tsbs = tbs as TacnySolvedBlockStmt) != null)
-                    return atomic_signature[tsbs.WhatKind];
-                else if ((tchbs = tbs as TacnyChangedBlockStmt) != null)
-                    return atomic_signature[tchbs.WhatKind];
-                else if ((ttcbs = tbs as TacnyTryCatchBlockStmt) != null)
-                    return atomic_signature[ttcbs.WhatKind];
+              if ((tsbs = tbs as TacnySolvedBlockStmt) != null)
+                return atomic_signature[tsbs.WhatKind];
+              if ((tchbs = tbs as TacnyChangedBlockStmt) != null)
+                return atomic_signature[tchbs.WhatKind];
+              if ((ttcbs = tbs as TacnyTryCatchBlockStmt) != null)
+                return atomic_signature[ttcbs.WhatKind];
             }
             else if (((os = st as OrStmt) != null))
             {
@@ -212,19 +211,19 @@ namespace Tacny
         }
 
 
-        public static System.Type GetStatementType(Statement st)
+        public static Type GetStatementType(Statement st)
         {
             Contract.Requires(st != null);
             return GetStatementType(GetAtomicType(st));
         }
 
-        public static System.Type GetStatementType(ApplySuffix aps)
+        public static Type GetStatementType(ApplySuffix aps)
         {
             Contract.Requires(aps != null);
             return GetStatementType(GetAtomicType(aps));
         }
 
-        public static System.Type GetStatementType(Atomic atomic)
+        public static Type GetStatementType(Atomic atomic)
         {
             if (!atomic_class.ContainsKey(atomic))
                 return null;

@@ -1,9 +1,8 @@
-﻿using Microsoft.Dafny;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
 using Tacny;
-using System.Linq;
+using Util;
 
 namespace LazyTacny {
 
@@ -22,12 +21,12 @@ namespace LazyTacny {
       List<Expression> callArgs;
       var result = new List<Expression>();
       InitArgs(st, out lv, out callArgs);
-      Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-      Contract.Assert(callArgs.Count == 1, Util.Error.MkErr(st, 0, 1, callArgs.Count));
+      Contract.Assert(lv != null, Error.MkErr(st, 8));
+      Contract.Assert(callArgs.Count == 1, Error.MkErr(st, 0, 1, callArgs.Count));
 
       foreach(var arg1 in ResolveExpression(callArgs[0])) {
         var expression = arg1 as Expression;
-        Contract.Assert(expression != null, Util.Error.MkErr(st, 1, "Term"));
+        Contract.Assert(expression != null, Error.MkErr(st, 1, "Term"));
         var expt = ExpressionTree.ExpressionToTree(expression);
         var leafs = expt.GetLeafData();
         foreach(var leaf in leafs) {

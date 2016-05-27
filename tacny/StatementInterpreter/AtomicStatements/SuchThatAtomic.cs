@@ -1,13 +1,10 @@
-﻿using System;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Collections;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
-using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
 using Util;
+using Printer = Util.Printer;
+
 namespace Tacny
 {
     class SuchThatAtomic : Atomic, IAtomicStmt
@@ -24,13 +21,13 @@ namespace Tacny
             object value = null;
             dynamic dynamic_val = null;
             TacticVarDeclStmt tvds = st as TacticVarDeclStmt;
-            Contract.Assert(tvds != null, Util.Error.MkErr(st, 5, typeof(TacticVarDeclStmt), st.GetType()));
+            Contract.Assert(tvds != null, Error.MkErr(st, 5, typeof(TacticVarDeclStmt), st.GetType()));
 
             AssignSuchThatStmt suchThat = tvds.Update as AssignSuchThatStmt;
-            Contract.Assert(suchThat != null, Util.Error.MkErr(st, 5, typeof(AssignSuchThatStmt), tvds.Update.GetType()));
+            Contract.Assert(suchThat != null, Error.MkErr(st, 5, typeof(AssignSuchThatStmt), tvds.Update.GetType()));
 
             BinaryExpr bexp = suchThat.Expr as BinaryExpr;
-            Contract.Assert(bexp != null, Util.Error.MkErr(st, 5, typeof(BinaryExpr), suchThat.Expr.GetType()));
+            Contract.Assert(bexp != null, Error.MkErr(st, 5, typeof(BinaryExpr), suchThat.Expr.GetType()));
             ResolveExpression(bexp, tvds.Locals[0], out value);
             dynamic_val = value;
             if (dynamic_val is IEnumerable)
@@ -38,7 +35,7 @@ namespace Tacny
                 foreach (var item in dynamic_val)
                 {
                     AddLocal(tvds.Locals[0], item);
-                    solution_list.Add(new Solution(this.Copy()));
+                    solution_list.Add(new Solution(Copy()));
                 }
             }
         }
@@ -56,8 +53,8 @@ namespace Tacny
                 {
                     case BinaryExpr.Opcode.In:
                         NameSegment var = bexp.E0 as NameSegment;
-                        Contract.Assert(var != null, Util.Error.MkErr(bexp, 6, declaration.Name));
-                        Contract.Assert(var.Name == declaration.Name, Util.Error.MkErr(bexp, 6, var.Name));
+                        Contract.Assert(var != null, Error.MkErr(bexp, 6, declaration.Name));
+                        Contract.Assert(var.Name == declaration.Name, Error.MkErr(bexp, 6, var.Name));
                         ProcessArg(bexp.E1, out result);
                         return;
 
@@ -71,12 +68,12 @@ namespace Tacny
                             List<dynamic> tmp = new List<dynamic>();
                             foreach (var item in lhs_dres)
                             {
-                                Atomic copy = this.Copy();
+                                Atomic copy = Copy();
                                 copy.AddLocal(declaration, item);
                                 object res;
                                 copy.ProcessArg(bexp.E1, out res);
-                                Dafny.LiteralExpr lit = res as Dafny.LiteralExpr;
-                                Contract.Assert(lit != null, Util.Error.MkErr(expr, 17));
+                                LiteralExpr lit = res as LiteralExpr;
+                                Contract.Assert(lit != null, Error.MkErr(expr, 17));
                                 if (lit.Value is bool)
                                 {
                                     if ((bool)lit.Value)
@@ -105,13 +102,13 @@ namespace Tacny
             NameSegment lhs_declaration = lhs as NameSegment;
             if (lhs_declaration == null)
             {
-                Util.Printer.Error(bexp, "Unexpected expression type after :|. Expected {0} Received {1}", typeof(BinaryExpr), lhs.GetType());
+                Printer.Error(bexp, "Unexpected expression type after :|. Expected {0} Received {1}", typeof(BinaryExpr), lhs.GetType());
                 return;
             }
 
             if (!lhs_declaration.Name.Equals(declaration.Name))
             {
-                Util.Printer.Error(bexp, "Declared variable and variable after :| don't match. Expected {0} Received {1}", declaration.Name, lhs_declaration.Name);
+                Printer.Error(bexp, "Declared variable and variable after :| don't match. Expected {0} Received {1}", declaration.Name, lhs_declaration.Name);
                 return;
             }
             /* HACK

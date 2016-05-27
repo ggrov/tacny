@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
-using System;
-using Tacny;
+using Microsoft.Dafny;
+using Util;
 
 namespace LazyTacny {
   class PostcondAtomic : Atomic, IAtomicLazyStmt {
@@ -18,16 +17,16 @@ namespace LazyTacny {
       List<Expression> callArgs; // we don't care about this
       List<Expression> ensures = new List<Expression>();
       InitArgs(st, out lv, out callArgs);
-      Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
+      Contract.Assert(lv != null, Error.MkErr(st, 8));
 
-      Contract.Assert(callArgs.Count <= 1, Util.Error.MkErr(st, 0, 0, callArgs.Count));
+      Contract.Assert(callArgs.Count <= 1, Error.MkErr(st, 0, 0, callArgs.Count));
 
       MemberDecl memberDecl = null;
       if (callArgs.Count > 0) {
         foreach (var member in ResolveExpression(callArgs[0])) {
           memberDecl = member as MemberDecl;
           if (memberDecl == null)
-            Contract.Assert(false, Util.Error.MkErr(st, 1, "Function, [Ghost] Method, Declaration"));
+            Contract.Assert(false, Error.MkErr(st, 1, "Function, [Ghost] Method, Declaration"));
           break;
         }
       } else {
@@ -45,7 +44,7 @@ namespace LazyTacny {
           foreach (var req in method.Ens)
             ensures.Add(Util.Copy.CopyExpression(req.E));
         } else {
-          Contract.Assert(false, Util.Error.MkErr(st, 1, "Function, [Ghost] Method, Declaration"));
+          Contract.Assert(false, Error.MkErr(st, 1, "Function, [Ghost] Method, Declaration"));
         }
       }
       return AddNewLocal(lv, ensures);

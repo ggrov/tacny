@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Collections;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
-using Microsoft.Boogie;
-using System;
+using Util;
+using Printer = Microsoft.Dafny.Printer;
+using Type = Microsoft.Dafny.Type;
 
 namespace Tacny
 {
@@ -48,7 +48,7 @@ namespace Tacny
             // generate the solutions
             foreach (var item in solutions)
             {
-                Atomic ac = this.Copy();
+                Atomic ac = Copy();
                 // create a deep copy of each UpdateStmt
                 UpdateStmt nus = Util.Copy.CopyUpdateStmt(item);
                 ac.AddUpdated(nus, nus);
@@ -71,28 +71,28 @@ namespace Tacny
             object member;
             MemberDecl md;
             InitArgs(st, out call_arguments);
-            Contract.Assert(tcce.OfSize(call_arguments, 2), Util.Error.MkErr(st, 0, 2, call_arguments.Count));
+            Contract.Assert(tcce.OfSize(call_arguments, 2), Error.MkErr(st, 0, 2, call_arguments.Count));
                      
             ProcessArg(call_arguments[0], out member);
-            Contract.Assert(member != null, Util.Error.MkErr(call_arguments[0], 1, typeof(Method)));
+            Contract.Assert(member != null, Error.MkErr(call_arguments[0], 1, typeof(Method)));
             md = member as MemberDecl;
 
-            Contract.Assert(md != null, Util.Error.MkErr(call_arguments[0], 1, typeof(MemberDecl)));
+            Contract.Assert(md != null, Error.MkErr(call_arguments[0], 1, typeof(MemberDecl)));
 
             // take the membed decl parameters
             if (member is Method)
                 md_ins.AddRange(((Method)member).Ins);
-            else if (member is Dafny.Function)
-                md_ins.AddRange(((Dafny.Function)member).Formals);
+            else if (member is Function)
+                md_ins.AddRange(((Function)member).Formals);
             else
-                Contract.Assert(false, Util.Error.MkErr(call_arguments[0], 1, String.Format("{0} or {1}", typeof(Method), typeof(Dafny.Function))));
+                Contract.Assert(false, Error.MkErr(call_arguments[0], 1, String.Format("{0} or {1}", typeof(Method), typeof(Function))));
 
             object ovars;
             ProcessArg(call_arguments[1], out ovars);
-            Contract.Assert(ovars != null, Util.Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
+            Contract.Assert(ovars != null, Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
 
             List<IVariable> vars = ovars as List<IVariable>;
-            Contract.Assert(vars != null, Util.Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
+            Contract.Assert(vars != null, Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
 
             
             
@@ -103,7 +103,7 @@ namespace Tacny
                 foreach (var arg in vars)
                 {
                     // get variable type
-                    Dafny.Type type = globalContext.GetVariableType(arg.Name);
+                    Type type = globalContext.GetVariableType(arg.Name);
                     if (type != null)
                     {
                         // if variable type and current argument types match
@@ -125,8 +125,8 @@ namespace Tacny
             if (result.Count == 0)
             {
                 ApplySuffix aps = new ApplySuffix(call_arguments[0].tok, new NameSegment(call_arguments[0].tok, md.Name, null), new List<Expression>());
-                UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
-                Console.WriteLine(Dafny.Printer.StatementToString(us));
+                UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs> { new ExprRhs(aps) });
+                Console.WriteLine(Printer.StatementToString(us));
                 solution_list.Add(us);
             }
             else
@@ -137,7 +137,7 @@ namespace Tacny
                     // create new fresh list of items to remove multiple references to the same object
                     List<Expression> new_list = Util.Copy.CopyExpressionList(item.Cast<Expression>().ToList());
                     ApplySuffix aps = new ApplySuffix(call_arguments[0].tok, new NameSegment(call_arguments[0].tok, md.Name, null), new_list);
-                    UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
+                    UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs> { new ExprRhs(aps) });
                     solution_list.Add(us);
                 }
             }

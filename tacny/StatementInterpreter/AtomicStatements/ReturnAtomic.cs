@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Dafny;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
+using Util;
+
 namespace Tacny
 {
     class ReturnAtomic : Atomic, IAtomicStmt
@@ -25,16 +24,16 @@ namespace Tacny
             List<IVariable> input = new List<IVariable>();
 
             InitArgs(st, out lv, out call_arguments);
-            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-            Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
-            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
+            Contract.Assert(lv != null, Error.MkErr(st, 8));
+            Contract.Assert(tcce.OfSize(call_arguments, 0), Error.MkErr(st, 0, 0, call_arguments.Count));
+            Contract.Assert(lv != null, Error.MkErr(st, 8));
 
             Method source = localContext.md as Method;
-            Contract.Assert(source != null, Util.Error.MkErr(st, 4));
+            Contract.Assert(source != null, Error.MkErr(st, 4));
 
             input.AddRange(source.Ins);
             AddLocal(lv, input);
-            solution_list.Add(new Solution(this.Copy()));
+            solution_list.Add(new Solution(Copy()));
 
             
         }

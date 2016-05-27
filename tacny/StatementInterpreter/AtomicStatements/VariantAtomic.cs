@@ -1,6 +1,8 @@
-﻿using Microsoft.Dafny;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
+using Util;
+
 namespace Tacny
 {
     class VariantAtomic : Atomic, IAtomicStmt
@@ -19,7 +21,7 @@ namespace Tacny
             Expression input = null;
 
             InitArgs(st, out call_arguments);
-            Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
+            Contract.Assert(tcce.OfSize(call_arguments, 1), Error.MkErr(st, 0, 1, call_arguments.Count));
 
             StringLiteralExpr wildCard = call_arguments[0] as StringLiteralExpr;
             if (wildCard != null)
@@ -67,7 +69,7 @@ namespace Tacny
                 Method target = Program.FindMember(globalContext.program.ParseProgram(), localContext.md.Name) as Method;
                 if (GetNewTarget() != null && GetNewTarget().Name == target.Name)
                     target = GetNewTarget();
-                Contract.Assert(target != null, Util.Error.MkErr(st, 3));
+                Contract.Assert(target != null, Error.MkErr(st, 3));
                 
                 dec_list = target.Decreases.Expressions;
                 // insert new variants at the end of the existing variants list
@@ -93,11 +95,11 @@ namespace Tacny
                         target.SignatureEllipsis);
                 
                 // register new method
-                this.localContext.newTarget = result;
-                globalContext.program.IncTotalBranchCount(globalContext.program.currentDebug);
+                localContext.newTarget = result;
+                globalContext.program.IncTotalBranchCount(globalContext.program.CurrentDebug);
             }
 
-            solution_list.Add(new Solution(this.Copy()));
+            solution_list.Add(new Solution(Copy()));
         }
     }
 }

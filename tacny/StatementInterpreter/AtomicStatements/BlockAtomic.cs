@@ -1,19 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
-using Dafny = Microsoft.Dafny;
-using Microsoft.Dafny;
-using Microsoft.Boogie;
+﻿using System.Diagnostics.Contracts;
 using System.Numerics;
-
+using Microsoft.Dafny;
 
 namespace Tacny
 {
     class BlockAtomic : Atomic
     {
-        protected ExpressionTree guard = null;
+        protected ExpressionTree guard;
 
         protected BlockAtomic(Atomic atomic) : base(atomic) { }
 
@@ -36,7 +29,7 @@ namespace Tacny
                 guard_wrapper = whileStmt.Guard;
             else
                 return null;
-            this.guard = ExpressionTree.ExpressionToTree(guard_wrapper);
+            guard = ExpressionTree.ExpressionToTree(guard_wrapper);
           
             return guard_wrapper;
         }
@@ -50,7 +43,7 @@ namespace Tacny
         [Pure]
         protected bool IsResolvable()
         {
-            return IsResolvable(this.guard);
+            return IsResolvable(guard);
         }
 
         /// <summary>
@@ -75,60 +68,60 @@ namespace Tacny
             // if the node is leaf, cast it to bool and return
             if (expt.IsLeaf())
             {
-                Dafny.LiteralExpr lit = EvaluateLeaf(expt) as Dafny.LiteralExpr;
+                LiteralExpr lit = EvaluateLeaf(expt) as LiteralExpr;
                 return lit.Value is bool ? (bool)lit.Value : false;
             }
             // left branch only
-            else if (expt.lChild != null && expt.rChild == null)
-                return EvaluateGuardTree(expt.lChild);
-              // if there is no more nesting resolve the expression
-            else if (expt.lChild.IsLeaf() && expt.rChild.IsLeaf())
+          if (expt.LChild != null && expt.RChild == null)
+            return EvaluateGuardTree(expt.LChild);
+          // if there is no more nesting resolve the expression
+          if (expt.LChild.IsLeaf() && expt.RChild.IsLeaf())
+          {
+            LiteralExpr lhs = null;
+            LiteralExpr rhs = null;
+            lhs = EvaluateLeaf(expt.LChild) as LiteralExpr;
+            rhs = EvaluateLeaf(expt.RChild) as LiteralExpr;
+            if (!lhs.GetType().Equals(rhs.GetType()))
+              return false;
+            BinaryExpr bexp = tcce.NonNull(expt.Data as BinaryExpr);
+            int res = -1;
+            if (lhs.Value is BigInteger)
             {
-                Dafny.LiteralExpr lhs = null;
-                Dafny.LiteralExpr rhs = null;
-                lhs = EvaluateLeaf(expt.lChild) as Dafny.LiteralExpr;
-                rhs = EvaluateLeaf(expt.rChild) as Dafny.LiteralExpr;
-                if (!lhs.GetType().Equals(rhs.GetType()))
-                    return false;
-                BinaryExpr bexp = tcce.NonNull<BinaryExpr>(expt.data as BinaryExpr);
-                int res = -1;
-                if (lhs.Value is BigInteger)
-                {
-                    BigInteger l = (BigInteger)lhs.Value;
-                    BigInteger r = (BigInteger)rhs.Value;
-                    res = l.CompareTo(r);
-                }
-                else if (lhs.Value is string)
-                {
-                    string l = lhs.Value as string;
-                    string r = rhs.Value as string;
-                    res = l.CompareTo(r);
-                }
-                else if (lhs.Value is bool)
-                    res = ((bool)lhs.Value).CompareTo((bool)rhs.Value);
+              BigInteger l = (BigInteger)lhs.Value;
+              BigInteger r = (BigInteger)rhs.Value;
+              res = l.CompareTo(r);
+            }
+            else if (lhs.Value is string)
+            {
+              string l = lhs.Value as string;
+              string r = rhs.Value as string;
+              res = l.CompareTo(r);
+            }
+            else if (lhs.Value is bool)
+              res = ((bool)lhs.Value).CompareTo((bool)rhs.Value);
 
-                if (bexp.Op == BinaryExpr.Opcode.Eq)
-                    return res == 0;
-                else if (bexp.Op == BinaryExpr.Opcode.Neq)
-                    return res != 0;
-                else if (bexp.Op == BinaryExpr.Opcode.Ge)
-                    return res >= 0;
-                else if (bexp.Op == BinaryExpr.Opcode.Gt)
-                    return res > 0;
-                else if (bexp.Op == BinaryExpr.Opcode.Le)
-                    return res <= 0;
-                else if (bexp.Op == BinaryExpr.Opcode.Lt)
-                    return res < 0;
-            }
-            else // evaluate a nested expression
-            {
-                BinaryExpr bexp = tcce.NonNull<BinaryExpr>(expt.data as BinaryExpr);
-                if (bexp.Op == BinaryExpr.Opcode.And)
-                    return EvaluateGuardTree(expt.lChild) && EvaluateGuardTree(expt.rChild);
-                else if (bexp.Op == BinaryExpr.Opcode.Or)
-                    return EvaluateGuardTree(expt.lChild) || EvaluateGuardTree(expt.rChild);
-            }
-            return false;
+            if (bexp.Op == BinaryExpr.Opcode.Eq)
+              return res == 0;
+            if (bexp.Op == BinaryExpr.Opcode.Neq)
+              return res != 0;
+            if (bexp.Op == BinaryExpr.Opcode.Ge)
+              return res >= 0;
+            if (bexp.Op == BinaryExpr.Opcode.Gt)
+              return res > 0;
+            if (bexp.Op == BinaryExpr.Opcode.Le)
+              return res <= 0;
+            if (bexp.Op == BinaryExpr.Opcode.Lt)
+              return res < 0;
+          }
+          else // evaluate a nested expression
+          {
+            BinaryExpr bexp = tcce.NonNull(expt.Data as BinaryExpr);
+            if (bexp.Op == BinaryExpr.Opcode.And)
+              return EvaluateGuardTree(expt.LChild) && EvaluateGuardTree(expt.RChild);
+            if (bexp.Op == BinaryExpr.Opcode.Or)
+              return EvaluateGuardTree(expt.LChild) || EvaluateGuardTree(expt.RChild);
+          }
+          return false;
         }
     }
 }

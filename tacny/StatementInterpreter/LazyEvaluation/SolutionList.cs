@@ -1,74 +1,73 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
-using System.Diagnostics;
+
 namespace LazyTacny {
   public class SolutionList {
 
-    public List<Solution> plist;
+    public List<Solution> Plist;
 
-    private List<List<Solution>> final; // a list of solutions ofr each tactic
+    private List<List<Solution>> _final; // a list of solutions ofr each tactic
 
     public SolutionList() {
-      plist = new List<Solution>();
-      final = new List<List<Solution>>();
+      Plist = new List<Solution>();
+      _final = new List<List<Solution>>();
     }
 
     public SolutionList(Solution solution) {
       Contract.Requires(solution != null);
-      plist = new List<Solution>() { solution };
-      final = new List<List<Solution>>();
+      Plist = new List<Solution> { solution };
+      _final = new List<List<Solution>>();
     }
 
     public void Add(Solution solution) {
-      plist.Add(solution);
+      Plist.Add(solution);
     }
 
     public void AddRange(List<Solution> solutions) {
       // remove non final solutions
       List<Solution> tmp = new List<Solution>();
-      foreach (var item in plist) {
-        if (item.state.DynamicContext.IsResolved())
+      foreach (var item in Plist) {
+        if (item.State.DynamicContext.IsResolved())
           tmp.Add(item);
       }
-      plist.Clear();
-      plist = tmp;
+      Plist.Clear();
+      Plist = tmp;
       //plist.Clear();
-      plist.AddRange(solutions);
+      Plist.AddRange(solutions);
     }
 
     public void AddFinal(List<Solution> solutions) {
-      final.Add(new List<Solution>(solutions.ToArray()));
+      _final.Add(new List<Solution>(solutions.ToArray()));
     }
 
     public bool IsFinal() {
-      foreach (var item in plist)
-        if (!item.isFinal)
+      foreach (var item in Plist)
+        if (!item.IsFinal)
           return false;
       return true;
     }
 
     public void SetIsFinal() {
-      foreach (var item in plist)
-        item.isFinal = true;
+      foreach (var item in Plist)
+        item.IsFinal = true;
     }
 
     public void UnsetFinal() {
-      foreach (var item in plist)
-        item.isFinal = false;
+      foreach (var item in Plist)
+        item.IsFinal = false;
     }
 
     public List<List<Solution>> GetFinal() {
-      return final;
+      return _final;
     }
 
     public void Fin() {
-      if (plist.Count > 0) {
-        AddFinal(plist);
-        plist.Clear();
+      if (Plist.Count > 0) {
+        AddFinal(Plist);
+        Plist.Clear();
       }
 
     }
@@ -76,70 +75,64 @@ namespace LazyTacny {
 
 
   public class Solution {
-    public Atomic state;
-    private Solution _parent = null;
-    public Solution parent {
-      set { _parent = value; }
-      get { return _parent; }
-    }
+    public Atomic State;
+    public Solution Parent { set; get; }
 
-    public bool isFinal = false;
+    public bool IsFinal;
 
     public Solution(Atomic state, Solution parent = null)
         : this(state, false, parent) { }
 
     public Solution(Atomic state, bool isFinal, Solution parent) {
-      this.state = state;
-      this.isFinal = isFinal;
-      this.parent = parent;
+      State = state;
+      IsFinal = isFinal;
+      Parent = parent;
     }
 
     [Pure]
     public bool IsResolved() {
-      return state.DynamicContext.IsResolved();
+      return State.DynamicContext.IsResolved();
     }
 
 
     public Program GenerateProgram(Function func, Program prog) {
-      ClassDecl curDecl;
-      for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++) {
-        curDecl = prog.DefaultModuleDef.TopLevelDecls[i] as ClassDecl;
-        if (curDecl != null) {
-          // scan each member for tactic calls and resolve if found
-          for (int j = 0; j < curDecl.Members.Count; j++) {
-            if (curDecl.Members[i].Name == func.Name)
-              curDecl.Members[i] = func;
-          }
-
-          prog.DefaultModuleDef.TopLevelDecls[i] = Tacny.Program.RemoveTactics(curDecl);
+      for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++)
+      {
+        var curDecl = prog.DefaultModuleDef.TopLevelDecls[i] as ClassDecl;
+        if (curDecl == null) continue;
+        // scan each member for tactic calls and resolve if found
+        for (int j = 0; j < curDecl.Members.Count; j++) {
+          if (curDecl.Members[i].Name == func.Name)
+            curDecl.Members[i] = func;
         }
+
+        prog.DefaultModuleDef.TopLevelDecls[i] = Tacny.Program.RemoveTactics(curDecl);
       }
 
       return prog;
     }
 
-    public string GenerateProgram(ref Dafny.Program prog, bool isFinal = false) {
+    public string GenerateProgram(ref Program prog, bool isFinal = false) {
       Debug.WriteLine("Generating Dafny program");
-      Method method = null;
-      List<Dafny.Program> prog_list = new List<Dafny.Program>();
-      Atomic ac = state.Copy();
-      MemberDecl newMemberDecl = null;
+      var ac = State.Copy();
+      MemberDecl newMemberDecl;
       ac.Fin();
       if (!ac.IsFunction) {
-        method = Tacny.Program.FindMember(prog, ac.DynamicContext.md.Name) as Method;
+        var method = Tacny.Program.FindMember(prog, ac.DynamicContext.md.Name) as Method;
         if (method == null)
           throw new Exception("Method not found");
-        UpdateStmt tac_call = ac.GetTacticCall();
+        UpdateStmt tacCall = ac.GetTacticCall();
         List<Statement> body = method.Body.Body;
-        body = InsertSolution(body, tac_call, ac.GetResolved());
+        body = InsertSolution(body, tacCall, ac.GetResolved());
         if (body == null)
           return null;
         if (!isFinal) {
-          for (int i = 0; i < body.Count; i++) {
-            if (body[i] is UpdateStmt) {
-              if (state.StaticContext.program.IsTacticCall(body[i] as UpdateStmt))
-                body.RemoveAt(i);
-            }
+          for (int i = 0; i < body.Count; i++)
+          {
+            var us = body[i] as UpdateStmt;
+            if (us == null) continue;
+            if (State.StaticContext.program.IsTacticCall(us))
+              body.RemoveAt(i);
           }
         }
 
@@ -147,9 +140,9 @@ namespace LazyTacny {
       } else {
         newMemberDecl = ac.GetNewTarget();
       }
-      ClassDecl curDecl;
-      for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++) {
-        curDecl = prog.DefaultModuleDef.TopLevelDecls[i] as ClassDecl;
+      for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++)
+      {
+        var curDecl = prog.DefaultModuleDef.TopLevelDecls[i] as ClassDecl;
         if (curDecl != null) {
           // scan each member for tactic calls and resolve if found
           for (int j = 0; j < curDecl.Members.Count; j++) {
@@ -168,37 +161,36 @@ namespace LazyTacny {
     }
 
     private static Method GenerateMethod(Method oldMd, List<Statement> body, Method source = null) {
-      Method src = source == null ? oldMd : source;
-      BlockStmt mdBody = new BlockStmt(src.Body.Tok, src.Body.EndTok, body);
-      System.Type type = src.GetType();
+      var src = source ?? oldMd;
+      var mdBody = new BlockStmt(src.Body.Tok, src.Body.EndTok, body);
+      var type = src.GetType();
       if (type == typeof(Lemma))
         return new Lemma(src.tok, src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
         src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
-      else if (type == typeof(CoLemma))
+      if (type == typeof(CoLemma))
         return new CoLemma(src.tok, src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
-        src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
-      else
-        return new Method(src.tok, src.Name, src.HasStaticKeyword, src.IsGhost,
-            src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod, src.Ens, src.Decreases,
-            mdBody, src.Attributes, src.SignatureEllipsis);
+          src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
+      return new Method(src.tok, src.Name, src.HasStaticKeyword, src.IsGhost,
+        src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod, src.Ens, src.Decreases,
+        mdBody, src.Attributes, src.SignatureEllipsis);
     }
 
     public static void PrintSolution(Solution solution) {
-      Dafny.Program prog = solution?.state.StaticContext.program.ParseProgram();
+      var prog = solution?.State.StaticContext.program.ParseProgram();
       solution?.GenerateProgram(ref prog);
-      solution?.state.StaticContext.program.ClearBody(solution.state.DynamicContext.md);
-      Console.WriteLine(String.Format("Tactic call {0} in {1} results: ", solution?.state.DynamicContext.tactic.Name, solution?.state.DynamicContext.md.Name));
-      solution?.state.StaticContext.program.PrintMember(prog, solution.state.StaticContext.md.Name);
+      solution?.State.StaticContext.program.ClearBody(solution.State.DynamicContext.md);
+      Console.WriteLine(
+        $"Tactic call {solution?.State.DynamicContext.tactic.Name} in {solution?.State.DynamicContext.md.Name} results: ");
+      solution?.State.StaticContext.program.PrintMember(prog, solution.State.StaticContext.md.Name);
     }
 
-    private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tac_call, List<Statement> solution) {
-      int index = FindTacCall(body, tac_call);
+    private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tacCall, List<Statement> solution) {
+      int index = FindTacCall(body, tacCall);
       if (index == -1)
         return null;
 
-      var newBody = new List<Statement>();
       var tmp = body.ToArray();
-      newBody = new List<Statement>(tmp);
+      var newBody = new List<Statement>(tmp);
       newBody.RemoveAt(index);
       newBody.InsertRange(index, solution);
 
@@ -206,16 +198,17 @@ namespace LazyTacny {
       return newBody;
     }
 
-    private static int FindTacCall(List<Statement> body, UpdateStmt tac_call) {
-      for (int j = 0; j < body.Count; j++) {
-        
-        if (body[j] is UpdateStmt) {
-          var us = body[j] as UpdateStmt;
-          if (CompareUpdateStmt(us, tac_call))
+    private static int FindTacCall(List<Statement> body, UpdateStmt tacCall) {
+      for (int j = 0; j < body.Count; j++)
+      {
+        var stmt = body[j] as UpdateStmt;
+        if (stmt != null) {
+          var us = stmt;
+          if (CompareUpdateStmt(us, tacCall))
             return j;
         } else if (body[j] is WhileStmt) {
           var us = ((WhileStmt)body[j]).TacAps as UpdateStmt;
-          if (CompareUpdateStmt(us, tac_call))
+          if (CompareUpdateStmt(us, tacCall))
             return j;
         }
       }
@@ -228,10 +221,11 @@ namespace LazyTacny {
       return st1.Tok.line == st2.Tok.line && st1.Tok.col == st2.Tok.col;
     }
 
+/*
     private static TopLevelDecl ExtractContext(MemberDecl md, ClassDecl cd) {
       Dictionary<string, MemberDecl> context = new Dictionary<string, MemberDecl>();
       if (md is Method) {
-        Method method = Util.Copy.CopyMethod(md as Method);
+        Method method = Copy.CopyMethod(md as Method);
         // check what member declarations are called in the pre condition
         List<MaybeFreeExpression> lMfe = method.Req;
         foreach (var mfe in lMfe) {
@@ -240,5 +234,6 @@ namespace LazyTacny {
       }
       return null;
     }
+*/
   }
 }

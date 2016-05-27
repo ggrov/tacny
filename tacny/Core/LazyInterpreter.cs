@@ -1,51 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
-using System.Diagnostics.Contracts;
 using System.Diagnostics;
-
+using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
+using Tacny;
+using Printer = Util.Printer;
+using Program = Tacny.Program;
 
 namespace LazyTacny {
   public class Interpreter {
-    private Tacny.Program tacnyProgram;
-    private SolutionList solution_list = new SolutionList();
+    private readonly Program _tacnyProgram;
+    private readonly SolutionList _solutionList;
 
-    public Interpreter(Tacny.Program tacnyProgram) {
+    public Interpreter(Program tacnyProgram) {
       Contract.Requires(tacnyProgram != null);
-      this.tacnyProgram = tacnyProgram;
-      this.solution_list = new SolutionList();
-      //Console.SetOut(System.IO.TextWriter.Null);
+      _tacnyProgram = tacnyProgram;
+      _solutionList = new SolutionList();
     }
 
-    public Program ResolveProgram() {
+    public Microsoft.Dafny.Program ResolveProgram() {
 
-      if (!tacnyProgram.HasTacticApplications()) {
-        return tacnyProgram.ParseProgram();
+      if (!_tacnyProgram.HasTacticApplications()) {
+        return _tacnyProgram.ParseProgram();
       }
-      foreach (var @class in tacnyProgram.topLevelClasses) {
-        tacnyProgram.currentTopLevelClass = @class;
-        if (tacnyProgram.currentTopLevelClass.tactics.Count < 1)
+      foreach (var @class in _tacnyProgram.TopLevelClasses) {
+        _tacnyProgram.CurrentTopLevelClass = @class;
+        if (_tacnyProgram.CurrentTopLevelClass.Tactics.Count < 1)
           continue;
-        foreach (var member in tacnyProgram.members) {
+        foreach (var member in _tacnyProgram.Members) {
           var res = LazyScanMemberBody(member.Value);
-          if (res != null) {
-            solution_list.Add(res);
-            solution_list.Fin();
-
-          }
+          if (res == null) continue;
+          _solutionList.Add(res);
+          _solutionList.Fin();
         }
       }
       // temp hack
       List<Solution> final = new List<Solution>();
-      foreach (var solution in solution_list.GetFinal())
+      foreach (var solution in _solutionList.GetFinal())
         final.Add(solution[0]);
 
-      Dafny.Program prog = tacnyProgram.ParseProgram();
+      Microsoft.Dafny.Program prog = _tacnyProgram.ParseProgram();
       foreach (var solution in final) {
         solution.GenerateProgram(ref prog);
       }
-      tacnyProgram.dafnyProgram = prog;
+      _tacnyProgram.DafnyProgram = prog;
 
       return prog;
 
@@ -54,62 +52,61 @@ namespace LazyTacny {
     private Solution LazyScanMemberBody(MemberDecl md) {
       Contract.Requires(md != null);
 
-      Debug.WriteLine(String.Format("Scanning member {0} body", md.Name));
-      if (md is Function) {
-        var fun = md as Function;
-        Tacny.ExpressionTree expt = null;
+      Debug.WriteLine($"Scanning member {md.Name} body");
+      var function = md as Function;
+      if (function != null) {
+        var fun = function;
         if (fun.Body == null)
           return null;
-        expt = Tacny.ExpressionTree.ExpressionToTree(fun.Body);
-        expt.FindAndResolveTacticApplication(tacnyProgram, fun);
+        var expt = ExpressionTree.ExpressionToTree(fun.Body);
+        expt.FindAndResolveTacticApplication(_tacnyProgram, fun);
         /* No reason ot generate new solution
          * if nothing has been changed 
          */
-        if (!expt.modified)
+        if (!expt.Modified)
           return null;
         var res = expt.TreeToExpression();
         var newFun = new Function(fun.tok, fun.Name, fun.HasStaticKeyword, fun.IsProtected, fun.IsGhost, fun.TypeArgs, fun.Formals, fun.ResultType, fun.Req, fun.Reads, fun.Ens, fun.Decreases, res, fun.Attributes, fun.SignatureEllipsis);
-        var ac = new Atomic();
-        ac.IsFunction = true;
-        ac.DynamicContext.newTarget = newFun;
+        var ac = new Atomic
+        {
+          IsFunction = true,
+          DynamicContext = {newTarget = newFun}
+        };
         return new Solution(ac);
 
-      } else if (md is Method) {
-        Method m = md as Method;
-        if (m.Body == null)
-          return null;
+      }
+      var m = md as Method;
+      if (m?.Body == null)
+        return null;
 
-        List<IVariable> variables = new List<IVariable>();
-        List<IVariable> resolved = tacnyProgram.GetResolvedVariables(md);
-        variables.AddRange(m.Ins);
-        variables.AddRange(m.Outs);
-        resolved.AddRange(m.Ins); // add input arguments as resolved variables
-
-        // does not work for multiple tactic applications
-        foreach (var st in m.Body.Body) {
-          UpdateStmt us = null;
-          WhileStmt ws = null;
-          // register local variables
-          if (st is VarDeclStmt) {
-            VarDeclStmt vds = st as VarDeclStmt;
+      List<IVariable> variables = new List<IVariable>();
+      List<IVariable> resolved = _tacnyProgram.GetResolvedVariables(md);
+      variables.AddRange(m.Ins);
+      variables.AddRange(m.Outs);
+      resolved.AddRange(m.Ins); // add input arguments as resolved variables
+      resolved.AddRange(m.Outs);
+      // does not work for multiple tactic applications
+      foreach (var st in m.Body.Body) {
+        UpdateStmt us = null;
+        WhileStmt ws = null;
+        // register local variables
+        if (st is VarDeclStmt) {
+          VarDeclStmt vds = st as VarDeclStmt;
+          variables.AddRange(vds.Locals);
+        } else if (st is UpdateStmt) {
+          us = st as UpdateStmt;
+        } else if (st is WhileStmt) {
+          ws = st as WhileStmt;
+          us = ws.TacAps as UpdateStmt;
+          foreach (var wst in ws.Body.Body) {
+            if (!(wst is VarDeclStmt)) continue;
+            var vds = wst as VarDeclStmt;
             variables.AddRange(vds.Locals);
-          } else if (st is UpdateStmt) {
-            us = st as UpdateStmt;
-          } else if (st is WhileStmt) {
-            ws = st as WhileStmt;
-            us = ws.TacAps as UpdateStmt;
-            foreach (var wst in ws.Body.Body) {
-              if (st is VarDeclStmt) {
-                VarDeclStmt vds = st as VarDeclStmt;
-                variables.AddRange(vds.Locals);
-              }
-            }
-          }
-          if (us != null && this.tacnyProgram.IsTacticCall(us)) {
-            Debug.WriteLine("Tactic call found");
-            return ResolveTactic(variables, resolved, us, md, ws);
           }
         }
+        if (us == null || !_tacnyProgram.IsTacticCall(us)) continue;
+        Debug.WriteLine("Tactic call found");
+        return ResolveTactic(variables, resolved, us, md, ws);
       }
       return null;
     }
@@ -117,11 +114,11 @@ namespace LazyTacny {
     private Solution ResolveTactic(List<IVariable> variables, List<IVariable> resolved, UpdateStmt us, MemberDecl md, WhileStmt ws = null) {
       try {
 
-        Solution result = Atomic.ResolveTactic(us, md, tacnyProgram, variables, resolved, ws);
-        this.tacnyProgram.currentDebug.Fin();
+        var result = Atomic.ResolveTactic(us, md, _tacnyProgram, variables, resolved, ws);
+        _tacnyProgram.CurrentDebug.Fin();
         return result;
       } catch (Exception e) {
-        Util.Printer.Error(e.Message);
+        Printer.Error(e.Message);
         return null;
       }
     }

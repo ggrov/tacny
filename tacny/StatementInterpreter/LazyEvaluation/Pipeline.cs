@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
-using Microsoft.Boogie;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Runtime.CompilerServices;
+using System.Linq;
+using System.Threading;
+using Microsoft.Boogie;
+using Microsoft.Dafny;
+using Util;
 
 namespace Tacny
 {
@@ -16,7 +13,7 @@ namespace Tacny
     {
         private static Mutex mut = new Mutex();
 
-        public static PipelineOutcome VerifyProgram(Dafny.Program program, IList<string> fileNames, string programId, out PipelineStatistics stats, out List<ErrorInformation> errorList, out ErrorInformation errorInfo)
+        public PipelineOutcome VerifyProgram(Microsoft.Dafny.Program program, IList<string> fileNames, string programId, out PipelineStatistics stats, out List<ErrorInformation> errorList, out ErrorInformation errorInfo)
         {
             Microsoft.Boogie.Program boogieProgram;
             Translate(program, fileNames, programId, Thread.CurrentThread.Name, out boogieProgram);
@@ -31,10 +28,10 @@ namespace Tacny
         /// Translates Dafny program to Boogie program
         /// </summary>
         /// <returns>Exit value</returns>
-        private static void Translate(Dafny.Program dafnyProgram, IList<string> fileNames, string programId, string uniqueIdPrefix, out Microsoft.Boogie.Program boogieProgram)
+        private  void Translate(Microsoft.Dafny.Program dafnyProgram, IList<string> fileNames, string programId, string uniqueIdPrefix, out Microsoft.Boogie.Program boogieProgram)
         {
 
-            Dafny.Translator translator = new Dafny.Translator();
+            Translator translator = new Translator();
             translator.InsertChecksums = true;
             translator.UniqueIdPrefix = uniqueIdPrefix;
             boogieProgram = translator.Translate(dafnyProgram);
@@ -44,7 +41,7 @@ namespace Tacny
         /// Pipeline the boogie program to Dafny where it is valid
         /// </summary>
         /// <returns>Exit value</returns>
-        private static PipelineOutcome BoogiePipeline(Microsoft.Boogie.Program program, IList<string> fileNames, string programId, out PipelineStatistics stats, out List<ErrorInformation> errorList)
+        private PipelineOutcome BoogiePipeline(Microsoft.Boogie.Program program, IList<string> fileNames, string programId, out PipelineStatistics stats, out List<ErrorInformation> errorList)
         {
             Contract.Requires(program != null);
             Contract.Ensures(0 <= Contract.ValueAtReturn(out stats).InconclusiveCount && 0 <= Contract.ValueAtReturn(out stats).TimeoutCount);
@@ -58,7 +55,7 @@ namespace Tacny
             errorList = new List<ErrorInformation>();
             stats = new PipelineStatistics();
             
-            if (Util.TacnyOptions.O.ParallelExecution)
+            if (TacnyOptions.O.ParallelExecution)
                 mut.WaitOne();
 
             PipelineOutcome oc = ExecutionEngine.ResolveAndTypecheck(program, bplFileName, out ltc, out mtc);
@@ -78,11 +75,11 @@ namespace Tacny
                         tmp.Add(errorInfo);
                     });
                     errorList.AddRange(tmp);
-                    if (Util.TacnyOptions.O.ParallelExecution)
+                    if (TacnyOptions.O.ParallelExecution)
                         mut.ReleaseMutex();
                     return oc;
                 default:
-                    if (Util.TacnyOptions.O.ParallelExecution)
+                    if (TacnyOptions.O.ParallelExecution)
                         mut.ReleaseMutex();
                     return oc;
                     //Contract.Assert(false); throw new cce.UnreachableException();  // unexpected outcome

@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
-using Dafny = Microsoft.Dafny;
+﻿using System.Collections.Generic;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
 
 namespace Tacny
 {
@@ -25,7 +19,7 @@ namespace Tacny
             List<Expression> args = null;
             IVariable lv = null;
             InitArgs(st, out lv, out args);
-            Dafny.LiteralExpr lit = new Dafny.LiteralExpr(st.Tok, true);
+            LiteralExpr lit = new LiteralExpr(st.Tok, true);
             localContext.AddLocal(lv, lit);
         }
 

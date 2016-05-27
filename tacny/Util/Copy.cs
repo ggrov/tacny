@@ -1,10 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
-using Microsoft.Boogie;
-using System;
 
 namespace Util {
   /// <summary>
@@ -43,12 +40,13 @@ namespace Util {
     public static UpdateStmt CopyUpdateStmt(UpdateStmt stmt) {
       ExprRhs old_exp = stmt.Rhss[0] as ExprRhs;
       ApplySuffix old_aps = old_exp.Expr as ApplySuffix;
-      Dafny.LiteralExpr literal = old_exp.Expr as Dafny.LiteralExpr;
+      LiteralExpr literal = old_exp.Expr as LiteralExpr;
       if (old_aps != null) {
         ApplySuffix aps = CopyExpression(old_aps) as ApplySuffix;
-        return new UpdateStmt(stmt.Tok, stmt.EndTok, CopyExpressionList(stmt.Lhss), new List<AssignmentRhs>() { new ExprRhs(aps) });
-      } else if (literal != null) {
-        return new UpdateStmt(stmt.Tok, stmt.EndTok, CopyExpressionList(stmt.Lhss), new List<AssignmentRhs>() { new ExprRhs(CopyExpression(literal)) });
+        return new UpdateStmt(stmt.Tok, stmt.EndTok, CopyExpressionList(stmt.Lhss), new List<AssignmentRhs> { new ExprRhs(aps) });
+      }
+      if (literal != null) {
+        return new UpdateStmt(stmt.Tok, stmt.EndTok, CopyExpressionList(stmt.Lhss), new List<AssignmentRhs> { new ExprRhs(CopyExpression(literal)) });
       }
 
       return null;
@@ -204,7 +202,7 @@ namespace Util {
     //todo test whether oldDict.values require deep copy
     public static Dictionary<Statement, Statement> CopyStatementDict(Dictionary<Statement, Statement> oldDict) {
       List<Statement> us_keys = new List<Statement>(oldDict.Keys);
-      List<Statement> us_values = Util.Copy.CopyStatementList(new List<Statement>(oldDict.Values));
+      List<Statement> us_values = CopyStatementList(new List<Statement>(oldDict.Values));
       Dictionary<Statement, Statement> newDict = us_keys.ToDictionary(x => x, x => us_values[us_keys.IndexOf(x)]);
       return newDict;
     }

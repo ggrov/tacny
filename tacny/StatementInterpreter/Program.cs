@@ -1,129 +1,120 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.CodeDom.Compiler;
-using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
-using Microsoft.Boogie;
-using Bpl = Microsoft.Boogie;
-using System.Diagnostics.Contracts;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
+using System.IO;
 using System.Linq;
+using System.Text;
+using Microsoft.Dafny;
+using Util;
+using Bpl = Microsoft.Boogie;
+using Printer = Util.Printer;
 
 namespace Tacny {
 
   public class TopLevelClassDeclaration {
-    public readonly Dictionary<string, ITactic> tactics;
-    public readonly Dictionary<string, MemberDecl> members;
+    public readonly Dictionary<string, ITactic> Tactics;
+    public readonly Dictionary<string, MemberDecl> Members;
 
 
     public TopLevelClassDeclaration() {
-      tactics = new Dictionary<string, ITactic>();
-      members = new Dictionary<string, MemberDecl>();
+      Tactics = new Dictionary<string, ITactic>();
+      Members = new Dictionary<string, MemberDecl>();
 
     }
   }
   public class Program {
     public class DebugData {
-      public string tactic = null;
-      public string method = null;
-      public int BadBranchCount = 0;      // number of branches where resolution failed
-      public int GoodBranchCount = 0;     // number of branches where resolution succeeded
-      public int VerificationFailure = 0; // number of times verification failed
-      public int VerificationSucc = 0;    // number of times verificaiton succeeded
-      public int TotalBranchCount = 0;    // total number of branches
-      public int CallsToBoogie = 0;       // number of calls made to Boogie during tactic resolution
-      public int CallsToDafny = 0;        // number of calls to Dafny resolver
-      public double StartTime = 0;           // Unix timestamp when the tactic resolution begins
-      public double EndTime = 0;             // Unix timestamp when the tactic resolution finishes
-      public double TimeAtBoogie = 0;
-      public double TimeAtDafny = 0;
-      private bool PrintHeader = true;
+      public string Tactic;
+      public string Method;
+      public int BadBranchCount;      // number of branches where resolution failed
+      public int GoodBranchCount;     // number of branches where resolution succeeded
+      public int VerificationFailure; // number of times verification failed
+      public int VerificationSucc;    // number of times verificaiton succeeded
+      public int TotalBranchCount;    // total number of branches
+      public int CallsToBoogie;       // number of calls made to Boogie during tactic resolution
+      public int CallsToDafny;        // number of calls to Dafny resolver
+      public double StartTime;           // Unix timestamp when the tactic resolution begins
+      public double EndTime;             // Unix timestamp when the tactic resolution finishes
+      public double TimeAtBoogie;
+      public double TimeAtDafny;
+      private bool _printHeader = true;
 
       public DebugData(string tactic, string method) {
-        StartTime = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
-        this.tactic = tactic;
-        this.method = method;
+        StartTime = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
+        Tactic = tactic;
+        Method = method;
       }
 
       public void Fin() {
-        if (EndTime == 0)
-          EndTime = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
+        if (Math.Abs(EndTime) < 0)
+          EndTime = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
       }
       public void PrintDebugData() {
         Fin();
-        System.Text.StringBuilder builder = new System.Text.StringBuilder();
-        builder.AppendLine(string.Format("Method: {0}", method));
-        builder.AppendLine(string.Format("Tactic: {0}", tactic));
-        builder.AppendLine(string.Format("Execution time: {0} ms", EndTime - StartTime));
-        builder.AppendLine(string.Format("Generated branches: {0}", TotalBranchCount));
-        builder.AppendLine(string.Format("Generated invalid branches: {0}", BadBranchCount));
-        builder.AppendLine(string.Format("Generated valid branches: {0}", GoodBranchCount));
-        builder.AppendLine(string.Format("Verification failed {0} times", VerificationFailure));
-        builder.AppendLine(string.Format("Verification succeeded {0} times", VerificationSucc));
-        builder.AppendLine(string.Format("Times Boogie was called: {0}", CallsToBoogie));
-        builder.AppendLine(string.Format("Time waited for Boogie: {0} ms", TimeAtBoogie));
-        builder.AppendLine(string.Format("Times Dafny was called: {0} ms", CallsToDafny));
-        builder.AppendLine(string.Format("Time waited for Dafny: {0}ms", CallsToDafny));
-        Util.Printer.P.PrintDebugMessage(builder.ToString());
+        var builder = new StringBuilder();
+        builder.AppendLine($"Method: {Method}");
+        builder.AppendLine($"Tactic: {Tactic}");
+        builder.AppendLine($"Execution time: {EndTime - StartTime} ms");
+        builder.AppendLine($"Generated branches: {TotalBranchCount}");
+        builder.AppendLine($"Generated invalid branches: {BadBranchCount}");
+        builder.AppendLine($"Generated valid branches: {GoodBranchCount}");
+        builder.AppendLine($"Verification failed {VerificationFailure} times");
+        builder.AppendLine($"Verification succeeded {VerificationSucc} times");
+        builder.AppendLine($"Times Boogie was called: {CallsToBoogie}");
+        builder.AppendLine($"Time waited for Boogie: {TimeAtBoogie} ms");
+        builder.AppendLine($"Times Dafny was called: {CallsToDafny} ms");
+        builder.AppendLine($"Time waited for Dafny: {CallsToDafny}ms");
+        Printer.P.PrintDebugMessage(builder.ToString());
       }
 
       public void PrintCsvDebugData(bool printHeader) {
         Fin();
-        System.Text.StringBuilder builder = new System.Text.StringBuilder();
+        var builder = new StringBuilder();
         if (printHeader) {
           builder.AppendLine("Tactic, Method, Execution time, Generated Nodes, Invalid nodes, Valid nodes, Verification Failure, Verification success, Boogie calls, Boogie Wait, Dafny Calls, Dafny Wait");
         }
-        builder.AppendLine(string.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}",
-            tactic, method,
-            EndTime - StartTime, TotalBranchCount,
-            BadBranchCount, GoodBranchCount,
-            VerificationFailure, VerificationSucc,
-            CallsToBoogie, TimeAtBoogie, CallsToDafny, TimeAtDafny));
-        Util.Printer.P.PrintCsvData(builder.ToString());
+        builder.AppendLine(
+          $"{Tactic}, {Method}, {EndTime - StartTime}, {TotalBranchCount}, {BadBranchCount}, {GoodBranchCount}, {VerificationFailure}, {VerificationSucc}, {CallsToBoogie}, {TimeAtBoogie}, {CallsToDafny}, {TimeAtDafny}");
+        Printer.P.PrintCsvData(builder.ToString());
       }
     }
 
 
+    private readonly IList<string> _fileNames;
+    public string ProgramId { set; get; }
 
-    const bool DEBUG = true;
-    private IList<string> fileNames;
-    private string _programId;
-    public string programId {
-      set { _programId = value; }
-      get { return _programId; }
-    }
-    private readonly Dafny.Program _original;
-    private Dafny.Program _program;
-    public Dafny.Program dafnyProgram {
+    private readonly Microsoft.Dafny.Program _original;
+    private Microsoft.Dafny.Program _program;
+    public Microsoft.Dafny.Program DafnyProgram {
       set {
-        resolved = false;
+        Resolved = false;
         _program = value;
-        errorInfo = null;
-        stats = null;
+        ErrorInfo = null;
+        Stats = null;
       }
       get {
         return _program;
       }
 
     }
-    public ErrorInformation errorInfo;
-    public List<ErrorInformation> errList;
-    public PipelineOutcome po;
-    public PipelineStatistics stats;
-    public bool resolved = false;
-    public List<TopLevelClassDeclaration> topLevelClasses;
-    public TopLevelClassDeclaration currentTopLevelClass;
-    public Dictionary<string, ITactic> tactics { get { return currentTopLevelClass.tactics; } }
-    public Dictionary<string, MemberDecl> members { get { return currentTopLevelClass.members; } }
-    public List<DatatypeDecl> globals;
-    public DebugData currentDebug;
-    public List<DebugData> debugDataList;
+    public Bpl.ErrorInformation ErrorInfo;
+    public List<Bpl.ErrorInformation> ErrList;
+    public Bpl.PipelineOutcome Po;
+    public Bpl.PipelineStatistics Stats;
+    public bool Resolved;
+    public List<TopLevelClassDeclaration> TopLevelClasses;
+    public TopLevelClassDeclaration CurrentTopLevelClass;
+    public Dictionary<string, ITactic> Tactics => CurrentTopLevelClass.Tactics;
+    public Dictionary<string, MemberDecl> Members => CurrentTopLevelClass.Members;
+    public List<DatatypeDecl> Globals;
+    public DebugData CurrentDebug;
+    public List<DebugData> DebugDataList;
 
 
     public void PrintAllDebugData(bool isCsv = false) {
       bool printHeader = true;
-      foreach (var item in debugDataList) {
+      foreach (var item in DebugDataList) {
         if (isCsv) {
           item.PrintCsvDebugData(printHeader);
           printHeader = false;
@@ -142,12 +133,12 @@ namespace Tacny {
     }
 
 
-    private void IncBadBranchCount(DebugData debugData) {
+    private static void IncBadBranchCount(DebugData debugData) {
       if (debugData != null)
         debugData.BadBranchCount++;
     }
 
-    private void IncGoodBranchCount(DebugData debugData) {
+    private static void IncGoodBranchCount(DebugData debugData) {
       if (debugData != null)
         debugData.GoodBranchCount++;
     }
@@ -157,32 +148,32 @@ namespace Tacny {
         debugData.TotalBranchCount++;
     }
 
-    private void IncVerificationFailure(DebugData debugData) {
+    private static void IncVerificationFailure(DebugData debugData) {
       if (debugData != null)
         debugData.VerificationFailure++;
     }
 
-    private void IncVerificationSuccess(DebugData debugData) {
+    private static void IncVerificationSuccess(DebugData debugData) {
       if (debugData != null)
         debugData.VerificationSucc++;
     }
 
-    private void IncCallsToBoogie(DebugData debugData) {
+    private static void IncCallsToBoogie(DebugData debugData) {
       if (debugData != null)
         debugData.CallsToBoogie++;
     }
 
-    private void IncCallsToDafny(DebugData debugData) {
-      if(debugData != null)
+    private static void IncCallsToDafny(DebugData debugData) {
+      if (debugData != null)
         debugData.CallsToDafny++;
     }
 
-    private void IncTimeAtBoogie(DebugData debugData, double time) {
+    public void IncTimeAtBoogie(DebugData debugData, double time) {
       if (debugData != null)
         debugData.TimeAtBoogie += time;
     }
 
-    private void IncTimeAtDafny(DebugData debugData, double time) {
+    private static void IncTimeAtDafny(DebugData debugData, double time) {
       if (debugData != null)
         debugData.TimeAtDafny += time;
     }
@@ -190,12 +181,12 @@ namespace Tacny {
     public void SetCurrent(ITactic tac, MemberDecl md) {
       Contract.Requires(tac != null);
       Contract.Requires(md != null);
-      DebugData dd = debugDataList.Where(i => i.tactic == tac.Name && i.method == md.Name).LastOrDefault();
+      var dd = DebugDataList.LastOrDefault(i => i.Tactic == tac.Name && i.Method == md.Name);
       if (dd == null) {
         dd = new DebugData(tac.Name, md.Name);
-        debugDataList.Add(dd);
+        DebugDataList.Add(dd);
       }
-      currentDebug = dd;
+      CurrentDebug = dd;
     }
 
     public Program(IList<string> fileNames, string programId) {
@@ -203,30 +194,30 @@ namespace Tacny {
       Contract.Requires(programId != null);
 
 
-      this.fileNames = fileNames;
-      this.programId = programId;
+      _fileNames = fileNames;
+      ProgramId = programId;
       string err = ParseCheck(fileNames, programId, out _original);
       if (err != null)
         throw new ArgumentException(err);
-      dafnyProgram = ParseProgram();
+      DafnyProgram = ParseProgram();
 
       Init();
     }
 
-    public Program(IList<string> fileNames, string programId, Dafny.Program program) {
-      this.fileNames = fileNames;
-      this.programId = programId;
-      this._original = program;
-      this.dafnyProgram = program;
+    public Program(IList<string> fileNames, string programId, Microsoft.Dafny.Program program) {
+      _fileNames = fileNames;
+      ProgramId = programId;
+      _original = program;
+      DafnyProgram = program;
       Init();
     }
 
     private void Init() {
-      debugDataList = new List<DebugData>();
-      topLevelClasses = new List<TopLevelClassDeclaration>();
-      globals = new List<DatatypeDecl>();
+      DebugDataList = new List<DebugData>();
+      TopLevelClasses = new List<TopLevelClassDeclaration>();
+      Globals = new List<DatatypeDecl>();
 
-      foreach (var item in dafnyProgram.DefaultModuleDef.TopLevelDecls) {
+      foreach (var item in DafnyProgram.DefaultModuleDef.TopLevelDecls) {
 
         ClassDecl curDecl = item as ClassDecl;
         if (curDecl != null) {
@@ -235,21 +226,21 @@ namespace Tacny {
           foreach (var member in curDecl.Members) {
             Tactic tac = member as Tactic;
             if (tac != null)
-              temp.tactics.Add(tac.Name, tac);
+              temp.Tactics.Add(tac.Name, tac);
             else {
               var tacFun = member as TacticFunction;
               if (tacFun != null)
-                temp.tactics.Add(tacFun.Name, tacFun);
+                temp.Tactics.Add(tacFun.Name, tacFun);
               else
-                temp.members.Add(member.Name, member);
+                temp.Members.Add(member.Name, member);
             }
 
           }
-          topLevelClasses.Add(temp);
+          TopLevelClasses.Add(temp);
         } else {
           DatatypeDecl dd = item as DatatypeDecl;
           if (dd != null)
-            globals.Add(dd);
+            Globals.Add(dd);
         }
       }
     }
@@ -259,7 +250,7 @@ namespace Tacny {
     /// </summary>
     /// <returns></returns>
     public Program NewProgram() {
-      return new Program(fileNames, programId, _original);
+      return new Program(_fileNames, ProgramId, _original);
 
     }
 
@@ -267,76 +258,77 @@ namespace Tacny {
     /// Create new instance of the working Dafny.Program
     /// </summary>
     /// <returns>Instance of dafny.Program</returns>
-    public Dafny.Program ParseProgram() {
+    public Microsoft.Dafny.Program ParseProgram() {
       //Dafny.Program prog;
       //ParseCheck(fileNames, programId, out prog);
       Cloner cl = new Cloner();
-      ModuleDecl module = new Dafny.LiteralModuleDecl(cl.CloneModuleDefinition(_original.DefaultModuleDef, _original.Name), null);
+      ModuleDecl module = new LiteralModuleDecl(cl.CloneModuleDefinition(_original.DefaultModuleDef, _original.Name), null);
 
-      this.dafnyProgram = new Dafny.Program(_original.Name, module, _original.BuiltIns);
-      return dafnyProgram;
+      DafnyProgram = new Microsoft.Dafny.Program(_original.Name, module, _original.BuiltIns);
+      return DafnyProgram;
     }
 
     public void VerifyProgram() {
-      if (!resolved)
+      if (!Resolved)
         ResolveProgram();
-      VerifyProgram(dafnyProgram);
+      VerifyProgram(DafnyProgram);
     }
 
-    public void VerifyProgram(Dafny.Program prog) {
+    public void VerifyProgram(Microsoft.Dafny.Program prog) {
       Debug.WriteLine("Verifying Dafny program");
 
-      IncCallsToBoogie(currentDebug);
+      IncCallsToBoogie(CurrentDebug);
       //disable Dafny output
       var cOut = Console.Out;
-    //  Console.SetOut(TextWriter.Null);
-      var start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
-      po = Pipeline.VerifyProgram(prog, fileNames, programId, out stats, out errList, out errorInfo);
-      var end = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
+      //  Console.SetOut(TextWriter.Null);
+      double start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
+      var pl=  new Pipeline();
+      Po = pl.VerifyProgram(prog, _fileNames, ProgramId, out Stats, out ErrList, out ErrorInfo);
+      double end = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       Console.SetOut(cOut);
-      IncTimeAtBoogie(currentDebug, end - start);
-      if (stats.ErrorCount == 0) {
+      IncTimeAtBoogie(CurrentDebug, end - start);
+      if (Stats.ErrorCount == 0) {
         Debug.WriteLine("Dafny program VERIFIED");
-        IncVerificationSuccess(currentDebug);
+        IncVerificationSuccess(CurrentDebug);
       } else {
         Debug.WriteLine("Dafny program NOT VERIFIED");
-        IncVerificationFailure(currentDebug);
+        IncVerificationFailure(CurrentDebug);
       }
 
     }
 
     public bool ResolveProgram() {
-      if (ResolveProgram(dafnyProgram) == 0)
-        resolved = true;
-      return resolved;
+      if (ResolveProgram(DafnyProgram) == 0)
+        Resolved = true;
+      return Resolved;
     }
 
-    public int ResolveProgram(Dafny.Program program) {
+    public int ResolveProgram(Microsoft.Dafny.Program program) {
       Debug.WriteLine("Resolving Dafny program");
 
-      IncCallsToDafny(currentDebug);
+      IncCallsToDafny(CurrentDebug);
       //disable Dafny output
       var cOut = Console.Out;
-      Console.SetOut(TextWriter.Null);
-      Dafny.Resolver r = new Dafny.Resolver(program);
+      //Console.SetOut(TextWriter.Null);
+      Resolver r = new Resolver(program);
       var start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       r.ResolveProgram(program);
       var end = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       Console.SetOut(cOut);
-      IncTimeAtDafny(currentDebug, end - start);
+      IncTimeAtDafny(CurrentDebug, end - start);
       if (r.ErrorCount != 0) {
         Debug.WriteLine("Resolution FAILED");
         Debug.WriteLine("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
-        IncBadBranchCount(currentDebug);
+        IncBadBranchCount(CurrentDebug);
       } else {
         Debug.WriteLine("Resolution SUCCESSFUL");
-        IncGoodBranchCount(currentDebug);
+        IncGoodBranchCount(CurrentDebug);
       }
 
       return r.ErrorCount;
     }
 
-    public static MemberDecl FindMember(Dafny.Program program, string name) {
+    public static MemberDecl FindMember(Microsoft.Dafny.Program program, string name) {
       foreach (var item in program.DefaultModuleDef.TopLevelDecls) {
         ClassDecl cd = item as ClassDecl;
         if (cd != null)
@@ -348,41 +340,28 @@ namespace Tacny {
       return null;
     }
 
-    public List<DatatypeDecl> GetGlobals(Dafny.Program prog) {
-      List<DatatypeDecl> data = new List<DatatypeDecl>();
-      foreach (TopLevelDecl d in prog.DefaultModuleDef.TopLevelDecls) {
-        DatatypeDecl dd = d as DatatypeDecl;
-        if (dd != null)
-          data.Add(dd);
-      }
-
-      return data;
+    public List<DatatypeDecl> GetGlobals(Microsoft.Dafny.Program prog) {
+      return prog.DefaultModuleDef.TopLevelDecls.OfType<DatatypeDecl>().ToList();
     }
 
-    public Token GetErrorToken() {
-      if (errorInfo != null)
-        return (Token)errorInfo.Tok;
-
-      return null;
+    public Bpl.Token GetErrorToken() {
+      return (Bpl.Token)ErrorInfo?.Tok;
     }
 
     public bool HasError() {
-      if (stats != null)
-        return stats.ErrorCount > 0;
+      if (Stats != null)
+        return Stats.ErrorCount > 0;
 
       return true;
     }
 
     public void ClearBody(MemberDecl md) {
-      ClearBody(md, dafnyProgram);
+      ClearBody(md, DafnyProgram);
     }
 
     public static TopLevelDecl RemoveTactics(ClassDecl cd) {
       Contract.Requires(cd != null);
-      List<MemberDecl> mdl = new List<MemberDecl>();
-      foreach (MemberDecl md in cd.Members)
-        if (!(md is ITactic))
-          mdl.Add(md);
+      var mdl = cd.Members.Where(md => !(md is ITactic)).ToList();
 
       return new ClassDecl(cd.tok, cd.Name, cd.Module, cd.TypeArgs, mdl, cd.Attributes, cd.TraitsTyp);
     }
@@ -390,52 +369,46 @@ namespace Tacny {
     /// <summary>
     /// Remove unresolved tactic calls from the program
     /// </summary>
+    /// <param name="md"></param>
     /// <param name="program">Dafny Program</param>
-    public void ClearBody(MemberDecl md, Dafny.Program program) {
+    public void ClearBody(MemberDecl md, Microsoft.Dafny.Program program) {
       foreach (var item in program.DefaultModuleDef.TopLevelDecls) {
-        ClassDecl cd = item as ClassDecl;
-        if (cd != null) {
-          foreach (var member in cd.Members) {
-            Method m = member as Method;
-            if (m != null && m.Name != md.Name) {
-              m.Body = null;
-            }
+        var cd = item as ClassDecl;
+        if (cd == null) continue;
+        foreach (var member in cd.Members) {
+          var m = member as Method;
+          if (m != null && m.Name != md.Name) {
+            m.Body = null;
           }
         }
       }
     }
 
-    // @TODO this could be optimised to hold the resolved data for all the program
+    // @TODO this could be optimised to hold the resolved data for all programs
     public List<IVariable> GetResolvedVariables(MemberDecl md) {
       ParseProgram();
       ClearBody(md);
-      for (int i = 0; i < dafnyProgram.DefaultModuleDef.TopLevelDecls.Count; i++) {
-        var curDecl = dafnyProgram.DefaultModuleDef.TopLevelDecls[i] as ClassDecl;
+      for (var i = 0; i < DafnyProgram.DefaultModuleDef.TopLevelDecls.Count; i++) {
+        var curDecl = DafnyProgram.DefaultModuleDef.TopLevelDecls[i] as ClassDecl;
         if (curDecl != null) {
-          dafnyProgram.DefaultModuleDef.TopLevelDecls[i] = RemoveTactics(curDecl);
+          DafnyProgram.DefaultModuleDef.TopLevelDecls[i] = RemoveTactics(curDecl);
         }
       }
       ResolveProgram();
       List<IVariable> result = null;
-      foreach (var item in this.dafnyProgram.DefaultModuleDef.TopLevelDecls) {
-        ClassDecl cd = item as ClassDecl;
-        if (cd != null) {
-          foreach (var member in cd.Members) {
-            Method m = member as Method;
-            if (m == null)
-              continue;
-            if (m.Name == md.Name) {
-              result = new List<IVariable>();
-              foreach (var stmt in m.Body.Body) {
-                VarDeclStmt vds = stmt as VarDeclStmt;
-                if (vds != null) {
-                  foreach (var local in vds.Locals) {
-                    if (local.Type != null)
-                      result.Add(local);
-                  }
-                }
-              }
-            }
+      foreach (var item in DafnyProgram.DefaultModuleDef.TopLevelDecls) {
+        var cd = item as ClassDecl;
+        if (cd == null) continue;
+        foreach (var member in cd.Members) {
+          var m = member as Method;
+          if (m == null)
+            continue;
+          if (m.Name != md.Name) continue;
+          result = new List<IVariable>();
+          foreach (var stmt in m.Body.Body) {
+            var vds = stmt as VarDeclStmt;
+            if (vds == null) continue;
+            result.AddRange(vds.Locals.Where(local => local.Type != null));
           }
         }
       }
@@ -450,9 +423,7 @@ namespace Tacny {
       return GetSignature(asx);
     }
     public static string GetSignature(ApplySuffix aps) {
-      if (aps == null)
-        return null;
-      return aps.Lhs.tok.val;
+      return aps?.Lhs.tok.val;
     }
     public bool IsTacticCall(UpdateStmt us) {
       return IsTacticCall(GetSignature(us));
@@ -465,23 +436,23 @@ namespace Tacny {
     public bool IsTacticCall(string name) {
       if (name == null)
         return false;
-      return tactics.ContainsKey(name);
+      return Tactics.ContainsKey(name);
     }
 
     public bool IsTacticFuntionCall(UpdateStmt us) {
       string name = GetSignature(us);
       if (name == null)
         return false;
-      return !tactics.ContainsKey(name) ? false : tactics[name] is TacticFunction;
+      return Tactics.ContainsKey(name) && Tactics[name] is TacticFunction;
 
     }
 
     public ITactic GetTactic(string name) {
       Contract.Requires(name != null);
-      if (!tactics.ContainsKey(name))
+      if (!Tactics.ContainsKey(name))
         return null;
 
-      return tactics[name];
+      return Tactics[name];
     }
 
     public ITactic GetTactic(UpdateStmt us) {
@@ -499,24 +470,24 @@ namespace Tacny {
 
     public MemberDecl GetMember(string name) {
       Contract.Requires(name != null);
-      if (!members.ContainsKey(name))
+      if (!Members.ContainsKey(name))
         return null;
-      return members[name];
+      return Members[name];
     }
 
     #region Parser
     /// <summary>
     /// Returns null on success, or an error string otherwise.
     /// </summary>
-    public string ParseCheck(IList<string/*!*/>/*!*/ fileNames, string/*!*/ programName, out Dafny.Program program)
+    public string ParseCheck(IList<string/*!*/>/*!*/ fileNames, string/*!*/ programName, out Microsoft.Dafny.Program program)
     //modifies Bpl.CommandLineOptions.Clo.XmlSink.*;
     {
       //Debug.WriteLine("ACTION: Parsing Dafny program");
       Contract.Requires(programName != null);
       Contract.Requires(fileNames != null);
       program = null;
-      ModuleDecl module = new Dafny.LiteralModuleDecl(new Dafny.DefaultModuleDecl(), null);
-      BuiltIns builtIns = new Dafny.BuiltIns();
+      ModuleDecl module = new LiteralModuleDecl(new DefaultModuleDecl(), null);
+      BuiltIns builtIns = new BuiltIns();
       foreach (string dafnyFileName in fileNames) {
         Contract.Assert(dafnyFileName != null);
         if (Bpl.CommandLineOptions.Clo.XmlSink != null && Bpl.CommandLineOptions.Clo.XmlSink.IsOpen) {
@@ -526,20 +497,20 @@ namespace Tacny {
           Console.WriteLine("Parsing " + dafnyFileName);
         }
 
-        string err = ParseFile(dafnyFileName, Bpl.Token.NoToken, module, builtIns, new Dafny.Errors());
+        string err = ParseFile(dafnyFileName, Bpl.Token.NoToken, module, builtIns, new Errors());
         if (err != null) {
           return err;
         }
       }
 
       if (!DafnyOptions.O.DisallowIncludes) {
-        string errString = ParseIncludes(module, builtIns, fileNames, new Dafny.Errors());
+        string errString = ParseIncludes(module, builtIns, fileNames, new Errors());
         if (errString != null) {
           return errString;
         }
       }
 
-      program = new Dafny.Program(programName, module, builtIns);
+      program = new Microsoft.Dafny.Program(programName, module, builtIns);
 
 
       if (Bpl.CommandLineOptions.Clo.NoResolve || Bpl.CommandLineOptions.Clo.NoTypecheck) { return null; }
@@ -549,11 +520,11 @@ namespace Tacny {
     // Lower-case file names before comparing them, since Windows uses case-insensitive file names
     private class IncludeComparer : IComparer<Include> {
       public int Compare(Include x, Include y) {
-        return x.fullPath.ToLower().CompareTo(y.fullPath.ToLower());
+        return string.Compare(x.fullPath.ToLower(), y.fullPath.ToLower(), StringComparison.Ordinal);
       }
     }
 
-    public static string ParseIncludes(ModuleDecl module, BuiltIns builtIns, IList<string> excludeFiles, Dafny.Errors errs) {
+    public static string ParseIncludes(ModuleDecl module, BuiltIns builtIns, IList<string> excludeFiles, Errors errs) {
       SortedSet<Include> includes = new SortedSet<Include>(new IncludeComparer());
       foreach (string fileName in excludeFiles) {
         includes.Add(new Include(null, fileName, Path.GetFullPath(fileName)));
@@ -562,16 +533,15 @@ namespace Tacny {
       do {
         newlyIncluded = false;
 
-        List<Include> newFilesToInclude = new List<Include>();
-        foreach (Include include in ((LiteralModuleDecl)module).ModuleDef.Includes) {
+        var newFilesToInclude = new List<Include>();
+        foreach (var include in ((LiteralModuleDecl)module).ModuleDef.Includes) {
           bool isNew = includes.Add(include);
-          if (isNew) {
-            newlyIncluded = true;
-            newFilesToInclude.Add(include);
-          }
+          if (!isNew) continue;
+          newlyIncluded = true;
+          newFilesToInclude.Add(include);
         }
 
-        foreach (Include include in newFilesToInclude) {
+        foreach (var include in newFilesToInclude) {
           string ret = ParseFile(include.filename, include.tok, module, builtIns, errs, false);
           if (ret != null) {
             return ret;
@@ -582,17 +552,17 @@ namespace Tacny {
       return null; // Success
     }
 
-    private static string ParseFile(string dafnyFileName, Bpl.IToken tok, ModuleDecl module, BuiltIns builtIns, Dafny.Errors errs, bool verifyThisFile = true) {
-      var fn = DafnyOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(dafnyFileName) : dafnyFileName;
+    private static string ParseFile(string dafnyFileName, Bpl.IToken tok, ModuleDecl module, BuiltIns builtIns, Errors errs, bool verifyThisFile = true) {
+      string fn = Bpl.CommandLineOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(dafnyFileName) : dafnyFileName;
       try {
 
-        int errorCount = Dafny.Parser.Parse(dafnyFileName, module, builtIns, errs, verifyThisFile);
+        int errorCount = Parser.Parse(dafnyFileName, module, builtIns, errs, verifyThisFile);
         if (errorCount != 0) {
-          return string.Format("{0} parse errors detected in {1}", errorCount, fn);
+          return $"{errorCount} parse errors detected in {fn}";
         }
       } catch (IOException e) {
         errs.SemErr(tok, "Unable to open included file");
-        return string.Format("Error opening file \"{0}\": {1}", fn, e.Message);
+        return $"Error opening file \"{fn}\": {e.Message}";
       }
       return null; // Success
     }
@@ -608,150 +578,143 @@ namespace Tacny {
     #region Compilation
     public void Compile() {
       //printer.WriteTrailer(stats);
-      if ((DafnyOptions.O.Compile /*&& allOk*/ && CommandLineOptions.Clo.ProcsToCheck == null) || DafnyOptions.O.ForceCompile)
-        Dafny.DafnyDriver.CompileDafnyProgram(dafnyProgram, fileNames[0]);
+      if ((DafnyOptions.O.Compile /*&& allOk*/ && Bpl.CommandLineOptions.Clo.ProcsToCheck == null) || DafnyOptions.O.ForceCompile)
+        DafnyDriver.CompileDafnyProgram(DafnyProgram, _fileNames[0]);
     }
 
-    private static void CompileDafnyProgram(Dafny.Program dafnyProgram, string dafnyProgramName, TextWriter outputWriter = null) {
-      Contract.Requires(dafnyProgram != null);
+    /*
+        private static void CompileDafnyProgram(Microsoft.Dafny.Program dafnyProgram, string dafnyProgramName, TextWriter outputWriter = null) {
+          Contract.Requires(dafnyProgram != null);
 
-      if (outputWriter == null) {
-        outputWriter = Console.Out;
-      }
+          if (outputWriter == null) {
+            outputWriter = Console.Out;
+          }
 
-      // Compile the Dafny program into a string that contains the C# program
-      StringWriter sw = new StringWriter();
-      Dafny.Compiler compiler = new Dafny.Compiler(sw);
-      compiler.ErrorWriter = outputWriter;
-      var hasMain = compiler.HasMain(dafnyProgram);
-      if (DafnyOptions.O.RunAfterCompile && !hasMain) {
-        // do no more
-        return;
-      }
-      compiler.Compile(dafnyProgram);
-      var csharpProgram = sw.ToString();
-      bool completeProgram = compiler.ErrorCount == 0;
+          // Compile the Dafny program into a string that contains the C# program
+          StringWriter sw = new StringWriter();
+          Compiler compiler = new Compiler(sw);
+          compiler.ErrorWriter = outputWriter;
+          var hasMain = compiler.HasMain(dafnyProgram);
+          if (DafnyOptions.O.RunAfterCompile && !hasMain) {
+            // do no more
+            return;
+          }
+          compiler.Compile(dafnyProgram);
+          var csharpProgram = sw.ToString();
+          bool completeProgram = compiler.ErrorCount == 0;
 
-      // blurt out the code to a file
-      if (DafnyOptions.O.SpillTargetCode) {
-        string targetFilename = Path.ChangeExtension(dafnyProgramName, "cs");
-        using (TextWriter target = new StreamWriter(new FileStream(targetFilename, System.IO.FileMode.Create))) {
-          target.Write(csharpProgram);
-          if (completeProgram) {
-            outputWriter.WriteLine("Compiled program written to {0}", targetFilename);
+          // blurt out the code to a file
+          if (DafnyOptions.O.SpillTargetCode) {
+            string targetFilename = Path.ChangeExtension(dafnyProgramName, "cs");
+            using (TextWriter target = new StreamWriter(new FileStream(targetFilename, FileMode.Create))) {
+              target.Write(csharpProgram);
+              if (completeProgram) {
+                outputWriter.WriteLine("Compiled program written to {0}", targetFilename);
+              } else {
+                outputWriter.WriteLine("File {0} contains the partially compiled program", targetFilename);
+              }
+            }
+          }
+
+          // compile the program into an assembly
+          if (!completeProgram) {
+            // don't compile
+          } else if (!CodeDomProvider.IsDefinedLanguage("CSharp")) {
+            outputWriter.WriteLine("Error: cannot compile, because there is no provider configured for input language CSharp");
           } else {
-            outputWriter.WriteLine("File {0} contains the partially compiled program", targetFilename);
-          }
-        }
-      }
+            var provider = CodeDomProvider.CreateProvider("CSharp");
+            var cp = new CompilerParameters();
+            cp.GenerateExecutable = hasMain;
+            if (DafnyOptions.O.RunAfterCompile) {
+              cp.GenerateInMemory = true;
+            } else if (hasMain) {
+              cp.OutputAssembly = Path.ChangeExtension(dafnyProgramName, "exe");
+              cp.GenerateInMemory = false;
+            } else {
+              cp.OutputAssembly = Path.ChangeExtension(dafnyProgramName, "dll");
+              cp.GenerateInMemory = false;
+            }
+            cp.CompilerOptions = "/debug /nowarn:0164 /nowarn:0219";  // warning CS0164 complains about unreferenced labels, CS0219 is about unused variables
+            cp.ReferencedAssemblies.Add("System.Numerics.dll");
 
-      // compile the program into an assembly
-      if (!completeProgram) {
-        // don't compile
-      } else if (!CodeDomProvider.IsDefinedLanguage("CSharp")) {
-        outputWriter.WriteLine("Error: cannot compile, because there is no provider configured for input language CSharp");
-      } else {
-        var provider = CodeDomProvider.CreateProvider("CSharp");
-        var cp = new System.CodeDom.Compiler.CompilerParameters();
-        cp.GenerateExecutable = hasMain;
-        if (DafnyOptions.O.RunAfterCompile) {
-          cp.GenerateInMemory = true;
-        } else if (hasMain) {
-          cp.OutputAssembly = Path.ChangeExtension(dafnyProgramName, "exe");
-          cp.GenerateInMemory = false;
-        } else {
-          cp.OutputAssembly = Path.ChangeExtension(dafnyProgramName, "dll");
-          cp.GenerateInMemory = false;
-        }
-        cp.CompilerOptions = "/debug /nowarn:0164 /nowarn:0219";  // warning CS0164 complains about unreferenced labels, CS0219 is about unused variables
-        cp.ReferencedAssemblies.Add("System.Numerics.dll");
-
-        var cr = provider.CompileAssemblyFromSource(cp, csharpProgram);
-        var assemblyName = Path.GetFileName(cr.PathToAssembly);
-        if (DafnyOptions.O.RunAfterCompile && cr.Errors.Count == 0) {
-          outputWriter.WriteLine("Program compiled successfully");
-          outputWriter.WriteLine("Running...");
-          outputWriter.WriteLine();
-          var entry = cr.CompiledAssembly.EntryPoint;
-          try {
-            object[] parameters = entry.GetParameters().Length == 0 ? new object[] { } : new object[] { new string[0] };
-            entry.Invoke(null, parameters);
-          } catch (System.Reflection.TargetInvocationException e) {
-            outputWriter.WriteLine("Error: Execution resulted in exception: {0}", e.Message);
-            outputWriter.WriteLine(e.InnerException.ToString());
-          } catch (Exception e) {
-            outputWriter.WriteLine("Error: Execution resulted in exception: {0}", e.Message);
-            outputWriter.WriteLine(e.ToString());
-          }
-        } else if (cr.Errors.Count == 0) {
-          outputWriter.WriteLine("Compiled assembly into {0}", assemblyName);
-        } else {
-          outputWriter.WriteLine("Errors compiling program into {0}", assemblyName);
-          foreach (var ce in cr.Errors) {
-            outputWriter.WriteLine(ce.ToString());
-            outputWriter.WriteLine();
+            var cr = provider.CompileAssemblyFromSource(cp, csharpProgram);
+            var assemblyName = Path.GetFileName(cr.PathToAssembly);
+            if (DafnyOptions.O.RunAfterCompile && cr.Errors.Count == 0) {
+              outputWriter.WriteLine("Program compiled successfully");
+              outputWriter.WriteLine("Running...");
+              outputWriter.WriteLine();
+              var entry = cr.CompiledAssembly.EntryPoint;
+              try {
+                object[] parameters = entry.GetParameters().Length == 0 ? new object[] { } : new object[] { new string[0] };
+                entry.Invoke(null, parameters);
+              } catch (TargetInvocationException e) {
+                outputWriter.WriteLine("Error: Execution resulted in exception: {0}", e.Message);
+                outputWriter.WriteLine(e.InnerException.ToString());
+              } catch (Exception e) {
+                outputWriter.WriteLine("Error: Execution resulted in exception: {0}", e.Message);
+                outputWriter.WriteLine(e.ToString());
+              }
+            } else if (cr.Errors.Count == 0) {
+              outputWriter.WriteLine("Compiled assembly into {0}", assemblyName);
+            } else {
+              outputWriter.WriteLine("Errors compiling program into {0}", assemblyName);
+              foreach (var ce in cr.Errors) {
+                outputWriter.WriteLine(ce.ToString());
+                outputWriter.WriteLine();
+              }
+            }
           }
         }
-      }
-    }
+    */
 
     #endregion
 
     /// <summary>
     /// Print verified program to file
     /// </summary>
-    public void PrintProgram(Dafny.Program program = null) {
-      if (program == null)
-        Util.Printer.P.PrintProgram(dafnyProgram);
-      else
-        Util.Printer.P.PrintProgram(program);
-
+    public void PrintProgram(Microsoft.Dafny.Program program = null) {
+      Printer.P.PrintProgram(program ?? DafnyProgram);
     }
 
     public void MaybePrintProgram(string filename) {
-      MaybePrintProgram(dafnyProgram, filename);
+      MaybePrintProgram(DafnyProgram, filename);
     }
     /// <summary>
     /// Print the source code
     /// </summary>
     /// <param name="prog"></param>
     /// <param name="filename"></param>
-    public void MaybePrintProgram(Dafny.Program prog, string filename) {
+    public void MaybePrintProgram(Microsoft.Dafny.Program prog, string filename) {
       // if program is not in debug mode disable console printing
       // PrintProgram(prog);
     }
 
-    public void PrintMember(Dafny.Program prog, string memberName, string filename = null) {
+    public void PrintMember(Microsoft.Dafny.Program prog, string memberName, string filename = null) {
       Contract.Requires(prog != null);
       Contract.Requires(memberName != null);
 
-      bool printToConsole = true;
+      var printToConsole = true;
 
       if (filename == null || filename == "-")
         printToConsole = true;
-      Printer p = null;
+      Microsoft.Dafny.Printer p = null;
       if (printToConsole)
-        p = new Dafny.Printer(Console.Out, Util.TacnyOptions.O.PrintMode);
+        p = new Microsoft.Dafny.Printer(Console.Out, TacnyOptions.O.PrintMode);
       else
-        p = Util.Printer.P;
+        p = Printer.P;
       foreach (var tld in prog.DefaultModuleDef.TopLevelDecls) {
-        if (tld is ClassDecl) {
-          ClassDecl cd = tld as ClassDecl;
-          MemberDecl md = cd.Members.FirstOrDefault(i => i.Name == memberName);
-          if (md != null) {
-            p.PrintMembers(new List<MemberDecl> { md }, Debug.IndentLevel, this.fileNames[0]);
-            return;
-          }
-        }
+        if (!(tld is ClassDecl)) continue;
+        var cd = tld as ClassDecl;
+        var md = cd.Members.FirstOrDefault(i => i.Name == memberName);
+        if (md == null) continue;
+        p.PrintMembers(new List<MemberDecl> { md }, Debug.IndentLevel, _fileNames[0]);
+        return;
       }
 
     }
 
     public bool HasTacticApplications() {
-      foreach (var item in topLevelClasses)
-        if (item.tactics.Count > 0)
-          return true;
-      return false;
+      return TopLevelClasses.Any(item => item.Tactics.Count > 0);
     }
   }
 }

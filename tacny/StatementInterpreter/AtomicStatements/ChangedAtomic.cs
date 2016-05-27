@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using Microsoft.Dafny;
-using System.Diagnostics.Contracts;
-using Dafny = Microsoft.Dafny;
+
 namespace Tacny
 {
     class ChangedAtomic : Atomic, IAtomicStmt

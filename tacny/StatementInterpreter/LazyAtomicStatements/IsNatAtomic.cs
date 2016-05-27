@@ -1,8 +1,9 @@
-﻿using Microsoft.Dafny;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using Tacny;
+using Microsoft.Dafny;
+using Util;
+
 namespace LazyTacny {
 
   public class IsNatAtomic : Atomic, IAtomicLazyStmt {
@@ -20,17 +21,15 @@ namespace LazyTacny {
       List<Expression> callArgs;
       object result = null;
       InitArgs(st, out lv, out callArgs);
-      Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-      Contract.Assert(callArgs.Count == 1, Util.Error.MkErr(st, 0, 1, callArgs.Count));
+      Contract.Assert(lv != null, Error.MkErr(st, 8));
+      Contract.Assert(callArgs.Count == 1, Error.MkErr(st, 0, 1, callArgs.Count));
       foreach (var item in ResolveExpression(callArgs[0])) {
         var ns = item as NameSegment;
-        if (ns != null) {
-          var type = StaticContext.GetVariableType(ns);
-          if (type == null) {
-            Contract.Assert(false, Util.Error.MkErr(st, 24));
-            result = new LiteralExpr(st.Tok, type is IntType);
-          }
-        }
+        if (ns == null) continue;
+        var type = StaticContext.GetVariableType(ns);
+        if (type != null) continue;
+        Contract.Assert(false, Error.MkErr(st, 24));
+        result = new LiteralExpr(st.Tok, false);
       }
 
       yield return AddNewLocal(lv, result);

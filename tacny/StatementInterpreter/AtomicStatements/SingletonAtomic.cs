@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
+using Util;
 
 namespace Tacny
 {
@@ -30,8 +31,8 @@ namespace Tacny
             Expression formula = null;
 
             InitArgs(st, out lv, out call_arguments);
-            Contract.Assert(lv != null, Util.Error.MkErr(st,8));
-            Contract.Assert(tcce.OfSize(call_arguments, 3), Util.Error.MkErr(st, 0, 3, call_arguments.Count));
+            Contract.Assert(lv != null, Error.MkErr(st,8));
+            Contract.Assert(tcce.OfSize(call_arguments, 3), Error.MkErr(st, 0, 3, call_arguments.Count));
 
             ProcessArg(call_arguments[0], out old_singleton);
             ProcessArg(call_arguments[1], out new_term);
@@ -48,7 +49,7 @@ namespace Tacny
                 for (int i = 0; i < exp_list.Count; i++)
                 {
                     AddLocal(lv, exp_list[i]);
-                    solution_list.Add(new Solution(this.Copy()));
+                    solution_list.Add(new Solution(Copy()));
                 }
             }
         }
@@ -67,39 +68,39 @@ namespace Tacny
 
             if (formula.IsLeaf())
             {
-                if (formula.data.GetType() == old_singleton.GetType() && formula.modified == false)
+                if (formula.Data.GetType() == old_singleton.GetType() && formula.Modified == false)
                 {
-                    if (formula.data is NameSegment)
+                    if (formula.Data is NameSegment)
                     {
-                        curNs = (NameSegment)formula.data;
+                        curNs = (NameSegment)formula.Data;
                         oldNs = (NameSegment)old_singleton;
 
                     }
-                    else if (formula.data is UnaryOpExpr)
+                    else if (formula.Data is UnaryOpExpr)
                     {
-                        curNs = (NameSegment)((UnaryOpExpr)formula.data).E;
+                        curNs = (NameSegment)((UnaryOpExpr)formula.Data).E;
                         oldNs = (NameSegment)((UnaryOpExpr)old_singleton).E;
                     }
                     else
-                        Contract.Assert(false, Util.Error.MkErr(formula.data, -1));
+                        Contract.Assert(false, Error.MkErr(formula.Data, -1));
 
                     if (curNs.Name == oldNs.Name)
                     {
                         ExpressionTree nt = formula.Copy();
-                        nt.data = new_term;
+                        nt.Data = new_term;
 
-                        if (nt.parent.lChild == nt)
-                            nt.parent.lChild = nt;
+                        if (nt.Parent.LChild == nt)
+                            nt.Parent.LChild = nt;
                         else
-                            nt.parent.rChild = nt;
+                            nt.Parent.RChild = nt;
 
-                        nexp.Add(nt.root.TreeToExpression());
+                        nexp.Add(nt.Root.TreeToExpression());
                     }
                 }
                 return;
             }
-            ReplaceTerm(old_singleton, new_term, formula.lChild, ref nexp);
-            ReplaceTerm(old_singleton, new_term, formula.rChild, ref nexp);
+            ReplaceTerm(old_singleton, new_term, formula.LChild, ref nexp);
+            ReplaceTerm(old_singleton, new_term, formula.RChild, ref nexp);
         }
 
     }

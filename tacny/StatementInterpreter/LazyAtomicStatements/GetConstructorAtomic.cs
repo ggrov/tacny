@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Dafny;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
+using Util;
 
 namespace LazyTacny {
   class GetConstructorAtomic : Atomic, IAtomicLazyStmt {
@@ -22,7 +20,7 @@ namespace LazyTacny {
       InitArgs(st, out lv, out callArgs);
 
       var ctor = DynamicContext.activeCtor;
-      Contract.Assert(ctor != null, Util.Error.MkErr(st, 22));
+      Contract.Assert(ctor != null, Error.MkErr(st, 22));
         
 
       return AddNewLocal(lv, ctor);

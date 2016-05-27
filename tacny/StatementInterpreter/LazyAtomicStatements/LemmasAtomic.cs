@@ -1,42 +1,37 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
-using System;
+using Microsoft.Dafny;
 using Tacny;
-using System.Diagnostics;
+using Util;
 
 namespace LazyTacny {
   class LemmasAtomic : Atomic, IAtomicLazyStmt {
     public LemmasAtomic(Atomic atomic) : base(atomic) { }
 
     public IEnumerable<Solution> Resolve(Statement st, Solution solution) {
-
-      yield return Lemmas(st, solution);
-
-      yield break;
+      yield return Lemmas(st);
     }
 
-    private Solution Lemmas(Statement st, Solution solution) {
-      IVariable lv = null;
-      List<Expression> call_arguments; // we don't care about this
-      List<MemberDecl> lemmas = new List<MemberDecl>();
+    private Solution Lemmas(Statement st) {
+      IVariable lv;
+      List<Expression> callArguments; // we don't care about this
+      var lemmas = new List<MemberDecl>();
 
-      InitArgs(st, out lv, out call_arguments);
-      Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-      Contract.Assert(tcce.OfSize(call_arguments, 0), Util.Error.MkErr(st, 0, 0, call_arguments.Count));
+      InitArgs(st, out lv, out callArguments);
+      Contract.Assert(lv != null, Error.MkErr(st, 8));
+      Contract.Assert(tcce.OfSize(callArguments, 0), Error.MkErr(st, 0, 0, callArguments.Count));
 
 
-      foreach (var member in StaticContext.program.members.Values) {
-        Lemma lem = member as Lemma;
-        FixpointLemma fl = member as FixpointLemma;
+      foreach (var member in StaticContext.program.Members.Values) {
+        var lem = member as Lemma;
+        var fl = member as FixpointLemma;
         if (lem != null)
           lemmas.Add(lem);
         else if (fl != null)
           lemmas.Add(fl);
-
       }
       AddLocal(lv, lemmas);
-      return new Solution(this.Copy());
+      return new Solution(Copy());
     }
   }
 }

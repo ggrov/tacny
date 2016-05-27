@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
-using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
 using Util;
 
 namespace Tacny
@@ -16,7 +11,7 @@ namespace Tacny
 
         public void Resolve(Statement st, ref List<Solution> solution_list)
         {
-            Contract.Assert(ExtractGuard(st) != null, Util.Error.MkErr(st, 2));
+            Contract.Assert(ExtractGuard(st) != null, Error.MkErr(st, 2));
             /**
              * Check if the loop guard can be resolved localy
              */
@@ -61,7 +56,7 @@ namespace Tacny
 
             foreach (var item in result)
             {
-                Atomic ac = this.Copy();
+                Atomic ac = Copy();
                 ac.AddUpdated(item, item);
                 solution_list.Add(new Solution(ac));
             }

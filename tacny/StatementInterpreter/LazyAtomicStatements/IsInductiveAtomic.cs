@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
 using Microsoft.Dafny;
 using Tacny;
+using Util;
 
 namespace LazyTacny {
   class IsInductiveAtomic : Atomic, IAtomicLazyStmt {
@@ -16,7 +14,7 @@ namespace LazyTacny {
       DatatypeDecl datatype = null;
 
       InitArgs(st, out lv, out call_arguments);
-      Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
+      Contract.Assert(tcce.OfSize(call_arguments, 1), Error.MkErr(st, 0, 1, call_arguments.Count));
 
       string argType = GetArgumentType(call_arguments[0] as NameSegment);
 
@@ -24,14 +22,14 @@ namespace LazyTacny {
         if (argType == "Element") {
           var ns = result as NameSegment;
           IVariable originalDecl = StaticContext.GetGlobalVariable(ns.Name);
-          Contract.Assert(originalDecl != null, Util.Error.MkErr(st, 9, ((NameSegment)call_arguments[0]).Name));
+          Contract.Assert(originalDecl != null, Error.MkErr(st, 9, ((NameSegment)call_arguments[0]).Name));
           var datatypeName = originalDecl.Type.ToString();
           datatype = StaticContext.GetGlobal(datatypeName);
           var lit = IsInductive(datatypeName, datatype);
           yield return AddNewLocal(lv, lit);
         } else {
           var ctor = result as DatatypeCtor;
-          Contract.Assert(ctor != null, Util.Error.MkErr(st, 1, "Datatype constructor"));
+          Contract.Assert(ctor != null, Error.MkErr(st, 1, "Datatype constructor"));
           var datatypeName = ctor.EnclosingDatatype.Name;
 
           LiteralExpr lit = new LiteralExpr(st.Tok, false);

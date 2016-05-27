@@ -1,22 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
 using Microsoft.Dafny;
 
 namespace LazyTacny {
-  class GenBexpAtomic : Atomic, IAtomicLazyStmt {
+  public class GenBexpAtomic : Atomic, IAtomicLazyStmt {
     public GenBexpAtomic(Atomic atomic) : base(atomic) { }
 
     public IEnumerable<Solution> Resolve(Statement st, Solution solution) {
 
-      yield return (GenerateExpression(st, solution));
-      yield break;
+      yield return (GenerateExpression(st));
     }
 
 
-    private Solution GenerateExpression(Statement st, Solution solution) {
+    private Solution GenerateExpression(Statement st) {
       IVariable lv = null;
       List<Expression> callArguments = null;
       InitArgs(st, out lv, out callArguments);
@@ -26,22 +22,22 @@ namespace LazyTacny {
         if (lhsValue is Expression)
           lhs = lhsValue as Expression;
         else if (lhsValue is IVariable)
-          lhs = IVariableToExpression(lhsValue as IVariable);
+          lhs = VariableToExpression(lhsValue as IVariable);
         foreach (var rhsValue in ResolveExpression(callArguments[2])) {
           Expression rhs = null;
           if (rhsValue is Expression)
             rhs = rhsValue as Expression;
           else if (rhsValue is IVariable)
-            rhs = IVariableToExpression(rhsValue as IVariable);
+            rhs = VariableToExpression(rhsValue as IVariable);
           foreach (var op in ResolveExpression(callArguments[1])) {
 
             var opLiteral = op as StringLiteralExpr;
-            var opString = opLiteral.Value.ToString();
-            bexp = new BinaryExpr(st.Tok, ToOpCode(opString), lhs as Expression, rhs as Expression);
+            string opString = opLiteral?.Value.ToString();
+            bexp = new BinaryExpr(st.Tok, ToOpCode(opString), lhs, rhs);
           }
         }
       }
-      return AddNewLocal<BinaryExpr>(lv, bexp);
+      return AddNewLocal(lv, bexp);
     }
 
 

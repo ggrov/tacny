@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Dafny;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
+using Microsoft.Dafny;
 using Tacny;
+using Util;
+
 namespace LazyTacny {
   class FreshNameAtomic : Atomic, IAtomicLazyStmt {
 
@@ -23,19 +23,18 @@ namespace LazyTacny {
       List<Expression> callArguments = null;
 
       InitArgs(st, out lv, out callArguments);
-      Contract.Assert(tcce.OfSize(callArguments, 1), Util.Error.MkErr(st, 0, 1, callArguments.Count));
+      Contract.Assert(tcce.OfSize(callArguments, 1), Error.MkErr(st, 0, 1, callArguments.Count));
 
       var nameLiteralExpr = callArguments[0] as StringLiteralExpr;
-      Contract.Assert(nameLiteralExpr != null, Util.Error.MkErr(st, 1, "string"));
-      var count = StaticContext.program.members.Keys.Count(x => x == nameLiteralExpr.AsStringLiteral());
+      Contract.Assert(nameLiteralExpr != null, Error.MkErr(st, 1, "string"));
+      var count = StaticContext.program.Members.Keys.Count(x => x == nameLiteralExpr.AsStringLiteral());
       if (count == 0) {
-        yield return AddNewLocal<StringLiteralExpr>(lv, Util.Copy.CopyStringLiteralExpr(nameLiteralExpr));
+        yield return AddNewLocal(lv, Util.Copy.CopyStringLiteralExpr(nameLiteralExpr));
       } else {
         var nameValue = nameLiteralExpr.AsStringLiteral();
         var freshNameValue = string.Format("{0}{1}{2}", nameValue, SUFFIX, count);
-        yield return AddNewLocal<StringLiteralExpr>(lv, new StringLiteralExpr(nameLiteralExpr.tok, freshNameValue, nameLiteralExpr.IsVerbatim));
+        yield return AddNewLocal(lv, new StringLiteralExpr(nameLiteralExpr.tok, freshNameValue, nameLiteralExpr.IsVerbatim));
       }
-      yield break;
     }
   }
 }

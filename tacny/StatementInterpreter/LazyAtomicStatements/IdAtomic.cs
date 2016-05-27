@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
-using Dafny = Microsoft.Dafny;
+﻿using System.Collections.Generic;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
 
 namespace LazyTacny {
   class IdAtomic : Atomic, IAtomicLazyStmt {
@@ -21,11 +15,10 @@ namespace LazyTacny {
       List<Expression> args = null;
       IVariable lv = null;
       InitArgs(st, out lv, out args);
-      Dafny.LiteralExpr lit = new Dafny.LiteralExpr(st.Tok, true);
-      var ac = this.Copy();
+      LiteralExpr lit = new LiteralExpr(st.Tok, true);
+      var ac = Copy();
       ac.DynamicContext.AddLocal(lv, lit);
       yield return new Solution(ac);
-      yield break;
     }
   }
 }

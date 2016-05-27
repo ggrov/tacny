@@ -1,147 +1,142 @@
-﻿using Microsoft.Dafny;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using Dafny = Microsoft.Dafny;
 using Microsoft.Boogie;
+using Microsoft.Dafny;
+using Type = System.Type;
 
 namespace LazyTacny {
-  /**
-   * TODO
-   * clean up
-   * 
-   */
+  
   class StatementRegister {
     public enum Atomic {
-      UNDEFINED = 0,
-      INVAR,
-      REPLACE_SINGLETON,
-      EXTRACT_GUARD,
-      REPLACE_OP,
-      IS_VALID,
-      ADD_MATCH,
-      PERM,
-      OR,
-      ID,
-      FAIL,
-      ADD_VARIANT,
-      VARIABLES,
-      PARAMS,
-      SUCH_THAT,
-      LEMMAS,
-      MERGE_LISTS,
-      WHILE,
-      IF,
-      SOLVED,
-      CHANGED,
-      FUNCTIONS,
-      PRE_COND,
-      POST_COND,
-      IS_INDUCTIVE,
-      TRY_CATCH,
-      RETURNS,
-      IS_DATATYPE,
-      GET_MEMBER,
-      FRESH_LEM_NAME,
-      GEN_BEXP,
-      TACNY_BEXP,
-      GET_CTOR,
-      DELETE,
-      IF_GUARD,
-      SPLIT,
-      CONSTS,
-      REPLACE_CONST,
-      SUBST,
-      PREDICATES,
-    };
+      Undefined = 0,
+      Invar,
+      ReplaceSingleton,
+      ExtractGuard,
+      ReplaceOp,
+      IsValid,
+      AddMatch,
+      Perm,
+      Or,
+      Id,
+      Fail,
+      AddVariant,
+      Variables,
+      Params,
+      SuchThat,
+      Lemmas,
+      MergeLists,
+      While,
+      If,
+      Solved,
+      Changed,
+      Functions,
+      PreCond,
+      PostCond,
+      IsInductive,
+      TryCatch,
+      Returns,
+      IsDatatype,
+      GetMember,
+      FreshLemName,
+      GenBexp,
+      TacnyBexp,
+      GetCtor,
+      Delete,
+      IfGuard,
+      Split,
+      Consts,
+      ReplaceConst,
+      Subst,
+      Predicates
+    }
 
-    public static Dictionary<string, Atomic> atomic_signature = new Dictionary<string, Atomic>()
+    public static Dictionary<string, Atomic> AtomicSignature = new Dictionary<string, Atomic>
     {
-      {"replace_singleton", Atomic.REPLACE_SINGLETON},
-      {"loop_guard", Atomic.EXTRACT_GUARD},
-      {"replace_operator", Atomic.REPLACE_OP},
-      {"is_valid", Atomic.IS_VALID},
-      {"cases", Atomic.ADD_MATCH},
-      {"explore", Atomic.PERM},
-      {"||", Atomic.OR},
-      {"id", Atomic.ID},
-      {"fail", Atomic.FAIL},
-      {"add_variant", Atomic.ADD_VARIANT},
-      {"variables", Atomic.VARIABLES},
-      {"params", Atomic.PARAMS},
-      {":|", Atomic.SUCH_THAT},
-      {"lemmas", Atomic.LEMMAS},
-      {"merge", Atomic.MERGE_LISTS},
-      {"solved", Atomic.SOLVED},
-      {"changed", Atomic.CHANGED},
-      {"functions", Atomic.FUNCTIONS},
-      {"preconditions", Atomic.PRE_COND},
-      {"postconditions", Atomic.POST_COND},
-      {"is_inductive", Atomic.IS_INDUCTIVE},
-      {"tryCatch", Atomic.TRY_CATCH},
-      {"get_returns", Atomic.RETURNS},
-      {"is_datatype", Atomic.IS_DATATYPE},
-      {"caller", Atomic.GET_MEMBER },
-      {"fresh_lem_name", Atomic.FRESH_LEM_NAME },
-      {"gen_bexp", Atomic.GEN_BEXP },
-      {"|||", Atomic.TACNY_BEXP },
-      {"get_constructor", Atomic.GET_CTOR },
-      {"delete", Atomic.DELETE },
-      { "if_guard", Atomic.IF_GUARD },
-      {"split", Atomic.SPLIT },
-      { "consts", Atomic.CONSTS },
-      { "replace_constants", Atomic.REPLACE_CONST },
-      { "subst", Atomic.SUBST },
-      { "predicates", Atomic.PREDICATES }
+      {"replace_singleton", Atomic.ReplaceSingleton},
+      {"loop_guard", Atomic.ExtractGuard},
+      {"replace_operator", Atomic.ReplaceOp},
+      {"is_valid", Atomic.IsValid},
+      {"cases", Atomic.AddMatch},
+      {"explore", Atomic.Perm},
+      {"||", Atomic.Or},
+      {"id", Atomic.Id},
+      {"fail", Atomic.Fail},
+      {"add_variant", Atomic.AddVariant},
+      {"variables", Atomic.Variables},
+      {"params", Atomic.Params},
+      {":|", Atomic.SuchThat},
+      {"lemmas", Atomic.Lemmas},
+      {"merge", Atomic.MergeLists},
+      {"solved", Atomic.Solved},
+      {"changed", Atomic.Changed},
+      {"functions", Atomic.Functions},
+      {"preconditions", Atomic.PreCond},
+      {"postconditions", Atomic.PostCond},
+      {"is_inductive", Atomic.IsInductive},
+      {"tryCatch", Atomic.TryCatch},
+      {"get_returns", Atomic.Returns},
+      {"is_datatype", Atomic.IsDatatype},
+      {"caller", Atomic.GetMember },
+      {"fresh_lem_name", Atomic.FreshLemName },
+      {"gen_bexp", Atomic.GenBexp },
+      {"|||", Atomic.TacnyBexp },
+      {"get_constructor", Atomic.GetCtor },
+      {"delete", Atomic.Delete },
+      { "if_guard", Atomic.IfGuard },
+      {"split", Atomic.Split },
+      { "consts", Atomic.Consts },
+      { "replace_constants", Atomic.ReplaceConst },
+      { "subst", Atomic.Subst },
+      { "predicates", Atomic.Predicates }
     };
 
-    public static Dictionary<Atomic, System.Type> atomic_class = new Dictionary<Atomic, System.Type>()
+    public static Dictionary<Atomic, Type> AtomicClass = new Dictionary<Atomic, Type>
     {
       //{Atomic.REPLACE_SINGLETON, typeof(SingletonAtomic)},
-      {Atomic.INVAR, typeof(InvariantAtomic)},
-      {Atomic.ADD_MATCH, typeof(MatchAtomic)},
-      {Atomic.REPLACE_OP, typeof(OperatorAtomic)},
-      {Atomic.EXTRACT_GUARD, typeof(GuardAtomic)},
-      {Atomic.PERM, typeof(PermAtomic)},
+      {Atomic.Invar, typeof(InvariantAtomic)},
+      {Atomic.AddMatch, typeof(MatchAtomic)},
+      {Atomic.ReplaceOp, typeof(OperatorAtomic)},
+      {Atomic.ExtractGuard, typeof(GuardAtomic)},
+      {Atomic.Perm, typeof(PermAtomic)},
       //{Atomic.OR, typeof(OrAtomic)},
-      {Atomic.ID, typeof(IdAtomic)},
-      {Atomic.FAIL, typeof(FailAtomic)},
+      {Atomic.Id, typeof(IdAtomic)},
+      {Atomic.Fail, typeof(FailAtomic)},
       //{Atomic.ADD_VARIANT, typeof(VariantAtomic)},
-      {Atomic.VARIABLES, typeof(VariablesAtomic)},
-      {Atomic.PARAMS, typeof(ParamsAtomic)},
-      {Atomic.MERGE_LISTS, typeof(MergeAtomic)},
-      {Atomic.SUCH_THAT, typeof(SuchThatAtomic)},
-      {Atomic.LEMMAS, typeof(LemmasAtomic)},
-      {Atomic.IF, typeof(IfAtomic)},
-      {Atomic.WHILE, typeof(WhileAtomic)},
+      {Atomic.Variables, typeof(VariablesAtomic)},
+      {Atomic.Params, typeof(ParamsAtomic)},
+      {Atomic.MergeLists, typeof(MergeAtomic)},
+      {Atomic.SuchThat, typeof(SuchThatAtomic)},
+      {Atomic.Lemmas, typeof(LemmasAtomic)},
+      {Atomic.If, typeof(IfAtomic)},
+      {Atomic.While, typeof(WhileAtomic)},
       //{Atomic.SOLVED, typeof(SolvedAtomic)},
       //{Atomic.CHANGED, typeof(ChangedAtomic)},
       //{Atomic.FUNCTIONS, typeof(FunctionsAtomic)},
-      {Atomic.PRE_COND, typeof(PrecondAtomic)},
-      {Atomic.POST_COND, typeof(PostcondAtomic)},
-      {Atomic.GET_MEMBER, typeof(GetMemberAtomic) },
-      {Atomic.IS_INDUCTIVE, typeof(IsInductiveAtomic)},
-      {Atomic.TRY_CATCH, typeof(TryCatchAtomic)},
-      {Atomic.RETURNS, typeof(ReturnAtomic)},
+      {Atomic.PreCond, typeof(PrecondAtomic)},
+      {Atomic.PostCond, typeof(PostcondAtomic)},
+      {Atomic.GetMember, typeof(GetMemberAtomic) },
+      {Atomic.IsInductive, typeof(IsInductiveAtomic)},
+      {Atomic.TryCatch, typeof(TryCatchAtomic)},
+      {Atomic.Returns, typeof(ReturnAtomic)},
       //{Atomic.IS_DATATYPE, typeof(IsDatatypeAtomic)},
-      {Atomic.FRESH_LEM_NAME, typeof(FreshNameAtomic) },
-      {Atomic.GEN_BEXP, typeof(GenBexpAtomic) },
-      {Atomic.TACNY_BEXP, typeof(ExpressionAtomic) },
-      {Atomic.GET_CTOR, typeof(GetConstructorAtomic) },
-      {Atomic.DELETE, typeof(DeleteAtomic) },
-      {Atomic.IF_GUARD, typeof(IfGuardAtomic) },
-      {Atomic.SPLIT, typeof(SplitAtomic) },
-      {Atomic.CONSTS, typeof(ConstantsAtomic) },
-      {Atomic.REPLACE_CONST, typeof(ReplaceConstantAtomic) },
-      {Atomic.SUBST, typeof(OperatorAtomic) },
-      {Atomic.PREDICATES, typeof(PredicateAtomic) }
+      {Atomic.FreshLemName, typeof(FreshNameAtomic) },
+      {Atomic.GenBexp, typeof(GenBexpAtomic) },
+      {Atomic.TacnyBexp, typeof(ExpressionAtomic) },
+      {Atomic.GetCtor, typeof(GetConstructorAtomic) },
+      {Atomic.Delete, typeof(DeleteAtomic) },
+      {Atomic.IfGuard, typeof(IfGuardAtomic) },
+      {Atomic.Split, typeof(SplitAtomic) },
+      {Atomic.Consts, typeof(ConstantsAtomic) },
+      {Atomic.ReplaceConst, typeof(ReplaceConstantAtomic) },
+      {Atomic.Subst, typeof(OperatorAtomic) },
+      {Atomic.Predicates, typeof(PredicateAtomic) }
   };
 
     /// <summary>
     /// Return the Atomic type of the statement
     /// </summary>
-    /// <param name="st">Statement to analyse</param>
+    /// <param name="call"></param>
     /// <returns>statement atomic type</returns>
     public static Atomic GetAtomicType(object call) {
       Contract.Requires(call != null);
@@ -149,15 +144,14 @@ namespace LazyTacny {
       ApplySuffix aps;
       if ((st = call as Statement) != null)
         return GetAtomicType(st);
-      else if ((aps = call as ApplySuffix) != null)
+      if ((aps = call as ApplySuffix) != null)
         return GetAtomicType(aps);
 
-      return Atomic.UNDEFINED;
+      return Atomic.Undefined;
     }
 
 
     public static Atomic GetAtomicType(Statement st) {
-      ExprRhs er;
       UpdateStmt us = null;
       TacnyBlockStmt tbs;
       TacticVarDeclStmt tvds;
@@ -170,19 +164,19 @@ namespace LazyTacny {
         TacnyChangedBlockStmt tchbs;
         TacnyTryCatchBlockStmt ttcbs;
         if ((tcbs = tbs as TacnyCasesBlockStmt) != null)
-          return atomic_signature[tcbs.WhatKind];
-        else if ((tsbs = tbs as TacnySolvedBlockStmt) != null)
-          return atomic_signature[tsbs.WhatKind];
-        else if ((tchbs = tbs as TacnyChangedBlockStmt) != null)
-          return atomic_signature[tchbs.WhatKind];
-        else if ((ttcbs = tbs as TacnyTryCatchBlockStmt) != null)
-          return atomic_signature[ttcbs.WhatKind];
+          return AtomicSignature[tcbs.WhatKind];
+        if ((tsbs = tbs as TacnySolvedBlockStmt) != null)
+          return AtomicSignature[tsbs.WhatKind];
+        if ((tchbs = tbs as TacnyChangedBlockStmt) != null)
+          return AtomicSignature[tchbs.WhatKind];
+        if ((ttcbs = tbs as TacnyTryCatchBlockStmt) != null)
+          return AtomicSignature[ttcbs.WhatKind];
       } else if (((os = st as OrStmt) != null)) {
         tok = os.Tok;
       } else if (st is IfStmt)
-        return Atomic.IF;
+        return Atomic.If;
       else if (st is WhileStmt)
-        return Atomic.WHILE;
+        return Atomic.While;
       else if ((us = st as UpdateStmt) != null) { } else if ((vds = st as VarDeclStmt) != null) {
         AssignSuchThatStmt suchThat = vds.Update as AssignSuchThatStmt;
         // check if declaration is such that
@@ -191,60 +185,59 @@ namespace LazyTacny {
         else
           us = vds.Update as UpdateStmt;
       } else if ((tvds = st as TacticVarDeclStmt) != null) {
-        AssignSuchThatStmt suchThat = tvds.Update as AssignSuchThatStmt;
+        var suchThat = tvds.Update as AssignSuchThatStmt;
         // check if declaration is such that
         if (suchThat != null)
           tok = suchThat.Tok;
         else
           us = tvds.Update as UpdateStmt;
       } else if (st is TacticInvariantStmt) {
-        return Atomic.INVAR;
+        return Atomic.Invar;
       }
 
       if (tok != null)
         return GetAtomicType(tok);
 
       if (us == null)
-        return Atomic.UNDEFINED;
+        return Atomic.Undefined;
 
-      er = (ExprRhs)us.Rhss[0];
+      var er = (ExprRhs)us.Rhss[0];
       return GetAtomicType(er.Expr as ApplySuffix);
     }
     public static Atomic GetAtomicType(ApplySuffix aps) {
       if (aps == null)
-        return Atomic.UNDEFINED;
+        return Atomic.Undefined;
       return GetAtomicType(aps.Lhs.tok);
     }
 
     /// <summary>
     /// Return atomic type from string signature
     /// </summary>
-    /// <param name="name">string signature</param>
     /// <returns>Atomic type</returns>
     public static Atomic GetAtomicType(IToken tok) {
       Contract.Requires<ArgumentNullException>(tok != null);
       string name = tok.val;
-      if (!atomic_signature.ContainsKey(name))
-        return Atomic.UNDEFINED;
+      if (!AtomicSignature.ContainsKey(name))
+        return Atomic.Undefined;
 
-      return atomic_signature[name];
+      return AtomicSignature[name];
     }
 
 
-    public static System.Type GetStatementType(Statement st) {
+    public static Type GetStatementType(Statement st) {
       Contract.Requires(st != null);
       return GetStatementType(GetAtomicType(st));
     }
 
-    public static System.Type GetStatementType(ApplySuffix aps) {
+    public static Type GetStatementType(ApplySuffix aps) {
       Contract.Requires(aps != null);
       return GetStatementType(GetAtomicType(aps));
     }
 
-    public static System.Type GetStatementType(Atomic atomic) {
-      if (!atomic_class.ContainsKey(atomic))
+    public static Type GetStatementType(Atomic atomic) {
+      if (!AtomicClass.ContainsKey(atomic))
         return null;
-      return atomic_class[atomic];
+      return AtomicClass[atomic];
     }
 
   }

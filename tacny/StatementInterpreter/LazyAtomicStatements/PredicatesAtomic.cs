@@ -1,8 +1,8 @@
-﻿using Microsoft.Dafny;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using Tacny;
+using Microsoft.Dafny;
+using Util;
+
 namespace LazyTacny {
 
   public class PredicateAtomic : Atomic, IAtomicLazyStmt {
@@ -20,10 +20,10 @@ namespace LazyTacny {
       List<Expression> callArgs;
       var result = new List<MemberDecl>();
       InitArgs(st, out lv, out callArgs);
-      Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-      Contract.Assert(callArgs.Count == 0, Util.Error.MkErr(st, 0, 0, callArgs.Count));
+      Contract.Assert(lv != null, Error.MkErr(st, 8));
+      Contract.Assert(callArgs.Count == 0, Error.MkErr(st, 0, 0, callArgs.Count));
 
-      foreach(var member in StaticContext.program.members.Values) {
+      foreach(var member in StaticContext.program.Members.Values) {
         var pred = member as Predicate;
         if (pred != null)
           result.Add(pred);

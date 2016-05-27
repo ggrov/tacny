@@ -1,8 +1,8 @@
-﻿using Microsoft.Dafny;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using Tacny;
+using Microsoft.Dafny;
+using Util;
+
 namespace LazyTacny {
 
   public class SplitAtomic : Atomic, IAtomicLazyStmt {
@@ -19,8 +19,8 @@ namespace LazyTacny {
       List<Expression> callArgs;
       List<Expression> result = new List<Expression>();
       InitArgs(st, out lv, out callArgs);
-      Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-      Contract.Assert(callArgs.Count == 2, Util.Error.MkErr(st, 0, 2, callArgs.Count));
+      Contract.Assert(lv != null, Error.MkErr(st, 8));
+      Contract.Assert(callArgs.Count == 2, Error.MkErr(st, 0, 2, callArgs.Count));
       foreach (var arg1 in ResolveExpression(callArgs[0])) {
         var expression = arg1 as BinaryExpr;
         if (expression == null)

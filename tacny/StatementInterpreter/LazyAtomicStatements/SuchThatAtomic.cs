@@ -1,12 +1,8 @@
-﻿using System;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Collections;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
-using Dafny = Microsoft.Dafny;
 using Microsoft.Dafny;
-using System.Diagnostics;
+using Util;
 
 namespace LazyTacny {
   class SuchThatAtomic : Atomic, IAtomicLazyStmt {
@@ -17,8 +13,6 @@ namespace LazyTacny {
       foreach (var item in SuchThat(st, solution)) {
         yield return item;
       }
-
-      yield break;
     }
 
     private IEnumerable<Solution> SuchThat(Statement st, Solution solution) {
@@ -30,10 +24,10 @@ namespace LazyTacny {
       }
 
       AssignSuchThatStmt suchThat = tvds.Update as AssignSuchThatStmt;
-      Contract.Assert(suchThat != null, Util.Error.MkErr(st, 5, typeof(AssignSuchThatStmt), tvds.Update.GetType()));
+      Contract.Assert(suchThat != null, Error.MkErr(st, 5, typeof(AssignSuchThatStmt), tvds.Update.GetType()));
 
       BinaryExpr bexp = suchThat.Expr as BinaryExpr;
-      Contract.Assert(bexp != null, Util.Error.MkErr(st, 5, typeof(BinaryExpr), suchThat.Expr.GetType()));
+      Contract.Assert(bexp != null, Error.MkErr(st, 5, typeof(BinaryExpr), suchThat.Expr.GetType()));
 
       // this will cause issues when multiple variables are used
       // as the variables are updated one at a time
@@ -54,8 +48,8 @@ namespace LazyTacny {
         switch (bexp.Op) {
           case BinaryExpr.Opcode.In:
             NameSegment var = bexp.E0 as NameSegment;
-            Contract.Assert(var != null, Util.Error.MkErr(bexp, 6, declaration.Name));
-            Contract.Assert(var.Name == declaration.Name, Util.Error.MkErr(bexp, 6, var.Name));
+            Contract.Assert(var != null, Error.MkErr(bexp, 6, declaration.Name));
+            Contract.Assert(var.Name == declaration.Name, Error.MkErr(bexp, 6, var.Name));
             foreach (var result in ResolveExpression(bexp.E1)) {
               if (result is IEnumerable) {
                 dynamic resultList = result;
@@ -68,13 +62,13 @@ namespace LazyTacny {
           case BinaryExpr.Opcode.And:
             // for each item in the resolved lhs of the expression
             foreach (var item in ResolveExpression(bexp.E0, declaration)) {
-              Atomic copy = this.Copy();
+              Atomic copy = Copy();
               copy.AddLocal(declaration, item);
               // resolve the rhs expression
               foreach (var res in copy.ResolveExpression(bexp.E1)) {
-                Dafny.LiteralExpr lit = res as Dafny.LiteralExpr;
+                LiteralExpr lit = res as LiteralExpr;
                 // sanity check
-                Contract.Assert(lit != null, Util.Error.MkErr(expr, 17));
+                Contract.Assert(lit != null, Error.MkErr(expr, 17));
                 if (lit.Value is bool) {
                   // if resolved to true
                   if ((bool)lit.Value) {

@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Diagnostics.Contracts;
-using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
+using System.Linq;
 using Microsoft.Boogie;
-using System;
-using System.Threading;
+using Microsoft.Dafny;
+using Util;
+using Formal = Microsoft.Dafny.Formal;
+
 // todo cases multiple tac calls, cases within cases, tac calls from cases etc.
 // update 
 
@@ -14,7 +14,7 @@ namespace Tacny
     class MatchAtomic : Atomic, IAtomicStmt
     {
 
-        private Token oldToken = null;
+        private Token oldToken;
 
         public MatchAtomic(Atomic atomic) : base(atomic) { }
 
@@ -61,12 +61,9 @@ namespace Tacny
                         return true;
                     return false;
                 }
-                else
-                {
-                    if (errorToken.line > oldToken.line && errorToken.line <= ms.Cases[ctor + 1].tok.line)
-                        return true;
-                    return false;
-                }
+              if (errorToken.line > oldToken.line && errorToken.line <= ms.Cases[ctor + 1].tok.line)
+                return true;
+              return false;
             }
             // the error must have changed
             return true;
@@ -94,16 +91,16 @@ namespace Tacny
             else
                 guard_arg = guard.E as NameSegment;
 
-            Contract.Assert(guard_arg != null, Util.Error.MkErr(st, 2));
+            Contract.Assert(guard_arg != null, Error.MkErr(st, 2));
 
-            IVariable tac_input = GetLocalKeyByName(guard_arg) as IVariable;
-            Contract.Assert(tac_input != null, Util.Error.MkErr(st, 9, guard_arg.Name));
+            IVariable tac_input = GetLocalKeyByName(guard_arg);
+            Contract.Assert(tac_input != null, Error.MkErr(st, 9, guard_arg.Name));
 
 
-            if (!(tac_input is Dafny.Formal))
+            if (!(tac_input is Formal))
             {
                 tac_input = GetLocalValueByName(guard_arg) as IVariable;
-                Contract.Assert(tac_input != null, Util.Error.MkErr(st, 9, guard_arg.Name));
+                Contract.Assert(tac_input != null, Error.MkErr(st, 9, guard_arg.Name));
                 // the original
                 guard_arg = new NameSegment(tac_input.Tok, tac_input.Name, null);
             }
@@ -123,7 +120,7 @@ namespace Tacny
                 isElement = true;
                 object val = GetLocalValueByName(tac_input.Name);
                 NameSegment decl = val as NameSegment;
-                Contract.Assert(decl != null, Util.Error.MkErr(st, 9, tac_input.Name));
+                Contract.Assert(decl != null, Error.MkErr(st, 9, tac_input.Name));
 
                 IVariable original_decl = globalContext.GetGlobalVariable(decl.Name);
                 if (original_decl != null)
@@ -135,7 +132,7 @@ namespace Tacny
                         datatype_name = original_decl.Type.ToString();
                 }
                 else
-                    Contract.Assert(false, Util.Error.MkErr(st, 9, tac_input.Name));
+                    Contract.Assert(false, Error.MkErr(st, 9, tac_input.Name));
             }
             //else
             //  Contract.Assert(false, Util.Error.MkErr(st, 1, "Element"));
@@ -143,7 +140,7 @@ namespace Tacny
 
             if (!globalContext.ContainsGlobalKey(datatype_name))
             {
-                Contract.Assert(false, Util.Error.MkErr(st, 12, datatype_name));
+                Contract.Assert(false, Error.MkErr(st, 12, datatype_name));
             }
 
             datatype = globalContext.GetGlobal(datatype_name);
@@ -153,7 +150,7 @@ namespace Tacny
                 ctorBodies = RepeatedDefault<Solution>(datatype.Ctors.Count);
                 // find the first failing case 
                 GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(guard_arg), datatype, ctorBodies, out ms, ctorFlags);
-                Atomic ac = this.Copy();
+                Atomic ac = Copy();
                 ac.AddUpdated(ms, ms);
                 solution = new Solution(ac, true, null);
                 if (!GenerateAndVerify(solution))
@@ -162,7 +159,7 @@ namespace Tacny
                 {
                     ctor = GetErrorIndex(globalContext.program.GetErrorToken(), ms);
                     ctorFlags[ctor] = true;
-                    this.oldToken = globalContext.program.GetErrorToken();
+                    oldToken = globalContext.program.GetErrorToken();
                 }
             }
             else
@@ -193,7 +190,7 @@ namespace Tacny
                     {
                         ctorBodies[ctor] = result[i];
                         GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(guard_arg), datatype, ctorBodies, out ms, ctorFlags);
-                        Atomic ac = this.Copy();
+                        Atomic ac = Copy();
                         ac.AddUpdated(ms, ms);
                         solution = new Solution(ac, true, null);
                         if (!GenerateAndVerify(solution))
@@ -223,7 +220,7 @@ namespace Tacny
             {
                 GenerateMatchStmt(localContext.tac_call.Tok.line, Util.Copy.CopyNameSegment(guard_arg), datatype, ctorBodies, out ms, ctorFlags);
                 AddUpdated(ms, ms);
-                solution_list.Add(new Solution(this.Copy(), true, null));
+                solution_list.Add(new Solution(Copy(), true, null));
             }
             else
             {
@@ -231,7 +228,7 @@ namespace Tacny
                 GenerateAllMatchStmt(localContext.tac_call.Tok.line, 0, Util.Copy.CopyNameSegment(guard_arg), datatype, allCtorBodies, new List<Solution>(), ref cases);
                 foreach (var item in cases)
                 {
-                    Atomic ac = this.Copy();
+                    Atomic ac = Copy();
                     ac.AddUpdated(item, item);
                     solution_list.Add(new Solution(ac, true, null));
                 }
@@ -243,7 +240,7 @@ namespace Tacny
         {
             Contract.Requires(ns != null);
             Contract.Requires(datatype != null);
-            Contract.Ensures(Contract.ValueAtReturn<MatchStmt>(out result) != null);
+            Contract.Ensures(Contract.ValueAtReturn(out result) != null);
             List<MatchCaseStmt> cases = new List<MatchCaseStmt>();
             result = null;
             int line = index + 1;
@@ -285,11 +282,11 @@ namespace Tacny
         private void GenerateMatchCaseStmt(int line, DatatypeCtor dtc, Solution solution, out MatchCaseStmt mcs)
         {
             Contract.Requires(dtc != null);
-            Contract.Ensures(Contract.ValueAtReturn<MatchCaseStmt>(out mcs) != null);
+            Contract.Ensures(Contract.ValueAtReturn(out mcs) != null);
             List<CasePattern> casePatterns = new List<CasePattern>();
             mcs = null;
             dtc = new DatatypeCtor(dtc.tok, dtc.Name, dtc.Formals, dtc.Attributes);
-            foreach (Dafny.Formal formal in dtc.Formals)
+            foreach (Formal formal in dtc.Formals)
             {
                 CasePattern cp;
                 GenerateCasePattern(line, formal, out cp);
@@ -305,10 +302,10 @@ namespace Tacny
             mcs = new MatchCaseStmt(CreateToken("cases", line, 0), dtc.CompileName, casePatterns, body);
         }
 
-        private void GenerateCasePattern(int line, Dafny.Formal formal, out CasePattern cp)
+        private void GenerateCasePattern(int line, Formal formal, out CasePattern cp)
         {
             Contract.Requires(formal != null);
-            formal = new Dafny.Formal(formal.tok, formal.Name, formal.Type, formal.InParam, formal.IsGhost);
+            formal = new Formal(formal.tok, formal.Name, formal.Type, formal.InParam, formal.IsGhost);
 
             cp = new CasePattern(CreateToken(formal.Name, line, 0),
                                     new BoundVar(CreateToken(formal.Name, line, 0), formal.Name, new InferredTypeProxy()));
@@ -364,13 +361,13 @@ namespace Tacny
         private bool CheckError(MatchStmt ms, ref bool[] ctorFlags, int ctor)
         {
             // hack for termination
-            if (globalContext.program.errorInfo.Msg == "cannot prove termination; try supplying a decreases clause")
+            if (globalContext.program.ErrorInfo.Msg == "cannot prove termination; try supplying a decreases clause")
                 return false;
             // if the error token has not changed since last iteration
             if (!ErrorChanged(globalContext.program.GetErrorToken(), ms, ctor))
                 return false;
 
-            this.oldToken = globalContext.program.GetErrorToken();
+            oldToken = globalContext.program.GetErrorToken();
             if (oldToken != null)
             {
                 int index = GetErrorIndex(oldToken, ms);

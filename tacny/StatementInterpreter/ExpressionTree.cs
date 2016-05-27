@@ -2,20 +2,18 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
-using Dafny = Microsoft.Dafny;
-
 
 namespace Tacny {
   /// <summary>
   /// Easy to manage tree representation of àn expression.
   /// </summary>
   public class ExpressionTree {
-    public ExpressionTree parent;
-    public ExpressionTree lChild;
-    public ExpressionTree rChild;
-    public Expression data;
-    public bool modified = false;
-    public ExpressionTree root;
+    public ExpressionTree Parent;
+    public ExpressionTree LChild;
+    public ExpressionTree RChild;
+    public Expression Data;
+    public bool Modified;
+    public ExpressionTree Root;
 
 
     public ExpressionTree() { }
@@ -29,53 +27,49 @@ namespace Tacny {
         : this(data, parent, lChild, rChild, null) { }
 
     public ExpressionTree(Expression data, ExpressionTree parent, ExpressionTree lChild, ExpressionTree rChild, ExpressionTree root) {
-      this.data = data;
-      this.parent = parent;
-      this.lChild = lChild;
-      this.rChild = rChild;
-      this.root = root;
+      Data = data;
+      Parent = parent;
+      LChild = lChild;
+      RChild = rChild;
+      Root = root;
     }
     [Pure]
     public bool IsLeaf() {
-      return lChild == null && rChild == null;
+      return LChild == null && RChild == null;
     }
     [Pure]
-    public bool isRoot() {
-      return parent == null;
+    public bool IsRoot() {
+      return Parent == null;
     }
 
     [Pure]
     public bool IsLeftChild() {
-      if (parent == null)
-        return false;
-      return parent.lChild.data.Equals(this.data);// == this;
+      return Parent != null && Parent.LChild.Data.Equals(Data);
     }
 
     public bool IsRightChild() {
-      if (parent == null)
-        return false;
-      return parent.rChild.data.Equals(this.data);
+      return Parent != null && Parent.RChild.Data.Equals(Data);
     }
 
     public int OccurrenceOf(Expression exp) {
-      if (!this.IsLeaf())
-        return lChild.OccurrenceOf(exp) + (rChild == null ? 0 : rChild.OccurrenceOf(exp));
+      if (!IsLeaf())
+        return LChild.OccurrenceOf(exp) + (RChild?.OccurrenceOf(exp) ?? 0);
 
-      if (exp.GetType() == data.GetType()) {
+      if (exp.GetType() == Data.GetType()) {
         Console.WriteLine(exp.GetType());
-        Console.WriteLine(data.GetType());
-        if (data is NameSegment) {
-          var ns1 = (NameSegment)data;
+        Console.WriteLine(Data.GetType());
+        if (Data is NameSegment) {
+          var ns1 = (NameSegment)Data;
           var ns2 = (NameSegment)exp;
           if (ns1.Name == ns2.Name)
             return 1;
-        } else if (data is Dafny.LiteralExpr) {
-          var ns1 = (Dafny.LiteralExpr)data;
-          var ns2 = (Dafny.LiteralExpr)exp;
+        } else if (Data is LiteralExpr) {
+          var ns1 = (LiteralExpr)Data;
+          var ns2 = (LiteralExpr)exp;
           if (ns1.Value == ns2.Value)
             return 1;
-        } else if (data is UnaryOpExpr) {
-          var ns1 = (UnaryOpExpr)data;
+        } else if (Data is UnaryOpExpr) {
+          var ns1 = (UnaryOpExpr)Data;
           var ns2 = (UnaryOpExpr)exp;
           var e1 = (NameSegment)ns1.E;
           var e2 = (NameSegment)ns2.E;
@@ -89,22 +83,22 @@ namespace Tacny {
 
     private ExpressionTree _CopyTree() {
       if (IsLeaf())
-        return new ExpressionTree(this.data, null, null, null, root);
+        return new ExpressionTree(Data, null, null, null, Root);
 
-      return new ExpressionTree(data, null, lChild._CopyTree(), (rChild == null ? null : rChild._CopyTree()));
+      return new ExpressionTree(Data, null, LChild._CopyTree(), RChild?._CopyTree());
     }
 
     public ExpressionTree FindNode(ExpressionTree node) {
       Contract.Requires(node != null);
-      if (data.Equals(node.data))
+      if (Data.Equals(node.Data))
         return this;
-      if (lChild != null) {
-        var tmp = lChild.FindNode(node);
+      if (LChild != null) {
+        var tmp = LChild.FindNode(node);
         if (tmp != null)
           return tmp;
       }
-      if (rChild != null) {
-        var tmp = rChild.FindNode(node);
+      if (RChild != null) {
+        var tmp = RChild.FindNode(node);
         if (tmp != null)
           return tmp;
       }
@@ -117,17 +111,18 @@ namespace Tacny {
     public static ExpressionTree FindAndReplaceNode(ExpressionTree tree, ExpressionTree newNode, ExpressionTree oldNode) {
       var node = oldNode;// tree.FindNode(oldNode);
       node.SetRoot();
-      if (node.isRoot()) {
+      if (node.IsRoot()) {
         return newNode.CopyNode();
-      } else if (node.IsLeftChild()) {
-        node.parent.lChild = newNode;
+      }
+      if (node.IsLeftChild()) {
+        node.Parent.LChild = newNode;
       } else if (node.IsRightChild()) {
-        node.parent.rChild = newNode;
+        node.Parent.RChild = newNode;
       } else {
         return tree;
       }
 
-      return node.root.Copy();
+      return node.Root.Copy();
     }
 
     /*
@@ -136,11 +131,11 @@ namespace Tacny {
      */
     private void SetParent() {
       if (!IsLeaf()) {
-        lChild.parent = this;
-        lChild.SetParent();
-        if (rChild != null) {
-          rChild.parent = this;
-          rChild.SetParent();
+        LChild.Parent = this;
+        LChild.SetParent();
+        if (RChild != null) {
+          RChild.Parent = this;
+          RChild.SetParent();
         }
       }
 
@@ -148,10 +143,10 @@ namespace Tacny {
 
     public void FindAndResolveTacticApplication(Program tacnyProgram, Function fun) {
       if (IsLeaf()) {
-        var aps = data as ApplySuffix;
+        var aps = Data as ApplySuffix;
         if (aps == null)
           return;
-        UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs>() { new ExprRhs(aps) });
+        UpdateStmt us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>(), new List<AssignmentRhs> { new ExprRhs(aps) });
         if (tacnyProgram.IsTacticCall(us)) {
           List<IVariable> variables = new List<IVariable>();
           ITactic tac = tacnyProgram.GetTactic(us);
@@ -159,17 +154,16 @@ namespace Tacny {
           variables.AddRange(fun.Formals);
           // get the resolved variables
           List<IVariable> resolved = new List<IVariable>();
-          Console.Out.WriteLine(string.Format("Resolving {0} in {1}", tac.Name, fun.Name));
+          Console.Out.WriteLine($"Resolving {tac.Name} in {fun.Name}");
           resolved.AddRange(fun.Formals); // add input arguments as resolved variables
-          var result = LazyTacny.Atomic.ResolveTactic( us, fun, tacnyProgram, variables, resolved);
-          this.data = result.state.DynamicContext.generatedExpressions[0];
-          tacnyProgram.currentDebug.Fin();
-          this.modified = true;
+          var result = LazyTacny.Atomic.ResolveTactic(us, fun, tacnyProgram, variables, resolved);
+          Data = result.State.DynamicContext.generatedExpressions[0];
+          tacnyProgram.CurrentDebug.Fin();
+          Modified = true;
         }
       } else {
-        lChild.FindAndResolveTacticApplication(tacnyProgram, fun);
-        if (rChild != null)
-          rChild.FindAndResolveTacticApplication(tacnyProgram, fun);
+        LChild.FindAndResolveTacticApplication(tacnyProgram, fun);
+        RChild?.FindAndResolveTacticApplication(tacnyProgram, fun);
       }
     }
 
@@ -179,20 +173,17 @@ namespace Tacny {
      * */
     public ExpressionTree Copy() {
       Contract.Ensures(Contract.Result<ExpressionTree>() != null);
-      if (root == null)
-        this.SetRoot();
-      ExpressionTree et = root._CopyTree();
+      if (Root == null)
+        SetRoot();
+      var et = Root?._CopyTree();
       et.SetParent();
       et.SetRoot();
-      if (!et.IsLeaf())
-        return et.FindNode(this);
-      else
-        return et;
+      return !et.IsLeaf() ? et.FindNode(this) : et;
     }
 
     public ExpressionTree CopyNode() {
 
-      var tree = this._CopyTree();
+      var tree = _CopyTree();
       return tree;
     }
 
@@ -201,11 +192,11 @@ namespace Tacny {
       List<Expression> leafs = new List<Expression>();
 
       if (IsLeaf())
-        leafs.Add(data);
+        leafs.Add(Data);
       else {
-        leafs.AddRange(lChild.GetLeafData());
-        if (rChild != null)
-          leafs.AddRange(rChild.GetLeafData());
+        leafs.AddRange(LChild.GetLeafData());
+        if (RChild != null)
+          leafs.AddRange(RChild.GetLeafData());
       }
 
       return leafs;
@@ -217,26 +208,25 @@ namespace Tacny {
       if (IsLeaf())
         leafs.Add(this);
       else {
-        leafs.AddRange(lChild.GetLeafs());
-        if (rChild != null)
-          leafs.AddRange(rChild.GetLeafs());
+        leafs.AddRange(LChild.GetLeafs());
+        if (RChild != null)
+          leafs.AddRange(RChild.GetLeafs());
       }
 
       return leafs;
     }
 
     public List<ExpressionTree> TreeToList() {
-      if (root == null)
+      if (Root == null)
         SetRoot();
-      if (parent == null)
+      if (Parent == null)
         SetParent();
-      List<ExpressionTree> nodes = new List<ExpressionTree>();
-      nodes.Add(this);
+      List<ExpressionTree> nodes = new List<ExpressionTree> { this };
 
-      if (lChild != null)
-        nodes.AddRange(lChild.TreeToList());
-      if (rChild != null)
-        nodes.AddRange(rChild.TreeToList());
+      if (LChild != null)
+        nodes.AddRange(LChild.TreeToList());
+      if (RChild != null)
+        nodes.AddRange(RChild.TreeToList());
 
       return nodes;
     }
@@ -244,64 +234,60 @@ namespace Tacny {
     public Expression TreeToExpression() {
       Contract.Ensures(Contract.Result<Expression>() != null);
       if (IsLeaf())
-        return data;
-      else {
-        if (data is TacnyBinaryExpr) {
-          TacnyBinaryExpr bexp = (TacnyBinaryExpr)data;
-          Expression E0 = lChild.TreeToExpression();
-          Expression E1 = (rChild == null ? null : rChild.TreeToExpression());
-          return new TacnyBinaryExpr(bexp.tok, bexp.Op, E0, E1);
-        }
-        if (data is BinaryExpr) {
-          BinaryExpr bexp = (BinaryExpr)data;
-          Expression E0 = lChild.TreeToExpression();
-          Expression E1 = (rChild == null ? null : rChild.TreeToExpression());
-
-          return new BinaryExpr(bexp.tok, bexp.Op, E0, E1);
-        } else if (data is ChainingExpression) {
-          List<Expression> operands = null;
-          ChainingExpression ce = (ChainingExpression)data;
-          operands = this.GetLeafData();
-          operands.RemoveAt(1); // hack to remove the duplicate name statement
-          List<BinaryExpr.Opcode> operators = new List<BinaryExpr.Opcode>();
-          BinaryExpr expr = (BinaryExpr)lChild.TreeToExpression();
-          operators.Add(((BinaryExpr)expr.E0).Op);
-          operators.Add(((BinaryExpr)expr.E1).Op);
-          return new ChainingExpression(ce.tok, operands, operators, ce.PrefixLimits, expr);
-        } else if (data is ParensExpression) {
-          return new ParensExpression(data.tok, lChild.TreeToExpression());
-        } else if (data is Dafny.QuantifierExpr) {
-          Dafny.QuantifierExpr qexp = (Dafny.QuantifierExpr)data;
-
-          if (data is Dafny.ForallExpr)
-            return new Dafny.ForallExpr(qexp.tok, qexp.BoundVars, qexp.Range, lChild.TreeToExpression(), qexp.Attributes);
-          else if (data is Dafny.ExistsExpr)
-            return new Dafny.ExistsExpr(qexp.tok, qexp.BoundVars, qexp.Range, lChild.TreeToExpression(), qexp.Attributes);
-
-        } else if (data is NegationExpression) {
-          return new NegationExpression(data.tok, lChild.TreeToExpression());
-        } else if(data is SeqSelectExpr) {
-          var e = (SeqSelectExpr)data;
-          return new SeqSelectExpr(e.tok, e.SelectOne, e.Seq, lChild.TreeToExpression(), rChild != null ? rChild.TreeToExpression() : null);
-        }
-
-        return data;
+        return Data;
+      if (Data is TacnyBinaryExpr) {
+        TacnyBinaryExpr bexp = (TacnyBinaryExpr)Data;
+        Expression E0 = LChild.TreeToExpression();
+        Expression E1 = RChild?.TreeToExpression();
+        return new TacnyBinaryExpr(bexp.tok, bexp.Op, E0, E1);
       }
+      if (Data is BinaryExpr) {
+        BinaryExpr bexp = (BinaryExpr)Data;
+        Expression E0 = LChild.TreeToExpression();
+        Expression E1 = RChild?.TreeToExpression();
+
+        return new BinaryExpr(bexp.tok, bexp.Op, E0, E1);
+      }
+      if (Data is ChainingExpression) {
+        List<Expression> operands = null;
+        ChainingExpression ce = (ChainingExpression)Data;
+        operands = GetLeafData();
+        operands.RemoveAt(1); // hack to remove the duplicate name statement
+        List<BinaryExpr.Opcode> operators = new List<BinaryExpr.Opcode>();
+        BinaryExpr expr = (BinaryExpr)LChild.TreeToExpression();
+        operators.Add(((BinaryExpr)expr.E0).Op);
+        operators.Add(((BinaryExpr)expr.E1).Op);
+        return new ChainingExpression(ce.tok, operands, operators, ce.PrefixLimits, expr);
+      }
+      if (Data is ParensExpression) {
+        return new ParensExpression(Data.tok, LChild.TreeToExpression());
+      }
+      if (Data is QuantifierExpr) {
+        QuantifierExpr qexp = (QuantifierExpr)Data;
+
+        if (Data is ForallExpr)
+          return new ForallExpr(qexp.tok, qexp.BoundVars, qexp.Range, LChild.TreeToExpression(), qexp.Attributes);
+        if (Data is ExistsExpr)
+          return new ExistsExpr(qexp.tok, qexp.BoundVars, qexp.Range, LChild.TreeToExpression(), qexp.Attributes);
+      } else if (Data is NegationExpression) {
+        return new NegationExpression(Data.tok, LChild.TreeToExpression());
+      } else if (Data is SeqSelectExpr) {
+        var e = (SeqSelectExpr)Data;
+        return new SeqSelectExpr(e.tok, e.SelectOne, e.Seq, LChild.TreeToExpression(), RChild?.TreeToExpression());
+      }
+
+      return Data;
     }
 
     public void SetRoot() {
-      root = FindRoot();
-      if (!IsLeaf()) {
-        lChild.SetRoot();
-        if (rChild != null)
-          rChild.SetRoot();
-      }
+      Root = FindRoot();
+      if (IsLeaf()) return;
+      LChild.SetRoot();
+      RChild?.SetRoot();
     }
 
     private ExpressionTree FindRoot() {
-      if (parent == null)
-        return this;
-      return parent.FindRoot();
+      return Parent == null ? this : Parent.FindRoot();
     }
 
     public static ExpressionTree ExpressionToTree(Expression exp) {
@@ -310,53 +296,51 @@ namespace Tacny {
       return expt;
     }
 
-     public ExpressionTree ExptToTree(Expression exp) {
+    public ExpressionTree ExptToTree(Expression exp) {
       Contract.Requires(exp != null);
       Contract.Ensures(Contract.Result<ExpressionTree>() != null);
-      ExpressionTree node = null;
-      if (exp is TacnyBinaryExpr) {
-        var e = (TacnyBinaryExpr)exp;
-        node = new ExpressionTree(e);
-        node.lChild = ExpressionToTree(e.E0);
-        node.rChild = ExpressionToTree(e.E1);
-      } if (exp is BinaryExpr) {
+      ExpressionTree node;
+      var binaryExpr = exp as TacnyBinaryExpr;
+      if (binaryExpr != null) {
+        var e = binaryExpr;
+        node = new ExpressionTree(e) {
+          LChild = ExpressionToTree(e.E0),
+          RChild = ExpressionToTree(e.E1)
+        };
+      } else if (exp is BinaryExpr) {
         var e = (BinaryExpr)exp;
-        node = new ExpressionTree(e);
-        node.lChild = ExpressionToTree(e.E0);
-        node.rChild = ExpressionToTree(e.E1);
-        
-      } else if (exp is Dafny.QuantifierExpr) {
-        var e = (Dafny.QuantifierExpr)exp;
-        node = new ExpressionTree(e);
-        node.lChild = ExpressionToTree(e.Term);
+        node = new ExpressionTree(e) {
+          LChild = ExpressionToTree(e.E0),
+          RChild = ExpressionToTree(e.E1)
+        };
+
+      } else if (exp is QuantifierExpr) {
+        var e = (QuantifierExpr)exp;
+        node = new ExpressionTree(e) { LChild = ExpressionToTree(e.Term) };
       } else if (exp is ParensExpression) {
         var e = (ParensExpression)exp;
-        node = new ExpressionTree(e);
-        node.lChild = ExpressionToTree(e.E);
+        node = new ExpressionTree(e) { LChild = ExpressionToTree(e.E) };
       } else if (exp is ChainingExpression) {
         var e = (ChainingExpression)exp;
-        node = new ExpressionTree(e);
-        node.lChild = ExpressionToTree(e.E);
+        node = new ExpressionTree(e) { LChild = ExpressionToTree(e.E) };
       } else if (exp is NegationExpression) {
         var e = (NegationExpression)exp;
-        node = new ExpressionTree(e);
-        node.lChild = ExpressionToTree(e.E);
+        node = new ExpressionTree(e) { LChild = ExpressionToTree(e.E) };
       } else if (exp is SeqSelectExpr) {
         var e = (SeqSelectExpr)exp;
-        node = new ExpressionTree(e);
-        node.lChild = ExpressionToTree(e.E0);
+        node = new ExpressionTree(e) { LChild = ExpressionToTree(e.E0) };
         if (e.E1 != null) {
-          node.rChild = ExpressionToTree(e.E1);
+          node.RChild = ExpressionToTree(e.E1);
         }
-        
+
       } else {
         node = new ExpressionTree(exp);
       }
 
-      if (node.lChild != null)
-        node.lChild.parent = node;
-      if (node.rChild != null)
-        node.rChild.parent = node;
+      if (node.LChild != null)
+        node.LChild.Parent = node;
+      if (node.RChild != null)
+        node.RChild.Parent = node;
       return node;
     }
   }

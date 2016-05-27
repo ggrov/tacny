@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Dafny;
 using System.Diagnostics.Contracts;
+using Microsoft.Dafny;
+using Util;
+
 namespace Tacny
 {
     class InvariantAtomic : Atomic, IAtomicStmt
@@ -30,8 +32,8 @@ namespace Tacny
             MaybeFreeExpression invariant = null;
 
             InitArgs(st, out lv, out call_arguments);
-            Contract.Assert(lv != null, Util.Error.MkErr(st, 8));
-            Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
+            Contract.Assert(lv != null, Error.MkErr(st, 8));
+            Contract.Assert(tcce.OfSize(call_arguments, 1), Error.MkErr(st, 0, 1, call_arguments.Count));
 
             ProcessArg(call_arguments[0], out formula);
             Contract.Assert(formula != null);
@@ -39,7 +41,7 @@ namespace Tacny
             invariant = new MaybeFreeExpression(formula);
 
             AddLocal(lv, invariant);
-            solution_list.Add(new Solution(this.Copy()));
+            solution_list.Add(new Solution(Copy()));
         }
 
         public void AddInvar(Statement st, ref List<Solution> solution_list)
@@ -55,16 +57,16 @@ namespace Tacny
 
             InitArgs(st, out call_arguments);
             Contract.Assert(call_arguments != null);
-            Contract.Assert(tcce.OfSize(call_arguments, 1), Util.Error.MkErr(st, 0, 1, call_arguments.Count));
+            Contract.Assert(tcce.OfSize(call_arguments, 1), Error.MkErr(st, 0, 1, call_arguments.Count));
 
             object invar_obj;
             ProcessArg(call_arguments[0], out invar_obj);
             invariant = invar_obj as MaybeFreeExpression;
-            Contract.Assert(invar_obj != null, Util.Error.MkErr(st, 1, typeof(MaybeFreeExpression)));
+            Contract.Assert(invar_obj != null, Error.MkErr(st, 1, typeof(MaybeFreeExpression)));
             WhileStmt nws = null;
 
             WhileStmt ws = FindWhileStmt(globalContext.tac_call, globalContext.md);
-            Contract.Assert(ws != null, Util.Error.MkErr(st, 11));
+            Contract.Assert(ws != null, Error.MkErr(st, 11));
             // if we already added new invariants to the statement, use the updated statement instead
             nws = GetUpdated(ws) as WhileStmt;
 
@@ -78,7 +80,7 @@ namespace Tacny
             nws = new WhileStmt(ws.Tok, ws.EndTok, ws.Guard, invar, ws.Decreases, ws.Mod, ws.Body);
             AddUpdated(ws, nws);
 
-            solution_list.Add(new Solution(this.Copy()));
+            solution_list.Add(new Solution(Copy()));
         }
     }
 }

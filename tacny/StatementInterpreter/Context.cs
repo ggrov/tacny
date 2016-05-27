@@ -1,10 +1,10 @@
-﻿using Microsoft.Dafny;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using Dafny = Microsoft.Dafny;
-using Microsoft.Boogie;
+using Microsoft.Dafny;
+using Util;
+using Type = Microsoft.Dafny.Type;
 
 namespace Tacny {
   public class Context {
@@ -26,27 +26,27 @@ namespace Tacny {
   /// </summary>
   #region LocalContext
   public class DynamicContext : Context {
-    public ITactic tactic = null;  // The called tactic
+    public ITactic tactic;  // The called tactic
     public List<Statement> tacticBody = new List<Statement>(); // body of the currently worked tactic
-    public Dictionary<Dafny.IVariable, object> localDeclarations = new Dictionary<Dafny.IVariable, object>();
+    public Dictionary<IVariable, object> localDeclarations = new Dictionary<IVariable, object>();
     public Dictionary<Statement, Statement> generatedStatements = new Dictionary<Statement, Statement>();
     public List<Expression> generatedExpressions = new List<Expression>();
-    public MemberDecl newTarget = null;
-    public DatatypeCtor activeCtor = null;
-    public WhileStmt whileStmt = null;
+    public MemberDecl newTarget;
+    public DatatypeCtor activeCtor;
+    public WhileStmt whileStmt;
     private int tacCounter;
-    public bool isPartialyResolved = false;
+    public bool isPartialyResolved;
     public DynamicContext() {
 
     }
     public DynamicContext(MemberDecl md, ITactic tac, UpdateStmt tac_call)
         : base(md, tac_call) {
-      this.tactic = tac;
+      tactic = tac;
       if (tactic is Tactic) {
         var tmp = tactic as Tactic;
-        this.tacticBody = new List<Statement>(tmp.Body.Body.ToArray());
+        tacticBody = new List<Statement>(tmp.Body.Body.ToArray());
       }
-      this.tacCounter = 0;
+      tacCounter = 0;
       FillTacticInputs();
     }
 
@@ -54,27 +54,27 @@ namespace Tacny {
         List<Statement> tac_body, Dictionary<IVariable, object> local_variables,
         Dictionary<Statement, Statement> updated_statements, int tacCounter, MemberDecl old_target)
         : base(md, tac_call) {
-      this.tactic = tac;
-      this.tacticBody = new List<Statement>(tac_body.ToArray());
+      tactic = tac;
+      tacticBody = new List<Statement>(tac_body.ToArray());
 
       List<IVariable> lv_keys = new List<IVariable>(local_variables.Keys);
       List<object> lv_values = new List<object>(local_variables.Values);
-      this.localDeclarations = lv_keys.ToDictionary(x => x, x => lv_values[lv_keys.IndexOf(x)]);
+      localDeclarations = lv_keys.ToDictionary(x => x, x => lv_values[lv_keys.IndexOf(x)]);
 
-      this.generatedStatements = updated_statements;
+      generatedStatements = updated_statements;
 
       this.tacCounter = tacCounter;
-      this.newTarget = old_target;
+      newTarget = old_target;
     }
 
     public DynamicContext Copy() {
       var newM = Util.Copy.CopyMember(md);
       ITactic newTac = Util.Copy.CopyMember(tactic as MemberDecl) as ITactic;
-      var new_target = newTarget != null ? Util.Copy.CopyMember(this.newTarget) : null;
+      var new_target = newTarget != null ? Util.Copy.CopyMember(newTarget) : null;
       var newContext = new DynamicContext(newM, newTac, tac_call, tacticBody, localDeclarations, Util.Copy.CopyStatementDict(generatedStatements), tacCounter, new_target);
-      newContext.activeCtor = this.activeCtor;
-      newContext.isPartialyResolved = this.isPartialyResolved;
-      newContext.whileStmt = this.whileStmt;
+      newContext.activeCtor = activeCtor;
+      newContext.isPartialyResolved = isPartialyResolved;
+      newContext.whileStmt = whileStmt;
       return newContext;
     }
 
@@ -93,7 +93,7 @@ namespace Tacny {
 
     public bool HasLocalWithName(NameSegment ns) {
       Contract.Requires<ArgumentNullException>(ns != null);
-      List<Dafny.IVariable> ins = new List<Dafny.IVariable>(localDeclarations.Keys);
+      List<IVariable> ins = new List<IVariable>(localDeclarations.Keys);
       var key = ins.FirstOrDefault(i => i.Name == ns.Name);
       return key != null;
     }
@@ -110,7 +110,7 @@ namespace Tacny {
 
     public object GetLocalValueByName(string name) {
       Contract.Requires<ArgumentNullException>(name != null);
-      List<Dafny.IVariable> ins = new List<Dafny.IVariable>(localDeclarations.Keys);
+      List<IVariable> ins = new List<IVariable>(localDeclarations.Keys);
       return localDeclarations.FirstOrDefault(i => i.Key.Name == name).Value;
     }
 
@@ -121,7 +121,7 @@ namespace Tacny {
 
     public IVariable GetLocalKeyByName(string name) {
       Contract.Requires<ArgumentNullException>(name != null);
-      List<Dafny.IVariable> ins = new List<Dafny.IVariable>(localDeclarations.Keys);
+      List<IVariable> ins = new List<IVariable>(localDeclarations.Keys);
       return ins.FirstOrDefault(i => i.Name == name);
     }
 
@@ -221,7 +221,7 @@ namespace Tacny {
   public class StaticContext : Context {
     public readonly Dictionary<string, DatatypeDecl> datatypes = new Dictionary<string, DatatypeDecl>();
     public Dictionary<string, IVariable> staticVariables = new Dictionary<string, IVariable>();
-    public Dictionary<IVariable, Dafny.Type> variable_types = new Dictionary<IVariable, Dafny.Type>();
+    public Dictionary<IVariable, Type> variable_types = new Dictionary<IVariable, Type>();
     //public Dictionary<string, IVariable> temp_variables = new Dictionary<string, IVariable>();
     public List<Statement> resolved = new List<Statement>();
     public MemberDecl newTarget = null;
@@ -233,8 +233,8 @@ namespace Tacny {
     public StaticContext(MemberDecl md, UpdateStmt tac_call, Program program)
         : base(md, tac_call) {
       this.program = program;
-      foreach (DatatypeDecl tld in program.globals)
-        this.datatypes.Add(tld.Name, tld);
+      foreach (DatatypeDecl tld in program.Globals)
+        datatypes.Add(tld.Name, tld);
     }
 
     public bool ContainsGlobalKey(string name) {
@@ -309,14 +309,14 @@ namespace Tacny {
       return null;
     }
 
-    public Dafny.Type GetVariableType(NameSegment ns) {
+    public Type GetVariableType(NameSegment ns) {
       Contract.Requires(ns != null);
       return GetVariableType(ns.Name);
     }
 
-    public Dafny.Type GetVariableType(string name) {
+    public Type GetVariableType(string name) {
       Contract.Requires(name != null);
-      if (Util.TacnyOptions.O.EvalAnalysis)
+      if (TacnyOptions.O.EvalAnalysis)
         return variable_types.FirstOrDefault(i => i.Key.Name == name).Value;
 
       return null;
