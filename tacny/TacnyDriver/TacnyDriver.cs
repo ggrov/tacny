@@ -14,7 +14,7 @@ using Printer = Util.Printer;
 namespace Tacny {
   public class TacnyDriver {
 
-    enum ExitValue { VERIFIED = 0, PREPROCESSING_ERROR, DAFNY_ERROR, NOT_VERIFIED }
+    enum ExitValue { Verified = 0, PreprocessingError, DafnyError/*NotVerified */}
     static OutputPrinter _printer; // console 
     public const string ProgId = "main_program_id";
 
@@ -57,13 +57,13 @@ namespace Tacny {
       // parse command line args
       //Util.TacnyOptions.O.Parse(args);
       if (!CommandLineOptions.Clo.Parse(args)) {
-        exitValue = ExitValue.PREPROCESSING_ERROR;
+        exitValue = ExitValue.PreprocessingError;
         return (int)exitValue;
       }
 
       if (CommandLineOptions.Clo.Files.Count == 0) {
         _printer.ErrorWriteLine(Console.Out, "*** Error: No input files were specified.");
-        exitValue = ExitValue.PREPROCESSING_ERROR;
+        exitValue = ExitValue.PreprocessingError;
         return (int)exitValue;
       }
       Console.Out.WriteLine("BEGIN: Tacny Options");
@@ -104,13 +104,13 @@ namespace Tacny {
         programId = ProgId;
       }
 
-      var exitValue = ExitValue.VERIFIED;
+      var exitValue = ExitValue.Verified;
       if (CommandLineOptions.Clo.VerifySeparately && 1 < fileNames.Count) {
         foreach (string f in fileNames) {
           Console.WriteLine();
           Console.WriteLine($"-------------------- {f} --------------------");
           var ev = ProcessFiles(new List<string> { f }, f);
-          if (exitValue != ev && ev != ExitValue.VERIFIED) {
+          if (exitValue != ev && ev != ExitValue.Verified) {
             exitValue = ev;
           }
         }
@@ -129,7 +129,7 @@ namespace Tacny {
           Printer.Install(fileNames[0]);
           tacnyProgram.MaybePrintProgram(tacnyProgram.DafnyProgram, programName + "_src");
         } catch (ArgumentException ex) {
-          exitValue = ExitValue.DAFNY_ERROR;
+          exitValue = ExitValue.DafnyError;
           _printer.ErrorWriteLine(Console.Out, ex.Message);
           return exitValue;
         }

@@ -35,7 +35,7 @@ namespace Tacny {
       public int CallsToBoogie;       // number of calls made to Boogie during tactic resolution
       public int CallsToDafny;        // number of calls to Dafny resolver
       public double StartTime;           // Unix timestamp when the tactic resolution begins
-      public double EndTime;             // Unix timestamp when the tactic resolution finishes
+      public double EndTime = -1;             // Unix timestamp when the tactic resolution finishes
       public double TimeAtBoogie;
       public double TimeAtDafny;
       private bool _printHeader = true;
@@ -47,7 +47,7 @@ namespace Tacny {
       }
 
       public void Fin() {
-        if (Math.Abs(EndTime) < 0)
+        if (EndTime < 0)
           EndTime = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
       }
       public void PrintDebugData() {
@@ -55,7 +55,7 @@ namespace Tacny {
         var builder = new StringBuilder();
         builder.AppendLine($"Method: {Method}");
         builder.AppendLine($"Tactic: {Tactic}");
-        builder.AppendLine($"Execution time: {EndTime - StartTime} ms");
+        builder.AppendLine(String.Format("Execution time: {0} ms", EndTime - StartTime));
         builder.AppendLine($"Generated branches: {TotalBranchCount}");
         builder.AppendLine($"Generated invalid branches: {BadBranchCount}");
         builder.AppendLine($"Generated valid branches: {GoodBranchCount}");

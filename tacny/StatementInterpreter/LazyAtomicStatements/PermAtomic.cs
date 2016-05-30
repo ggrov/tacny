@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -40,26 +39,25 @@ namespace LazyTacny {
         Contract.Assert(member != null, Error.MkErr(callArguments[0], 1, typeof(Method)));
         MemberDecl md;
         if (member is NameSegment) {
-          md = StaticContext.program.Members.FirstOrDefault(i => i.Key == (member as NameSegment).Name).Value;
+          md = StaticContext.program.Members.FirstOrDefault(i => i.Key == (member as NameSegment)?.Name).Value;
         } else {
           md = member as MemberDecl;
         }
         Contract.Assert(md != null, Error.MkErr(callArguments[0], 1, typeof(MemberDecl)));
 
         // take the membed decl parameters
-        if (md is Method)
-          mdIns.AddRange(((Method)md).Ins);
+        var method = md as Method;
+        if (method != null)
+          mdIns.AddRange(method.Ins);
         else if (md is Function)
           mdIns.AddRange(((Function)md).Formals);
         else
-          Contract.Assert(false, Error.MkErr(callArguments[0], 1, String.Format("{0} or {1}", typeof(Method), typeof(Function))));
+          Contract.Assert(false, Error.MkErr(callArguments[0], 1, $"{typeof(Method)} or {typeof(Function)}"));
 
         foreach (var ovars in ResolveExpression(callArguments[1])) {
           Contract.Assert(ovars != null, Error.MkErr(callArguments[0], 1, typeof(List<IVariable>)));
 
-          List<IVariable> vars = ovars as List<IVariable>;
-          if (vars == null)
-            vars = new List<IVariable>();
+          List<IVariable> vars = ovars as List<IVariable> ?? new List<IVariable>();
           //Contract.Assert(vars != null, Util.Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
 
 

@@ -22,7 +22,7 @@ namespace LazyTacny {
 
 
       foreach (var item in ResolveExpression(st.Expr)) {
-        if (item is UpdateStmt) {
+        if (item is UpdateStmt) {   
           var us = item as UpdateStmt;
           var aps = ((ExprRhs)us.Rhss[0]).Expr as ApplySuffix;
           if (aps != null)
