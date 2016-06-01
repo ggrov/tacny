@@ -83,8 +83,10 @@
     <Reference Include="Boogie">
       <HintPath>..\..\boogie\Binaries\Boogie.exe</HintPath>
     </Reference>
-    <Reference Include="Core">
-      <HintPath>..\..\boogie\Binaries\Core.dll</HintPath>
+    <Reference Include="BoogieCore, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16" />
+    <Reference Include="BoogieParserHelper, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
     </Reference>
     <Reference Include="Dafny">
       <HintPath>..\..\dafny\Binaries\Dafny.exe</HintPath>
@@ -94,9 +96,6 @@
     </Reference>
     <Reference Include="ExecutionEngine">
       <HintPath>..\..\boogie\Binaries\ExecutionEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="ParserHelper">
-      <HintPath>..\..\boogie\Binaries\ParserHelper.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

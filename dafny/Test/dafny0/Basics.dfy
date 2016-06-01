@@ -1,4 +1,4 @@
-// RUN: %dafny /compile:0 /print:"%t.print" /dprint:"%t.dprint" "%s" > "%t"
+// RUN: %dafny /compile:0 /print:"%t.print" /dprint:"%t.dprint" /autoTriggers:0 "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
 class Global {
@@ -100,7 +100,7 @@ method ExpliesAssociativityM(A: bool, B: bool, C: bool) {
   }
 }
 
-method ExpliesShortCircuiting(a: array<T>)
+method ExpliesShortCircuiting(a: array)
 {
   assert a == null || 0 <= a.Length;  // (W)
   assert a != null ==> 0 <= a.Length;  // (X) -- same as (W)

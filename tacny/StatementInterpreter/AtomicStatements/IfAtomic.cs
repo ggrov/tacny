@@ -109,12 +109,12 @@ namespace Tacny
                             elseBody = new BlockStmt(original.Els.Tok, original.Thn.EndTok, elseList);
                         else
                             elseBody = elseList[0];
-                        result.Add(new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(thenBody), elseBody));
+                        result.Add(new IfStmt(original.Tok, original.EndTok, original.IsExistentialGuard, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(thenBody), elseBody));
                     }
                 }
                 else
                 {
-                    result.Add(new IfStmt(original.Tok, original.EndTok, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(thenBody), null));
+                    result.Add(new IfStmt(original.Tok, original.EndTok, original.IsExistentialGuard, Util.Copy.CopyExpression(guard), Util.Copy.CopyBlockStmt(thenBody), null));
                 }
             }
         }

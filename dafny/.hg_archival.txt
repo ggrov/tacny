@@ -1,0 +1,5 @@
+repo: 16206439289746a37aab5c150f6d82a31dc6a6d1
+node: 8b6284791c4cffe6a2aa80ad4f0b7494495b6436
+branch: default
+latesttag: emicvccbld_build_2.1.40227.0
+latesttagdistance: 1267

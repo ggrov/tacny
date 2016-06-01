@@ -16,17 +16,120 @@ COMPILER Dafny
 /*--------------------------------------------------------------------------*/
 readonly Expression/*!*/ dummyExpr;
 readonly AssignmentRhs/*!*/ dummyRhs;
-readonly FrameExpression/*!*/ dummyFrameExpr;
+readonly FrameExpression/*!*/ dummyFrameExpr;  
 readonly Statement/*!*/ dummyStmt;
 readonly ModuleDecl theModule;
 readonly BuiltIns theBuiltIns;
 readonly bool theVerifyThisFile;
 int anonymousIds = 0;
 
-struct MemberModifiers {
+/// <summary>
+/// Holds the modifiers given for a declaration
+///
+/// Not all modifiers are applicable to all kinds of declarations.
+/// Errors are given when a modify does not apply.
+/// We also record the tokens for the specified modifiers so that
+/// they can be used in error messages.
+/// </summary>
+struct DeclModifierData {
+  public bool IsAbstract;
+  public IToken AbstractToken;
   public bool IsGhost;
+  public IToken GhostToken;
   public bool IsStatic;
+  public IToken StaticToken;
   public bool IsProtected;
+  public IToken ProtectedToken;
+  public bool IsExtern;
+  public IToken ExternToken;
+  public StringLiteralExpr ExternName;
+
+}
+
+// Check that token has not been set, then set it.
+public void CheckAndSetToken(ref IToken token)
+{
+    if (token != null) {
+      SemErr(t, "Duplicate declaration modifier: " + t.val);
+    }
+    token = t;
+}
+
+/// <summary>
+// A flags type used to tell what declaration modifiers are allowed for a declaration.
+/// </summary>
+[Flags]
+enum AllowedDeclModifiers {
+  None = 0,
+  Abstract = 1,
+  Ghost = 2,
+
+  // Means ghost not allowed because already implicitly ghost.
+  AlreadyGhost = 4,
+  Static = 8,
+  Protected = 16, 
+  Extern = 32
+};
+
+/// <summary>
+/// Check the declaration modifiers against those that are allowed.
+///
+/// The 'allowed' parameter specifies which declaratio modifiers are allowed.
+/// The 'declCaption' parameter should be a string describing the kind of declaration. 
+/// It is used in error messages.
+/// Any declaration modifiers that are present but not allowed are cleared.
+///</summary>
+void CheckDeclModifiers(DeclModifierData dmod, string declCaption, AllowedDeclModifiers allowed)
+{
+  if (dmod.IsAbstract && ((allowed & AllowedDeclModifiers.Abstract) == 0)) {
+    SemErr(dmod.AbstractToken, declCaption + " cannot be declared 'abstract'.");
+    dmod.IsAbstract = false;
+  }
+  if (dmod.IsGhost) {
+    if ((allowed & AllowedDeclModifiers.AlreadyGhost) != 0) {
+      SemErr(dmod.GhostToken, declCaption + " cannot be declared ghost (they are 'ghost' by default).");
+      dmod.IsGhost = false;
+    } else if ((allowed & AllowedDeclModifiers.Ghost) == 0) {
+      SemErr(dmod.GhostToken, declCaption + " cannot be declared 'ghost'.");
+      dmod.IsGhost = false;
+    }
+  }
+  if (dmod.IsStatic && ((allowed & AllowedDeclModifiers.Static) == 0)) {
+    SemErr(dmod.StaticToken, declCaption + " cannot be declared 'static'.");
+    dmod.IsStatic = false;
+  }
+  if (dmod.IsProtected && ((allowed & AllowedDeclModifiers.Protected) == 0)) {
+    SemErr(dmod.ProtectedToken, declCaption + " cannot be declared 'protected'.");
+    dmod.IsProtected = false;
+  }
+  if (dmod.IsExtern && ((allowed & AllowedDeclModifiers.Extern) == 0)) {
+    SemErr(dmod.ExternToken, declCaption + " cannot be declared 'extern'.");
+    dmod.IsExtern = false;
+  }
+}
+
+/// <summary>
+/// Encode an 'extern' declaration modifier as an {:extern name} attribute.
+///
+/// We also include an {:axiom} attribute since the specification of an
+/// external entity is assumed to hold, but only for methods or functions.
+///</summary>
+static void EncodeExternAsAttribute(DeclModifierData dmod, ref Attributes attrs, IToken/*!*/ id, bool needAxiom) {
+  if (dmod.IsExtern) {
+    StringLiteralExpr name = dmod.ExternName;
+    if (name == null) {
+      bool isVerbatimString = false;
+      name = new StringLiteralExpr(id, id.val, isVerbatimString);
+    }
+    var args = new List<Expression>();
+    args.Add(name);
+    attrs = new Attributes("extern", args, attrs);
+
+    // Also 'extern' implies 'axiom' for methods or functions.
+    if (needAxiom) {
+      attrs = new Attributes("axiom", new List<Expression>(), attrs);
+    }
+  }
 }
 
 ///<summary>
@@ -41,11 +144,11 @@ public static int Parse (string/*!*/ filename, ModuleDecl module, BuiltIns built
   string s;
   if (filename == "stdin.dfy") {
     s = Microsoft.Boogie.ParserHelper.Fill(System.Console.In, new List<string>());
-    return Parse(s, filename, module, builtIns, errors, verifyThisFile);
+    return Parse(s, filename, filename, module, builtIns, errors, verifyThisFile);
   } else {
     using (System.IO.StreamReader reader = new System.IO.StreamReader(filename)) {
       s = Microsoft.Boogie.ParserHelper.Fill(reader, new List<string>());
-      return Parse(s, DafnyOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(filename) : filename, module, builtIns, errors, verifyThisFile);
+      return Parse(s, filename, DafnyOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(filename) : filename, module, builtIns, errors, verifyThisFile);
     }
   }
 }
@@ -55,12 +158,12 @@ public static int Parse (string/*!*/ filename, ModuleDecl module, BuiltIns built
 /// Returns the number of parsing errors encountered.
 /// Note: first initialize the Scanner.
 ///</summary>
-public static int Parse (string/*!*/ s, string/*!*/ filename, ModuleDecl module, BuiltIns builtIns, bool verifyThisFile=true) {
+public static int Parse (string/*!*/ s, string/*!*/ fullFilename, string/*!*/ filename, ModuleDecl module, BuiltIns builtIns, ErrorReporter reporter, bool verifyThisFile=true) {
   Contract.Requires(s != null);
   Contract.Requires(filename != null);
   Contract.Requires(module != null);
-  Errors errors = new Errors();
-  return Parse(s, filename, module, builtIns, errors, verifyThisFile);
+  Errors errors = new Errors(reporter);
+  return Parse(s, fullFilename, filename, module, builtIns, errors, verifyThisFile);
 }
 ///<summary>
 /// Parses top-level things (modules, classes, datatypes, class members)
@@ -68,18 +171,18 @@ public static int Parse (string/*!*/ s, string/*!*/ filename, ModuleDecl module,
 /// Returns the number of parsing errors encountered.
 /// Note: first initialize the Scanner with the given Errors sink.
 ///</summary>
-public static int Parse (string/*!*/ s, string/*!*/ filename, ModuleDecl module, BuiltIns builtIns,
-                         Errors/*!*/ errors, bool verifyThisFile=true) {
+public static int Parse (string/*!*/ s, string/*!*/ fullFilename, string/*!*/ filename, ModuleDecl module,
+                         BuiltIns builtIns, Errors/*!*/ errors, bool verifyThisFile=true) {
   Contract.Requires(s != null);
   Contract.Requires(filename != null);
   Contract.Requires(module != null);
   Contract.Requires(errors != null);
   byte[]/*!*/ buffer = cce.NonNull( UTF8Encoding.Default.GetBytes(s));
   MemoryStream ms = new MemoryStream(buffer,false);
-  Scanner scanner = new Scanner(ms, errors, filename);
+  Scanner scanner = new Scanner(ms, errors, fullFilename, filename);
   Parser parser = new Parser(scanner, errors, module, builtIns, verifyThisFile);
   parser.Parse();
-  return parser.errors.count;
+  return parser.errors.ErrorCount;
 }
 public Parser(Scanner/*!*/ scanner, Errors/*!*/ errors, ModuleDecl module, BuiltIns builtIns, bool verifyThisFile=true)
   : this(scanner, errors)  // the real work
@@ -102,6 +205,25 @@ bool IsAttribute() {
 bool IsAlternative() {
   Token x = scanner.Peek();
   return la.kind == _lbrace && x.kind == _case;
+}
+
+// an existential guard starts with an identifier and is then followed by
+// * a colon (if the first identifier is given an explicit type),
+// * a comma (if there's a list a bound variables and the first one is not given an explicit type),
+// * a start-attribute (if there's one bound variable and it is not given an explicit type and there are attributes), or
+// * a bored smiley (if there's one bound variable and it is not given an explicit type).
+bool IsExistentialGuard() {
+  scanner.ResetPeek();
+  if (la.kind == _ident) {
+    Token x = scanner.Peek();
+    if (x.kind == _colon || x.kind == _comma || x.kind == _boredSmiley) {
+      return true;
+    } else if (x.kind == _lbrace) {
+      x = scanner.Peek();
+      return x.kind == _colon;
+    }
+  }
+  return false;
 }
 
 bool IsLoopSpec() {
@@ -142,10 +264,6 @@ bool IsAndOp() {
 bool IsOrOp() {
   return la.val == "||" || la.val == "\u2228";
 }
-
-bool IsTacnyOrOp() {
-  return la.val == "|||";
-}
 bool IsRelOp() {
   return la.val == "=="
       || la.val == "<"
@@ -178,6 +296,9 @@ bool IsMapDisplay() {
 }
 bool IsIMapDisplay() {
   return la.kind == _imap && scanner.Peek().kind == _lbracket;
+}
+bool IsISetDisplay() {
+  return la.kind == _iset && scanner.Peek().kind == _lbrace;
 }
 
 bool IsSuffix() {
@@ -300,6 +421,9 @@ bool IsGenericInstantiation() {
       return false;
   }
 }
+/* Returns true if the next thing is of the form:
+ *     "<" Type { "," Type } ">"
+ */
 bool IsTypeList(ref IToken pt) {
   if (pt.kind != _openAngleBracket) {
     return false;
@@ -307,6 +431,10 @@ bool IsTypeList(ref IToken pt) {
   pt = scanner.Peek();
   return IsTypeSequence(ref pt, _closeAngleBracket);
 }
+/* Returns true if the next thing is of the form:
+ *     Type { "," Type }
+ * followed by an endBracketKind.
+ */
 bool IsTypeSequence(ref IToken pt, int endBracketKind) {
   while (true) {
     if (!IsType(ref pt)) {
@@ -338,12 +466,13 @@ bool IsType(ref IToken pt) {
       return true;
     case _arrayToken:
     case _set:
+    case _iset:
     case _multiset:
     case _seq:
     case _map:
     case _imap:
       pt = scanner.Peek();
-      return IsTypeList(ref pt);
+      return pt.kind != _openAngleBracket || IsTypeList(ref pt);
     case _ident:
       while (true) {
         // invariant: next token is an ident
@@ -362,10 +491,22 @@ bool IsType(ref IToken pt) {
       }
     case _openparen:
       pt = scanner.Peek();
+      if (pt.kind == _closeparen) {
+        // end of type list
+        pt = scanner.Peek();
+        return true;
+      }
       return IsTypeSequence(ref pt, _closeparen);
     default:
       return false;
   }
+}
+
+
+bool IsDefaultImport() {
+  scanner.ResetPeek();  
+  Token x = scanner.Peek();  // lookahead token again 
+  return la.val == "default" && x.val != "export";
 }
 
 /*--------------------------------------------------------------------------*/
@@ -420,6 +561,7 @@ TOKENS
   object = "object".
   string = "string".
   set = "set".
+  iset = "iset".
   multiset = "multiset".
   seq = "seq".
   map = "map".
@@ -443,6 +585,7 @@ TOKENS
   comma = ','.
   verticalbar = '|'.
   doublecolon = "::".
+  boredSmiley = ":|".
   bullet = '\u2022'.
   dot = '.'.
   semi = ';'.
@@ -477,26 +620,21 @@ TOKENS
   star = '*'.
   notIn = "!in" CONTEXT (nonidchar).
   ellipsis = "...".
-  /*-----------------------------------------------------------*/
-  tactic = "tactic".
-  /*-----------------------------------------------------------*/
+    tactic = "tactic".
 COMMENTS FROM "/*" TO "*/" NESTED
 COMMENTS FROM "//" TO lf
 IGNORE cr + lf + tab
 /*------------------------------------------------------------------------*/
 PRODUCTIONS
 Dafny
-= (. ClassDecl/*!*/ c; DatatypeDecl/*!*/ dt; TopLevelDecl td; IteratorDecl iter;
-     List<MemberDecl/*!*/> membersDefaultClass = new List<MemberDecl/*!*/>();
-     ModuleDecl submodule;
+= (. List<MemberDecl/*!*/> membersDefaultClass = new List<MemberDecl/*!*/>();
      // to support multiple files, create a default module only if theModule is null
      DefaultModuleDecl defaultModule = (DefaultModuleDecl)((LiteralModuleDecl)theModule).ModuleDef;
      // theModule should be a DefaultModuleDecl (actually, the singular DefaultModuleDecl)
-	 TraitDecl/*!*/ trait;
      Contract.Assert(defaultModule != null);
   .)
   { "include" stringToken               (. {
-                                             string parsedFile = t.filename;
+                                             string parsedFile = scanner.FullFilename;
                                              bool isVerbatimString;
                                              string includedFile = Util.RemoveParsedStringQuotes(t.val, out isVerbatimString);
                                              includedFile = Util.RemoveEscaping(includedFile, isVerbatimString);
@@ -510,15 +648,7 @@ Dafny
                                            }
                                         .)
   }
-  { SubModuleDecl<defaultModule, out submodule> (. defaultModule.TopLevelDecls.Add(submodule); .)
-  | ClassDecl<defaultModule, out c>             (. defaultModule.TopLevelDecls.Add(c); .)
-  | DatatypeDecl<defaultModule, out dt>         (. defaultModule.TopLevelDecls.Add(dt); .)
-  | NewtypeDecl<defaultModule, out td>          (. defaultModule.TopLevelDecls.Add(td); .)
-  | OtherTypeDecl<defaultModule, out td>        (. defaultModule.TopLevelDecls.Add(td); .)
-  | IteratorDecl<defaultModule, out iter>       (. defaultModule.TopLevelDecls.Add(iter); .)
-  | TraitDecl<defaultModule, out trait>    (. defaultModule.TopLevelDecls.Add(trait); .)
-  | ClassMemberDecl<membersDefaultClass, false, !DafnyOptions.O.AllowGlobals>
-  }
+  { TopDecl<defaultModule, membersDefaultClass, /* isTopLevel */ true, /* isAbstract */ false> }
   (. // find the default class in the default module, then append membersDefaultClass to its member list
      DefaultClassDecl defaultClass = null;
      foreach (TopLevelDecl topleveldecl in defaultModule.TopLevelDecls) {
@@ -534,44 +664,78 @@ Dafny
      } .)
   EOF
   .
-SubModuleDecl<ModuleDefinition parent, out ModuleDecl submodule>
-= (. ClassDecl/*!*/ c; DatatypeDecl/*!*/ dt; TopLevelDecl td; IteratorDecl iter;
-     Attributes attrs = null;  IToken/*!*/ id;
-     TraitDecl/*!*/ trait;
-	 List<MemberDecl/*!*/> namedModuleDefaultClassMembers = new List<MemberDecl>();;
+
+DeclModifier<ref DeclModifierData dmod>
+= ( "abstract"                             (. dmod.IsAbstract = true;  CheckAndSetToken(ref dmod.AbstractToken); .)
+  | "ghost"                                (. dmod.IsGhost = true;  CheckAndSetToken(ref dmod.GhostToken); .)
+  | "static"                               (. dmod.IsStatic = true; CheckAndSetToken(ref dmod.StaticToken); .)
+  | "protected"                            (. dmod.IsProtected = true; CheckAndSetToken(ref dmod.ProtectedToken); .)
+  | "extern"                               (. dmod.IsExtern = true; CheckAndSetToken(ref dmod.ExternToken); .)
+    [ stringToken                          (. bool isVerbatimString;
+                                              string s = Util.RemoveParsedStringQuotes(t.val, out isVerbatimString);
+                                              dmod.ExternName = new StringLiteralExpr(t, s, isVerbatimString);
+                                           .)
+    ]
+  )
+  .
+
+TopDecl<. ModuleDefinition module, List<MemberDecl/*!*/> membersDefaultClass, bool isTopLevel, bool isAbstract .>
+= (. DeclModifierData dmod = new DeclModifierData(); ModuleDecl submodule;
+     ClassDecl/*!*/ c; DatatypeDecl/*!*/ dt; TopLevelDecl td; IteratorDecl iter;
+  	 TraitDecl/*!*/ trait;
+  .)
+  { DeclModifier<ref dmod> }
+  ( SubModuleDecl<dmod, module, out submodule> (. module.TopLevelDecls.Add(submodule); .)
+  | ClassDecl<dmod, module, out c>             (. module.TopLevelDecls.Add(c); .)
+  | DatatypeDecl<dmod, module, out dt>         (. module.TopLevelDecls.Add(dt); .)
+  | NewtypeDecl<dmod, module, out td>          (. module.TopLevelDecls.Add(td); .)
+  | OtherTypeDecl<dmod, module, out td>        (. module.TopLevelDecls.Add(td); .)
+  | IteratorDecl<dmod, module, out iter>       (. module.TopLevelDecls.Add(iter); .)
+  | TraitDecl<dmod, module, out trait>         (. module.TopLevelDecls.Add(trait); .)
+  | ClassMemberDecl<dmod, membersDefaultClass, false, !DafnyOptions.O.AllowGlobals, 
+                    !isTopLevel && DafnyOptions.O.IronDafny && isAbstract>
+  ) .
+
+SubModuleDecl<DeclModifierData dmod, ModuleDefinition parent, out ModuleDecl submodule>
+= (. Attributes attrs = null;  IToken/*!*/ id;
+	   List<MemberDecl/*!*/> namedModuleDefaultClassMembers = new List<MemberDecl>();;
      List<IToken> idRefined = null, idPath = null, idAssignment = null;
      ModuleDefinition module;
-     ModuleDecl sm;
      submodule = null; // appease compiler
-     bool isAbstract = false;
+     bool isAbstract = dmod.IsAbstract;
+     bool isExclusively = false;
      bool opened = false;
+     CheckDeclModifiers(dmod, "Modules", AllowedDeclModifiers.Abstract | AllowedDeclModifiers.Extern);
   .)
-  ( [ "abstract"  (. isAbstract = true; .) ]
-    "module"
+  ( "module"
     { Attribute<ref attrs> }
     NoUSIdent<out id>
+    (. EncodeExternAsAttribute(dmod, ref attrs, id, /* needAxiom */ false); .)
 
-      [ "refines" QualifiedModuleName<out idRefined> ] (. module = new ModuleDefinition(id, id.val, isAbstract, false, idRefined == null ? null : idRefined, parent, attrs, false); .)
+      [ "exclusively" "refines" QualifiedModuleName<out idRefined> (. isExclusively = true; .)  
+      | "refines" QualifiedModuleName<out idRefined> (. isExclusively = false; .) ] 
+            (. module = new ModuleDefinition(id, id.val, isAbstract, false, isExclusively, idRefined == null ? null : idRefined, parent, attrs, false, this); .)  
        "{"                                             (. module.BodyStartTok = t; .)
-        { SubModuleDecl<module, out sm>                (. module.TopLevelDecls.Add(sm); .)
-        | ClassDecl<module, out c>                     (. module.TopLevelDecls.Add(c); .)
-        | TraitDecl<module, out trait>                 (. module.TopLevelDecls.Add(trait); .)
-		| DatatypeDecl<module, out dt>                 (. module.TopLevelDecls.Add(dt); .)
-        | NewtypeDecl<module, out td>                  (. module.TopLevelDecls.Add(td); .)
-        | OtherTypeDecl<module, out td>                (. module.TopLevelDecls.Add(td); .)
-        | IteratorDecl<module, out iter>               (. module.TopLevelDecls.Add(iter); .)
-        | ClassMemberDecl<namedModuleDefaultClassMembers, false, !DafnyOptions.O.AllowGlobals>
-        }
-      "}"                                  (. module.BodyEndTok = t;
+            { TopDecl<module, namedModuleDefaultClassMembers, /* isTopLevel */ false, isAbstract>}
+       "}"                                 (. module.BodyEndTok = t;
                                               module.TopLevelDecls.Add(new DefaultClassDecl(module, namedModuleDefaultClassMembers));
                                               submodule = new LiteralModuleDecl(module, parent); .)
   |
     "import" ["opened" (.opened = true;.)]
     NoUSIdent<out id>
+    (. EncodeExternAsAttribute(dmod, ref attrs, id, /* needAxiom */ false); .)
     [ "=" QualifiedModuleName<out idPath>
       (. submodule = new AliasModuleDecl(idPath, id, parent, opened); .)
-    | "as" QualifiedModuleName<out idPath>  ["default" QualifiedModuleName<out idAssignment> ]
+    | "as" QualifiedModuleName<out idPath> [IF(IsDefaultImport()) "default" QualifiedModuleName<out idAssignment> ]
+      (. submodule = new ModuleFacadeDecl(idPath, id, parent, idAssignment, opened); 
+         errors.Warning(t, "\"import A as B\" has been deprecated; in the new syntax, it is \"import A:B\"");
+      .)
+    | ":" QualifiedModuleName<out idPath>
       (. submodule = new ModuleFacadeDecl(idPath, id, parent, idAssignment, opened); .)
+    | "." QualifiedModuleName<out idPath>
+      (. idPath.Insert(0, id);
+			   submodule = new AliasModuleDecl(idPath, id, parent, opened); 
+      .)
     ]
     [ SYNC ";"
         // This semi-colon used to be required, but it seems silly to have it.
@@ -585,6 +749,33 @@ SubModuleDecl<ModuleDefinition parent, out ModuleDecl submodule>
          submodule = new AliasModuleDecl(idPath, id, parent, opened);
        }
     .)
+	| (. 		 
+		  bool isDefault = false;
+			bool includeBody;
+			IToken exportId;
+			List<ExportSignature> exports = new List<ExportSignature>();;
+      List<string> extends = new List<string>(); 
+		.)
+	  ["default"  (. isDefault = true; .) ]
+		"export"
+		NoUSIdent<out exportId>
+		["extends" 
+     NoUSIdent<out id>(. extends.Add(id.val); .) 
+     {"," NoUSIdent<out id>  (. extends.Add(id.val); .) }
+    ] 
+		"{"
+		   NoUSIdent<out id>   (. includeBody = false; .)
+			 ['+' (. includeBody = true; .)]
+			 (. exports.Add(new ExportSignature(id, includeBody)); .)
+       { ","
+         NoUSIdent<out id> (. includeBody = false; .)
+			   ['+' (. includeBody = true; .)]
+			   (. exports.Add(new ExportSignature(id, includeBody)); .)
+       }
+		"}"
+		(.
+		   submodule = new ModuleExportDecl(exportId, parent, isDefault, exports, extends);
+		.)
   )
 .
 
@@ -596,7 +787,8 @@ QualifiedModuleName<.out List<IToken> ids.>
   }
   .
 
-ClassDecl<ModuleDefinition/*!*/ module, out ClassDecl/*!*/ c>
+
+ClassDecl<DeclModifierData dmodClass, ModuleDefinition/*!*/ module, out ClassDecl/*!*/ c>
 = (. Contract.Requires(module != null);
      Contract.Ensures(Contract.ValueAtReturn(out c) != null);
      IToken/*!*/ id;
@@ -606,18 +798,23 @@ ClassDecl<ModuleDefinition/*!*/ module, out ClassDecl/*!*/ c>
      List<TypeParameter/*!*/> typeArgs = new List<TypeParameter/*!*/>();
      List<MemberDecl/*!*/> members = new List<MemberDecl/*!*/>();
      IToken bodyStart;
+     CheckDeclModifiers(dmodClass, "Classes", AllowedDeclModifiers.Extern);
+     DeclModifierData dmod; 
   .)
   SYNC
   "class"
   { Attribute<ref attrs> }
   NoUSIdent<out id>
+  (. EncodeExternAsAttribute(dmodClass, ref attrs, id, /* needAxiom */ false); .)
   [ GenericParameters<typeArgs> ]
   ["extends" 
   Type<out trait>		(. traits.Add(trait); .) 
   {"," Type<out trait>  (. traits.Add(trait); .) }
   ]         
   "{"                                            (. bodyStart = t;  .)
-  { ClassMemberDecl<members, true, false>
+  { (. dmod = new DeclModifierData(); .)
+    { DeclModifier<ref dmod> }
+    ClassMemberDecl<dmod, members, true, false, false>
   }
   "}"
   (. c = new ClassDecl(id, id.val, module, typeArgs, members, attrs, traits);
@@ -626,23 +823,27 @@ ClassDecl<ModuleDefinition/*!*/ module, out ClassDecl/*!*/ c>
   .)
   .
 
-    TraitDecl<ModuleDefinition/*!*/ module, out TraitDecl/*!*/ trait>
-  = (. Contract.Requires(module != null);
+TraitDecl<DeclModifierData dmodIn, ModuleDefinition/*!*/ module, out TraitDecl/*!*/ trait>
+  = (. Contract.Requires(module != null);     
 	   Contract.Ensures(Contract.ValueAtReturn(out trait) != null);
+     CheckDeclModifiers(dmodIn, "Traits", AllowedDeclModifiers.None);
 	   IToken/*!*/ id;
 	   Attributes attrs = null;
 	   List<TypeParameter/*!*/> typeArgs = new List<TypeParameter/*!*/>(); //traits should not support type parameters at the moment
 	   List<MemberDecl/*!*/> members = new List<MemberDecl/*!*/>();
 	   IToken bodyStart;
+     DeclModifierData dmod; 
     .)
 	SYNC
 	"trait"
 	{ Attribute<ref attrs> }
 	NoUSIdent<out id>
 	[ GenericParameters<typeArgs> ]
-	"{"                                            (. bodyStart = t; .)
-    { ClassMemberDecl<members, true, false>
-    }
+  	"{"                                            (. bodyStart = t; .)
+      {                                            (. dmod  = new DeclModifierData(); .)
+        { DeclModifier<ref dmod> }
+        ClassMemberDecl<dmod, members, true, false, false>
+      }
     "}"
 	(. trait = new TraitDecl(id, id.val, module, typeArgs, members, attrs);
      trait.BodyStartTok = bodyStart;
@@ -650,44 +851,33 @@ ClassDecl<ModuleDefinition/*!*/ module, out ClassDecl/*!*/ c>
     .)
 	.
 
-ClassMemberDecl<.List<MemberDecl> mm, bool allowConstructors, bool moduleLevelDecl.>
+ClassMemberDecl<. DeclModifierData dmod, List<MemberDecl> mm, bool allowConstructors, bool moduleLevelDecl, bool isWithinAbstractModule.>
 = (. Contract.Requires(cce.NonNullElements(mm));
      Method/*!*/ m;
      Function/*!*/ f;
-     MemberModifiers mmod = new MemberModifiers();
-     IToken staticToken = null, protectedToken = null;
   .)
-  { "ghost"                                (. mmod.IsGhost = true; .)
-  | "static"                               (. mmod.IsStatic = true; staticToken = t; .)
-  | "protected"                            (. mmod.IsProtected = true; protectedToken = t; .)
-  }
   ( (. if (moduleLevelDecl) {
          SemErr(la, "fields are not allowed to be declared at the module level; instead, wrap the field in a 'class' declaration");
-         mmod.IsStatic = false;
-         mmod.IsProtected = false;
+         dmod.IsStatic = false;
        }
     .)
-    FieldDecl<mmod, mm>
+    FieldDecl<dmod, mm>
   | IF(IsFunctionDecl())
-    (. if (moduleLevelDecl && staticToken != null) {
-         errors.Warning(staticToken, "module-level functions are always non-instance, so the 'static' keyword is not allowed here");
-         mmod.IsStatic = false;
+    (. if (moduleLevelDecl && dmod.StaticToken != null) {
+         errors.Warning(dmod.StaticToken, "module-level functions are always non-instance, so the 'static' keyword is not allowed here");
+         dmod.IsStatic = false;
        }
     .)
-    FunctionDecl<mmod, out f>                   (. mm.Add(f); .)
-  | (. if (moduleLevelDecl && staticToken != null) {
-         errors.Warning(staticToken, "module-level methods are always non-instance, so the 'static' keyword is not allowed here");
-         mmod.IsStatic = false;
-       }
-       if (protectedToken != null) {
-         SemErr(protectedToken, "only functions, not methods, can be declared 'protected'");
-         mmod.IsProtected = false;
+    FunctionDecl<dmod, isWithinAbstractModule, out f>                   (. mm.Add(f); .)
+  | (. if (moduleLevelDecl && dmod.StaticToken != null) {
+         errors.Warning(dmod.StaticToken, "module-level methods are always non-instance, so the 'static' keyword is not allowed here");
+         dmod.IsStatic = false;
        }
     .)
-    MethodDecl<mmod, allowConstructors, out m>  (. mm.Add(m); .)
+    MethodDecl<dmod, allowConstructors, isWithinAbstractModule, out m>  (. mm.Add(m); .)
   )
   .
-DatatypeDecl<ModuleDefinition/*!*/ module, out DatatypeDecl/*!*/ dt>
+DatatypeDecl<DeclModifierData dmod, ModuleDefinition/*!*/ module, out DatatypeDecl/*!*/ dt>
 = (. Contract.Requires(module != null);
      Contract.Ensures(Contract.ValueAtReturn(out dt)!=null);
      IToken/*!*/ id;
@@ -696,6 +886,7 @@ DatatypeDecl<ModuleDefinition/*!*/ module, out DatatypeDecl/*!*/ dt>
      List<DatatypeCtor/*!*/> ctors = new List<DatatypeCtor/*!*/>();
      IToken bodyStart = Token.NoToken;  // dummy assignment
      bool co = false;
+     CheckDeclModifiers(dmod, "Datatypes or codatatypes", AllowedDeclModifiers.None);
   .)
   SYNC
   ( "datatype"
@@ -733,27 +924,27 @@ DatatypeMemberDecl<.List<DatatypeCtor/*!*/>/*!*/ ctors.>
   [ FormalsOptionalIds<formals> ]
   (. ctors.Add(new DatatypeCtor(id, id.val, formals, attrs)); .)
   .
-FieldDecl<.MemberModifiers mmod, List<MemberDecl/*!*/>/*!*/ mm.>
+FieldDecl<.DeclModifierData dmod, List<MemberDecl/*!*/>/*!*/ mm.>
 = (. Contract.Requires(cce.NonNullElements(mm));
      Attributes attrs = null;
      IToken/*!*/ id;  Type/*!*/ ty;
+     CheckDeclModifiers(dmod, "Fields", AllowedDeclModifiers.Ghost);
   .)
   SYNC
   "var"
-  (. if (mmod.IsStatic) { SemErr(t, "fields cannot be declared 'static'"); }
-  .)
   { Attribute<ref attrs> }
-  FIdentType<out id, out ty>                        (. mm.Add(new Field(id, id.val, mmod.IsGhost, ty, attrs)); .)
-  { "," FIdentType<out id, out ty>                  (. mm.Add(new Field(id, id.val, mmod.IsGhost, ty, attrs)); .)
+  FIdentType<out id, out ty>                        (. mm.Add(new Field(id, id.val, dmod.IsGhost, ty, attrs)); .)
+  { "," FIdentType<out id, out ty>                  (. mm.Add(new Field(id, id.val, dmod.IsGhost, ty, attrs)); .)
   }
   OldSemi
   .
-NewtypeDecl<ModuleDefinition module, out TopLevelDecl td>
+NewtypeDecl<DeclModifierData dmod, ModuleDefinition module, out TopLevelDecl td>
 = (. IToken id, bvId;
      Attributes attrs = null;
      td = null;
      Type baseType = null;
      Expression wh;
+     CheckDeclModifiers(dmod, "Newtypes", AllowedDeclModifiers.None);
   .)
   "newtype"
   { Attribute<ref attrs> }
@@ -761,19 +952,20 @@ NewtypeDecl<ModuleDefinition module, out TopLevelDecl td>
   "="
   ( IF(IsIdentColonOrBar())
     NoUSIdent<out bvId>
-    [ ":" Type<out baseType> ]       (. if (baseType == null) { baseType = new OperationTypeProxy(true, true, false, false, false); } .)
+    [ ":" Type<out baseType> ]       (. if (baseType == null) { baseType = new OperationTypeProxy(true, true, false, false, false, false); } .)
     "|"
     Expression<out wh, false, true>  (. td = new NewtypeDecl(theVerifyThisFile ? id : new IncludeToken(id), id.val, module, new BoundVar(bvId, bvId.val, baseType), wh, attrs); .)
   | Type<out baseType>               (. td = new NewtypeDecl(theVerifyThisFile ? id : new IncludeToken(id), id.val, module, baseType, attrs); .)
   )
   .
-OtherTypeDecl<ModuleDefinition module, out TopLevelDecl td>
+OtherTypeDecl<DeclModifierData dmod, ModuleDefinition module, out TopLevelDecl td>
 = (. IToken id;
      Attributes attrs = null;
      var eqSupport = TypeParameter.EqualitySupportValue.Unspecified;
      var typeArgs = new List<TypeParameter>();
      td = null;
      Type ty;
+     CheckDeclModifiers(dmod, "Type aliases", AllowedDeclModifiers.None);
   .)
   "type"
   { Attribute<ref attrs> }
@@ -869,7 +1061,7 @@ TypeIdentOptional<out IToken/*!*/ id, out string/*!*/ identName, out Type/*!*/ t
   .)
   .
 /*------------------------------------------------------------------------*/
-IteratorDecl<ModuleDefinition module, out IteratorDecl/*!*/ iter>
+IteratorDecl<DeclModifierData dmod, ModuleDefinition module, out IteratorDecl/*!*/ iter>
 = (. Contract.Ensures(Contract.ValueAtReturn(out iter) != null);
      IToken/*!*/ id;
      Attributes attrs = null;
@@ -891,6 +1083,7 @@ IteratorDecl<ModuleDefinition module, out IteratorDecl/*!*/ iter>
      IToken signatureEllipsis = null;
      IToken bodyStart = Token.NoToken;
      IToken bodyEnd = Token.NoToken;
+     CheckDeclModifiers(dmod, "Iterators", AllowedDeclModifiers.None);
   .)
   SYNC
   "iterator"
@@ -936,7 +1129,7 @@ GenericParameters<.List<TypeParameter/*!*/>/*!*/ typeArgs.>
   ">"
   .
 /*------------------------------------------------------------------------*/
-MethodDecl<MemberModifiers mmod, bool allowConstructor, out Method/*!*/ m>
+MethodDecl<DeclModifierData dmod, bool allowConstructor, bool isWithinAbstractModule, out Method/*!*/ m>
 = (. Contract.Ensures(Contract.ValueAtReturn(out m) !=null);
      IToken/*!*/ id = Token.NoToken;
      bool hasName = false;  IToken keywordToken;
@@ -955,53 +1148,43 @@ MethodDecl<MemberModifiers mmod, bool allowConstructor, out Method/*!*/ m>
      bool isConstructor = false;
      bool isIndLemma = false;
      bool isCoLemma = false;
-	   bool isTactic = false;
-     bool isTFunction = false;
+     bool isTactic = false;
      IToken signatureEllipsis = null;
      IToken bodyStart = Token.NoToken;
      IToken bodyEnd = Token.NoToken;
+     AllowedDeclModifiers allowed = AllowedDeclModifiers.None;
+     string caption = "";
   .)
   SYNC
-  ( "method"						
-  | "tactic"						            (. isTactic = true; .)
-  | "lemma"                         (. isLemma = true; .)
-  | "colemma"                       (. isCoLemma = true; .)
-  | "comethod"                      (. isCoLemma = true;
+  ( "method"                        (. caption = "Methods";
+                                       allowed = AllowedDeclModifiers.Ghost | AllowedDeclModifiers.Static 
+                                         | AllowedDeclModifiers.Extern; .)
+  | "tactic"                        (. isTactic = true; caption = "Tactics"; 
+                                        allowed = AllowedDeclModifiers.AlreadyGhost | AllowedDeclModifiers.Static 
+                                        | AllowedDeclModifiers.Protected; .)
+  | "lemma"                         (. isLemma = true; caption = "Lemmas";
+                                       allowed = AllowedDeclModifiers.AlreadyGhost | AllowedDeclModifiers.Static 
+                                         | AllowedDeclModifiers.Protected; .)
+  | "colemma"                       (. isCoLemma = true; caption = "Colemmas";
+                                       allowed = AllowedDeclModifiers.AlreadyGhost | AllowedDeclModifiers.Static 
+                                         | AllowedDeclModifiers.Protected; .)
+  | "comethod"                      (. isCoLemma = true; caption = "Comethods";
+                                       allowed = AllowedDeclModifiers.AlreadyGhost | AllowedDeclModifiers.Static 
+                                         | AllowedDeclModifiers.Protected;
                                        errors.Warning(t, "the 'comethod' keyword has been deprecated; it has been renamed to 'colemma'");
                                     .)
-  | "inductive" "lemma"             (. isIndLemma = true; .)
+  | "inductive" "lemma"             (. isIndLemma = true;  caption = "Inductive lemmas";
+                                       allowed = AllowedDeclModifiers.AlreadyGhost | AllowedDeclModifiers.Static;.)
   | "constructor"                   (. if (allowConstructor) {
                                          isConstructor = true;
                                        } else {
                                          SemErr(t, "constructors are allowed only in classes");
-                                       }
+                                       } 
+                                       caption = "Constructors";
+                                       allowed = AllowedDeclModifiers.None;
                                     .)
-  )                                 (. keywordToken = t; .)
-  (. if (isLemma) {
-       if (mmod.IsGhost) {
-         SemErr(t, "lemmas cannot be declared 'ghost' (they are automatically 'ghost')");
-       }
-     } else if (isConstructor) {
-       if (mmod.IsGhost) {
-         SemErr(t, "constructors cannot be declared 'ghost'");
-       }
-       if (mmod.IsStatic) {
-         SemErr(t, "constructors cannot be declared 'static'");
-       }
-     } else if (isIndLemma) {
-       if (mmod.IsGhost) {
-         SemErr(t, "inductive lemmas cannot be declared 'ghost' (they are automatically 'ghost')");
-       }
-     } else if (isCoLemma) {
-       if (mmod.IsGhost) {
-         SemErr(t, "colemmas cannot be declared 'ghost' (they are automatically 'ghost')");
-       }
-     } else if (isTactic) {
-       if (mmod.IsGhost) {
-         SemErr(t, "tactics cannot be declared 'ghost' (they are automatically 'ghost')");
-       }
-     } 
-  .)
+  )                                 (. keywordToken = t; 
+                                       CheckDeclModifiers(dmod, caption, allowed); .)
   { Attribute<ref attrs> }
   [ NoUSIdent<out id>               (. hasName = true; .)
   ]
@@ -1011,20 +1194,21 @@ MethodDecl<MemberModifiers mmod, bool allowConstructor, out Method/*!*/ m>
          SemErr(la, "a method must be given a name (expecting identifier)");
        }
      }
+     EncodeExternAsAttribute(dmod, ref attrs, id, /* needAxiom */ true);
   .)
   (
     [ GenericParameters<typeArgs> ]
-    Formals<true, !mmod.IsGhost, ins>
+    Formals<true, !dmod.IsGhost, ins>
     [ "returns"                                 (. if (isConstructor) { SemErr(t, "constructors cannot have out-parameters"); } .)
-      Formals<false, !mmod.IsGhost, outs>
+      Formals<false, !dmod.IsGhost, outs>
     ]
   | "..."                                       (. signatureEllipsis = t; .)
   )
   { MethodSpec<req, mod, ens, dec, ref decAttrs, ref modAttrs> }
-  [ BlockStmt<out body, out bodyStart, out bodyEnd, isTactic>
+  [ BlockStmt<out body, out bodyStart, out bodyEnd>
   ]
   (.
-     if (DafnyOptions.O.DisallowSoundnessCheating && body == null && ens.Count > 0 && !Attributes.Contains(attrs, "axiom") && !Attributes.Contains(attrs, "imported") && !Attributes.Contains(attrs, "decl") && theVerifyThisFile) {
+     if (!isWithinAbstractModule && DafnyOptions.O.DisallowSoundnessCheating && body == null && ens.Count > 0 && !Attributes.Contains(attrs, "axiom") && !Attributes.Contains(attrs, "imported") && !Attributes.Contains(attrs, "decl") && theVerifyThisFile) {
         SemErr(t, "a method with an ensures clause must have a body, unless given the :axiom attribute");
      }
 
@@ -1033,20 +1217,20 @@ MethodDecl<MemberModifiers mmod, bool allowConstructor, out Method/*!*/ m>
        m = new Constructor(tok, hasName ? id.val : "_ctor", typeArgs, ins,
                            req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
      } else if (isIndLemma) {
-       m = new InductiveLemma(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
+       m = new InductiveLemma(tok, id.val, dmod.IsStatic, typeArgs, ins, outs,
                               req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
      } else if (isCoLemma) {
-       m = new CoLemma(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
+       m = new CoLemma(tok, id.val, dmod.IsStatic, typeArgs, ins, outs,
                        req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
      } else if (isLemma) {
-       m = new Lemma(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
+       m = new Lemma(tok, id.val, dmod.IsStatic, typeArgs, ins, outs,
                      req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
      }else if(isTactic) {
-	     m = new Tactic(tok, id.val, mmod.IsStatic, typeArgs, ins, outs,
+       m = new Tactic(tok, id.val, dmod.IsStatic, typeArgs, ins, outs,
                      req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
       
-	 } else {
-       m = new Method(tok, id.val, mmod.IsStatic, mmod.IsGhost, typeArgs, ins, outs,
+   } else {
+       m = new Method(tok, id.val, dmod.IsStatic, dmod.IsGhost, typeArgs, ins, outs,
                       req, new Specification<FrameExpression>(mod, modAttrs), ens, new Specification<Expression>(dec, decAttrs), body, attrs, signatureEllipsis);
      }
      m.BodyStartTok = bodyStart;
@@ -1157,7 +1341,13 @@ TypeAndToken<out IToken tok, out Type ty>
     [ GenericInstantiation<gt> ]    (. if (gt.Count > 1) {
                                          SemErr("set type expects only one type argument");
                                        }
-                                       ty = new SetType(gt.Count == 1 ? gt[0] : null);
+                                       ty = new SetType(true, gt.Count == 1 ? gt[0] : null);
+                                    .)
+  | "iset"                          (. tok = t;  gt = new List<Type>(); .)
+    [ GenericInstantiation<gt> ]    (. if (gt.Count > 1) {
+                                         SemErr("set type expects only one type argument");
+                                       }
+                                       ty = new SetType(false, gt.Count == 1 ? gt[0] : null);
                                     .)
   | "multiset"                      (. tok = t;  gt = new List<Type>(); .)
     [ GenericInstantiation<gt> ]    (. if (gt.Count > 1) {
@@ -1245,7 +1435,7 @@ GenericInstantiation<.List<Type/*!*/>/*!*/ gt.>
   ">"
   .
 /*------------------------------------------------------------------------*/
-FunctionDecl<MemberModifiers mmod, out Function/*!*/ f>
+FunctionDecl<DeclModifierData dmod, bool isWithinAbstractModule, out Function/*!*/ f>
 = (. Contract.Ensures(Contract.ValueAtReturn(out f)!=null);
      Attributes attrs = null;
      IToken/*!*/ id = Token.NoToken;  // to please compiler
@@ -1259,19 +1449,22 @@ FunctionDecl<MemberModifiers mmod, out Function/*!*/ f>
      Expression body = null;
      bool isPredicate = false; bool isIndPredicate = false; bool isCoPredicate = false;
      bool isFunctionMethod = false;
-     bool isFunctionTactic = false;
      IToken bodyStart = Token.NoToken;
      IToken bodyEnd = Token.NoToken;
      IToken signatureEllipsis = null;
      bool missingOpenParen;
   .)
   /* ----- function ----- */
-  ( "function" 
-    [ "method"                 (. isFunctionMethod = true; .) |
-      "tactic"                 (. isFunctionTactic = true; .)
+  ( "function"
+    [ "method"                 (. isFunctionMethod = true; .)
     ]
-
-    (. if (mmod.IsGhost) { SemErr(t, "functions cannot be declared 'ghost' (they are ghost by default)"); }
+    (. AllowedDeclModifiers allowed = AllowedDeclModifiers.AlreadyGhost | AllowedDeclModifiers.Static | AllowedDeclModifiers.Protected;
+       string caption = "Functions";
+       if (isFunctionMethod) { 
+         allowed |= AllowedDeclModifiers.Extern; 
+         caption = "Function methods";
+       }
+       CheckDeclModifiers(dmod, caption, allowed);
     .)
     { Attribute<ref attrs> }
     NoUSIdent<out id>
@@ -1287,7 +1480,13 @@ FunctionDecl<MemberModifiers mmod, out Function/*!*/ f>
   | "predicate"                (. isPredicate = true; .)
     [ "method"                 (. isFunctionMethod = true; .)
     ]
-    (. if (mmod.IsGhost) { SemErr(t, "predicates cannot be declared 'ghost' (they are ghost by default)"); }
+    (. AllowedDeclModifiers allowed = AllowedDeclModifiers.AlreadyGhost | AllowedDeclModifiers.Static | AllowedDeclModifiers.Protected;
+       string caption = "Predicates";
+       if (isFunctionMethod) { 
+         allowed |= AllowedDeclModifiers.Extern; 
+         caption = "Predicate methods";
+       }
+       CheckDeclModifiers(dmod, caption, allowed);
     .)
     { Attribute<ref attrs> }
     NoUSIdent<out id>
@@ -1302,7 +1501,8 @@ FunctionDecl<MemberModifiers mmod, out Function/*!*/ f>
 
   /* ----- inductive predicate ----- */
   | "inductive" "predicate"    (. isIndPredicate = true; .)
-    (. if (mmod.IsGhost) { SemErr(t, "inductive predicates cannot be declared 'ghost' (they are ghost by default)"); }
+    (. CheckDeclModifiers(dmod, "Inductive predicates",
+         AllowedDeclModifiers.AlreadyGhost | AllowedDeclModifiers.Static | AllowedDeclModifiers.Protected);
     .)
     { Attribute<ref attrs> }
     NoUSIdent<out id>
@@ -1316,7 +1516,8 @@ FunctionDecl<MemberModifiers mmod, out Function/*!*/ f>
 
   /* ----- copredicate ----- */
   | "copredicate"              (. isCoPredicate = true; .)
-    (. if (mmod.IsGhost) { SemErr(t, "copredicates cannot be declared 'ghost' (they are ghost by default)"); }
+    (. CheckDeclModifiers(dmod, "Copredicates",
+         AllowedDeclModifiers.AlreadyGhost | AllowedDeclModifiers.Static | AllowedDeclModifiers.Protected);
     .)
     { Attribute<ref attrs> }
     NoUSIdent<out id>
@@ -1333,26 +1534,23 @@ FunctionDecl<MemberModifiers mmod, out Function/*!*/ f>
   { FunctionSpec<reqs, reads, ens, decreases> }
   [ FunctionBody<out body, out bodyStart, out bodyEnd>
   ]
-  (. if (DafnyOptions.O.DisallowSoundnessCheating && body == null && ens.Count > 0 && !Attributes.Contains(attrs, "axiom") && !Attributes.Contains(attrs, "imported")) {
+  (. if (!isWithinAbstractModule && DafnyOptions.O.DisallowSoundnessCheating && body == null && ens.Count > 0 &&
+         !Attributes.Contains(attrs, "axiom") && !Attributes.Contains(attrs, "imported")) {
         SemErr(t, "a function with an ensures clause must have a body, unless given the :axiom attribute");
      }
-
+     EncodeExternAsAttribute(dmod, ref attrs, id, /* needAxiom */ true);
      IToken tok = theVerifyThisFile ? id : new IncludeToken(id);
      if (isPredicate) {
-        f = new Predicate(tok, id.val, mmod.IsStatic, mmod.IsProtected, !isFunctionMethod, typeArgs, formals,
+        f = new Predicate(tok, id.val, dmod.IsStatic, dmod.IsProtected, !isFunctionMethod, typeArgs, formals,
                           reqs, reads, ens, new Specification<Expression>(decreases, null), body, Predicate.BodyOriginKind.OriginalOrInherited, attrs, signatureEllipsis);
      } else if (isIndPredicate) {
-        f = new InductivePredicate(tok, id.val, mmod.IsStatic, mmod.IsProtected, typeArgs, formals,
+        f = new InductivePredicate(tok, id.val, dmod.IsStatic, dmod.IsProtected, typeArgs, formals,
                                    reqs, reads, ens, body, attrs, signatureEllipsis);
      } else if (isCoPredicate) {
-        f = new CoPredicate(tok, id.val, mmod.IsStatic, mmod.IsProtected, typeArgs, formals,
+        f = new CoPredicate(tok, id.val, dmod.IsStatic, dmod.IsProtected, typeArgs, formals,
                             reqs, reads, ens, body, attrs, signatureEllipsis);
-     } else if(isFunctionTactic) {
-        f = new TacticFunction(tok, id.val, mmod.IsStatic, mmod.IsProtected, !isFunctionMethod, typeArgs, formals, returnType,
-                         reqs, reads, ens, new Specification<Expression>(decreases, null), body, attrs, signatureEllipsis);
-     }
-     else {
-        f = new Function(tok, id.val, mmod.IsStatic, mmod.IsProtected, !isFunctionMethod, typeArgs, formals, returnType,
+     } else {
+        f = new Function(tok, id.val, dmod.IsStatic, dmod.IsProtected, !isFunctionMethod, typeArgs, formals, returnType,
                          reqs, reads, ens, new Specification<Expression>(decreases, null), body, attrs, signatureEllipsis);
      }
      f.BodyStartTok = bodyStart;
@@ -1430,48 +1628,22 @@ FunctionBody<out Expression/*!*/ e, out IToken bodyStart, out IToken bodyEnd>
   "}"                         (. bodyEnd = t; .)
   .
 /*------------------------------------------------------------------------*/
-BlockStmt<out BlockStmt/*!*/ block, out IToken bodyStart, out IToken bodyEnd, bool isTactic = false>
+BlockStmt<out BlockStmt/*!*/ block, out IToken bodyStart, out IToken bodyEnd>
 = (. Contract.Ensures(Contract.ValueAtReturn(out block) != null);
      List<Statement/*!*/> body = new List<Statement/*!*/>();
-     List<Statement/*!*/> orStmtRhs = new List<Statement/*!*/>();
-     IToken endTok = Token.NoToken;
-     Expression or = null;
   .)
   "{"                                  (. bodyStart = t; .)
-  { Stmt<body, isTactic>
+  { Stmt<body>
   }
-  "}"                                  (. bodyEnd = t; .)
-  
-
-  [
-    "||"                          (. bodyStart = t; .)
-      (
-        "{"      
-         { Stmt<orStmtRhs, isTactic>
-         }
-        "}"                                  (. endTok = t; .)
-        |
-        Expression<out or, false, true>
-        ";"                            (. endTok = t; .)
-      )
-  ]
-
-  (. if(or != null) {
-       block = new OrStmt(bodyStart, endTok, body, or);
-     } else if (orStmtRhs.Count != 0) {
-       block = new OrStmt(bodyStart, endTok, body, orStmtRhs);
-     } else {
-      block = new BlockStmt(bodyStart, bodyEnd, body);
-     }
-
-  .)
+  "}"                                  (. bodyEnd = t;
+                                          block = new BlockStmt(bodyStart, bodyEnd, body); .)
   .
-Stmt<.List<Statement/*!*/>/*!*/ ss,  bool isTactic = false.>
+Stmt<.List<Statement/*!*/>/*!*/ ss.>
 = (. Statement/*!*/ s;
   .)
-  OneStmt<out s, isTactic>                                (. ss.Add(s); .)
+  OneStmt<out s>                                (. ss.Add(s); .)
   .
-OneStmt<out Statement/*!*/ s, bool isTactic = false>
+OneStmt<out Statement/*!*/ s>
 = (. Contract.Ensures(Contract.ValueAtReturn(out s) != null); IToken/*!*/ x;  IToken/*!*/ id;  string label = null;
      s = dummyStmt;  /* to please the compiler */
      BlockStmt bs;
@@ -1502,15 +1674,7 @@ OneStmt<out Statement/*!*/ s, bool isTactic = false>
     SYNC
     ";"                                (. s = label != null ? new BreakStmt(x, t, label) : new BreakStmt(x, t, breakCount); .)
   | ReturnStmt<out s>
-  | SkeletonStmt<out s>  
-  | TacnyCasesBlockStmt<out s>
-  | TacnySolvedBlockStmt<out s>
-  | TacnyChangedBlockStmt<out s>
-  | TacnyTryCatchBlockStmt<out s>
-  | TacticVarDeclStmt<out s>
-  | TacticInvariantStmt<out s>
-  | TacticAssertStmt<out s>
-
+  | SkeletonStmt<out s>
   )
   .
 
@@ -1566,8 +1730,6 @@ UpdateStmt<out Statement/*!*/ s>
      Attributes attrs = null;
      IToken suchThatAssume = null;
      Expression suchThat = null;
-     Expression or = null;
-     List<Statement/*!*/> body = null;
   .)
   Lhs<out e>                       (. x = e.tok; .)
   ( { Attribute<ref attrs> }
@@ -1584,29 +1746,13 @@ UpdateStmt<out Statement/*!*/ s>
         "assume"                   (. suchThatAssume = t; .)
       ]
       Expression<out suchThat, false, true>
-    /*| "||"                          (. x = t; .)
-      (
-        "{"      
-          (. body = new List<Statement/*!*/>(); .)                            
-          { Stmt<body> }
-         "}"                                  (. endTok = t; .)
-        |
-        Expression<out or, false, true>
-      )
-      */
     )
     ";"                            (. endTok = t; .)
   | ":"                            (. SemErr(t, "invalid statement (did you forget the 'label' keyword?)"); .)
-  
   )
-
   (. if (suchThat != null) {
        s = new AssignSuchThatStmt(x, endTok, lhss, suchThat, suchThatAssume, null);
-     } else if(body != null) {
-       s = new OrStmt(x, endTok, lhss, body);
-     } else if(or != null) {
-       s = new OrStmt(x, endTok, lhss, or);
-      } else {
+     } else {
        if (lhss.Count == 0 && rhss.Count == 0) {
          s = new BlockStmt(x, endTok, new List<Statement>()); // error, give empty statement
        } else {
@@ -1659,116 +1805,78 @@ VarDeclStatement<.out Statement/*!*/ s.>
      Expression suchThat = null;
      Attributes attrs = null;
      IToken endTok;
-     Expression or = null;
+     s = dummyStmt;
   .)
   [ "ghost"                                 (. isGhost = true;  x = t; .)
   ]
   "var"                                     (. if (!isGhost) { x = t; } .)
-  { Attribute<ref attrs> }
-  LocalIdentTypeOptional<out d, isGhost>    (. lhss.Add(d); d.Attributes = attrs; attrs = null; .)
-  { ","
-    { Attribute<ref attrs> }
-    LocalIdentTypeOptional<out d, isGhost>  (. lhss.Add(d); d.Attributes = attrs; attrs = null; .)
-  }
-  [ ":="                           (. assignTok = t; .)
-    Rhs<out r>                     (. rhss.Add(r); .)
-    { "," Rhs<out r>               (. rhss.Add(r); .)
+  ( { Attribute<ref attrs> }
+    LocalIdentTypeOptional<out d, isGhost>    (. lhss.Add(d); d.Attributes = attrs; attrs = null; .)
+    { ","
+      { Attribute<ref attrs> }
+      LocalIdentTypeOptional<out d, isGhost>  (. lhss.Add(d); d.Attributes = attrs; attrs = null; .)
     }
-    [
-      "||"                          (. x = t; .)
-        Expression<out or, false, true>
+    [ ":="                           (. assignTok = t; .)
+      Rhs<out r>                     (. rhss.Add(r); .)
+      { "," Rhs<out r>               (. rhss.Add(r); .)
+      }
+    | { Attribute<ref attrs> }
+      ":|"                           (. assignTok = t; .)
+      [ IF(la.kind == _assume)       /* an Expression can also begin with an "assume", so this says to resolve it to pick up any "assume" here */
+        "assume"                     (. suchThatAssume = t; .)
+      ]
+      Expression<out suchThat, false, true>
     ]
-  | { Attribute<ref attrs> }
-    ":|"                           (. assignTok = t; .)
-    [ IF(la.kind == _assume)       /* an Expression can also begin with an "assume", so this says to resolve it to pick up any "assume" here */
-      "assume"                     (. suchThatAssume = t; .)
-    ]
-    Expression<out suchThat, false, true>
-  ]
-  SYNC ";"                         (. endTok = t; .)
-  (. ConcreteUpdateStatement update;
-     if (suchThat != null) {
-       var ies = new List<Expression>();
-       foreach (var lhs in lhss) {
-         ies.Add(new IdentifierExpr(lhs.Tok, lhs.Name));
+    SYNC ";"                         (. endTok = t; .)
+    (. ConcreteUpdateStatement update;
+       if (suchThat != null) {
+         var ies = new List<Expression>();
+         foreach (var lhs in lhss) {
+           ies.Add(new IdentifierExpr(lhs.Tok, lhs.Name));
+         }
+         update = new AssignSuchThatStmt(assignTok, endTok, ies, suchThat, suchThatAssume, attrs);
+       } else if (rhss.Count == 0) {
+         update = null;
+       } else {
+         var ies = new List<Expression>();
+         foreach (var lhs in lhss) {
+           ies.Add(new AutoGhostIdentifierExpr(lhs.Tok, lhs.Name));
+         }
+         update = new UpdateStmt(assignTok, endTok, ies, rhss);
        }
-       update = new AssignSuchThatStmt(assignTok, endTok, ies, suchThat, suchThatAssume, attrs);
-     } else if (rhss.Count == 0) {
-       update = null;
-     } else {
-       var ies = new List<Expression>();
-       foreach (var lhs in lhss) {
-         ies.Add(new AutoGhostIdentifierExpr(lhs.Tok, lhs.Name));
-       }
-       update = new UpdateStmt(assignTok, endTok, ies, rhss);
-     }
-     s = new VarDeclStmt(x, endTok, lhss, update);
-  .)
-  .
-TacticVarDeclStmt<.out Statement/*!*/ s.>
-= (. IToken x = null, assignTok = null;
-      bool isGhost = false;
-     LocalVariable d;
-     AssignmentRhs r;
-     List<LocalVariable> lhss = new List<LocalVariable>();
-     List<AssignmentRhs> rhss = new List<AssignmentRhs>();
-     IToken suchThatAssume = null;
-     Expression suchThat = null;
-     Attributes attrs = null;
-     IToken endTok;
-     Expression or = null;
-  .)
-  (
-  
-  "tactic"
-  "var"                                     (. { x = t; } .)
-  | "tvar"                                  (. { x = t; } .)
+       s = new VarDeclStmt(x, endTok, lhss, update);
+    .)
+  | "("                             (. var letLHSs = new List<CasePattern>();
+                                       var letRHSs = new List<Expression>();
+                                       List<CasePattern> arguments = new List<CasePattern>();
+                                       CasePattern pat;
+                                       Expression e = dummyExpr;
+                                       IToken id = t;
+                                    .)
+      [ CasePattern<out pat>            (. arguments.Add(pat); .)
+        { "," CasePattern<out pat>      (. arguments.Add(pat); .)
+        }
+      ]
+    ")"                             (. // Parse parenthesis without an identifier as a built in tuple type.
+                                       theBuiltIns.TupleType(id, arguments.Count, true); // make sure the tuple type exists
+                                       string ctor = BuiltIns.TupleTypeCtorName;  //use the TupleTypeCtors
+                                       pat = new CasePattern(id, ctor, arguments); 
+                                       if (isGhost) { pat.Vars.Iter(bv => bv.IsGhost = true); }
+                                       letLHSs.Add(pat);
+                                    .)
+    ( ":="
+    | { Attribute<ref attrs> }
+      ":|"                          (.  SemErr(pat.tok, "LHS of assign-such-that expression must be variables, not general patterns"); .)
+    )
+    Expression<out e, false, true>        (. letRHSs.Add(e); .)
+    
+    ";"
+    (. s = new LetStmt(e.tok, e.tok, letLHSs, letRHSs); .)
   )
-  
-  { Attribute<ref attrs> }
-  LocalIdentTypeOptional<out d, isGhost>    (. lhss.Add(d); d.Attributes = attrs; attrs = null; .)
-  { ","
-    { Attribute<ref attrs> }
-    LocalIdentTypeOptional<out d, isGhost>  (. lhss.Add(d); d.Attributes = attrs; attrs = null; .)
-  }
-  [ ":="                           (. assignTok = t; .)
-    Rhs<out r>                     (. rhss.Add(r); .)
-    { "," Rhs<out r>               (. rhss.Add(r); .)
-    }
-    [
-      "||"                          (. x = t; .)
-        Expression<out or, false, true>
-    ]
-  | { Attribute<ref attrs> }
-    ":|"                           (. assignTok = t; .)
-    [ IF(la.kind == _assume)       /* an Expression can also begin with an "assume", so this says to resolve it to pick up any "assume" here */
-      "assume"                     (. suchThatAssume = t; .)
-    ]
-    Expression<out suchThat, false, true>
-  ]
-  SYNC ";"                         (. endTok = t; .)
-  (. ConcreteUpdateStatement update;
-     if (suchThat != null) {
-       var ies = new List<Expression>();
-       foreach (var lhs in lhss) {
-         ies.Add(new IdentifierExpr(lhs.Tok, lhs.Name));
-       }
-       update = new AssignSuchThatStmt(assignTok, endTok, ies, suchThat, suchThatAssume, attrs);
-     } else if (rhss.Count == 0) {
-       update = null;
-     } else {
-       var ies = new List<Expression>();
-       foreach (var lhs in lhss) {
-         ies.Add(new AutoGhostIdentifierExpr(lhs.Tok, lhs.Name));
-       }
-       update = new UpdateStmt(assignTok, endTok, ies, rhss);
-     }
-     s = new TacticVarDeclStmt(x, endTok, lhss, update);
-  .)
   .
 IfStmt<out Statement/*!*/ ifStmt>
 = (. Contract.Ensures(Contract.ValueAtReturn(out ifStmt) != null); IToken/*!*/ x;
-     Expression guard = null;  IToken guardEllipsis = null;
+     Expression guard = null;  IToken guardEllipsis = null;  bool isExistentialGuard = false;
      BlockStmt/*!*/ thn;
      BlockStmt/*!*/ bs;
      Statement/*!*/ s;
@@ -1780,11 +1888,13 @@ IfStmt<out Statement/*!*/ ifStmt>
   "if"                       (. x = t; .)
   (
     IF(IsAlternative())
-    AlternativeBlock<out alternatives, out endTok>
+    AlternativeBlock<true, out alternatives, out endTok>
     (. ifStmt = new AlternativeStmt(x, endTok, alternatives); .)
   |
-    ( Guard<out guard>
-    | "..."                  (. guardEllipsis = t; .)
+    ( IF(IsExistentialGuard())
+      ExistentialGuard<out guard, true>  (. isExistentialGuard = true; .)
+    | Guard<out guard>
+    | "..."                              (. guardEllipsis = t; .)
     )
     BlockStmt<out thn, out bodyStart, out bodyEnd>    (. endTok = thn.EndTok; .)
     [ "else"
@@ -1793,99 +1903,29 @@ IfStmt<out Statement/*!*/ ifStmt>
       )
     ]
     (. if (guardEllipsis != null) {
-         ifStmt = new SkeletonStatement(new IfStmt(x, endTok, guard, thn, els), guardEllipsis, null);
+         ifStmt = new SkeletonStatement(new IfStmt(x, endTok, isExistentialGuard, guard, thn, els), guardEllipsis, null);
        } else {
-         ifStmt = new IfStmt(x, endTok, guard, thn, els);
+         ifStmt = new IfStmt(x, endTok, isExistentialGuard, guard, thn, els);
        }
     .)
   )
   .
-
-TacnySolvedBlockStmt<out Statement/*!*/ tacnySolvedStatement>
-= (. Contract.Ensures(Contract.ValueAtReturn(out tacnySolvedStatement) != null); IToken/*!*/ x;
-     BlockStmt/*!*/ body;
-     IToken bodyStart, bodyEnd, endTok;
-     tacnySolvedStatement = dummyStmt;  // to please the compiler
-  .)
-  "solved"                       (. x = t; .)
-  (
-    BlockStmt<out body, out bodyStart, out bodyEnd>    (. endTok = body.EndTok; .)
-    (. tacnySolvedStatement = new TacnySolvedBlockStmt(x, endTok, body); .)
-  )
-  .
-
-TacnyChangedBlockStmt<out Statement/*!*/ tacnyChangedStatement>
-= (. Contract.Ensures(Contract.ValueAtReturn(out tacnyChangedStatement) != null); IToken/*!*/ x;
-     BlockStmt/*!*/ body;
-     IToken bodyStart, bodyEnd, endTok;
-     tacnyChangedStatement = dummyStmt;  // to please the compiler
-  .)
-  "changed"                       (. x = t; .)
-  (
-    BlockStmt<out body, out bodyStart, out bodyEnd>    (. endTok = body.EndTok; .)
-    (. tacnyChangedStatement = new TacnyChangedBlockStmt(x, endTok, body); .)
-  )
-  .
-
-TacnyTryCatchBlockStmt<out Statement/*!*/ tacnyTryCatchStatement>
-= (. Contract.Ensures(Contract.ValueAtReturn(out tacnyTryCatchStatement) != null); IToken/*!*/ x;
-     BlockStmt/*!*/ body;
-     BlockStmt/*!*/ ctch = null;
-     IToken bodyStart, bodyEnd, endTok;
-     tacnyTryCatchStatement = dummyStmt;  // to please the compiler
-  .)
-  "try"                       (. x = t; .)
-  (
-    BlockStmt<out body, out bodyStart, out bodyEnd>    (. endTok = body.EndTok; .)
-    [ "catch"
-      BlockStmt<out ctch, out bodyStart, out bodyEnd> (. endTok = ctch.EndTok; .)
-    ]
-    (. tacnyTryCatchStatement = new TacnyTryCatchBlockStmt(x, endTok, body, ctch); .)
-  )
-  .
-
-
-TacnyCasesBlockStmt<out Statement/*!*/ tacnyCasesStmt>
-= (. Contract.Ensures(Contract.ValueAtReturn(out tacnyCasesStmt) != null); IToken/*!*/ x;
-     Expression guard = null;  IToken guardEllipsis = null;
-     BlockStmt/*!*/ thn;
-     IToken bodyStart, bodyEnd, endTok;
-     List<GuardedAlternative> alternatives;
-     tacnyCasesStmt = dummyStmt;  // to please the compiler
-  .)
-
-  "tmatch"                       (. x = t; .)
-  (
-    IF(IsAlternative())
-    AlternativeBlock<out alternatives, out endTok>
-    (. tacnyCasesStmt = new AlternativeStmt(x, endTok, alternatives); .)
-  |
-    ( Guard<out guard>
-    | "..."                  (. guardEllipsis = t; .)
-    )
-    BlockStmt<out thn, out bodyStart, out bodyEnd>    (. endTok = thn.EndTok; .)
-    (. if (guardEllipsis != null) {
-         tacnyCasesStmt = new SkeletonStatement(new TacnyCasesBlockStmt(x, endTok, guard, thn), guardEllipsis, null);
-       } else {
-         tacnyCasesStmt = new TacnyCasesBlockStmt(x, endTok, guard, thn);
-       }
-    .)
-  )
-  .
-
-AlternativeBlock<.out List<GuardedAlternative> alternatives, out IToken endTok.>
+AlternativeBlock<.bool allowExistentialGuards, out List<GuardedAlternative> alternatives, out IToken endTok.>
 = (. alternatives = new List<GuardedAlternative>();
      IToken x;
-     Expression e;
+     Expression e; bool isExistentialGuard;
      List<Statement> body;
   .)
   "{"
-  { "case"                      (. x = t; .)
-    Expression<out e, true, false> // NB: don't allow lambda here
+  { "case"                             (. x = t; isExistentialGuard = false; e = dummyExpr; .)
+    ( IF(allowExistentialGuards && IsExistentialGuard())
+      ExistentialGuard<out e, false >  (. isExistentialGuard = true; .)  // NB: don't allow lambda here
+    | Expression<out e, true, false> // NB: don't allow lambda here
+    )
     "=>"
     (. body = new List<Statement>(); .)
     { Stmt<body> }
-    (. alternatives.Add(new GuardedAlternative(x, e, body)); .)
+    (. alternatives.Add(new GuardedAlternative(x, isExistentialGuard, e, body)); .)
   }
   "}"                           (. endTok = t; .)
   .
@@ -1898,25 +1938,23 @@ WhileStmt<out Statement stmt>
      Attributes decAttrs = null;
      Attributes modAttrs = null;
      List<FrameExpression> mod = null;
-  
+
      BlockStmt body = null;  IToken bodyEllipsis = null;
      IToken bodyStart = null, bodyEnd = null, endTok = Token.NoToken;
      List<GuardedAlternative> alternatives;
      stmt = dummyStmt;  // to please the compiler
      bool isDirtyLoop = true;
-     Statement tacAps = null;
   .)
   "while"                    (. x = t; .)
   (
     IF(IsLoopSpec() || IsAlternative())
     { LoopSpec<invariants, decreases, ref mod, ref decAttrs, ref modAttrs> }
-    AlternativeBlock<out alternatives, out endTok>
+    AlternativeBlock<false, out alternatives, out endTok>
     (. stmt = new AlternativeLoopStmt(x, endTok, invariants, new Specification<Expression>(decreases, decAttrs), new Specification<FrameExpression>(mod, modAttrs), alternatives); .)
   |
     ( Guard<out guard>           (. Contract.Assume(guard == null || cce.Owner.None(guard)); .)
     | "..."                      (. guardEllipsis = t; .)
     )
-    [ UpdateStmt<out tacAps> ]
     { LoopSpec<invariants, decreases, ref mod, ref decAttrs, ref modAttrs> }
     ( IF(la.kind == _lbrace)      /* if there's an open brace, claim it as the beginning of the loop body (as opposed to a BlockStmt following the loop) */
       BlockStmt<out body, out bodyStart, out bodyEnd>  (. endTok = body.EndTok; isDirtyLoop = false; .)
@@ -1933,9 +1971,6 @@ WhileStmt<out Statement stmt>
           body = new BlockStmt(x, endTok, new List<Statement>());
         }
         stmt = new WhileStmt(x, endTok, guard, invariants, new Specification<Expression>(decreases, decAttrs), new Specification<FrameExpression>(null, null), body);
-        var ws = stmt as WhileStmt;
-        ws.TacAps = tacAps;
-        stmt = ws;
         stmt = new SkeletonStatement(stmt, guardEllipsis, bodyEllipsis);
       } else {
         // The following statement protects against crashes in case of parsing errors
@@ -1943,15 +1978,10 @@ WhileStmt<out Statement stmt>
           body = new BlockStmt(x, endTok, new List<Statement>());
         }
         stmt = new WhileStmt(x, endTok, guard, invariants, new Specification<Expression>(decreases, decAttrs), new Specification<FrameExpression>(mod, modAttrs), body);
-        var ws = stmt as WhileStmt;
-        ws.TacAps = tacAps;
-        stmt = ws;
-
       }
     .)
   )
   .
-
 LoopSpec<.List<MaybeFreeExpression> invariants, List<Expression> decreases, ref List<FrameExpression> mod, ref Attributes decAttrs, ref Attributes modAttrs.>
 = (. Expression e; FrameExpression fe;
      bool isFree = false; Attributes attrs = null;
@@ -1999,6 +2029,21 @@ Guard<out Expression e>   /* null represents demonic-choice */
   | Expression<out ee, true, true>        (. e = ee; .)
   )
   .
+ExistentialGuard<out Expression e, bool allowLambda>
+= (. var bvars = new List<BoundVar>();
+     BoundVar bv;  IToken x;
+     Attributes attrs = null;
+     Expression body;
+  .)
+  IdentTypeOptional<out bv>                    (. bvars.Add(bv); x = bv.tok; .)
+  { ","
+    IdentTypeOptional<out bv>                  (. bvars.Add(bv); .)
+  }
+  { Attribute<ref attrs> }
+  ":|"
+  Expression<out body, true, allowLambda>
+  (. e = new ExistsExpr(x, bvars, null, body, attrs); .)
+  .
 MatchStmt<out Statement/*!*/ s>
 = (. Contract.Ensures(Contract.ValueAtReturn(out s) != null);
      Token x;  Expression/*!*/ e;  MatchCaseStmt/*!*/ c;
@@ -2028,9 +2073,10 @@ CaseStatement<out MatchCaseStmt/*!*/ c>
   "case"                      (. x = t; .)
   ( Ident<out id>             (. name = id.val; .)
     [ "("
-      CasePattern<out pat>        (. arguments.Add(pat); .)
-      { "," CasePattern<out pat>  (. arguments.Add(pat); .)
-      }
+       [ CasePattern<out pat>        (. arguments.Add(pat); .)
+         { "," CasePattern<out pat>  (. arguments.Add(pat); .)
+         }
+       ]
     ")" ]
   | "("
       CasePattern<out pat>        (. arguments.Add(pat); .)
@@ -2067,45 +2113,6 @@ AssertStmt<out Statement/*!*/ s>
        s = new AssertStmt(x, t, e, attrs);
      }
   .)
-  .
-TacticInvariantStmt<out Statement/*!*/ s>
-= (. Contract.Ensures(Contract.ValueAtReturn(out s) != null); IToken/*!*/ x;
-     Expression e = dummyExpr; Attributes attrs = null;
-     bool isObject = true;
-  .)
-  (
-
-    "invariant"                                     
-    | ( 
-        "tactic" "invariant"                            
-      | "tinvariant"
-      )                                             (. isObject = false; .)
-  )                                                 (. x = t; .)
-  
-  { IF(IsAttribute()) Attribute<ref attrs> } 
-  ( Expression<out e, false, true>)
-  ";"
-  
-  (. s = new TacticInvariantStmt(x, t, e, attrs, isObject); .)
-  .
-TacticAssertStmt<out Statement/*!*/ s>
-= (. Contract.Ensures(Contract.ValueAtReturn(out s) != null); IToken/*!*/ x;
-     Expression e = dummyExpr; Attributes attrs = null;
-     bool isObject = true;
-  .)
-  (
-    "assert"                                     
-    | ( 
-        "tactic" "assert"                            
-      | "tassert"
-      )                                             (. isObject = false; .)
-  )                                                 (. x = t; .)
-  
-  { IF(IsAttribute()) Attribute<ref attrs> } 
-  ( Expression<out e, false, true>)
-  ";"
-  
-  (. s = new TacticAssertStmt(x, t, e, attrs, isObject); .)
   .
 AssumeStmt<out Statement/*!*/ s>
 = (. Contract.Ensures(Contract.ValueAtReturn(out s) != null); IToken/*!*/ x;
@@ -2219,6 +2226,7 @@ ModifyStmt<out Statement s>
 CalcStmt<out Statement s>
 = (. Contract.Ensures(Contract.ValueAtReturn(out s) != null);
      Token x;
+     Attributes attrs = null;
      CalcStmt.CalcOp op, calcOp = Microsoft.Dafny.CalcStmt.DefaultOp, resOp = Microsoft.Dafny.CalcStmt.DefaultOp;
      var lines = new List<Expression>();
      var hints = new List<BlockStmt>();
@@ -2230,6 +2238,7 @@ CalcStmt<out Statement s>
      IToken danglingOperator = null;
   .)
   "calc"                                                  (. x = t; .)
+  { IF(IsAttribute()) Attribute<ref attrs> }
   [ CalcOp<out opTok, out calcOp>                         (. maybeOp = calcOp.ResultOp(calcOp); // guard against non-transitive calcOp (like !=)
                                                              if (maybeOp == null) {
                                                                SemErr(opTok, "the main operator of a calculation must be transitive");
@@ -2278,7 +2287,7 @@ CalcStmt<out Statement s>
       // Repeat the last line to create a dummy line for the dangling hint
       lines.Add(lines[lines.Count - 1]);
     }
-    s = new CalcStmt(x, t, calcOp, lines, hints, stepOps, resOp);
+    s = new CalcStmt(x, t, calcOp, lines, hints, stepOps, resOp, attrs);
   .)
   .
 CalcOp<out IToken x, out CalcStmt.CalcOp/*!*/ op>
@@ -2320,7 +2329,6 @@ ImpliesOp = "==>" | '\u21d2'.
 ExpliesOp = "<==" | '\u21d0'.
 AndOp = "&&" | '\u2227'.
 OrOp = "||" | '\u2228'.
-TacnyOrOp = "|||".
 
 NegOp = "!" | '\u00ac'.
 Forall = "forall" | '\u2200'.
@@ -2373,10 +2381,13 @@ ImpliesExpliesExpression<out Expression e0, bool allowSemi, bool allowLambda>
     ( ImpliesOp                                               (. x = t; .)
       ImpliesExpression<out e1, allowSemi, allowLambda>       (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.Imp, e0, e1); .)
     | ExpliesOp                                               (. x = t; .)
-      LogicalExpression<out e1, allowSemi, allowLambda>       (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.Exp, e0, e1); .)
+      LogicalExpression<out e1, allowSemi, allowLambda>       (. // The order of operands is reversed so that it can be turned into implication during resolution 
+			                                                           e0 = new BinaryExpr(x, BinaryExpr.Opcode.Exp, e1, e0); .)
       { IF(IsExpliesOp())  /* read a reverse implication as far as possible */
         ExpliesOp                                             (. x = t; .)
-        LogicalExpression<out e1, allowSemi, allowLambda>     (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.Exp, e0, e1); .)
+        LogicalExpression<out e1, allowSemi, allowLambda>     (. //The order of operands is reversed so that it can be turned into implication during resolution
+				                                                         e0 = new BinaryExpr(x, BinaryExpr.Opcode.Exp, e1, e0); 
+																															.)
       }
     )
   ]
@@ -2393,18 +2404,12 @@ ImpliesExpression<out Expression e0, bool allowSemi, bool allowLambda>
 LogicalExpression<out Expression e0, bool allowSemi, bool allowLambda>
 = (. Contract.Ensures(Contract.ValueAtReturn(out e0) != null); IToken/*!*/ x;  Expression/*!*/ e1; .)
   RelationalExpression<out e0, allowSemi, allowLambda>
-  [ IF(IsAndOp() || IsOrOp() || IsTacnyOrOp())  /* read a LogicalExpression as far as possible */
+  [ IF(IsAndOp() || IsOrOp())  /* read a LogicalExpression as far as possible */
     ( AndOp                                                   (. x = t; .)
       RelationalExpression<out e1, allowSemi, allowLambda>    (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.And, e0, e1); .)
       { IF(IsAndOp())  /* read a conjunction as far as possible */
         AndOp                                                 (. x = t; .)
         RelationalExpression<out e1, allowSemi, allowLambda>  (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.And, e0, e1); .)
-      }
-    | TacnyOrOp /*  ########### TACNY OR ########## */        (. x = t; .)
-      RelationalExpression<out e1, allowSemi, allowLambda>    (. e0 = new TacnyBinaryExpr(x, TacnyBinaryExpr.TacnyOpcode.TacnyOr, e0, e1); .)
-       { IF(IsTacnyOrOp())  /* read a disjunction as far as possible */
-        TacnyOrOp                                                  (. x = t; .)
-        RelationalExpression<out e1, allowSemi, allowLambda>  (. e0 = new TacnyBinaryExpr(x, TacnyBinaryExpr.TacnyOpcode.TacnyOr, e0, e1); .)
       }
     | OrOp                                                    (. x = t; .)
       RelationalExpression<out e1, allowSemi, allowLambda>    (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.Or, e0, e1); .)
@@ -2412,7 +2417,6 @@ LogicalExpression<out Expression e0, bool allowSemi, bool allowLambda>
         OrOp                                                  (. x = t; .)
         RelationalExpression<out e1, allowSemi, allowLambda>  (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.Or, e0, e1); .)
       }
-    
     )
   ]
   .
@@ -2597,10 +2601,13 @@ UnaryExpression<out Expression e, bool allowSemi, bool allowLambda>
     "imap"                                          (. x = t; .)
     MapDisplayExpr<x, false, out e>
     { IF(IsSuffix()) Suffix<ref e> }
+  | IF(IsISetDisplay())  /* this alternative must be checked before going into EndlessExpression, where there is another "iset" */
+    "iset"                                          (. x = t; .)
+    ISetDisplayExpr<x, false, out e>
+    { IF(IsSuffix()) Suffix<ref e> }
   | IF(IsLambda(allowLambda))
     LambdaExpression<out e, allowSemi>  /* this is an endless expression */
   | EndlessExpression<out e, allowSemi, allowLambda>
-
   | NameSegment<out e>
     { IF(IsSuffix()) Suffix<ref e> }
   | DisplayExpr<out e>
@@ -2705,13 +2712,22 @@ ParensExpression<out Expression e, bool allowSemi, bool allowLambda>
      }
   .)
   .
+ISetDisplayExpr<IToken/*!*/ setToken, bool finite, out Expression e>
+= (. Contract.Ensures(Contract.ValueAtReturn(out e) != null);
+     List<Expression> elements = new List<Expression/*!*/>();;
+     e = dummyExpr;
+  .)
+  "{"
+      [ Expressions<elements> ]                (. e = new SetDisplayExpr(setToken, finite, elements);.)
+  "}"
+  .
 DisplayExpr<out Expression e>
 = (. Contract.Ensures(Contract.ValueAtReturn(out e) != null);
      IToken x;  List<Expression> elements;
      e = dummyExpr;
   .)
   ( "{"                                        (. x = t;  elements = new List<Expression/*!*/>(); .)
-      [ Expressions<elements> ]                (. e = new SetDisplayExpr(x, elements);.)
+      [ Expressions<elements> ]                (. e = new SetDisplayExpr(x, true, elements);.)
     "}"
   | "["                                        (. x = t;  elements = new List<Expression/*!*/>(); .)
       [ Expressions<elements> ]                (. e = new SeqDisplayExpr(x, elements); .)
@@ -2776,7 +2792,10 @@ EndlessExpression<out Expression e, bool allowSemi, bool allowLambda>
     "else" Expression<out e1, allowSemi, allowLambda>    (. e = new ITEExpr(x, e, e0, e1); .)
   | MatchExpression<out e, allowSemi, allowLambda>
   | QuantifierGuts<out e, allowSemi, allowLambda>
-  | SetComprehensionExpr<out e, allowSemi, allowLambda>
+  | "set"                           (. x = t; .)
+    SetComprehensionExpr<x, true, out e, allowSemi, allowLambda>
+  | "iset"                           (. x = t; .)
+    SetComprehensionExpr<x, false, out e, allowSemi, allowLambda>
   | StmtInExpr<out s>
     Expression<out e, allowSemi, allowLambda>            (. e = new StmtExpr(s.Tok, s, e); .)
   | LetExpr<out e, allowSemi, allowLambda>
@@ -2872,9 +2891,10 @@ CaseExpression<out MatchCaseExpr c, bool allowSemi, bool allowLambda>
   "case"                      (. x = t; .)
   ( Ident<out id>             (. name = id.val; .)
     [ "("
-      CasePattern<out pat>        (. arguments.Add(pat); .)
-      { "," CasePattern<out pat>  (. arguments.Add(pat); .)
-      }
+       [ CasePattern<out pat>        (. arguments.Add(pat); .)
+         { "," CasePattern<out pat>  (. arguments.Add(pat); .)
+         }
+       ]
     ")" ]
   | "("
       CasePattern<out pat>        (. arguments.Add(pat); .)
@@ -2981,8 +3001,17 @@ Suffix<ref Expression e>
      Expression e0 = null;  Expression e1 = null;  Expression ee;  bool anyDots = false;
      List<Expression> multipleLengths = null; bool takeRest = false; // takeRest is relevant only if multipleLengths is non-null
      List<Expression> multipleIndices = null;
+     List<Tuple<IToken, string, Expression>> updates;
+     Expression v;
   .)
-  ( DotSuffix<out id, out x>                   (. if (x != null) {
+  ( "."
+    ( "("                                             (. x = t; updates = new List<Tuple<IToken, string, Expression>>(); .)
+        MemberBindingUpdate<out id, out v>            (. updates.Add(Tuple.Create(id, id.val, v)); .)
+        { "," MemberBindingUpdate<out id, out v>      (. updates.Add(Tuple.Create(id, id.val, v)); .)
+        }
+      ")"
+      (. e = new DatatypeUpdateExpr(x, e, updates); .)
+    | DotSuffix<out id, out x>                 (. if (x != null) {
                                                     // process id as a Suffix in its own right
                                                     e = new ExprDotName(id, e, id.val, null);
                                                     id = x;  // move to the next Suffix
@@ -2991,17 +3020,18 @@ Suffix<ref Expression e>
                                                .)
 
 
-    ( IF(IsGenericInstantiation())
-      (. typeArgs = new List<Type>(); .)
-      GenericInstantiation<typeArgs>
-    | HashCall<id, out openParen, out typeArgs, out args>
-    | /* empty */
+      ( IF(IsGenericInstantiation())
+        (. typeArgs = new List<Type>(); .)
+        GenericInstantiation<typeArgs>
+      | HashCall<id, out openParen, out typeArgs, out args>
+      | /* empty */
+      )
+      (. e = new ExprDotName(id, e, id.val, typeArgs);
+         if (openParen != null) {
+           e = new ApplySuffix(openParen, e, args);
+         }
+      .)
     )
-    (. e = new ExprDotName(id, e, id.val, typeArgs);
-       if (openParen != null) {
-         e = new ApplySuffix(openParen, e, args);
-       }
-    .)
   | "["                                        (. x = t; .)
       ( Expression<out ee, true, true>         (. e0 = ee; .)
         ( ".."                                 (. anyDots = true; .)
@@ -3115,16 +3145,14 @@ QuantifierDomain<.out List<BoundVar> bvars, out Attributes attrs, out Expression
   ]
   .
 
-SetComprehensionExpr<out Expression q, bool allowSemi, bool allowLambda>
+SetComprehensionExpr<IToken setToken, bool finite, out Expression q, bool allowSemi, bool allowLambda>
 = (. Contract.Ensures(Contract.ValueAtReturn(out q) != null);
-     IToken x = Token.NoToken;
      BoundVar bv;
      List<BoundVar/*!*/> bvars = new List<BoundVar>();
      Expression range;
      Expression body = null;
      Attributes attrs = null;
   .)
-  "set"                                        (. x = t; .)
   IdentTypeOptional<out bv>                    (. bvars.Add(bv); .)
   { ","
     IdentTypeOptional<out bv>                  (. bvars.Add(bv); .)
@@ -3136,7 +3164,7 @@ SetComprehensionExpr<out Expression q, bool allowSemi, bool allowLambda>
     Expression<out body, allowSemi, allowLambda>
   ]
   (. if (body == null && bvars.Count != 1) { SemErr(t, "a set comprehension with more than one bound variable must have a term expression"); }
-     q = new SetComprehension(x, bvars, range, body, attrs);
+     q = new SetComprehension(setToken, finite, bvars, range, body, attrs);
   .)
   .
 Expressions<.List<Expression> args.>
@@ -3147,13 +3175,15 @@ Expressions<.List<Expression> args.>
   .
 /*------------------------------------------------------------------------*/
 Attribute<ref Attributes attrs>
-= (. string name;
+= (. IToken openBrace, colon, x, closeBrace;
      var args = new List<Expression>();
   .)
-  "{" ":" ident                            (. name = t.val; .)
+  "{"                         (. openBrace = t; .)
+  ":"                         (. colon = t; .)
+  NoUSIdent<out x>
   [ Expressions<args> ]
-  "}"
-  (. attrs = new Attributes(name, args, attrs); .)
+  "}"                         (. closeBrace = t; .)
+  (. attrs = new UserSuppliedAttributes(x, openBrace, colon, closeBrace, args, attrs); .)
   .
 /*------------------------------------------------------------------------*/
 Ident<out IToken/*!*/ x>
@@ -3161,10 +3191,10 @@ Ident<out IToken/*!*/ x>
   ident            (. x = t; .)
   .
 // Identifier or sequence of digits
-// Parse one of the following:
-//      . ident
-//      . digits
-//      . digits . digits
+// Parse one of the following, which are supposed to follow a ".":
+//        ident
+//        digits
+//        digits . digits
 // In the first two cases, x returns as the token for the ident/digits and y returns as null.
 // In the third case, x and y return as the tokens for the first and second digits.
 // This parser production solves a problem where the scanner might parse a real number instead
@@ -3174,7 +3204,6 @@ DotSuffix<out IToken x, out IToken y>
      x = Token.NoToken;
      y = null;
   .)
-  "."
   ( ident          (. x = t; .)
   | digits         (. x = t; .)
   | decimaldigits  (. x = t;
@@ -3200,6 +3229,15 @@ DotSuffix<out IToken x, out IToken y>
   | "reads"       (. x = t; .)
   )
   .
+MemberBindingUpdate<out IToken id, out Expression e>
+= (. id = Token.NoToken; e = dummyExpr; .)
+  ( ident          (. id = t; .)
+  | digits         (. id = t; .)
+  )
+  ":="
+  Expression<out e, true, true>
+  .
+
 // Identifier, disallowing leading underscores
 NoUSIdent<out IToken/*!*/ x>
 = (. Contract.Ensures(Contract.ValueAtReturn(out x) != null); .)
@@ -3231,7 +3269,7 @@ Nat<out BigInteger n>
   ( digits
     (. S = Util.RemoveUnderscores(t.val);
        try {
-         n = BigInteger.Parse(S);
+         n = BigIntegerParser.Parse(S);
        } catch (System.FormatException) {
          SemErr("incorrectly formatted number");
          n = BigInteger.Zero;
@@ -3241,7 +3279,7 @@ Nat<out BigInteger n>
     (. S = Util.RemoveUnderscores(t.val.Substring(2));
        try {
          // note: leading 0 required when parsing positive hex numbers
-         n = BigInteger.Parse("0" + S, System.Globalization.NumberStyles.HexNumber);
+         n = BigIntegerParser.Parse("0" + S, System.Globalization.NumberStyles.HexNumber);
        } catch (System.FormatException) {
          SemErr("incorrectly formatted number");
          n = BigInteger.Zero;

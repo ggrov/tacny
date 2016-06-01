@@ -19,7 +19,7 @@ namespace Util
         }
         public bool Contracts = true;
         public bool EvalAnalysis = true;
-        public bool ParallelExecution;
+      public bool ParallelExecution = false;
         public bool LazyEval = true;
         public bool PrintCsv;
         public int EnableSearch = -1;

@@ -126,21 +126,20 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AbsInt">
-      <HintPath>..\..\boogie\Binaries\AbsInt.dll</HintPath>
+    <Reference Include="BoogieBasetypes, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\boogie\Binaries\BoogieBasetypes.dll</HintPath>
     </Reference>
-    <Reference Include="Basetypes">
-      <HintPath>..\..\boogie\Binaries\Basetypes.dll</HintPath>
+    <Reference Include="BoogieConcurrency, Version=1.0.0.0, Culture=neutral, PublicKeyToken=736440c9b414ea16" />
+    <Reference Include="BoogieCore, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\boogie\Binaries\BoogieCore.dll</HintPath>
     </Reference>
-    <Reference Include="Boogie">
-      <HintPath>..\..\boogie\Binaries\Boogie.exe</HintPath>
+    <Reference Include="BoogieExecutionEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\boogie\Binaries\BoogieExecutionEngine.dll</HintPath>
     </Reference>
-    <Reference Include="Concurrency">
-      <HintPath>..\..\boogie\Binaries\Concurrency.dll</HintPath>
-    </Reference>
-    <Reference Include="Core">
-      <HintPath>..\..\boogie\Binaries\Core.dll</HintPath>
-    </Reference>
+    <Reference Include="BoogieParserHelper, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16" />
     <Reference Include="Dafny, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dafny\Binaries\Dafny.exe</HintPath>
@@ -149,34 +148,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
     </Reference>
-    <Reference Include="Doomed">
-      <HintPath>..\..\boogie\Binaries\Doomed.dll</HintPath>
-    </Reference>
-    <Reference Include="ExecutionEngine">
-      <HintPath>..\..\boogie\Binaries\ExecutionEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="Graph">
-      <HintPath>..\..\boogie\Binaries\Graph.dll</HintPath>
-    </Reference>
-    <Reference Include="Houdini">
-      <HintPath>..\..\boogie\Binaries\Houdini.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Model">
-      <HintPath>..\..\boogie\Binaries\Model.dll</HintPath>
-    </Reference>
-    <Reference Include="ModelViewer">
-      <HintPath>..\..\boogie\Binaries\ModelViewer.dll</HintPath>
-    </Reference>
-    <Reference Include="ParserHelper">
-      <HintPath>..\..\boogie\Binaries\ParserHelper.dll</HintPath>
-    </Reference>
-    <Reference Include="Predication">
-      <HintPath>..\..\boogie\Binaries\Predication.dll</HintPath>
-    </Reference>
-    <Reference Include="Provers.SMTLib">
-      <HintPath>..\..\boogie\Binaries\Provers.SMTLib.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
@@ -185,12 +157,6 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="VCExpr">
-      <HintPath>..\..\boogie\Binaries\VCExpr.dll</HintPath>
-    </Reference>
-    <Reference Include="VCGeneration">
-      <HintPath>..\..\boogie\Binaries\VCGeneration.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Atomic.cs" />

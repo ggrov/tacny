@@ -1,4 +1,4 @@
-// RUN: %dafny /compile:0 /dprint:"%t.dprint" "%s" > "%t"
+// RUN: %dafny /compile:0 /dprint:"%t.dprint" /autoTriggers:0 "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
 // We consider a number representation that consists of a sequence of digits.  The least
@@ -234,17 +234,16 @@ lemma UniqueRepresentation(a: seq<int>, b: seq<int>, lowDigit: int, base: nat)
 }
 
 lemma ZeroIsUnique(a: seq<int>, lowDigit: int, base: nat)
-  requires 2 <= base && lowDigit <= 0 < lowDigit + base;
-  requires a == trim(a);
-  requires IsSkewNumber(a, lowDigit, base);
-  requires eval(a, base) == 0;
-  ensures a == [];
+  requires 2 <= base && lowDigit <= 0 < lowDigit + base
+  requires a == trim(a)
+  requires IsSkewNumber(a, lowDigit, base)
+  requires eval(a, base) == 0
+  ensures a == []
 {
   if a != [] {
-    assert eval(a, base) == a[0] + base * eval(a[1..], base);
     if eval(a[1..], base) == 0 {
       TrimProperty(a);
-      ZeroIsUnique(a[1..], lowDigit, base);
+      // ZeroIsUnique(a[1..], lowDigit, base);
     }
     assert false;
   }
@@ -293,3 +292,7 @@ lemma MulInverse(x: int, a: int, b: int, y: int)
   ensures a == b;
 {
 }
+
+// Local Variables:
+// dafny-prover-local-args: ("/vcsMaxKeepGoingSplits:5")
+// End:

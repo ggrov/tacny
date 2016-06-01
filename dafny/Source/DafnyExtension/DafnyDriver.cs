@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
@@ -18,13 +19,16 @@ namespace DafnyLanguage
   {
     readonly string _filename;
     readonly ITextSnapshot _snapshot;
+    readonly ITextBuffer _buffer;
     Dafny.Program _program;
+    static object bufferDafnyKey = new object();
 
     List<DafnyError> _errors = new List<DafnyError>();
     public List<DafnyError> Errors { get { return _errors; } }
 
-    public DafnyDriver(ITextSnapshot snapshot, string filename) {
-      _snapshot = snapshot;
+    public DafnyDriver(ITextBuffer buffer, string filename) {
+      _buffer = buffer;
+      _snapshot = buffer.CurrentSnapshot;
       _filename = filename;
     }
 
@@ -37,9 +41,11 @@ namespace DafnyLanguage
       if (Dafny.DafnyOptions.O == null) {
         var options = new Dafny.DafnyOptions();
         options.ProverKillTime = 10;
+        options.AutoTriggers = true;
         options.ErrorTrace = 0;
         options.VcsCores = Math.Max(1, System.Environment.ProcessorCount - 1);
         options.ModelViewFile = "-";
+        options.UnicodeOutput = true;
         Dafny.DafnyOptions.Install(options);
 
         // Read additional options from DafnyOptions.txt
@@ -105,82 +111,84 @@ namespace DafnyLanguage
 
     #region Parsing and type checking
 
-    internal Dafny.Program ProcessResolution() {
-      if (!ParseAndTypeCheck()) {
+    internal Dafny.Program ProcessResolution(bool runResolver) {
+      if (!ParseAndTypeCheck(runResolver)) {
         return null;
       }
       return _program;
     }
 
-    bool ParseAndTypeCheck() {
-      Dafny.ModuleDecl module = new Dafny.LiteralModuleDecl(new Dafny.DefaultModuleDecl(), null);
-      Dafny.BuiltIns builtIns = new Dafny.BuiltIns();
-      Dafny.Errors parseErrors = new VSErrors(this);
-      int errorCount = Dafny.Parser.Parse(_snapshot.GetText(), _filename, module, builtIns, parseErrors);
-      string errString = Dafny.Main.ParseIncludes(module, builtIns, new List<string>(), parseErrors);
-      if (errorCount != 0 || errString != null)
-        return false;
-      Dafny.Program program = new Dafny.Program(_filename, module, builtIns);
+    bool ParseAndTypeCheck(bool runResolver) {
+      Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>> parseResult;
+      Dafny.Program program;
+      var errorReporter = new VSErrorReporter(this);
+      if (_buffer.Properties.TryGetProperty(bufferDafnyKey, out parseResult) &&
+         (parseResult.Item1 == _snapshot)) {
+        // already parsed;
+        program = parseResult.Item2;
+        _errors = parseResult.Item3;
+        if (program == null)
+          runResolver = false;
+      } else {
+        Dafny.ModuleDecl module = new Dafny.LiteralModuleDecl(new Dafny.DefaultModuleDecl(), null);
+        Dafny.BuiltIns builtIns = new Dafny.BuiltIns();
+        var parseErrors = new Dafny.Errors(errorReporter);
+        int errorCount = Dafny.Parser.Parse(_snapshot.GetText(), _filename, _filename, module, builtIns, parseErrors);
+        string errString = Dafny.Main.ParseIncludes(module, builtIns, new List<string>(), parseErrors);
 
-      var r = new VSResolver(program, this);
+        if (errorCount != 0 || errString != null) {
+          runResolver = false;
+          program = null;
+        } else {
+          program = new Dafny.Program(_filename, module, builtIns, errorReporter);
+        }
+        _buffer.Properties[bufferDafnyKey] = new Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>>(_snapshot, program, _errors);
+      }
+      if (!runResolver) {
+        return false;
+      }
+
+      var r = new Resolver(program);
       r.ResolveProgram(program);
-      if (r.ErrorCount != 0)
+      if (errorReporter.Count(ErrorLevel.Error) != 0)
         return false;
 
-      program.AdditionalInformation.AddRange(r.AdditionalInformation);
       _program = program;
       return true;  // success
     }
 
+
     void RecordError(string filename, int line, int col, ErrorCategory cat, string msg, bool isRecycled = false)
     {
-      _errors.Add(new DafnyError(filename, line, col, cat, msg, _snapshot, isRecycled, null, System.IO.Path.GetFullPath(this._filename) == filename));
+      _errors.Add(new DafnyError(filename, line - 1, col - 1, cat, msg, _snapshot, isRecycled, null, System.IO.Path.GetFullPath(this._filename) == filename));
     }
 
-    class VSErrors : Dafny.Errors
+    class VSErrorReporter : Dafny.ErrorReporter
     {
       DafnyDriver dd;
-      public VSErrors(DafnyDriver dd) {
+
+      public VSErrorReporter(DafnyDriver dd) {
         this.dd = dd;
       }
-      public override void SynErr(string filename, int line, int col, string msg) {
-        dd.RecordError(filename, line - 1, col - 1, ErrorCategory.ParseError, msg);
-        count++;
-      }
-      public override void SemErr(string filename, int line, int col, string msg) {
-        dd.RecordError(filename, line - 1, col - 1, ErrorCategory.ResolveError, msg);
-        count++;
-      }
-      public override void Warning(string filename, int line, int col, string msg) {
-        dd.RecordError(filename, line - 1, col - 1, ErrorCategory.ParseWarning, msg);
-      }
-    }
 
-    class VSResolver : Dafny.Resolver
-    {
-      DafnyDriver dd;
-      Dictionary<IToken, HashSet<AdditionalInformation>> _additionalInformation = new Dictionary<IToken, HashSet<AdditionalInformation>>();
-      public List<AdditionalInformation> AdditionalInformation { get { return _additionalInformation.Values.SelectMany(i => i).ToList(); } }
-
-      public VSResolver(Dafny.Program program, DafnyDriver dd)
-        : base(program) {
-        this.dd = dd;
-
-        AdditionalInformationReporter =
-          (addinfo)
-            =>
-            {
-              if (!_additionalInformation.ContainsKey(addinfo.Token)) {
-                _additionalInformation.Add(addinfo.Token, new HashSet<AdditionalInformation>());
-              }
-              _additionalInformation[addinfo.Token].Add(addinfo);
-            };
-      }
-
-      public override void Error(Bpl.IToken tok, string msg, params object[] args) {
-        string s = string.Format(msg, args);
-        dd.RecordError(tok.filename, tok.line - 1, tok.col - 1, ErrorCategory.ResolveError, s);
-        ErrorCount++;
+      // TODO: The error tracking could be made better to track the full information returned by Dafny
+      public override bool Message(MessageSource source, ErrorLevel level, IToken tok, string msg) {
+        if (base.Message(source, level, tok, msg)) {
+          switch (level) {
+            case ErrorLevel.Error:
+              dd.RecordError(tok.filename, tok.line, tok.col, source == MessageSource.Parser ? ErrorCategory.ParseError : ErrorCategory.ResolveError, msg);
+              break;
+            case ErrorLevel.Warning:
+              dd.RecordError(tok.filename, tok.line, tok.col, source == MessageSource.Parser ? ErrorCategory.ParseWarning : ErrorCategory.ResolveWarning, msg);
+              break;
+            case ErrorLevel.Info:
+              // The AllMessages variable already keeps track of this
+              break;
+          }
+          return true;
+        } else {
+          return false;
+        }
       }
     }
 
@@ -191,7 +199,10 @@ namespace DafnyLanguage
     public static void Compile(Dafny.Program dafnyProgram, TextWriter outputWriter)
     {
       Microsoft.Dafny.DafnyOptions.O.SpillTargetCode = true;
-      Microsoft.Dafny.DafnyDriver.CompileDafnyProgram(dafnyProgram, dafnyProgram.FullName, outputWriter);
+      // Currently there are no provisions for specifying other files to compile with from the 
+      // VS interface, so just send an empty list.
+      ReadOnlyCollection<string> otherFileNames = new List<string>().AsReadOnly();
+      Microsoft.Dafny.DafnyDriver.CompileDafnyProgram(dafnyProgram, dafnyProgram.FullName, otherFileNames, outputWriter);
     }
 
     #endregion
@@ -265,8 +276,15 @@ namespace DafnyLanguage
       return Dafny.DafnyOptions.Clo.VerifySnapshots;
     }
 
+    public static bool ChangeAutomaticInduction() {
+      var old = Dafny.DafnyOptions.O.Induction;
+      // toggle between modes 1 and 3
+      Dafny.DafnyOptions.O.Induction = old == 1 ? 3 : 1;
+      return Dafny.DafnyOptions.O.Induction == 3;
+    }
+
     public static bool Verify(Dafny.Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er) {
-      Dafny.Translator translator = new Dafny.Translator();
+      Dafny.Translator translator = new Dafny.Translator(dafnyProgram.reporter);
       translator.InsertChecksums = true;
       translator.UniqueIdPrefix = uniqueIdPrefix;
       Bpl.Program boogieProgram = translator.Translate(dafnyProgram);

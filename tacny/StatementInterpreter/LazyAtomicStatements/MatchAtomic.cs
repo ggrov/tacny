@@ -13,7 +13,7 @@ using Type = Microsoft.Dafny.Type;
 namespace LazyTacny {
   class MatchAtomic : Atomic, IAtomicLazyStmt {
 
-    private Token _oldToken;
+    private IToken _oldToken;
     private Dictionary<string, Type> _ctorTypes;
 
     public MatchAtomic(Atomic atomic) : base(atomic) { }
@@ -26,7 +26,7 @@ namespace LazyTacny {
      * A matchStatement error token will always be a case tok 
      * we find the first failing cases block and return the index 
      */
-    public int GetErrorIndex(Token errorToken, MatchStmt st) {
+    public int GetErrorIndex(IToken errorToken, MatchStmt st) {
       foreach (var item in st.Cases)
         if (item.tok == errorToken)
           return st.Cases.IndexOf(item);
@@ -40,7 +40,7 @@ namespace LazyTacny {
     /// <param name="ms"></param>
     /// <param name="ctor"></param>
     /// <returns></returns>
-    public bool ErrorChanged(Token errorToken, MatchStmt ms, int ctor) {
+    public bool ErrorChanged(IToken errorToken, MatchStmt ms, int ctor) {
       // check if error has been generated
       if (_oldToken == null || errorToken == null)
         return true;

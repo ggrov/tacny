@@ -3,37 +3,31 @@ using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
 using Util;
 
-namespace Tacny
-{
-    class TacnyContract
-    {
+namespace Tacny {
+    class TacnyContract {
         private readonly Atomic atomic;
 
-        public TacnyContract(Solution solution)
-        {
+        public TacnyContract(Solution solution) {
             Contract.Requires(solution != null);
             // check if codeContracts for Tacny are enabled
             if (TacnyOptions.O.Contracts)
                 atomic = solution.state;
         }
 
-        public static void ValidateRequires(Solution solution)
-        {
+        public static void ValidateRequires(Solution solution) {
             Contract.Requires(solution != null);
             TacnyContract tc = new TacnyContract(solution);
             tc.ValidateRequires();
         }
 
 
-        protected void ValidateRequires()
-        {
+        protected void ValidateRequires() {
             //if (atomic != null)
             //    foreach (var req in atomic.localContext.tactic.Req)
             //        ValidateOne(req);
         }
 
-        protected void ValidateOne(MaybeFreeExpression mfe)
-        {
+        protected void ValidateOne(MaybeFreeExpression mfe) {
             Contract.Requires<ArgumentNullException>(mfe != null);
             Expression expr = mfe.E;
             Expression res = null;

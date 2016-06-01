@@ -1,9 +1,9 @@
-// RUN: %dafny /compile:0 /dprint:"%t.dprint" "%s" > "%t"
+// RUN: %dafny /compile:0 /dprint:"%t.dprint" /autoTriggers:0 "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
 predicate IsPrime(n: int)
 {
-  2 <= n && forall m :: 2 <= m < n ==> n % m != 0
+  2 <= n && forall m {:nowarn} :: 2 <= m < n ==> n % m != 0 // WISH It would be great to think about the status of modulo as a trigger
 }
 
 // The following theorem shows that there is an infinite number of primes
@@ -110,6 +110,13 @@ lemma RemoveFactor(x: int, s: set<int>)
       x * y * product(s - {y} - {x});
       { assert s - {y} - {x} == s - {x} - {y}; }
       x * y * product(s - {x} - {y});
+      /* FIXME: This annotation wasn't needed before the introduction
+       * of auto-triggers. It's not needed if one adds {:no_trigger}
+       * to the forall y :: y in s ==> y <= x part of PickLargest, but that
+       * boils down to z3 picking $Box(...) as good trigger
+       */
+      // FIXME: the parens shouldn't be needed around (s - {x})
+      { assert y in (s - {x}); }
       { assert y == PickLargest(s - {x}); }
       x * product(s - {x});
     }
@@ -160,8 +167,8 @@ lemma Composite(c: int) returns (a: int, b: int)
   calc {
     true;
     !IsPrime(c);
-    !(2 <= c && forall m :: 2 <= m < c ==> c % m != 0);
-    exists m :: 2 <= m < c && c % m == 0;
+    !(2 <= c && forall m {:nowarn} :: 2 <= m < c ==> c % m != 0);
+    exists m {:nowarn} :: 2 <= m < c && c % m == 0;
   }
   a :| 2 <= a < c && c % a == 0;
   b := c / a;
@@ -187,7 +194,7 @@ lemma LargestElementExists(s: set<int>)
   var s' := s;
   while true
     invariant s' != {} && s' <= s;
-    invariant forall x,y :: x in s' && y in s - s' ==> y <= x;
+    invariant forall x,y {:nowarn} :: x in s' && y in s - s' ==> y <= x;
     decreases s';
   {
     var x :| x in s';  // pick something

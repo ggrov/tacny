@@ -1,70 +1,70 @@
-FunctionSpecifications.dfy(35,25): Error BP5003: A postcondition might not hold on this return path.
-FunctionSpecifications.dfy(31,13): Related location: This is the postcondition that might not hold.
+FunctionSpecifications.dfy(29,9): Error BP5003: A postcondition might not hold on this return path.
+FunctionSpecifications.dfy(31,12): Related location: This is the postcondition that might not hold.
 Execution trace:
     (0,0): anon0
-    (0,0): anon8_Else
-    (0,0): anon9_Else
-    (0,0): anon10_Then
+    (0,0): anon10_Else
     (0,0): anon11_Else
-FunctionSpecifications.dfy(45,3): Error BP5003: A postcondition might not hold on this return path.
-FunctionSpecifications.dfy(40,24): Related location: This is the postcondition that might not hold.
+    (0,0): anon12_Then
+    (0,0): anon13_Else
+    (0,0): anon9
+FunctionSpecifications.dfy(38,9): Error BP5003: A postcondition might not hold on this return path.
+FunctionSpecifications.dfy(40,23): Related location: This is the postcondition that might not hold.
 Execution trace:
     (0,0): anon0
-    (0,0): anon11_Else
-    (0,0): anon14_Else
-    (0,0): anon15_Then
-FunctionSpecifications.dfy(53,11): Error: cannot prove termination; try supplying a decreases clause
+    (0,0): anon15_Else
+    (0,0): anon18_Else
+    (0,0): anon19_Then
+    (0,0): anon14
+FunctionSpecifications.dfy(53,10): Error: cannot prove termination; try supplying a decreases clause
 Execution trace:
     (0,0): anon0
-    (0,0): anon8_Then
-    (0,0): anon3
-FunctionSpecifications.dfy(59,10): Error BP5003: A postcondition might not hold on this return path.
-FunctionSpecifications.dfy(60,22): Related location: This is the postcondition that might not hold.
+    (0,0): anon11_Then
+    (0,0): anon5
+FunctionSpecifications.dfy(59,9): Error BP5003: A postcondition might not hold on this return path.
+FunctionSpecifications.dfy(60,21): Related location: This is the postcondition that might not hold.
 Execution trace:
     (0,0): anon0
-    (0,0): anon5_Else
-FunctionSpecifications.dfy(108,23): Error: assertion violation
+    (0,0): anon7_Else
+FunctionSpecifications.dfy(108,22): Error: assertion violation
 Execution trace:
     (0,0): anon0
-FunctionSpecifications.dfy(111,23): Error: assertion violation
+FunctionSpecifications.dfy(111,22): Error: assertion violation
 Execution trace:
     (0,0): anon0
-FunctionSpecifications.dfy(126,27): Error: assertion violation
+FunctionSpecifications.dfy(126,26): Error: assertion violation
 Execution trace:
     (0,0): anon0
     (0,0): anon3_Then
-FunctionSpecifications.dfy(130,27): Error: assertion violation
+FunctionSpecifications.dfy(130,26): Error: assertion violation
 Execution trace:
     (0,0): anon0
     (0,0): anon3_Else
-FunctionSpecifications.dfy(158,3): Error: cannot prove termination; try supplying a decreases clause
+FunctionSpecifications.dfy(158,2): Error: cannot prove termination; try supplying a decreases clause
 Execution trace:
     (0,0): anon0
-    (0,0): anon3_Else
-FunctionSpecifications.dfy(167,11): Error: cannot prove termination; try supplying a decreases clause
+    (0,0): anon4_Else
+FunctionSpecifications.dfy(167,10): Error: cannot prove termination; try supplying a decreases clause
 Execution trace:
     (0,0): anon0
-    (0,0): anon3_Else
-FunctionSpecifications.dfy(135,20): Error BP5003: A postcondition might not hold on this return path.
-FunctionSpecifications.dfy(137,29): Related location: This is the postcondition that might not hold.
+    (0,0): anon4_Else
+FunctionSpecifications.dfy(135,19): Error BP5003: A postcondition might not hold on this return path.
+FunctionSpecifications.dfy(137,28): Related location: This is the postcondition that might not hold.
 Execution trace:
     (0,0): anon0
-    (0,0): anon5_Then
-    (0,0): anon2
-    (0,0): anon6_Else
-FunctionSpecifications.dfy(146,3): Error: failure to decrease termination measure
+    (0,0): anon4_Else
+FunctionSpecifications.dfy(146,2): Error: failure to decrease termination measure
 Execution trace:
     (0,0): anon0
-    (0,0): anon3_Else
-FunctionSpecifications.dfy(153,3): Error: failure to decrease termination measure
+    (0,0): anon4_Else
+FunctionSpecifications.dfy(153,2): Error: failure to decrease termination measure
 Execution trace:
     (0,0): anon0
-    (0,0): anon3_Else
-FunctionSpecifications.dfy(174,3): Error: cannot prove termination; try supplying a decreases clause
+    (0,0): anon4_Else
+FunctionSpecifications.dfy(174,2): Error: cannot prove termination; try supplying a decreases clause
 Execution trace:
     (0,0): anon0
-    (0,0): anon3_Else
-FunctionSpecifications.dfy(171,20): Error: cannot prove termination; try supplying a decreases clause
+    (0,0): anon4_Else
+FunctionSpecifications.dfy(171,19): Error: cannot prove termination; try supplying a decreases clause
 Execution trace:
     (0,0): anon0
 

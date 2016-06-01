@@ -68,26 +68,27 @@ namespace DafnyLanguage
     {
       Error = error;
     }
-    
-    private static string ConvertToErrorType(DafnyError err)
-    {
-      string ty;  // the COLORs below indicate what I see on my machine
-      switch (err.Category)
-      {
-        default:  // unexpected category
+
+    private static string ConvertToErrorType(DafnyError err) {
+      // the COLORs below indicate what I see on my machine
+      switch (err.Category) {
+        case ErrorCategory.ProcessError:
         case ErrorCategory.ParseError:
-        case ErrorCategory.ParseWarning:
-          ty = "syntax error"; break;  // COLOR: red
+          return "syntax error";  // COLOR: red
         case ErrorCategory.ResolveError:
-          ty = "compiler error"; break;  // COLOR: blue
-        case ErrorCategory.VerificationError:
-          ty = "error"; break;  // COLOR: red
-        case ErrorCategory.AuxInformation:
-          ty = "other error"; break;  // COLOR: purple red
+          return "compiler error";  // COLOR: blue
+        case ErrorCategory.ParseWarning:
+        case ErrorCategory.ResolveWarning:
+          return "compiler warning";  // COLOR: blue
         case ErrorCategory.InternalError:
-          ty = "error"; break;  // COLOR: red
+        case ErrorCategory.VerificationError:
+          return "error";  // COLOR: red
+        case ErrorCategory.AuxInformation:
+          return "other error";  // COLOR: purple red
+        default:
+          Contract.Assert(false);
+          throw new InvalidOperationException();
       }
-      return ty;
     }
   }
 
@@ -188,7 +189,7 @@ namespace DafnyLanguage
     {
       get
       {
-        return _verificationErrors.Values.Where(ec => ec.RequestId == MostRecentRequestId).SelectMany(ec => ec.Errors.Reverse());
+        return _verificationErrors.Values.Where(ec => ec.RequestId == MostRecentRequestId).SelectMany(ec => ec.Errors.Reverse()).ToList();
       }
     }
 
@@ -198,13 +199,19 @@ namespace DafnyLanguage
       {
         lock (this)
         {
-          if (_resolutionErrors != null && _resolutionErrors.Any())
-          {
-            return _resolutionErrors;
+          bool anyResolutionErrors = false;
+          if (_resolutionErrors != null) {
+            foreach (var err in _resolutionErrors) {
+              if (CategoryConversion(err.Category) == TaskErrorCategory.Error) {
+                anyResolutionErrors = true;
+              }
+              yield return err;
+            }
           }
-          else
-          {
-            return VerificationErrors;
+          if (!anyResolutionErrors) {
+            foreach (var err in VerificationErrors) {
+              yield return err;
+            }
           }
         }
       }
@@ -310,19 +317,18 @@ namespace DafnyLanguage
     /// <summary>
     /// Calls the Dafny parser/resolver/type checker on the contents of the buffer, updates the Error List accordingly.
     /// </summary>
-    void ResolveBuffer(object sender, EventArgs args)
-    {
+    void ResolveBuffer(object sender, EventArgs args) {
       ITextSnapshot snapshot = _buffer.CurrentSnapshot;
       if (snapshot == Snapshot)
         return;  // we've already done this snapshot
 
       string filename = _document != null ? _document.FilePath : "<program>";
-      var driver = new DafnyDriver(snapshot, filename);
+      var driver = new DafnyDriver(_buffer, filename);
       List<DafnyError> newErrors;
       Dafny.Program program;
       try
       {
-        program = driver.ProcessResolution();
+        program = driver.ProcessResolution(true);
         newErrors = driver.Errors;
       }
       catch (Exception e)
@@ -353,49 +359,46 @@ namespace DafnyLanguage
 
     public void UpdateErrorList(ITextSnapshot snapshot)
     {
-      lock (this) 
+      if (_errorProvider != null && !m_disposed)
       {
-        if (_errorProvider != null && !m_disposed)
-        {
-          _errorProvider.SuspendRefresh();  // reduce flickering
-          _errorProvider.Tasks.Clear();
-          foreach (var err in AllErrors)
-          { 
-            var lineNum = 0;
-            var columnNum = 0;
-            if (err.Span != null) {
-              var span = err.Span.GetSpan(snapshot);
-              lineNum = snapshot.GetLineNumberFromPosition(span.Start.Position);
-              var line = snapshot.GetLineFromPosition(span.Start.Position);
-              columnNum = span.Start - line.Start;
-            } else {
-              lineNum = err.Line;
-              columnNum = err.Column;
-            }
-            
-            ErrorTask task = new ErrorTask()
-            {
-              Category = TaskCategory.BuildCompile,
-              ErrorCategory = CategoryConversion(err.Category),
-              Text = err.Message,
-              Line = lineNum,
-              Column = columnNum
-            };
-            if (err.Filename != null) {
-              task.Document = err.Filename;
-            } 
-            else if (_document != null)
-            {
-              task.Document = _document.FilePath;
-            }
-            if (err.Category != ErrorCategory.ProcessError && err.Category != ErrorCategory.InternalError)
-            {
-              task.Navigate += new EventHandler(NavigateHandler);
-            }
-            _errorProvider.Tasks.Add(task);
+        _errorProvider.SuspendRefresh();  // reduce flickering
+        _errorProvider.Tasks.Clear();
+        foreach (var err in AllErrors)
+        { 
+          var lineNum = 0;
+          var columnNum = 0;
+          if (err.Span != null) {
+            var span = err.Span.GetSpan(snapshot);
+            lineNum = snapshot.GetLineNumberFromPosition(span.Start.Position);
+            var line = snapshot.GetLineFromPosition(span.Start.Position);
+            columnNum = span.Start - line.Start;
+          } else {
+            lineNum = err.Line;
+            columnNum = err.Column;
           }
-          _errorProvider.ResumeRefresh();
+          
+          ErrorTask task = new ErrorTask()
+          {
+            Category = TaskCategory.BuildCompile,
+            ErrorCategory = CategoryConversion(err.Category),
+            Text = err.Message,
+            Line = lineNum,
+            Column = columnNum
+          };
+          if (err.Filename != null) {
+            task.Document = err.Filename;
+          } 
+          else if (_document != null)
+          {
+            task.Document = _document.FilePath;
+          }
+          if (err.Category != ErrorCategory.ProcessError && err.Category != ErrorCategory.InternalError)
+          {
+            task.Navigate += new EventHandler(NavigateHandler);
+          }
+          _errorProvider.Tasks.Add(task);
         }
+        _errorProvider.ResumeRefresh();
       }
       var chng = TagsChanged;
       if (chng != null)
@@ -412,6 +415,7 @@ namespace DafnyLanguage
         case ErrorCategory.InternalError:
           return TaskErrorCategory.Error;
         case ErrorCategory.ParseWarning:
+        case ErrorCategory.ResolveWarning:
           return TaskErrorCategory.Warning;
         case ErrorCategory.AuxInformation:
           return TaskErrorCategory.Message;
@@ -477,7 +481,7 @@ namespace DafnyLanguage
 
   public enum ErrorCategory
   {
-    ProcessError, ParseWarning, ParseError, ResolveError, VerificationError, AuxInformation, InternalError
+    ProcessError, ParseWarning, ParseError, ResolveWarning, ResolveError, VerificationError, AuxInformation, InternalError
   }
 
   public class DafnyError
@@ -527,7 +531,7 @@ namespace DafnyLanguage
              else
              {
                var line = Math.Max(0, int.Parse(match.Groups[1].Value) - 1);
-               var column = Math.Max(0, int.Parse(match.Groups[2].Value) - 1);
+               var column = Math.Max(0, int.Parse(match.Groups[2].Value));
                var sLine = Snapshot.GetLineFromLineNumber(line);
                Contract.Assert(column <= sLine.Length);
                var sLength = Math.Max(0, Math.Min(sLine.Length - column, 0));

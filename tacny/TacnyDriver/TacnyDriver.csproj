@@ -143,6 +143,15 @@
     <Reference Include="Boogie">
       <HintPath>..\..\boogie\Binaries\Boogie.exe</HintPath>
     </Reference>
+    <Reference Include="BoogieCore">
+      <HintPath>..\..\boogie\Binaries\BoogieCore.dll</HintPath>
+    </Reference>
+    <Reference Include="BoogieExecutionEngine">
+      <HintPath>..\..\boogie\Binaries\BoogieExecutionEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="BoogieParserHelper">
+      <HintPath>..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
+    </Reference>
     <Reference Include="Concurrency">
       <HintPath>..\..\boogie\Binaries\Concurrency.dll</HintPath>
     </Reference>

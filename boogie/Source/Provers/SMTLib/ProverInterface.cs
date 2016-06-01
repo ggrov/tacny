@@ -86,6 +86,21 @@ namespace Microsoft.Boogie.SMTLib
       }
     }
 
+    public override void AssertNamed(VCExpr vc, bool polarity, string name)
+    {
+      string vcString;
+      if (polarity)
+      {
+        vcString = VCExpr2String(vc, 1);
+      }
+      else
+      {
+        vcString = "(not " + VCExpr2String(vc, 1) + ")";
+      }
+      AssertAxioms();
+      SendThisVC(string.Format("(assert (! {0} :named {1}))", vcString, name));
+    }
+
     private void SetupAxiomBuilder(VCExpressionGenerator gen)
     {
       switch (CommandLineOptions.Clo.TypeEncodingMethod)
@@ -246,9 +261,9 @@ namespace Microsoft.Boogie.SMTLib
 
         // Set produce-unsat-cores last. It seems there's a bug in Z3 where if we set it earlier its value
         // gets reset by other set-option commands ( https://z3.codeplex.com/workitem/188 )
-        if (CommandLineOptions.Clo.ContractInfer && (CommandLineOptions.Clo.UseUnsatCoreForContractInfer || CommandLineOptions.Clo.ExplainHoudini))
+        if (CommandLineOptions.Clo.PrintNecessaryAssumes || (CommandLineOptions.Clo.ContractInfer && (CommandLineOptions.Clo.UseUnsatCoreForContractInfer || CommandLineOptions.Clo.ExplainHoudini)))
         {
-          SendThisVC("(set-option :produce-unsat-cores true)");
+          SendCommon("(set-option :produce-unsat-cores true)");
           this.usingUnsatCore = true;
         }
 
@@ -321,6 +336,8 @@ namespace Microsoft.Boogie.SMTLib
             SendCommon("(declare-datatypes () (" + datatypeString + "))");
           }
         }
+        if (CommandLineOptions.Clo.ProverPreamble != null)
+            SendCommon("(include \"" + CommandLineOptions.Clo.ProverPreamble + "\")");
       }
 
       if (!AxiomsAreSetup)
@@ -399,6 +416,8 @@ namespace Microsoft.Boogie.SMTLib
 
       PrepareCommon();
 
+      OptimizationRequests.Clear();
+
       string vcString = "(assert (not\n" + VCExpr2String(vc, 1) + "\n))";
       FlushAxioms();
 
@@ -406,7 +425,11 @@ namespace Microsoft.Boogie.SMTLib
 
       SendThisVC("(push 1)");
       SendThisVC("(set-info :boogie-vc-id " + SMTLibNamer.QuoteId(descriptiveName) + ")");
+
       SendThisVC(vcString);
+
+      SendOptimizationRequests();
+
       FlushLogFile();
 
       if (Process != null) {
@@ -416,8 +439,19 @@ namespace Microsoft.Boogie.SMTLib
           Process.Inspector.NewProblem(descriptiveName, vc, handler);
       }
 
-      SendThisVC("(check-sat)");
+      SendCheckSat();
       FlushLogFile();
+    }
+
+    private void SendOptimizationRequests()
+    {
+      if (options.Solver == SolverKind.Z3 && 0 < OptimizationRequests.Count)
+      {
+        foreach (var r in OptimizationRequests)
+        {
+          SendThisVC(r);
+        }
+      }
     }
 
     public override void Reset(VCExpressionGenerator gen)
@@ -444,6 +478,7 @@ namespace Microsoft.Boogie.SMTLib
       if (options.Solver == SolverKind.Z3)
       {
         this.gen = gen;
+        SendThisVC("(reset)");
         Namer.Reset();
         common.Clear();
         SetupAxiomBuilder(gen);
@@ -454,7 +489,9 @@ namespace Microsoft.Boogie.SMTLib
         ctx.KnownDatatypeConstructors.Clear();
         ctx.parent = this;
         DeclCollector.Reset();
-        SendThisVC("; doing a full reset...");
+        NamedAssumes.Clear();
+        UsedNamedAssumes = null;
+        SendThisVC("; did a full reset");
       }
     }
 	
@@ -595,7 +632,10 @@ namespace Microsoft.Boogie.SMTLib
 				if(declHandler.var_map.ContainsKey(name))
 					return declHandler.var_map[name];
 				HandleProverError ("Prover error: unknown symbol:" + name);
-				throw new BadExprFromProver ();
+				//throw new BadExprFromProver ();
+                var v = gen.Variable(name, Type.Int);
+                bound.Add(name, v);
+                return v;
 			}
 			ArgGetter g = i => SExprToVCExpr (e [i], bound);
 			ArgsGetter ga = () => e.Arguments.Select (x => SExprToVCExpr (x, bound)).ToArray ();
@@ -610,10 +650,11 @@ namespace Microsoft.Boogie.SMTLib
                 {
                     var binds = e.Arguments[0];
                     var vcbinds = new List<VCExprVar>();
+                    var bound_copy = new Dictionary<string, VCExpr>(bound);
                     for (int i = 0; i < binds.Arguments.Count(); i++)
                     {
                         var bind = binds.Arguments[i];
-                        var symb = bind.Name;
+                        var symb = StripCruft(bind.Name);
                         var vcv = SExprToVar(bind);
                         vcbinds.Add(vcv);
                         bound[symb] = vcv;
@@ -623,12 +664,7 @@ namespace Microsoft.Boogie.SMTLib
                         body = gen.Forall(vcbinds, new List<VCTrigger>(), body);
                     else
                         body = gen.Exists(vcbinds, new List<VCTrigger>(), body);
-                    for (int i = 0; i < binds.Arguments.Count(); i++)
-                    {
-                        var bind = binds.Arguments[i];
-                        var symb = bind.Name;
-                        bound.Remove(symb);
-                    }
+                    bound = bound_copy;
                     return body;
                 }
 			case "-" : // have to deal with unary case
@@ -648,6 +684,7 @@ namespace Microsoft.Boogie.SMTLib
 				bool expand_lets = true;
 				var binds = e.Arguments[0];
 				var vcbinds = new List<VCExprLetBinding>();
+                var bound_copy = new Dictionary<string, VCExpr>(bound);
 				for(int i = 0; i < binds.Arguments.Count(); i++){
 					var bind = binds.Arguments[i];
 					var symb = bind.Name;
@@ -661,11 +698,7 @@ namespace Microsoft.Boogie.SMTLib
 				var body = g(1); 
 				if(!expand_lets)
 					body = gen.Let(vcbinds,body);
-				for(int i = 0; i < binds.Arguments.Count(); i++){
-					var bind = binds.Arguments[i];
-					var symb = bind.Name;
-					bound.Remove (symb);
-				}
+                bound = bound_copy;
                 return body;
 			}
 				
@@ -1016,6 +1049,9 @@ namespace Microsoft.Boogie.SMTLib
                 case "unknown":
                     result = Outcome.Invalid;
                     break;
+                case "bounded":
+                    result = Outcome.Bounded;
+                    break;
                 case "error":
                     if (resp.ArgCount > 0 && resp.Arguments[0].Name.Contains("canceled"))
                     {
@@ -1053,7 +1089,8 @@ namespace Microsoft.Boogie.SMTLib
                             HandleProverError("Unexpected prover response: " + resp.ToString());
                         break;
                     }
-				case Outcome.Valid:
+                case Outcome.Valid:
+                case Outcome.Bounded:
 				    {
 						resp = Process.GetProverResponse();
                         if (resp.Name == "fixedpoint")
@@ -1262,86 +1299,144 @@ namespace Microsoft.Boogie.SMTLib
             
             result = GetResponse();
 
+            var reporter = handler as VC.VCGen.ErrorReporter;
+            // TODO(wuestholz): Is the reporter ever null?
+            if (usingUnsatCore && result == Outcome.Valid && reporter != null && 0 < NamedAssumes.Count)
+            {
+              if (usingUnsatCore)
+              {
+                UsedNamedAssumes = new HashSet<string>();
+                SendThisVC("(get-unsat-core)");
+                var resp = Process.GetProverResponse();
+                if (resp.Name != "")
+                {
+                  UsedNamedAssumes.Add(resp.Name);
+                  if (CommandLineOptions.Clo.PrintNecessaryAssumes)
+                  {
+                    reporter.AddNecessaryAssume(resp.Name.Substring("aux$$assume$$".Length));
+                  }
+                }
+                foreach (var arg in resp.Arguments)
+                {
+                  UsedNamedAssumes.Add(arg.Name);
+                  if (CommandLineOptions.Clo.PrintNecessaryAssumes)
+                  {
+                    reporter.AddNecessaryAssume(arg.Name.Substring("aux$$assume$$".Length));
+                  }
+                }
+              }
+              else
+              {
+                UsedNamedAssumes = null;
+              }
+            }
+
             if (CommandLineOptions.Clo.RunDiagnosticsOnTimeout && result == Outcome.TimeOut)
             {
               #region Run timeout diagnostics
 
+              if (CommandLineOptions.Clo.TraceDiagnosticsOnTimeout)
+              {
+                Console.Out.WriteLine("Starting timeout diagnostics with initial time limit {0}.", options.TimeLimit);
+              }
+
               SendThisVC("; begin timeout diagnostics");
 
+              var start = DateTime.UtcNow;
               var unverified = new SortedSet<int>(ctx.TimeoutDiagnosticIDToAssertion.Keys);
-              var lastCnt = unverified.Count + 1;
-              var mod = 2;
-              var timeLimit = options.TimeLimit;
-              var timeLimitFactor = 1;
+              var timedOut = new SortedSet<int>();
+              int frac = 2;
+              int queries = 0;
+              int timeLimitPerAssertion = 0 < options.TimeLimit ? (options.TimeLimit / 100) * CommandLineOptions.Clo.TimeLimitPerAssertionInPercent : 1000;
               while (true)
               {
-                // TODO(wuestholz): Try out different ways for splitting up the work.
-                var split0 = new SortedSet<int>(unverified.Where((val, idx) => idx % mod == 0));
-                var split1 = new SortedSet<int>(unverified.Except(split0));
-
-                int cnt = unverified.Count;
-
-                if (cnt == 0)
+                int rem = unverified.Count;
+                if (rem == 0)
                 {
-                  result = Outcome.Valid;
-                  break;
-                }
-                else if (lastCnt == cnt)
-                {
-                  if (mod < cnt)
+                  if (0 < timedOut.Count)
                   {
-                    mod++;
-                  }
-                  else if (timeLimitFactor <= 3 && 0 < timeLimit)
-                  {
-                    // TODO(wuestholz): Add a commandline option to control this.
-                    timeLimitFactor++;
+                    result = CheckSplit(timedOut, ref popLater, options.TimeLimit, timeLimitPerAssertion, ref queries);
+                    if (result == Outcome.Valid)
+                    {
+                      timedOut.Clear();
+                    }
+                    else if (result == Outcome.TimeOut)
+                    {
+                      // Give up and report which assertions were not verified.
+                      var cmds = timedOut.Select(id => ctx.TimeoutDiagnosticIDToAssertion[id]);
+
+                      if (cmds.Any())
+                      {
+                        handler.OnResourceExceeded("timeout after running diagnostics", cmds);
+                      }
+                    }
                   }
                   else
                   {
-                    // Give up and report which assertions were not verified.
-                    var cmds = unverified.Select(id => ctx.TimeoutDiagnosticIDToAssertion[id]);
-
-                    if (cmds.Any())
-                    {
-                      handler.OnResourceExceeded("timeout after running diagnostics", cmds);
-                    }
-
-                    break;
+                    result = Outcome.Valid;
                   }
-                }
-                lastCnt = cnt;
-
-                if (0 < split0.Count)
-                {
-                  var result0 = CheckSplit(split0, ref popLater, timeLimitFactor * timeLimit);
-                  if (result0 == Outcome.Valid)
-                  {
-                    unverified.ExceptWith(split0);
-                  }
-                  else if (result0 == Outcome.Invalid)
-                  {
-                    result = result0;
-                    break;
-                  }
+                  break;
                 }
 
-                if (0 < split1.Count)
+                // TODO(wuestholz): Try out different ways for splitting up the work (e.g., randomly).
+                var cnt = Math.Max(1, rem / frac);
+                // It seems like assertions later in the control flow have smaller indexes.
+                var split = new SortedSet<int>(unverified.Where((val, idx) => (rem - idx - 1) < cnt));
+                Contract.Assert(0 < split.Count);
+                var splitRes = CheckSplit(split, ref popLater, timeLimitPerAssertion, timeLimitPerAssertion, ref queries);
+                if (splitRes == Outcome.Valid)
                 {
-                  var result1 = CheckSplit(split1, ref popLater, timeLimitFactor * timeLimit);
-                  if (result1 == Outcome.Valid)
+                  unverified.ExceptWith(split);
+                  frac = 1;
+                }
+                else if (splitRes == Outcome.Invalid)
+                {
+                  result = splitRes;
+                  break;
+                }
+                else if (splitRes == Outcome.TimeOut)
+                {
+                  if (2 <= frac && (4 <= (rem / frac)))
                   {
-                    unverified.ExceptWith(split1);
+                    frac *= 4;
                   }
-                  else if (result1 == Outcome.Invalid)
+                  else if (2 <= (rem / frac))
                   {
-                    result = result1;
-                    break;
+                    frac *= 2;
                   }
+                  else
+                  {
+                    timedOut.UnionWith(split);
+                    unverified.ExceptWith(split);
+                    frac = 1;
+                  }
+                }
+                else
+                {
+                  break;
                 }
               }
 
+              unverified.UnionWith(timedOut);
+
+              var end = DateTime.UtcNow;
+
               SendThisVC("; end timeout diagnostics");
+
+              if (CommandLineOptions.Clo.TraceDiagnosticsOnTimeout)
+              {
+                Console.Out.WriteLine("Terminated timeout diagnostics after {0:F0} ms and {1} prover queries.", end.Subtract(start).TotalMilliseconds, queries);
+                Console.Out.WriteLine("Outcome: {0}", result);
+                Console.Out.WriteLine("Unverified assertions: {0} (of {1})", unverified.Count, ctx.TimeoutDiagnosticIDToAssertion.Keys.Count);
+
+                string filename = "unknown";
+                var assertion = ctx.TimeoutDiagnosticIDToAssertion.Values.Select(t => t.Item1).FirstOrDefault(a => a.tok != null && a.tok != Token.NoToken && a.tok.filename != null);
+                if (assertion != null)
+                {
+                  filename = assertion.tok.filename;
+                }
+                File.AppendAllText("timeouts.csv", string.Format(";{0};{1};{2:F0};{3};{4};{5};{6}\n", filename, options.TimeLimit, end.Subtract(start).TotalMilliseconds, queries, result, unverified.Count, ctx.TimeoutDiagnosticIDToAssertion.Keys.Count));
+              }
 
               #endregion
             }
@@ -1395,13 +1490,13 @@ namespace Microsoft.Boogie.SMTLib
               expr = "false";
             }
             SendThisVC("(assert " + expr + ")");
-            SendThisVC("(check-sat)");
+            SendCheckSat();
           }
           else {
             string source = labels[labels.Length - 2];
             string target = labels[labels.Length - 1];
             SendThisVC("(assert (not (= (ControlFlow 0 " + source + ") (- " + target + "))))");
-            SendThisVC("(check-sat)");
+            SendCheckSat();
           }
         }
 
@@ -1417,15 +1512,17 @@ namespace Microsoft.Boogie.SMTLib
       }
     }
 
-    private Outcome CheckSplit(SortedSet<int> split, ref bool popLater, int timeLimit)
+    private Outcome CheckSplit(SortedSet<int> split, ref bool popLater, int timeLimit, int timeLimitPerAssertion, ref int queries)
     {
+      var tla = timeLimitPerAssertion * split.Count;
+
       if (popLater)
       {
         SendThisVC("(pop 1)");
       }
 
       SendThisVC("(push 1)");
-      SendThisVC(string.Format("(set-option :{0} {1})", Z3.SetTimeoutOption(), timeLimit));
+      SendThisVC(string.Format("(set-option :{0} {1})", Z3.SetTimeoutOption(), (0 < tla && tla < timeLimit) ? tla : timeLimit));
       popLater = true;
 
       SendThisVC(string.Format("; checking split VC with {0} unverified assertions", split.Count));
@@ -1439,8 +1536,13 @@ namespace Microsoft.Boogie.SMTLib
         expr = VCExprGen.AndSimp(expr, lit);
       }
       SendThisVC("(assert " + VCExpr2String(expr, 1) + ")");
+      if (options.Solver == SolverKind.Z3)
+      {
+        SendThisVC("(apply (then (using-params propagate-values :max_rounds 1) simplify) :print false)");
+      }
       FlushLogFile();
-      SendThisVC("(check-sat)");
+      SendCheckSat();
+      queries++;
       return GetResponse();
     }
 
@@ -1777,6 +1879,7 @@ namespace Microsoft.Boogie.SMTLib
     private Model GetErrorModel() {
       if (!options.ExpectingModel())
         return null;
+
       SendThisVC("(get-model)");
       Process.Ping();
       Model theModel = null;
@@ -1871,6 +1974,9 @@ namespace Microsoft.Boogie.SMTLib
             result = Outcome.Invalid;
             wasUnknown = true;
             break;
+          case "objectives":
+            // We ignore this.
+            break;
           default:
             HandleProverError("Unexpected prover response: " + resp.ToString());
             break;
@@ -1908,6 +2014,8 @@ namespace Microsoft.Boogie.SMTLib
 
       return result;
     }
+
+    readonly IList<string> OptimizationRequests = new List<string>();
 
     protected string VCExpr2String(VCExpr expr, int polarity)
     {
@@ -1948,10 +2056,8 @@ namespace Microsoft.Boogie.SMTLib
         DeclCollector.Collect(sortedExpr);
         FeedTypeDeclsToProver();
 
-
-
-        AddAxiom(SMTLibExprLineariser.ToString(sortedAxioms, Namer, options));
-        string res = SMTLibExprLineariser.ToString(sortedExpr, Namer, options);
+        AddAxiom(SMTLibExprLineariser.ToString(sortedAxioms, Namer, options, namedAssumes: NamedAssumes));
+        string res = SMTLibExprLineariser.ToString(sortedExpr, Namer, options, NamedAssumes, OptimizationRequests);
         Contract.Assert(res != null);
 
         if (CommandLineOptions.Clo.Trace)
@@ -2059,19 +2165,20 @@ namespace Microsoft.Boogie.SMTLib
         throw new NotImplementedException();
     }
 
-    public override void Assert(VCExpr vc, bool polarity)
+    public override void Assert(VCExpr vc, bool polarity, bool isSoft = false, int weight = 1)
     {
-        string a = "";
-        if (polarity)
-        {
-            a = "(assert " + VCExpr2String(vc, 1) + ")";
+        OptimizationRequests.Clear();
+        string assert = "assert";
+        if (options.Solver == SolverKind.Z3 && isSoft) {
+            assert += "-soft";
         }
-        else
-        {
-            a = "(assert (not\n" + VCExpr2String(vc, 1) + "\n))";
+        var expr = polarity ? VCExpr2String(vc, 1) : "(not\n" + VCExpr2String(vc, 1) + "\n)";
+        if (options.Solver == SolverKind.Z3 && isSoft) {
+            expr += " :weight " + weight;
         }
         AssertAxioms();
-        SendThisVC(a);
+        SendThisVC("(" + assert + " " + expr + ")");
+        SendOptimizationRequests();
     }
 
     public override void DefineMacro(Macro f, VCExpr vc) {
@@ -2091,8 +2198,14 @@ namespace Microsoft.Boogie.SMTLib
     public override void Check()
     {
         PrepareCommon();
-        SendThisVC("(check-sat)");
+        SendCheckSat();
         FlushLogFile();
+    }
+
+    public void SendCheckSat()
+    {
+      UsedNamedAssumes = null;
+      SendThisVC("(check-sat)");
     }
 	
     public override void SetTimeOut(int ms)
@@ -2288,21 +2401,6 @@ namespace Microsoft.Boogie.SMTLib
           if (CommandLineOptions.Clo.PrintFixedPoint == null)
               CommandLineOptions.Clo.PrintFixedPoint = "itp.fixedpoint.bpl";
           return opts;
-      }
-
-      public override void AssertNamed(VCExpr vc, bool polarity, string name)
-      {
-          string vcString;
-          if (polarity)
-          {
-              vcString = VCExpr2String(vc, 1);
-          }
-          else
-          {
-              vcString = "(not " + VCExpr2String(vc, 1) + ")";
-          }
-          AssertAxioms();
-          SendThisVC(string.Format("(assert (! {0} :named {1}))", vcString, name));
       }
 
       public override VCExpr ComputeInterpolant(VCExpr A, VCExpr B)

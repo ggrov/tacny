@@ -1,4 +1,4 @@
-// RUN: %dafny "%s" > "%t"
+// RUN: %dafny /compile:3 /autoTriggers:0 "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
 // The tests in this file are designed to run through the compiler.  They contain
@@ -43,7 +43,9 @@ module CoRecursion {
   //   40
   //   41
   //   42
-  method Main() {
+  //   9
+  //   9
+  method TestMain() {
     var m := 17;
     var cell := new Cell;
     cell.data := 40;
@@ -57,6 +59,37 @@ module CoRecursion {
       match (l) { case Cons(x,y) => }
       print l.car, "\n";
       l := l.cdr;
+    }
+    var nio := OneLess(0, 10);
+    print nio, "\n";
+    nio := OneLess'(0, 10);
+    print nio, "\n";
+  }
+
+  method OneLess(lo: int, hi: int) returns (m: int)
+    requires lo < hi
+    // This method ensures m == hi - 1, but we don't care to prove it
+    decreases hi - lo
+  {
+    if y :| lo < y < hi {
+      m := OneLess(y, hi);
+    } else {
+      m := lo;
+    }
+  }
+
+  method OneLess'(lo: int, hi: int) returns (m: int)
+    requires lo < hi
+    // This method ensures m == hi - 1, but we don't care to prove it
+    decreases hi - lo
+  {
+    if {
+      case y :| lo < y < hi =>
+        m := OneLess'(y, hi);
+      case lo+1 < hi =>
+        m := OneLess'(lo+1, hi);
+      case lo + 1 == hi =>
+        m := lo;
     }
   }
 }
@@ -76,8 +109,8 @@ module T refines S {
   }
 }
 module A {
-   import X as S default T
-   import Y as S default T
+   import X : T
+   import Y : T
    import Z = T
    method run() {
      var x := new X.C;
@@ -95,7 +128,7 @@ method NotMain() {
 
 
 abstract module S1 {
-  import B as S default T
+  import B : T
   method do()
 }
 
@@ -105,7 +138,7 @@ module T1 refines S1 {
   }
 }
 module A1 {
-   import X as S1 default T1
+   import X : T1
    method run() {
      X.do();
      var x := new X.B.C;
@@ -225,5 +258,58 @@ class DigitUnderscore_Names {
     this.10 := 0x0000_0009;
     assert this.0_1_0 == int(00_07.0_0) && this.010 == 8 && this.10 == 9;
     this.10 := 20;
+  }
+}
+
+// ------------------------------------------------------------------
+
+method Main()
+{
+  CoRecursion.TestMain();
+  EqualityTests.TestMain();
+}
+
+// ------------------------------------------------------------------
+
+module EqualityTests {
+  class C<T> {
+  }
+
+  method TestMain()
+  {
+    // regression tests:
+    var a: C<int>, b: C<int> := null, null;
+    if a == null {
+      print "a is null\n";
+    }
+    if a != null {
+      print "a is not null\n";
+    }
+    if a == b {
+      print "a and b are equal\n";
+    }
+    if a != b {
+      print "a and b are not equal\n";
+    }
+
+    var H := new real[10];
+    ArrayTests(H);
+  }
+
+  method ArrayTests<T>(H: array<T>)
+  {
+    var G := new int[10];
+    if G == H {  // this comparison is allowed in Dafny, but requires a cast in C#
+      print "this would be highly suspicious\n";
+    }
+    if G != H {  // this comparison is allowed in Dafny, but requires a cast in C#
+      print "good world order\n";
+    }
+    if null == H {
+      print "given array is null\n";
+    }
+    if null != H {
+      print "given array is non-null\n";
+    }
   }
 }

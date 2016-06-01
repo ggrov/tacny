@@ -7,7 +7,6 @@ class C {
   ghost method Init_ModifyNothing() { }
   ghost method Init_ModifyThis() modifies this;
   {
-    data := 6;  // error: assignment to a non-ghost field
     gdata := 7;
   }
   ghost method Init_ModifyStuff(c: C) modifies this, c; { }
@@ -40,8 +39,8 @@ method M0(IS: set<int>)
   {
     var x := i;
     x := x + 1;
-    y := 18;  // (this statement is not allowed, since y is declared outside the forall, but that check happens only if the first resolution pass of the forall statement passes, which it doesn't in this case because of the next line)
-    z := 20;  // error: assigning to a non-ghost variable inside a ghost forall block
+    y := 18;  // error: assigning to a (ghost) variable inside a ghost forall block
+    z := 20;  // error: assigning to a (non-ghost) variable inside a ghost forall block
   }
 
   forall (i | 0 <= i)
@@ -118,5 +117,17 @@ method M3(c: C)
     ensures true;
   {
     c.GhostMethodWithModifies(x);  // error: not allowed to call method with nonempty modifies clause
+  }
+}
+
+module AnotherModule {
+  class C {
+    var data: int;
+    ghost var gdata: int;
+    ghost method Init_ModifyThis() modifies this;
+    {
+      data := 6;  // error: assignment to a non-ghost field
+      gdata := 7;
+    }
   }
 }

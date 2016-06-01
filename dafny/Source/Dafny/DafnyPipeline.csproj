@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -8,7 +8,7 @@
     <ProjectGuid>{FE44674A-1633-4917-99F4-57635E6FA740}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DafnyPipeline</RootNamespace>
+    <RootNamespace>Microsoft.Dafny</RootNamespace>
     <AssemblyName>DafnyPipeline</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -41,7 +41,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NO_ENABLE_IRONDAFNY</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeContractsEnableRuntimeChecking>False</CodeContractsEnableRuntimeChecking>
@@ -83,7 +83,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;NO_ENABLE_IRONDAFNY</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
@@ -91,7 +91,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Checked|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Checked\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NO_ENABLE_IRONDAFNY</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
@@ -124,17 +124,16 @@
     <CodeContractsRuntimeCheckingLevel>Full</CodeContractsRuntimeCheckingLevel>
     <CodeContractsReferenceAssembly>Build</CodeContractsReferenceAssembly>
     <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
-    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Basetypes">
-      <HintPath>..\..\..\boogie\Binaries\Basetypes.dll</HintPath>
+    <Reference Include="BoogieBasetypes">
+      <HintPath>..\..\..\boogie\Binaries\BoogieBasetypes.dll</HintPath>
     </Reference>
-    <Reference Include="Core">
-      <HintPath>..\..\..\boogie\Binaries\Core.dll</HintPath>
+    <Reference Include="BoogieCore">
+      <HintPath>..\..\..\boogie\Binaries\BoogieCore.dll</HintPath>
     </Reference>
-    <Reference Include="ParserHelper">
-      <HintPath>..\..\..\boogie\Binaries\ParserHelper.dll</HintPath>
+    <Reference Include="BoogieParserHelper">
+      <HintPath>..\..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
@@ -144,8 +143,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Cloner.cs" />
+    <Compile Include="Reporting.cs" />
+    <Compile Include="Triggers\QuantifiersCollection.cs" />
+    <Compile Include="Triggers\QuantifierSplitter.cs" />
+    <Compile Include="Triggers\TriggerExtensions.cs" />
+    <Compile Include="Triggers\QuantifiersCollector.cs" />
+    <Compile Include="Triggers\TriggersCollector.cs" />
+    <Compile Include="Triggers\TriggerUtils.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="Compiler.cs" />
+    <Compile Include="BigIntegerParser.cs" />
     <Compile Include="DafnyAst.cs" />
     <Compile Include="DafnyMain.cs" />
     <Compile Include="DafnyOptions.cs" />

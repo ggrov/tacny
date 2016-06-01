@@ -1,5 +1,7 @@
-// RUN: %dafny /compile:3 /print:"%t.print" /dprint:"%t.dprint" "%s" > "%t"
+// RUN: %dafny /compile:3 /print:"%t.print" /dprint:"%t.dprint" /autoTriggers:1 "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
+
+// /autoTriggers:1 added to suppress instabilities
 
 method Main() { }
 
@@ -51,7 +53,7 @@ method L(a: array<int>, c: array<int>, n: nat)
     case A == C =>
       assert forall i :: 0 <= i < h ==> A[i] == C[i];
     case A == C =>
-      assert forall i :: 0 <= i < h ==> a[n+i] == c[n+i];
+      assert forall i :: n <= i < n + h ==> a[i] == c[i];
     case true =>
   }
 }
@@ -71,20 +73,24 @@ method M(a: array<int>, c: array<int>, m: nat, n: nat, k: nat, l: nat)
         } else if * {
           assert forall i :: 0 <= i < n ==> A[i] == C[i];
         } else if * {
-          assert forall i :: k <= i < k+n ==> A[i-k] == C[i-k];
+          assert forall i {:nowarn} :: k <= i < k+n ==> A[i-k] == C[i-k];
         } else if * {
           assert forall i :: 0 <= i < n ==> A[i] == a[k+i];
         } else if * {
           assert forall i :: 0 <= i < n ==> C[i] == c[l+i];
         } else if * {
-          assert forall i :: 0 <= i < n ==> a[k+i] == c[l+i];
+          assert forall i {:nowarn} :: 0 <= i < n ==> a[k+i] == c[l+i];
         }
       }
     case l+m <= c.Length && forall i :: 0 <= i < m ==> a[i] == c[l+i] =>
       assert a[..m] == c[l..l+m];
     case l+a.Length <= c.Length && forall i :: k <= i < a.Length ==> a[i] == c[l+i] =>
-      assert a[k..] == c[l+k..l+a.Length];	   
+      assert a[k..] == c[l+k..l+a.Length];
     case l+k+m <= c.Length && forall i :: k <= i < k+m ==> a[i] == c[l+i] =>
-	  assert a[k..k+m] == c[l+k..l+k+m];
+      assert a[k..k+m] == c[l+k..l+k+m];
   }
 }
+
+// Local Variables:
+// dafny-prover-local-args: ("/autoTriggers:1")
+// End:

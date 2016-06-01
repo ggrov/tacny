@@ -3,7 +3,7 @@
 
 // Example taken from:
 // Edsger W. Dijkstra: Heuristics for a Calculational Proof. Inf. Process. Lett. (IPL) 53(3):141-143 (1995)
-// Transcribed into Dafny by Valentin Wüstholz and Nadia Polikarpova.
+// Transcribed into Dafny by Valentin WÃ¼stholz and Nadia Polikarpova.
 
 // f is an arbitrary function on the natural numbers
 function f(n: nat) : nat
@@ -56,7 +56,7 @@ lemma lemma_ping(j: nat, n: nat)
   }
 }
 
-// The other directorion: f(n) <= n
+// The other direction: f(n) <= n
 lemma lemma_pong(n: nat)
   requires P()
   ensures f(n) <= n

@@ -14,7 +14,7 @@ namespace Tacny
     class MatchAtomic : Atomic, IAtomicStmt
     {
 
-        private Token oldToken;
+        private IToken oldToken;
 
         public MatchAtomic(Atomic atomic) : base(atomic) { }
 
@@ -27,7 +27,7 @@ namespace Tacny
          * A matchStatement error token will always be a case tok 
          * we find the first failing cases block and return the index 
          */
-        public int GetErrorIndex(Token errorToken, MatchStmt st)
+        public int GetErrorIndex(IToken errorToken, MatchStmt st)
         {
             foreach (var item in st.Cases)
                 if (item.tok == errorToken)
@@ -42,7 +42,7 @@ namespace Tacny
         /// <param name="ms"></param>
         /// <param name="ctor"></param>
         /// <returns></returns>
-        public bool ErrorChanged(Token errorToken, MatchStmt ms, int ctor)
+        public bool ErrorChanged(IToken errorToken, MatchStmt ms, int ctor)
         {
             // check if error has been generated
             if (oldToken == null || errorToken == null)

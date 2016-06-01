@@ -9,9 +9,9 @@ method GhostDivergentLoop()
    a[1] := -1;
    ghost var i := 0;
    while (i < 2)
-      decreases *; // error: not allowed on a ghost loop
-      invariant i <= 2;
-      invariant (forall j :: 0 <= j && j < i ==> a[j] > 0);
+      decreases * // error: not allowed on a ghost loop
+      invariant i <= 2
+      invariant (forall j :: 0 <= j && j < i ==> a[j] > 0)
    {
      i := 0;
    }
@@ -91,9 +91,9 @@ class EE {
     var b3 := Benny;
     var d0 := David(20);  // error: constructor name David is ambiguous
     var d1 := David;  // error: constructor name David is ambiguous (never mind that the signature does
-		      // not match either of them)
+          // not match either of them)
     var d2 := David(20, 40);  // error: constructor name Davis is ambiguous (never mind that the given
-			      // parameters match the signature of only one of those constructors)
+            // parameters match the signature of only one of those constructors)
     var d3 := Abc.David(20, 40);  // error: wrong number of parameters
     var d4 := Rst.David(20, 40);
     var e := Eleanor;  // this resolves to the field, not the Abc datatype constructor
@@ -102,7 +102,7 @@ class EE {
 }
 
 // --------------- ghost tests -------------------------------------
-
+module HereAreMoreGhostTests {
 datatype GhostDt =
   Nil(ghost extraInfo: int) |
   Cons(data: int, tail: GhostDt, ghost moreInfo: int)
@@ -150,14 +150,6 @@ class GhostTests {
     r := r + g;  // fine, for the same reason
     r := N(20, 20);  // error: call to non-ghost method from ghost method is not okay
   }
-  ghost method NiceTry()
-    ensures false;
-  {
-    while (true)
-      decreases *;  // error:  not allowed in ghost context
-    {
-    }
-  }
   ghost method BreaksAreFineHere(t: int)
   {
     var n := 0;
@@ -186,6 +178,57 @@ class GhostTests {
     }
   }
   method BreakMayNotBeFineHere(ghost t: int)
+  {
+    var n := 0;
+    ghost var k := 0;
+    var p := 0;
+    while (true)
+      invariant n <= 112;
+      decreases 112 - n;
+    {
+      label MyStructure: {
+        k := k + 1;
+      }
+      label MyOtherStructure:
+      if (k % 17 == 0) {
+        break MyOtherStructure;  // this break is fine
+      } else {
+        k := k + 1;
+      }
+
+      var dontKnow;
+      if (n == 112) {
+        ghost var m := 0;
+        label LoopLabel0:
+        label LoopLabel1:
+        while (m < 200) {
+          if (m % 103 == 0) {
+            if {
+              case true => break;  // fine, since this breaks out of the enclosing ghost loop
+              case true => break LoopLabel0;  // fine
+              case true => break LoopLabel1;  // fine
+            }
+          } else if (m % 101 == 0) {
+          }
+          m := m + 3;
+        }
+        break;
+      } else if (dontKnow == 708) {
+        var q := 0;
+        while (q < 1) {
+          label IfNest:
+          if (p == 67) {
+            break break;  // fine, since this is not a ghost context
+          }
+          q := q + 1;
+        }
+      } else if (n == t) {
+      }
+      n := n + 1;
+      p := p + 1;
+    }
+  }
+  method BreakMayNotBeFineHere_Ghost(ghost t: int)
   {
     var n := 0;
     ghost var k := 0;
@@ -230,8 +273,6 @@ class GhostTests {
           if (p == 67) {
             break break;  // fine, since this is not a ghost context
           } else if (*) {
-            break break break;  // error: tries to break out of more loop levels than there are
-          } else if (*) {
             break break;  // fine, since this is not a ghost context
           } else if (k == 67) {
             break break;  // error, because this is a ghost context
@@ -246,7 +287,7 @@ class GhostTests {
     }
   }
 }
-
+} //HereAreMoreGhostTests
 method DuplicateLabels(n: int) {
   var x;
   if (n < 7) {
@@ -310,18 +351,17 @@ method DatatypeDestructors(d: DTD_List) {
       assert d.DTD_Cons? == d.Car;  // type error
       assert d == DTD_Cons(hd, tl, 5);
       ghost var g0 := d.g;  // fine
-      var g1 := d.g;  // error: cannot use ghost member in non-ghost code
   }
 }
 
 // ------------------- print statements ---------------------------------------
-
+module GhostPrintAttempts {
 method PrintOnlyNonGhosts(a: int, ghost b: int)
 {
   print "a: ", a, "\n";
   print "b: ", b, "\n";  // error: print statement cannot take ghosts
 }
-
+}
 // ------------------- auto-added type arguments ------------------------------
 
 class GenericClass<T> { var data: T; }
@@ -381,48 +421,45 @@ method TestCalc(m: int, n: int, a: bool, b: bool)
     n + m + 1;
     ==> n + m + 2; // error: ==> operator requires boolean lines
   }
-  calc {
-    n + m;
-    { print n + m; } // error: non-ghost statements are not allowed in hints
-    m + n;
-  }
 }
 
-class SideEffectChecks {
-  ghost var ycalc: int;
+module MyOwnModule {
+  class SideEffectChecks {
+    ghost var ycalc: int;
 
-  ghost method Mod(a: int)
-    modifies this;
-    ensures ycalc == a;
-  {
-    ycalc := a;
-  }
+    ghost method Mod(a: int)
+      modifies this;
+      ensures ycalc == a;
+    {
+      ycalc := a;
+    }
 
-  ghost method Bad()
-    modifies this;
-    ensures 0 == 1;
-  {
-    var x: int;
-    calc {
-      0;
-      { Mod(0); }     // methods with side-effects are not allowed
-      ycalc;
-      { ycalc := 1; } // heap updates are not allowed
-      1;
-      { x := 1; }     // updates to locals defined outside of the hint are not allowed
-      x;
-      {
-	var x: int;
-	x := 1;       // this is OK
+    ghost method Bad()
+      modifies this;
+      ensures 0 == 1;
+    {
+      var x: int;
+      calc {
+        0;
+        { Mod(0); }     // error: methods with side-effects are not allowed
+        ycalc;
+        { ycalc := 1; } // error: heap updates are not allowed
+        1;
+        { x := 1; }     // error: updates to locals defined outside of the hint are not allowed
+        x;
+        {
+          var x: int;
+          x := 1;       // this is OK
+        }
+        1;
       }
-      1;
     }
   }
 }
-
+  
 // ------------------- nameless constructors ------------------------------
 
-class YHWH {
+class Y {
   var data: int;
   constructor (x: int)
     modifies this;
@@ -433,22 +470,22 @@ class YHWH {
   {
   }
   method Test() {
-    var IAmWhoIAm := new YHWH(5);
-    IAmWhoIAm := new YHWH._ctor(7);  // but, in fact, it is also possible to use the underlying name
-    IAmWhoIAm := new YHWH;  // error: the class has a constructor, so one must be used
-    var s := new Lucifer.Init(5);
-    s := new Lucifer.FromArray(null);
-    s := new Lucifer(false);
-    s := new Lucifer._ctor(false);
-    s := new Lucifer.M();  // error: there is a constructor, so one must be called
-    s := new Lucifer;  // error: there is a constructor, so one must be called
+    var i := new Y(5);
+    i := new Y._ctor(7);  // but, in fact, it is also possible to use the underlying name
+    i := new Y;  // error: the class has a constructor, so one must be used
+    var s := new Luci.Init(5);
+    s := new Luci.FromArray(null);
+    s := new Luci(false);
+    s := new Luci._ctor(false);
+    s := new Luci.M();  // error: there is a constructor, so one must be called
+    s := new Luci;  // error: there is a constructor, so one must be called
     var l := new Lamb;
     l := new Lamb();  // error: there is no default constructor
     l := new Lamb.Gwen();
   }
 }
 
-class Lucifer {
+class Luci {
   constructor Init(y: int) { }
   constructor (nameless: bool) { }
   constructor FromArray(a: array<int>) { }
@@ -456,7 +493,7 @@ class Lucifer {
 }
 
 class Lamb {
-  method Jesus() { }
+  method Jess() { }
   method Gwen() { }
 }
 
@@ -467,13 +504,9 @@ method AssignSuchThatFromGhost()
   var x: int;
   ghost var g: int;
 
-  x := g;  // error: ghost cannot flow into non-ghost
-
   x := *;
   assume x == g;  // this mix of ghosts and non-ghosts is cool (but, of course,
                   // the compiler will complain)
-
-  x :| x == g;  // error: left-side has non-ghost, so RHS must be non-ghost as well
 
   x :| assume x == g;  // this is cool, since it's an assume (but, of course, the
                        // compiler will complain)
@@ -543,8 +576,6 @@ method LetSuchThat(ghost z: int, n: nat)
   var x: int;
   x := var y :| y < 0; y;  // fine for the resolver (but would give a verification error for not being deterministic)
 
-  x := var y :| y < z; y;  // error: contraint depend on ghost (z)
-
   x := var w :| w == 2*w; w;  // fine (even for the verifier, this one)
   x := var w := 2*w; w;  // error: the 'w' in the RHS of the assignment is not in scope
   ghost var xg := var w :| w == 2*w; w;
@@ -555,16 +586,16 @@ method LetSuchThat(ghost z: int, n: nat)
 module NonInferredType {
   predicate P<T>(x: T)
 
-  method NonInferredType0(x: int)
+  method InferredType(x: int)
   {
     var t;
-    assume forall z :: P(z) && z == t;  // It would be nice to allow the following example, but the implementation calls DiscoverBounds before CheckInference for quantifiers.
+    assume forall z :: P(z) && z == t;
     assume t == x;  // this statement determines the type of t and z
   }
 
-  method NonInferredType1(x: int)
+  method NonInferredType(x: int)
   {
-    var t;
+    var t;  // error: the type of t is not determined
     assume forall z :: P(z) && z == t;  // error: the type of z is not determined
   }
 }
@@ -582,7 +613,42 @@ module GhostAllocationTests {
     p := new G;  // error: ditto
   }
 
-  method GhostNew1(n: nat)
+  method GhostNew1(n: nat, ghost g: int) returns (t: G, z: int)
+  {
+    if n < 0 {
+      z, t := 5, new G;  // fine
+    }
+    if n < g {
+      var zz, tt := 5, new G;  // error: 'new' not allowed in ghost contexts
+    }
+  }
+
+  method GhostNew2(ghost b: bool)
+  {
+    if (b) {
+      var y := new GIter();  // error: 'new' not allowed in ghost contexts (and a non-ghost method is not allowed to be called here either)
+    }
+  }
+
+  method GhostNew3(n: nat)
+  {
+    var g := new G;
+    calc {
+      5;
+      { var y := new G; }  // error: 'new' not allowed in ghost contexts
+      2 + 3;
+    }
+  }
+
+  ghost method GhostNew4(g: G)
+    modifies g;
+  {
+  }
+}
+
+module NewForall {
+  class G { }
+  method NewForallTest(n: nat)
   {
     var a := new G[n];
     forall i | 0 <= i < n {
@@ -593,42 +659,6 @@ module GhostAllocationTests {
     {
       a[i] := new G;  // error: 'new' not allowed in ghost contexts, and proof-forall cannot update state
     }
-  }
-
-  method GhostNew2(n: nat, ghost g: int) returns (t: G, z: int)
-  {
-    if n < 0 {
-      z, t := 5, new G;  // fine
-    }
-    if n < g {
-      var zz, tt := 5, new G;  // error: 'new' not allowed in ghost contexts
-    }
-  }
-
-  method GhostNew3(ghost b: bool)
-  {
-    if (b) {
-      var y := new GIter();  // error: 'new' not allowed in ghost contexts (and a non-ghost method is not allowed to be called here either)
-    }
-  }
-
-  method GhostNew4(n: nat)
-  {
-    var g := new G;
-    calc {
-      5;
-      { var y := new G; }  // error: 'new' not allowed in ghost contexts
-      2 + 3;
-      { if n != 0 { GhostNew4(n-1); } }  // error: cannot call non-ghost method in a ghost context
-      1 + 4;
-      { GhostNew5(g); }  // error: cannot call method with nonempty modifies
-      -5 + 10;
-    }
-  }
-
-  ghost method GhostNew5(g: G)
-    modifies g;
-  {
   }
 }
 
@@ -672,46 +702,31 @@ module StatementsInExpressions {
     {
     }
 
-    ghost method M()
-      modifies this;
-    {
-      calc {
-	5;
-	{ SideEffect(); }  // error: cannot call method with side effects
-	5;
-      }
-    }
-
     function F(): int
     {
       calc {
-	6;
-	{ assert 6 < 8; }
-	{ NonGhostMethod(); }  // error: cannot call non-ghost method
-	{ var x := 8;
-	  while x != 0
-	    decreases *;  // error: cannot use 'decreases *' in a ghost context
-	  {
-	    x := x - 1;
-	  }
-	}
-	{ var x := 8;
-	  while x != 0
-	  {
-	    x := x - 1;
-	  }
-	}
-	{ MyField := 12; }  // error: cannot assign to a field
-	{ MyGhostField := 12; }  // error: cannot assign to any field
-	{ SideEffect(); }  // error: cannot call (ghost) method with a modifies clause
-	{ var x := 8;
-	  while x != 0
-	    modifies this;  // error: cannot use a modifies clause on a loop
-	  {
-	    x := x - 1;
-	  }
-	}
-	6;
+        6;
+        { assert 6 < 8; }
+        { var x := 8;
+          while x != 0
+            decreases *  // error: cannot use 'decreases *' here
+          {
+            x := x - 1;
+          }
+        }
+        { var x := 8;
+          while x != 0
+          {
+            x := x - 1;
+          }
+        }
+        { var x := 8;
+          while x != 0
+          {
+            x := x - 1;
+          }
+        }
+        6;
       }
       5
     }
@@ -723,33 +738,28 @@ module StatementsInExpressions {
     {
       var y :=
       calc {
-	6;
-	{ assert 6 < 8; }
-	{ NonGhostMethod(); }  // error: cannot call non-ghost method
-	{ var x := 8;
-	  while x != 0
-	    decreases *;  // error: cannot use 'decreases *' in a ghost context
-	  {
-	    x := x - 1;
-	  }
-	}
-	{ MyField := 12; }  // error: cannot assign to a field
-	{ MyGhostField := 12; }  // error: cannot assign to any field
-	{ M(); }  // error: cannot call (ghost) method with a modifies clause
-	{ var x := 8;
-	  while x != 0
-	    modifies this;  // error: cannot use a modifies clause on a loop
-	  {
-	    x := x - 1;
-	  }
-	}
-	{ var x := 8;
-	  while x != 0
-	  {
-	    x := x - 1;
-	  }
-	}
-	6;
+        6;
+        { assert 6 < 8; }
+        { var x := 8;
+          while x != 0
+            decreases *  // error: cannot use 'decreases *' here
+          {
+            x := x - 1;
+          }
+        }
+        { var x := 8;
+          while x != 0
+          {
+            x := x - 1;
+          }
+        }
+        { var x := 8;
+          while x != 0
+          {
+            x := x - 1;
+          }
+        }
+        6;
       }
       5;
     }
@@ -764,7 +774,6 @@ module StatementsInExpressions {
     {
       MyLemma();
       MyGhostMethod();   // error: modifi2es state
-      OrdinaryMethod();  // error: not a ghost
       OutParamMethod();  // error: has out-parameters
       10
     }
@@ -846,40 +855,48 @@ class ModifyStatementClass {
   ghost method G0()
     modifies `g;
     modifies `x;  // error: non-ghost field mentioned in ghost context
-  {
-    modify `g;
-    modify `x;  // error: non-ghost field mentioned in ghost context
-  }
-  method G1()
-    modifies this;
-  {
-    modify `x;
-    if g < 100 {
-      // we are now in a ghost context
+}
+module ModifyStatementClass_More {
+  class C {
+    var x: int;
+    ghost var g: int;
+    ghost method G0()
+      modifies `g;
+    {
+      modify `g;
       modify `x;  // error: non-ghost field mentioned in ghost context
     }
-  }
-  method G2(y: nat)
-    modifies this;
-  {
-    if g < 100 {
-      // we're now in a ghost context
-      var n := 0;
-      while n < y
-        modifies `x;  // error: non-ghost field mentioned in ghost context
-      {
-        if * {
-          g := g + 1;  // if we got as far as verification, this would be flagged as an error too
-        }
-        n := n + 1;
+    method G1()
+      modifies this;
+    {
+      modify `x;
+      if g < 100 {
+        // we are now in a ghost context
+        modify `x;  // error: non-ghost field mentioned in ghost context
       }
     }
-    modify `x;  // fine
-    ghost var i := 0;
-    while i < y
-      modifies `x;  // error: non-ghost field mentioned in ghost context
+    method G2(y: nat)
+      modifies this;
     {
-      i := i + 1;
+      if g < 100 {
+        // we're now in a ghost context
+        var n := 0;
+        while n < y
+          modifies `x;  // error: non-ghost field mentioned in ghost context
+        {
+          if * {
+            g := g + 1;  // if we got as far as verification, this would be flagged as an error too
+          }
+          n := n + 1;
+        }
+      }
+      modify `x;  // fine
+      ghost var i := 0;
+      while i < y
+        modifies `x;  // error: non-ghost field mentioned in ghost context
+      {
+        i := i + 1;
+      }
     }
   }
 }
@@ -1109,15 +1126,15 @@ method TraitSynonym()
 // ----- set comprehensions where the term type is finite -----
 
 module ObjectSetComprehensions {
-  // allowed in non-ghost context:
-  function A() : set<object> { set o : object | true :: o }
+  // the following set comprehensions are known to be finite
+  function A() : set<object> { set o : object | true :: o }  // error: a function is not allowed to depend on the allocated state
 
-  lemma B() { var x := set o : object | true :: o; }
+  function method B() : set<object> { set o : object | true :: o }  // error: a function is not allowed to depend on the allocated state
 
-  // not allowed in non-ghost context:
-  function method C() : set<object> { set o : object | true :: o }
+  // outside functions, the comprehension is permitted, but it cannot be compiled
+  lemma C() { var x := set o : object | true :: o; }
 
-  method D() { var x := set o : object | true :: o; }
+  method D() { var x := set o : object | true :: o; }  // error: not (easily) compilable
 }
 
 // ------ regression test for type checking of integer division -----
@@ -1211,9 +1228,9 @@ module NonInferredTypeVariables {
   method BadClient(n: nat)
   {
     var p := P(n);  // error: cannot infer the type argument for P
-    ghost var q := Q(n);  // error: cannot infer the type argument for Q
+    ghost var q := Q(n);  // error: cannot infer the type argument for Q (and thus q's type cannot be determined either)
     M(n);  // error: cannot infer the type argument for M
-    var x := N(n);  // error: cannot infer the type argument for N
+    var x := N(n);  // error: cannot infer the type argument for N (and thus x's type cannot be determined either)
     var a := new array;  // error: cannot infer the type argument for 'array'
     var c := new C;  // error: cannot infer the type argument for 'C'
     var s: set;  // type argument for 'set' 
@@ -1231,7 +1248,7 @@ module NonInferredTypeVariables {
     ghost var d0 := forall s :: s == {7} ==> s != {};
     var d1 := forall s: set :: s in S ==> s == {};
     var ggcc0: C;
-    var ggcc1: C;
+    var ggcc1: C;  // error: full type cannot be determined
     ghost var d2 := forall c: C :: c != null ==> c.f == 10;
     ghost var d2' := forall c :: c == ggcc0 && c != null ==> c.f == 10;
     ghost var d2'' := forall c :: c == ggcc1 && c != null ==> c.f == c.f; // error: here, type of c is not determined
@@ -1253,14 +1270,14 @@ module SignatureCompletion {
   datatype Dt = Ctor(X -> Dt)  // error: X is not a declared type
   datatype Et<Y> = Ctor(X -> Et, Y)  // error: X is not a declared type
 
-  // For methods and functions, signatures can auto-declare type parameters
-  method My0(s: set, x: A -> B)
-  method My1(x: A -> B, s: set)
+
+  method My0<A,B>(s: set, x: A -> B)
+  method My1<A,B>(x: A -> B, s: set)
   method My2<A,B>(s: set, x: A -> B)
   method My3<A,B>(x: A -> B, s: set)
 
-  function F0(s: set, x: A -> B): int
-  function F1(x: A -> B, s: set): int
+  function F0<A,B>(s: set, x: A -> B): int
+  function F1<A,B>(x: A -> B, s: set): int
   function F2<A,B>(s: set, x: A -> B): int
   function F3<A,B>(x: A -> B, s: set): int
 }
@@ -1292,7 +1309,7 @@ module FrameTargetFields {
       modifies `z  // cool
     {
     }
-
+} } module FrameTargetFields_More {  class C {    var x: int    var y: int    ghost var z: int
     method P()
       modifies this
     {
@@ -1348,4 +1365,350 @@ module GhostLet {
 module TupleEqualitySupport {
   datatype GoodRecord = GoodRecord(set<(int,int)>)
   datatype BadRecord = BadRecord(set<(int, int->bool)>)  // error: this tuple type does not support equality
+}
+
+// ------------------- non-type variable names -------------------
+
+module NonTypeVariableNames {
+  type X = int
+
+  module Y { }
+
+  method M(m: map<real,string>)
+  {
+    assert X == X;  // error (x2): type name used as variable
+    assert Y == Y;  // error (x2): module name used as variable
+    assert X in m;  // error (x2): type name used as variable
+    assert Y in m;  // error (x2): module name used as variable
+  }
+
+  method N(k: int)
+  {
+    assert k == X;  // error (x2): type name used as variable
+    assert k == Y;  // error (x2): module name used as variable
+    X := k;  // error: type name used as variable
+    Y := k;  // error: module name used as variable
+  }
+}
+
+// ------------------- assign-such-that and let-such-that -------------------
+
+module SuchThat {
+  method M() {
+    var x: int;
+    x :| 5 + 7;  // error: constraint should be boolean
+    x :| x;  // error: constraint should be boolean
+    var y :| 4;  // error: constraint should be boolean
+  }
+  function F(): int {
+    var w :| 6 + 8;  // error: constraint should be boolean
+    w
+  }
+}
+
+// ---------------------- NEW STUFF ----------------------------------------
+
+module GhostTests {
+  class G { }
+  
+  method GhostNew3(n: nat)
+  {
+    var g := new G;
+    calc {
+      5;
+      2 + 3;
+      { if n != 0 { GhostNew3(n-1); } }  // error: cannot call non-ghost method in a ghost context
+      1 + 4;
+      { GhostNew4(g); }  // error: cannot call method with nonempty modifies
+      -5 + 10;
+    }
+  }
+
+  ghost method GhostNew4(g: G)
+    modifies g;
+  {
+  }
+  
+  class MyClass {
+    ghost method SideEffect()
+      modifies this;
+    {
+    }
+
+    method NonGhostMethod()
+    {
+    }
+
+    ghost method M()
+      modifies this;
+    {
+      calc {
+        5;
+        { SideEffect(); }  // error: cannot call method with side effects
+        5;
+      }
+    }
+    function F(): int
+    {
+      calc {
+        6;
+        { assert 6 < 8; }
+        { NonGhostMethod(); }  // error: cannot call non-ghost method
+        { var x := 8;
+          while x != 0
+          {
+            x := x - 1;
+          }
+        }
+        { var x := 8;
+          while x != 0
+          {
+            x := x - 1;
+          }
+        }
+        { MyField := 12; }  // error: cannot assign to a field, and especially not a non-ghost field
+        { MyGhostField := 12; }  // error: cannot assign to any field
+        { SideEffect(); }  // error: cannot call (ghost) method with a modifies clause
+        { var x := 8;
+          while x != 0
+            modifies this;  // error: cannot use a modifies clause on a loop
+          {
+            x := x - 1;
+          }
+        }
+        6;
+      }
+      5
+    }
+    var MyField: int;
+    ghost var MyGhostField: int;
+    method N()
+    {
+      var y :=
+      calc {
+        6;
+        { assert 6 < 8; }
+        { NonGhostMethod(); }  // error: cannot call non-ghost method
+        { var x := 8;
+          while x != 0
+          {
+            x := x - 1;
+          }
+        }
+        { MyField := 12; }  // error: cannot assign to a field, and especially not a non-ghost field
+        { MyGhostField := 12; }  // error: cannot assign to any field
+        { M(); }  // error: cannot call (ghost) method with a modifies clause
+        { var x := 8;
+          while x != 0
+            modifies this;  // error: cannot use a modifies clause on a loop
+          {
+            x := x - 1;
+          }
+        }
+        { var x := 8;
+          while x != 0
+          {
+            x := x - 1;
+          }
+        }
+        6;
+      }
+      5;
+    }
+    ghost method MyLemma()
+    ghost method MyGhostMethod()
+      modifies this;
+    method OrdinaryMethod()
+    ghost method OutParamMethod() returns (y: int)
+
+    function UseLemma(): int
+    {
+      MyLemma();
+      OrdinaryMethod();  // error: not a ghost
+      10
+    }
+  }
+}
+
+module EvenMoreGhostTests {
+  ghost method NiceTry()
+    ensures false;
+  {
+    while (true)
+      decreases *  // error:  not allowed here
+    {
+    }
+  }
+  method BreakMayNotBeFineHere()
+  {
+    var n := 0;
+    var p := 0;
+    while (true)
+    {
+      var dontKnow;
+      if (n == 112) {
+      } else if (dontKnow == 708) {
+        while * {
+          label IfNest:
+          if (p == 67) {
+            break break;  // fine, since this is not a ghost context
+          } else if (*) {
+            break break break;  // error: tries to break out of more loop levels than there are
+          }
+        }
+      }
+    }
+  }
+}
+
+module BadGhostTransfer {
+  datatype DTD_List = DTD_Nil | DTD_Cons(Car: int, Cdr: DTD_List, ghost g: int)
+
+  method DatatypeDestructors_Ghost(d: DTD_List) {
+    var g1 := d.g;  // error: cannot use ghost member in non-ghost code
+  }
+  method AssignSuchThatFromGhost()
+  {
+    var x: int;
+    ghost var g: int;
+
+    x := g;  // error: ghost cannot flow into non-ghost
+
+    x := *;
+    assume x == g;  // this mix of ghosts and non-ghosts is cool (but, of course,
+                    // the compiler will complain)
+
+    x :| x == g;  // error: left-side has non-ghost, so RHS must be non-ghost as well
+
+    x :| assume x == g;  // this is cool, since it's an assume (but, of course, the
+                         // compiler will complain)
+
+    x :| x == 5;
+    g :| g <= g;
+    g :| assume g < g;  // the compiler will complain here, despite the LHS being
+                        // ghost -- and rightly so, since an assume is used
+  }
+}
+
+module MoreGhostPrintAttempts {
+  method TestCalc_Ghost(m: int, n: int, a: bool, b: bool)
+  {
+    calc {
+      n + m;
+      { print n + m; } // error: non-ghost statements are not allowed in hints
+      m + n;
+    }
+  }
+}
+
+module MoreLetSuchThatExpr {
+  method LetSuchThat_Ghost(ghost z: int, n: nat)
+  {
+    var x := var y :| y < z; y;  // error: contraint depend on ghost (z)
+  }
+}
+
+module UnderspecifiedTypedShouldBeResolvedOnlyOnce {
+  method CalcTest0(s: seq<int>) {
+    calc {
+      2;
+      var t :| true; 2;  // error: type of 't' is underspecified
+    }
+  }
+}
+
+module LoopResolutionTests {
+  class C {
+    var x: int
+    ghost var y: int
+  }
+
+  ghost method M(c: C)
+    requires c != null
+    modifies c
+  {
+    var n := 0;
+    while n < 100
+      modifies c`y
+      modifies c`x  // error: not allowed to mention non-ghost field in modifies clause of ghost loops
+    {
+      c.x := c.x + 1;  // error: assignment to non-ghost field not allowed here
+    }
+  }
+
+  method MM(c: C)
+    requires c != null
+    modifies c
+  {
+    var n := 0;
+    while
+      invariant n <= 100
+      modifies c  // regression test
+    {
+      case n < 100 =>  n := n + 1;
+    }
+  }
+
+  method MMX(c: C, ghost g: int)
+    requires c != null
+    modifies c
+  {
+    var n := 0;
+    while
+      invariant n <= 100
+      modifies c`y
+      modifies c`x  // error: not allowed to mention non-ghost field in modifies clause of ghost loops
+    {
+      case n < 100 =>  n := n + 1;  // error: cannot assign to non-ghost in a ghost loop
+      case g < 56 && n != 100 => n := n + 1;  // error: cannot assign to non-ghost in a ghost loop
+    }
+  }
+
+  method MD0(c: C, ghost g: nat)
+    requires c != null
+    modifies c
+    decreases *
+  {
+    var n := 0;
+    while n + g < 100
+      invariant n <= 100
+      decreases *  // error: disallowed on ghost loops
+    {
+      n := n + 1;  // error: cannot assign to non-ghost in a ghost loop
+    }
+  }
+
+  method MD1(c: C, ghost g: nat)
+    requires c != null
+    modifies c
+    decreases *
+  {
+    var n := 0;
+    while
+      invariant n <= 100
+      decreases *  // error: disallowed on ghost loops
+    {
+      case n + g < 100 =>  n := n + 1;  // error: cannot assign to non-ghost in a ghost loop
+    }
+  }
+}
+
+module UnderspecifiedTypesInAttributes {
+  function method P<T>(x: T): int
+  method M() {
+    var {:myattr var u :| true; 6} v: int;  // error: type of u is underspecified
+    var j {:myattr var u :| true; 6} :| 0 <= j < 100;  // error: type of u is underspecified
+
+    var a := new int[100];
+    forall lp {:myattr var u :| true; 6} | 0 <= lp < 100 {  // error: type of u is underspecified
+      a[lp] := 0;
+    }
+
+    modify {:myattr P(10)} {:myattr var u :| true; 6} a;  // error: type of u is underspecified
+
+    calc {:myattr P(10)} {:myattr var u :| true; 6} // error: type of u is underspecified
+    {
+      5;
+    }
+  }
 }

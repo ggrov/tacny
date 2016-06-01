@@ -89,6 +89,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\boogie\Binaries\Basetypes.dll</HintPath>
     </Reference>
+    <Reference Include="BoogieParserHelper, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
+    </Reference>
     <Reference Include="Concurrency">
       <HintPath>..\..\boogie\Binaries\Concurrency.dll</HintPath>
     </Reference>
@@ -123,10 +127,6 @@
     </Reference>
     <Reference Include="ModelViewer">
       <HintPath>..\..\boogie\Binaries\ModelViewer.dll</HintPath>
-    </Reference>
-    <Reference Include="ParserHelper, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\boogie\Binaries\ParserHelper.dll</HintPath>
     </Reference>
     <Reference Include="Predication">
       <HintPath>..\..\boogie\Binaries\Predication.dll</HintPath>

@@ -1,4 +1,5 @@
-// RUN: %dafny /compile:0 /dprint:"%t.dprint.dfy" "%s" > "%t"; %dafny /noVerify /compile:1 "%t.dprint.dfy" >> "%t"
+// RUN: %dafny /compile:0 /dprint:"%t.dprint.dfy" "%s" > "%t"
+// RUN: %dafny /noVerify /compile:1 "%t.dprint.dfy" >> "%t"
 // RUN: %diff "%s.expect" "%t"
 
 class MyClass {
@@ -31,5 +32,14 @@ class MyClass {
       invariant f <= x;
       decreases f;
       modifies `f;
+  }
+
+  predicate P(y: int)
+    
+  method M4() {
+    forall y: int  // this once used to crash Dafny
+      ensures P(y)
+
+    forall x: int  // this once used to crash Dafny
   }
 }

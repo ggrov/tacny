@@ -1,0 +1,15 @@
+m
+rBinaries
+mSource/Dafny
+mSource/DafnyDriver
+mSource/DafnyExtension
+mSource/Jennisys
+mSource/Jennisys/examples
+mTest
+mTest/VerifyThis2015
+mTest/dafny0
+mTest/dafny0/Trait
+mTest/dafny0/snapshots
+mTest/dafny4
+mTest/hofs
+mUtil/vim

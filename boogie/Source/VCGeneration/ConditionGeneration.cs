@@ -85,6 +85,7 @@ namespace Microsoft.Boogie {
     public string RequestId;
     public abstract byte[] Checksum { get; }
     public byte[] SugaredCmdChecksum;
+    public bool IsAuxiliaryCexForDiagnosingTimeouts;
 
     public Dictionary<TraceLocation, CalleeCounterexampleInfo> calleeCounterexamples;
 
@@ -313,7 +314,7 @@ namespace Microsoft.Boogie {
     public abstract int GetLocation();
   }
 
-  public class CounterexampleComparer : IComparer<Counterexample> {
+  public class CounterexampleComparer : IComparer<Counterexample>, IEqualityComparer<Counterexample> {
 
     private int Compare(List<Block> bs1, List<Block> bs2)
     {
@@ -374,6 +375,16 @@ namespace Microsoft.Boogie {
         return 1;
       }
       return -1;
+    }
+
+    public bool Equals(Counterexample x, Counterexample y)
+    {
+      return Compare(x, y) == 0;
+    }
+
+    public int GetHashCode(Counterexample obj)
+    {
+      return 0;
     }
   }
 
@@ -983,11 +994,11 @@ namespace VC {
     #endregion
 
 
-    protected Checker FindCheckerFor(int timeout, bool isBlocking = true)
+    protected Checker FindCheckerFor(int timeout, bool isBlocking = true, int waitTimeinMs = 50, int maxRetries = 3)
     {
+      Contract.Requires(0 <= waitTimeinMs && 0 <= maxRetries);
       Contract.Ensures(!isBlocking || Contract.Result<Checker>() != null);
 
-      var maxRetries = 3;
       lock (checkers)
       {
       retry:
@@ -1015,6 +1026,8 @@ namespace VC {
                 else
                 {
                   checkers.RemoveAt(i);
+                  i--;
+                  continue;
                 }
               }
             }
@@ -1029,7 +1042,10 @@ namespace VC {
         {
           if (isBlocking || 0 < maxRetries)
           {
-            Monitor.Wait(checkers, 50);
+            if (0 < waitTimeinMs)
+            {
+              Monitor.Wait(checkers, waitTimeinMs);
+            }
             maxRetries--;
             goto retry;
           }
@@ -1117,7 +1133,8 @@ namespace VC {
         }
         if (returnBlocks > 1) {
           string unifiedExitLabel = "GeneratedUnifiedExit";
-          Block unifiedExit = new Block(new Token(-17, -4), unifiedExitLabel, new List<Cmd>(), new ReturnCmd(Token.NoToken));
+          Block unifiedExit;
+          unifiedExit = new Block(new Token(-17, -4), unifiedExitLabel, new List<Cmd>(), new ReturnCmd(impl.StructuredStmts != null ? impl.StructuredStmts.EndCurly : Token.NoToken));         
           Contract.Assert(unifiedExit != null);
           foreach (Block b in impl.Blocks) {
             if (b.TransferCmd is ReturnCmd) {
@@ -1522,6 +1539,26 @@ namespace VC {
 
         PredicateCmd pc = (PredicateCmd)c.Clone();
         Contract.Assert(pc != null);
+
+        QKeyValue current = pc.Attributes;
+        while (current != null)
+        {
+          if (current.Key == "minimize" || current.Key == "maximize") {
+            Contract.Assume(current.Params.Count == 1);
+            var param = current.Params[0] as Expr;
+            Contract.Assume(param != null && (param.Type.IsInt || param.Type.IsReal || param.Type.IsBv));
+            current.ClearParams();
+            current.AddParam(Substituter.ApplyReplacingOldExprs(incarnationSubst, oldFrameSubst, param));
+          }
+          if (current.Key == "verified_under") {
+            Contract.Assume(current.Params.Count == 1);
+            var param = current.Params[0] as Expr;
+            Contract.Assume(param != null && param.Type.IsBool);
+            current.ClearParams();
+            current.AddParam(Substituter.ApplyReplacingOldExprs(incarnationSubst, oldFrameSubst, param));
+          }
+          current = current.Next;
+        }
 
         Expr copy = Substituter.ApplyReplacingOldExprs(incarnationSubst, oldFrameSubst, pc.Expr);
         if (CommandLineOptions.Clo.ModelViewFile != null && pc is AssumeCmd) {

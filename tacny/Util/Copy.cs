@@ -58,7 +58,7 @@ namespace Util {
     /// <param name="stmt"></param>
     /// <returns></returns>
     public static IfStmt CopyIfStmt(IfStmt stmt) {
-      return new IfStmt(stmt.Tok, stmt.EndTok, CopyExpression(stmt.Guard), CopyBlockStmt(stmt.Thn), CopyStatement(stmt.Els));
+      return new IfStmt(stmt.Tok, stmt.EndTok, stmt.IsExistentialGuard, CopyExpression(stmt.Guard), CopyBlockStmt(stmt.Thn), CopyStatement(stmt.Els));
     }
 
     /// <summary>

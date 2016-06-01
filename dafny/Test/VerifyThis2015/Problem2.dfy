@@ -114,7 +114,7 @@ method ParallelGcd(A: int, B: int) returns (gcd: int)
   var pc0, pc1 := 0, 0;  // program counter for the two processes
   var a0, b0, a1, b1;  // local variables for the two processes
   // To model fairness of scheduling, these "budget" variable give a bound on the number of times the
-  // scheduler will repeatedly schedule on process to execute its "compare a and b" test.  When a
+  // scheduler will repeatedly schedule one process to execute its "compare a and b" test.  When a
   // process executes its comparison, its budget is decreased and the budget for the other process
   // is set to some arbitrary positive amount.
   var budget0, budget1 :| budget0 > 0 && budget1 > 0;
@@ -315,7 +315,7 @@ lemma GcdDecrease(a: int, b: int)
   ensures Gcd(a, b) == Gcd(a - b, b)
 {
   var k := Gcd(a - b, b);
-  assert DividesBoth(k, a-b, b) && forall m :: DividesBoth(m, a-b, b) ==> m <= k;
+  assert DividesBoth(k, a-b, b) && forall m, mm :: mm == a - b ==> DividesBoth(m, mm, b) ==> m <= k; // WISH: auto-generate 'mm'
   var n := DividesProperty(k, a-b);
   assert n*k == a-b;
   var p := DividesProperty(k, b);

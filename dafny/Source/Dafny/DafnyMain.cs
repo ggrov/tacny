@@ -12,7 +12,7 @@ using Bpl = Microsoft.Boogie;
 namespace Microsoft.Dafny {
   public class Main {
 
-      private static void MaybePrintProgram(Program program, string filename)
+      private static void MaybePrintProgram(Program program, string filename, bool afterResolver)
       {
           if (filename != null) {
               TextWriter tw;
@@ -22,14 +22,14 @@ namespace Microsoft.Dafny {
                   tw = new System.IO.StreamWriter(filename);
               }
               Printer pr = new Printer(tw, DafnyOptions.O.PrintMode);
-              pr.PrintProgram(program);
+              pr.PrintProgram(program, afterResolver);
           }
       }
    
     /// <summary>
     /// Returns null on success, or an error string otherwise.
     /// </summary>
-    public static string ParseCheck(IList<string/*!*/>/*!*/ fileNames, string/*!*/ programName, out Program program)
+    public static string ParseCheck(IList<string/*!*/>/*!*/ fileNames, string/*!*/ programName, ErrorReporter reporter, out Program program)
       //modifies Bpl.CommandLineOptions.Clo.XmlSink.*;
     {
       Contract.Requires(programName != null);
@@ -47,31 +47,31 @@ namespace Microsoft.Dafny {
           Console.WriteLine("Parsing " + dafnyFileName);
         }
 
-        string err = ParseFile(dafnyFileName, Bpl.Token.NoToken, module, builtIns, new Errors());
+        string err = ParseFile(dafnyFileName, Bpl.Token.NoToken, module, builtIns, new Errors(reporter));
         if (err != null) {
           return err;
         }        
       }
 
       if (!DafnyOptions.O.DisallowIncludes) {
-        string errString = ParseIncludes(module, builtIns, fileNames, new Errors());
+        string errString = ParseIncludes(module, builtIns, fileNames, new Errors(reporter));
         if (errString != null) {
           return errString;
         }
       }
 
-      program = new Program(programName, module, builtIns);
+      program = new Program(programName, module, builtIns, reporter);
 
-      MaybePrintProgram(program, DafnyOptions.O.DafnyPrintFile);
+      MaybePrintProgram(program, DafnyOptions.O.DafnyPrintFile, false);
 
       if (Bpl.CommandLineOptions.Clo.NoResolve || Bpl.CommandLineOptions.Clo.NoTypecheck) { return null; }
 
       Dafny.Resolver r = new Dafny.Resolver(program);
       r.ResolveProgram(program);
-      MaybePrintProgram(program, DafnyOptions.O.DafnyPrintResolvedFile);
+      MaybePrintProgram(program, DafnyOptions.O.DafnyPrintResolvedFile, true);
 
-      if (r.ErrorCount != 0) {
-        return string.Format("{0} resolution/type errors detected in {1}", r.ErrorCount, program.Name);
+      if (reporter.Count(ErrorLevel.Error) != 0) {
+        return string.Format("{0} resolution/type errors detected in {1}", reporter.Count(ErrorLevel.Error), program.Name);
       }
 
       return null;  // success
