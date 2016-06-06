@@ -22,7 +22,7 @@ readonly ModuleDecl theModule;
 readonly BuiltIns theBuiltIns;
 readonly bool theVerifyThisFile;
 int anonymousIds = 0;
-
+IToken oldTok;
 /// <summary>
 /// Holds the modifiers given for a declaration
 ///
@@ -207,6 +207,16 @@ bool IsAlternative() {
   return la.kind == _lbrace && x.kind == _case;
 }
 
+// the "tactic" keyword was used when declaring a tactic stmt
+bool IsTacticKeyword() {
+    return oldTok != null && oldTok.kind == _tactic;
+}
+
+bool IsTvds() {
+  var x = scanner.Peek();
+  return la.kind == _var;
+}
+
 // an existential guard starts with an identifier and is then followed by
 // * a colon (if the first identifier is given an explicit type),
 // * a comma (if there's a list a bound variables and the first one is not given an explicit type),
@@ -264,6 +274,11 @@ bool IsAndOp() {
 bool IsOrOp() {
   return la.val == "||" || la.val == "\u2228";
 }
+
+bool IsTacnyOrOp() {
+  return la.val == "|||";
+}
+
 bool IsRelOp() {
   return la.val == "=="
       || la.val == "<"
@@ -620,7 +635,9 @@ TOKENS
   star = '*'.
   notIn = "!in" CONTEXT (nonidchar).
   ellipsis = "...".
-    tactic = "tactic".
+  tactic = "tactic".
+  var = "var".
+  match = "match".
 COMMENTS FROM "/*" TO "*/" NESTED
 COMMENTS FROM "//" TO lf
 IGNORE cr + lf + tab
@@ -1449,6 +1466,7 @@ FunctionDecl<DeclModifierData dmod, bool isWithinAbstractModule, out Function/*!
      Expression body = null;
      bool isPredicate = false; bool isIndPredicate = false; bool isCoPredicate = false;
      bool isFunctionMethod = false;
+     bool isFunctionTactic = false;
      IToken bodyStart = Token.NoToken;
      IToken bodyEnd = Token.NoToken;
      IToken signatureEllipsis = null;
@@ -1456,7 +1474,8 @@ FunctionDecl<DeclModifierData dmod, bool isWithinAbstractModule, out Function/*!
   .)
   /* ----- function ----- */
   ( "function"
-    [ "method"                 (. isFunctionMethod = true; .)
+    [   "method"                 (. isFunctionMethod = true; .)
+      | "tactic"                 (. isFunctionTactic = true; .)
     ]
     (. AllowedDeclModifiers allowed = AllowedDeclModifiers.AlreadyGhost | AllowedDeclModifiers.Static | AllowedDeclModifiers.Protected;
        string caption = "Functions";
@@ -1549,6 +1568,9 @@ FunctionDecl<DeclModifierData dmod, bool isWithinAbstractModule, out Function/*!
      } else if (isCoPredicate) {
         f = new CoPredicate(tok, id.val, dmod.IsStatic, dmod.IsProtected, typeArgs, formals,
                             reqs, reads, ens, body, attrs, signatureEllipsis);
+     } else if(isFunctionTactic) {
+        f = new TacticFunction(tok, id.val, dmod.IsStatic, dmod.IsProtected, !isFunctionMethod, typeArgs, formals, returnType,
+                         reqs, reads, ens, new Specification<Expression>(decreases, null), body, attrs, signatureEllipsis);
      } else {
         f = new Function(tok, id.val, dmod.IsStatic, dmod.IsProtected, !isFunctionMethod, typeArgs, formals, returnType,
                          reqs, reads, ens, new Specification<Expression>(decreases, null), body, attrs, signatureEllipsis);
@@ -1675,6 +1697,181 @@ OneStmt<out Statement/*!*/ s>
     ";"                                (. s = label != null ? new BreakStmt(x, t, label) : new BreakStmt(x, t, breakCount); .)
   | ReturnStmt<out s>
   | SkeletonStmt<out s>
+  | TacticStmt<out s>
+  )
+.
+
+TacticStmt<out Statement/*!*/ s>
+= (. Contract.Ensures(Contract.ValueAtReturn(out s) != null); IToken/*!*/ x;  IToken/*!*/ id;  string label = null;
+     s = dummyStmt;  /* to please the compiler */
+  .)
+  SYNC
+
+  ("tactic" (
+     
+     "var"          (.x = t;.)    TacticVarDeclStmt<out s, x>         
+    | "match"       (.x = t;.)    TacnyCasesBlockStmt<out s, x> 
+    | "invariant"   (.x = t;.)    TacticInvariantStmt<out s, x>  
+    | "assert"      (.x = t;.)    TacticAssertStmt<out s, x>  
+    )
+    | "tvar"        (.x = t;.)    TacticVarDeclStmt<out s, x>        
+    | "tmatch"      (.x = t;.)    TacnyCasesBlockStmt<out s, x>
+    | "tinvariant"  (.x = t;.)    TacticInvariantStmt<out s, x>
+    | "invariant"   (.x = t;.)    TacticInvariantStmt<out s, x, true>
+    | "tassert"     (.x = t;.)    TacticAssertStmt<out s, x>
+    | TacnySolvedBlockStmt<out s>
+    | TacnyChangedBlockStmt<out s>
+    | TacnyTryCatchBlockStmt<out s>
+  )  
+. 
+
+TacticInvariantStmt<out Statement/*!*/ s, IToken x, bool isObject = false>
+= (. Contract.Ensures(Contract.ValueAtReturn(out s) != null);
+     Expression e = dummyExpr; Attributes attrs = null;
+  .)
+  
+  { IF(IsAttribute()) Attribute<ref attrs> } 
+  ( Expression<out e, false, true>)
+  ";"
+  
+  (. s = new TacticInvariantStmt(x, t, e, attrs, isObject); .)
+  .
+TacticAssertStmt<out Statement/*!*/ s, IToken x, bool isObject = false>
+= (. Contract.Ensures(Contract.ValueAtReturn(out s) != null);
+     Expression e = dummyExpr; Attributes attrs = null;
+  .)
+  
+  { IF(IsAttribute()) Attribute<ref attrs> } 
+  ( Expression<out e, false, true>)
+  ";"
+  
+  (. s = new TacticAssertStmt(x, t, e, attrs, isObject); .)
+  .
+
+TacticVarDeclStmt<.out Statement/*!*/ s, IToken x.>
+= (. IToken assignTok = null;
+      bool isGhost = false;
+     LocalVariable d;
+     AssignmentRhs r;
+     List<LocalVariable> lhss = new List<LocalVariable>();
+     List<AssignmentRhs> rhss = new List<AssignmentRhs>();
+     IToken suchThatAssume = null;
+     Expression suchThat = null;
+     Attributes attrs = null;
+     IToken endTok;
+     Expression or = null;
+  .)
+
+  
+  { Attribute<ref attrs> }
+  LocalIdentTypeOptional<out d, isGhost>    (. lhss.Add(d); d.Attributes = attrs; attrs = null; .)
+  { ","
+    { Attribute<ref attrs> }
+    LocalIdentTypeOptional<out d, isGhost>  (. lhss.Add(d); d.Attributes = attrs; attrs = null; .)
+  }
+  [ ":="                           (. assignTok = t; .)
+    Rhs<out r>                     (. rhss.Add(r); .)
+    { "," Rhs<out r>               (. rhss.Add(r); .)
+    }
+    [
+      "||"                          (. x = t; .)
+        Expression<out or, false, true>
+    ]
+  | { Attribute<ref attrs> }
+    ":|"                           (. assignTok = t; .)
+    [ IF(la.kind == _assume)       /* an Expression can also begin with an "assume", so this says to resolve it to pick up any "assume" here */
+      "assume"                     (. suchThatAssume = t; .)
+    ]
+    Expression<out suchThat, false, true>
+  ]
+  SYNC ";"                         (. endTok = t; .)
+  (. ConcreteUpdateStatement update;
+     if (suchThat != null) {
+       var ies = new List<Expression>();
+       foreach (var lhs in lhss) {
+         ies.Add(new IdentifierExpr(lhs.Tok, lhs.Name));
+       }
+       update = new AssignSuchThatStmt(assignTok, endTok, ies, suchThat, suchThatAssume, attrs);
+     } else if (rhss.Count == 0) {
+       update = null;
+     } else {
+       var ies = new List<Expression>();
+       foreach (var lhs in lhss) {
+         ies.Add(new AutoGhostIdentifierExpr(lhs.Tok, lhs.Name));
+       }
+       update = new UpdateStmt(assignTok, endTok, ies, rhss);
+     }
+     s = new TacticVarDeclStmt(x, endTok, lhss, update);
+  .)
+  .
+
+TacnyCasesBlockStmt<out Statement/*!*/ tacnyCasesStmt, IToken x>
+= (. Contract.Ensures(Contract.ValueAtReturn(out tacnyCasesStmt) != null);
+     Expression guard = null;  IToken guardEllipsis = null;
+     BlockStmt/*!*/ thn;
+     IToken bodyStart, bodyEnd, endTok;
+     List<GuardedAlternative> alternatives;
+     tacnyCasesStmt = dummyStmt;  // to please the compiler
+  .)
+  
+  (
+    IF(IsAlternative())
+    AlternativeBlock<true, out alternatives, out endTok>
+    (. tacnyCasesStmt = new AlternativeStmt(x, endTok, alternatives); .)
+  |
+    ( Guard<out guard>
+    | "..."                  (. guardEllipsis = t; .)
+    )
+    BlockStmt<out thn, out bodyStart, out bodyEnd>    (. endTok = thn.EndTok; .)
+    (. if (guardEllipsis != null) {
+         tacnyCasesStmt = new SkeletonStatement(new TacnyCasesBlockStmt(x, endTok, guard, thn), guardEllipsis, null);
+       } else {
+         tacnyCasesStmt = new TacnyCasesBlockStmt(x, endTok, guard, thn);
+       }
+    .)
+  )
+  .
+
+TacnySolvedBlockStmt<out Statement/*!*/ tacnySolvedStatement>
+= (. Contract.Ensures(Contract.ValueAtReturn(out tacnySolvedStatement) != null); IToken/*!*/ x;
+     BlockStmt/*!*/ body;
+     IToken bodyStart, bodyEnd, endTok;
+     tacnySolvedStatement = dummyStmt;  // to please the compiler
+  .)
+  "solved"                       (. x = t; .)
+  (
+    BlockStmt<out body, out bodyStart, out bodyEnd>    (. endTok = body.EndTok; .)
+    (. tacnySolvedStatement = new TacnySolvedBlockStmt(x, endTok, body); .)
+  )
+  .
+
+TacnyChangedBlockStmt<out Statement/*!*/ tacnyChangedStatement>
+= (. Contract.Ensures(Contract.ValueAtReturn(out tacnyChangedStatement) != null); IToken/*!*/ x;
+     BlockStmt/*!*/ body;
+     IToken bodyStart, bodyEnd, endTok;
+     tacnyChangedStatement = dummyStmt;  // to please the compiler
+  .)
+  "changed"                       (. x = t; .)
+  (
+    BlockStmt<out body, out bodyStart, out bodyEnd>    (. endTok = body.EndTok; .)
+    (. tacnyChangedStatement = new TacnyChangedBlockStmt(x, endTok, body); .)
+  )
+  .
+
+TacnyTryCatchBlockStmt<out Statement/*!*/ tacnyTryCatchStatement>
+= (. Contract.Ensures(Contract.ValueAtReturn(out tacnyTryCatchStatement) != null); IToken/*!*/ x;
+     BlockStmt/*!*/ body;
+     BlockStmt/*!*/ ctch = null;
+     IToken bodyStart, bodyEnd, endTok;
+     tacnyTryCatchStatement = dummyStmt;  // to please the compiler
+  .)
+  "try"                       (. x = t; .)
+  (
+    BlockStmt<out body, out bodyStart, out bodyEnd>    (. endTok = body.EndTok; .)
+    [ "catch"
+      BlockStmt<out ctch, out bodyStart, out bodyEnd> (. endTok = ctch.EndTok; .)
+    ]
+    (. tacnyTryCatchStatement = new TacnyTryCatchBlockStmt(x, endTok, body, ctch); .)
   )
   .
 
@@ -1944,6 +2141,7 @@ WhileStmt<out Statement stmt>
      List<GuardedAlternative> alternatives;
      stmt = dummyStmt;  // to please the compiler
      bool isDirtyLoop = true;
+     Statement tacAps = null;
   .)
   "while"                    (. x = t; .)
   (
@@ -1956,6 +2154,7 @@ WhileStmt<out Statement stmt>
     | "..."                      (. guardEllipsis = t; .)
     )
     { LoopSpec<invariants, decreases, ref mod, ref decAttrs, ref modAttrs> }
+    ["tactic" UpdateStmt<out tacAps> ]
     ( IF(la.kind == _lbrace)      /* if there's an open brace, claim it as the beginning of the loop body (as opposed to a BlockStmt following the loop) */
       BlockStmt<out body, out bodyStart, out bodyEnd>  (. endTok = body.EndTok; isDirtyLoop = false; .)
     | IF(la.kind == _ellipsis)    /* if there's an ellipsis, claim it as standing for the loop body (as opposed to a "...;" statement following the loop) */
@@ -1977,7 +2176,7 @@ WhileStmt<out Statement stmt>
         if (body == null && !isDirtyLoop) {
           body = new BlockStmt(x, endTok, new List<Statement>());
         }
-        stmt = new WhileStmt(x, endTok, guard, invariants, new Specification<Expression>(decreases, decAttrs), new Specification<FrameExpression>(mod, modAttrs), body);
+        stmt = new WhileStmt(x, endTok, guard, invariants, new Specification<Expression>(decreases, decAttrs), new Specification<FrameExpression>(mod, modAttrs), body) {TacAps = tacAps;};
       }
     .)
   )
@@ -2329,6 +2528,7 @@ ImpliesOp = "==>" | '\u21d2'.
 ExpliesOp = "<==" | '\u21d0'.
 AndOp = "&&" | '\u2227'.
 OrOp = "||" | '\u2228'.
+TacnyOrOp = "|||".
 
 NegOp = "!" | '\u00ac'.
 Forall = "forall" | '\u2200'.
@@ -2404,12 +2604,18 @@ ImpliesExpression<out Expression e0, bool allowSemi, bool allowLambda>
 LogicalExpression<out Expression e0, bool allowSemi, bool allowLambda>
 = (. Contract.Ensures(Contract.ValueAtReturn(out e0) != null); IToken/*!*/ x;  Expression/*!*/ e1; .)
   RelationalExpression<out e0, allowSemi, allowLambda>
-  [ IF(IsAndOp() || IsOrOp())  /* read a LogicalExpression as far as possible */
+  [ IF(IsAndOp() || IsOrOp() || IsTacnyOrOp())  /* read a LogicalExpression as far as possible */
     ( AndOp                                                   (. x = t; .)
       RelationalExpression<out e1, allowSemi, allowLambda>    (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.And, e0, e1); .)
       { IF(IsAndOp())  /* read a conjunction as far as possible */
         AndOp                                                 (. x = t; .)
         RelationalExpression<out e1, allowSemi, allowLambda>  (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.And, e0, e1); .)
+      }
+    | TacnyOrOp /*  ########### TACNY OR ########## */        (. x = t; .)
+      RelationalExpression<out e1, allowSemi, allowLambda>    (. e0 = new TacnyBinaryExpr(x, TacnyBinaryExpr.TacnyOpcode.TacnyOr, e0, e1); .)
+       { IF(IsTacnyOrOp())  /* read a disjunction as far as possible */
+        TacnyOrOp                                                  (. x = t; .)
+        RelationalExpression<out e1, allowSemi, allowLambda>  (. e0 = new TacnyBinaryExpr(x, TacnyBinaryExpr.TacnyOpcode.TacnyOr, e0, e1); .)
       }
     | OrOp                                                    (. x = t; .)
       RelationalExpression<out e1, allowSemi, allowLambda>    (. e0 = new BinaryExpr(x, BinaryExpr.Opcode.Or, e0, e1); .)

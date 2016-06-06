@@ -146,6 +146,7 @@ bool IsOrOp() {
 bool IsTacnyOrOp() {
   return la.val == "|||";
 }
+
 bool IsRelOp() {
   return la.val == "=="
       || la.val == "<"

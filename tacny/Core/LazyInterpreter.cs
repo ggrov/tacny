@@ -21,7 +21,7 @@ namespace LazyTacny {
 
     public Microsoft.Dafny.Program ResolveProgram() {
 
-      _tacnyProgram.PrintBoogieProgram();
+    //  _tacnyProgram.PrintBoogieProgram();
       if (!_tacnyProgram.HasTacticApplications()) {
         return _tacnyProgram.ParseProgram();
       }
