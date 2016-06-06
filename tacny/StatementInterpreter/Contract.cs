@@ -3,6 +3,7 @@ using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
 using Util;
 
+
 namespace Tacny {
     class TacnyContract {
         private readonly Atomic atomic;
