@@ -2,7 +2,6 @@
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using Microsoft.Dafny;
-using Tacny;
 
 namespace LazyTacny {
   public class BlockAtomic : Atomic {

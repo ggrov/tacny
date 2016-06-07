@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
-
+using Dafny = Microsoft.Dafny;
 namespace LazyTacny {
   public class SolutionList {
 
@@ -95,7 +95,7 @@ namespace LazyTacny {
     }
 
 
-    public Program GenerateProgram(Function func, Program prog) {
+    public Dafny.Program GenerateProgram(Function func, Dafny.Program prog) {
       for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++)
       {
         var curDecl = prog.DefaultModuleDef.TopLevelDecls[i] as ClassDecl;
@@ -106,20 +106,20 @@ namespace LazyTacny {
             curDecl.Members[i] = func;
         }
 
-        prog.DefaultModuleDef.TopLevelDecls[i] = Tacny.Program.RemoveTactics(curDecl);
+        prog.DefaultModuleDef.TopLevelDecls[i] = LazyTacny.Program.RemoveTactics(curDecl);
       }
 
       return prog;
     }
     
 
-    public string GenerateProgram(ref Program prog, bool isFinal = false) {
+    public string GenerateProgram(ref Dafny.Program prog, bool isFinal = false) {
       Debug.WriteLine("Generating Dafny program");
       var ac = State.Copy();
       MemberDecl newMemberDecl;
       ac.Fin();
       if (!ac.IsFunction) {
-        var method = Tacny.Program.FindMember(prog, ac.DynamicContext.md.Name) as Method;
+        var method = LazyTacny.Program.FindMember(prog, ac.DynamicContext.md.Name) as Method;
         if (method == null)
           throw new Exception("Method not found");
         UpdateStmt tacCall = ac.GetTacticCall();
@@ -153,7 +153,7 @@ namespace LazyTacny {
               curDecl.Members[j] = newMemberDecl;
           }
 
-          prog.DefaultModuleDef.TopLevelDecls[i] = Tacny.Program.RemoveTactics(curDecl);
+          prog.DefaultModuleDef.TopLevelDecls[i] = LazyTacny.Program.RemoveTactics(curDecl);
         }
       }
 

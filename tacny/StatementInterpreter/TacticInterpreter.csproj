@@ -166,7 +166,6 @@
     <Compile Include="LazyAtomicStatements\ExpressionAtomic.cs" />
     <Compile Include="LazyAtomicStatements\FailAtomic.cs" />
     <Compile Include="LazyAtomicStatements\FreshNameAtomic.cs" />
-    <Compile Include="LazyAtomicStatements\FunctionsAtomic.cs" />
     <Compile Include="LazyAtomicStatements\GenBexpAtomic.cs" />
     <Compile Include="LazyAtomicStatements\GetConstructorAtomic.cs" />
     <Compile Include="LazyAtomicStatements\GetMemberAtomic.cs" />
@@ -179,9 +178,10 @@
     <Compile Include="LazyAtomicStatements\IsNatAtomic.cs" />
     <Compile Include="LazyAtomicStatements\LemmasAtomic.cs" />
     <Compile Include="LazyAtomicStatements\MatchAtomic.cs" />
-    <Compile Include="LazyAtomicStatements\MergeAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\MergeAtomic.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="LazyAtomicStatements\OperatorAtomic.cs" />
-    <Compile Include="LazyAtomicStatements\ParamsAtomic.cs" />
     <Compile Include="LazyAtomicStatements\PermAtomic.cs" />
     <Compile Include="LazyAtomicStatements\PostcondAtomic.cs" />
     <Compile Include="LazyAtomicStatements\PrecondAtomic.cs" />
@@ -191,12 +191,13 @@
     <Compile Include="LazyAtomicStatements\SplitAtomic.cs" />
     <Compile Include="LazyAtomicStatements\SuchThatAtomic.cs" />
     <Compile Include="LazyAtomicStatements\TryCatchAtomic.cs" />
-    <Compile Include="LazyAtomicStatements\VariablesAtomic.cs" />
     <Compile Include="LazyAtomicStatements\WhileAtomic.cs" />
     <Compile Include="LazyEvaluation\BlockAtomic.cs" />
     <Compile Include="LazyEvaluation\StatementRegister.cs" />
     <Compile Include="LazyEvaluation\Contract.cs" />
     <Compile Include="LazyEvaluation\LazyAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\ParamsAtomic.cs" />
+    <Compile Include="LazyAtomicStatements\VariablesAtomic.cs" />
     <Compile Include="LazyEvaluation\SolutionList.cs" />
     <Compile Include="LazyEvaluation\Pipeline.cs" />
     <Compile Include="Properties\Settings.Designer.cs">

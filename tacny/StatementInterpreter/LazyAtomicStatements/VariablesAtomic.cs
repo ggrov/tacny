@@ -2,7 +2,6 @@
 using System.Diagnostics.Contracts;
 using System.Linq;
 using Microsoft.Dafny;
-using Tacny;
 using Util;
 
 namespace LazyTacny {

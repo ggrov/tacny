@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using Microsoft.Dafny;
-using Tacny;
 using Util;
 using Type = Microsoft.Dafny.Type;
 

@@ -5,13 +5,12 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-using LazyTacny;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
 using Util;
 using Printer = Util.Printer;
 
-namespace Tacny {
+namespace LazyTacny {
   public class TacnyDriver {
 
     enum ExitValue { Verified = 0, PreprocessingError, DafnyError/*NotVerified */}

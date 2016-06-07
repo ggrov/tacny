@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
-using Tacny;
 using Util;
 
 namespace LazyTacny {

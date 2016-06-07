@@ -5,14 +5,13 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Text;
-using LazyTacny;
 using Microsoft.Dafny;
 using Util;
 using Bpl = Microsoft.Boogie;
 using Printer = Util.Printer;
 using Dfy = Microsoft.Dafny;
 
-namespace Tacny {
+namespace LazyTacny {
 
   public class TopLevelClassDeclaration {
     public readonly Dictionary<string, ITactic> Tactics;

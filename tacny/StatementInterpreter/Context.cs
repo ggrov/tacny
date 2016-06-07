@@ -6,7 +6,7 @@ using Microsoft.Dafny;
 using Util;
 using Type = Microsoft.Dafny.Type;
 
-namespace Tacny {
+namespace LazyTacny {
   public class Context {
     public MemberDecl md;
     public UpdateStmt tac_call;

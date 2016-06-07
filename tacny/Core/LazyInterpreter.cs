@@ -4,9 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Threading.Tasks;
 using Microsoft.Dafny;
-using Tacny;
 using Printer = Util.Printer;
-using Program = Tacny.Program;
 
 namespace LazyTacny {
   public class Interpreter {

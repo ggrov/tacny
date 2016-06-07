@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
 
-namespace Tacny {
+namespace LazyTacny {
   /// <summary>
   /// Easy to manage tree representation of àn expression.
   /// </summary>

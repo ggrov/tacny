@@ -10,7 +10,7 @@ using Dafny = Microsoft.Dafny;
 using Bpl = Microsoft.Boogie;
 using Util;
 
-namespace Tacny {
+namespace LazyTacny {
     public class Pipeline {
         private static Mutex mut = new Mutex();
 

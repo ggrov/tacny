@@ -7,13 +7,11 @@ using System.Linq;
 using System.Numerics;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
-using Tacny;
 using Util;
 using Formal = Microsoft.Dafny.Formal;
 using LiteralExpr = Microsoft.Dafny.LiteralExpr;
 using LocalVariable = Microsoft.Dafny.LocalVariable;
 using Printer = Util.Printer;
-using Program = Tacny.Program;
 using QuantifierExpr = Microsoft.Dafny.QuantifierExpr;
 using Type = Microsoft.Dafny.Type;
 

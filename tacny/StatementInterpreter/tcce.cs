@@ -6,7 +6,7 @@ using Microsoft.Dafny;
 /// <summary>
 /// A class containing static methods to extend the functionality of Code Contracts
 /// </summary>
-namespace Tacny
+namespace LazyTacny
 {
     public class tcce
     {

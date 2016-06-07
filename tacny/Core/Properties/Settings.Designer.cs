@@ -12,7 +12,7 @@ using System.CodeDom.Compiler;
 using System.Configuration;
 using System.Runtime.CompilerServices;
 
-namespace Tacny.Properties {
+namespace LazyTacny.Properties {
     
     
     [CompilerGenerated()]
