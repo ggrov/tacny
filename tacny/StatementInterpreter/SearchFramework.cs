@@ -28,7 +28,7 @@ namespace LazyTacny {
   }
 
   public class SearchStrategy : ISearch {
-    private Strategy _activeStrategy = Strategy.Bfs;
+    private readonly Strategy _activeStrategy = Strategy.Bfs;
     public SearchStrategy(Strategy strategy) {
       if (TacnyOptions.O.EnableSearch >= 0) {
         try {
@@ -103,6 +103,9 @@ namespace LazyTacny {
     public new static IEnumerable<Solution> Search(Atomic atomic, bool verify = true) {
       Debug.WriteLine($"Resolving tactic {atomic.DynamicContext.tactic}");
 
+      // temp hack
+      var mergePrograms = true;
+      var finalList = new List<Solution>();
       //local solution list
       var result = atomic == null ? new List<Solution>() : new List<Solution> { new Solution(atomic) };
       while (true) {
@@ -115,21 +118,53 @@ namespace LazyTacny {
           // lazily resolve a statement in the solution
           foreach (var solution in Atomic.ResolveStatement(item)) {
             // validate result
-            if (solution.IsResolved())
-            {
+            if (solution.IsResolved()) {
               if (verify) {
-                if (!VerifySolution(solution)) continue;
-                yield return solution; yield break;
+                if (mergePrograms) {
+                   finalList.Add((solution));
+                  if (finalList.Count == 1) {
+                    var tacProg = solution.State.StaticContext.program;
+                    var program = tacProg.ParseProgram();
+                    foreach (var sol in finalList) {
+                      program = solution.State.StaticContext.program.GenerateProgram(sol, program);
+                    }
+
+
+                    if (tacProg.ResolveProgram(program) == 0) {
+                      Util.Printer.P.PrintProgram(program);
+                      tacProg.VerifyProgram(program);
+                    }
+                  }
+                  else {
+                    continue;
+                  }
+                }
+                else {
+                  if (!VerifySolution(solution)) continue;
+                  yield return solution;
+                  yield break;
+                }
               }
               yield return solution;
-            }
-            else if (solution.State.DynamicContext.isPartialyResolved) {
-              if (verify)
-              {
-                if (VerifySolution(solution)) { yield return solution; yield break; }
-                interm.Add(solution);
-              }
-              else { interm.Add(solution); yield return solution; }
+            } else if (solution.State.DynamicContext.isPartialyResolved) {
+              if (verify) {
+                if (mergePrograms) {
+                  finalList.Add((solution));
+                  if (finalList.Count == 2) {
+                    var program = solution.State.StaticContext.program.ParseProgram();
+                    foreach (var sol in finalList) {
+                      program = solution.State.StaticContext.program.GenerateProgram(sol, program);
+                    }
+                    Util.Printer.P.PrintProgram(program);
+                  }
+                } else {
+                  if (VerifySolution(solution)) {
+                    yield return solution;
+                    yield break;
+                  }
+                  interm.Add(solution);
+                }
+              } else { interm.Add(solution); yield return solution; }
             } else {
               interm.Add(solution);
             }
@@ -194,12 +229,10 @@ namespace LazyTacny {
             yield return solution;
           }
         } else if (solution.State.DynamicContext.isPartialyResolved) {
-          if (verify)
-          {
+          if (verify) {
             if (VerifySolution(solution)) { yield return solution; yield break; }
             solutionStack.Push(Atomic.ResolveStatement(solution).GetEnumerator());
-          }
-          else {
+          } else {
             solutionStack.Push(Atomic.ResolveStatement(solution).GetEnumerator());
             yield return solution;
           }

@@ -1085,7 +1085,7 @@ namespace LazyTacny {
     public bool ResolveAndVerify(Solution solution) {
       Contract.Requires<ArgumentNullException>(solution != null);
 
-      Microsoft.Dafny.Program prog = StaticContext.program.ParseProgram();
+      var prog = StaticContext.program.ParseProgram();
       solution.GenerateProgram(ref prog);
       StaticContext.program.ClearBody(DynamicContext.md);
 
@@ -1095,10 +1095,7 @@ namespace LazyTacny {
         return false;
       StaticContext.program.VerifyProgram();
       return true;
-
     }
-
-
 
     /// <summary>
     /// Register datatype ctor vars as locals and set active ctor in the context
@@ -1262,9 +1259,9 @@ namespace LazyTacny {
       if (segment != null)
         ns = segment;
       else if (a is ExprDotName) {
-        ns = ((ExprDotName) a).Lhs as NameSegment;
+        ns = ((ExprDotName)a).Lhs as NameSegment;
       } else if (a is SeqSelectExpr) {
-        ns = ((SeqSelectExpr) a).E0 as NameSegment;
+        ns = ((SeqSelectExpr)a).E0 as NameSegment;
       }
 
       return ns;

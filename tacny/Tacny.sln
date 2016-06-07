@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TacnyDriver", "TacnyDriver\TacnyDriver.csproj", "{6F761865-501E-4F68-9F6F-5DFE4923CCA3}"
 EndProject
@@ -15,6 +15,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Util", "Util\Util.csproj", "{15D5AE0C-9692-417F-B5C0-CEB12B79E785}"
 EndProject
 Project("{F088123C-0E9E-452A-89E6-6BA2F21D5CAC}") = "Diagrams", "Diagrams\Diagrams.modelproj", "{CE5066A6-8F53-4E71-92FB-345077695244}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TacticInterpreter.Tests", "TacticInterpreter.Tests\TacticInterpreter.Tests.csproj", "{B8E3C1B0-6ADF-4ED2-9935-8EA614DF0336}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,6 +44,10 @@ Global
 		{CE5066A6-8F53-4E71-92FB-345077695244}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE5066A6-8F53-4E71-92FB-345077695244}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE5066A6-8F53-4E71-92FB-345077695244}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8E3C1B0-6ADF-4ED2-9935-8EA614DF0336}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8E3C1B0-6ADF-4ED2-9935-8EA614DF0336}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8E3C1B0-6ADF-4ED2-9935-8EA614DF0336}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8E3C1B0-6ADF-4ED2-9935-8EA614DF0336}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

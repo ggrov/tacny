@@ -88,6 +88,7 @@ namespace Util {
             printer.PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, prog.FullName);
             //printer.PrintProgram(prog);// PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, Path.GetFullPath(prog.FullName));
             wr.Flush();
+          wr.Close();
         }
 
         public void PrintDebugMessage(string message, params object[] args) {

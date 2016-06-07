@@ -111,6 +111,7 @@ namespace LazyTacny {
 
       return prog;
     }
+    
 
     public string GenerateProgram(ref Program prog, bool isFinal = false) {
       Debug.WriteLine("Generating Dafny program");
@@ -160,17 +161,18 @@ namespace LazyTacny {
       return null;
     }
 
-    private static Method GenerateMethod(Method oldMd, List<Statement> body, Method source = null) {
+
+    public static Method GenerateMethod(Method oldMd, List<Statement> body, Method source = null, string newName = null) {
       var src = source ?? oldMd;
       var mdBody = new BlockStmt(src.Body.Tok, src.Body.EndTok, body);
       var type = src.GetType();
       if (type == typeof(Lemma))
-        return new Lemma(src.tok, src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
+        return new Lemma(src.tok, newName ?? src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
         src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
       if (type == typeof(CoLemma))
-        return new CoLemma(src.tok, src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
+        return new CoLemma(src.tok, newName ?? src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
           src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
-      return new Method(src.tok, src.Name, src.HasStaticKeyword, src.IsGhost,
+      return new Method(src.tok, newName ?? src.Name, src.HasStaticKeyword, src.IsGhost,
         src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod, src.Ens, src.Decreases,
         mdBody, src.Attributes, src.SignatureEllipsis);
     }
@@ -184,7 +186,7 @@ namespace LazyTacny {
       solution?.State.StaticContext.program.PrintMember(prog, solution.State.StaticContext.md.Name);
     }
 
-    private static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tacCall, List<Statement> solution) {
+    public static List<Statement> InsertSolution(List<Statement> body, UpdateStmt tacCall, List<Statement> solution) {
       int index = FindTacCall(body, tacCall);
       if (index == -1)
         return null;

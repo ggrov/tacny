@@ -32,10 +32,12 @@ namespace Tacny {
 
 
         public void StartBoogie(string fileName) {
-            var processInfo = new ProcessStartInfo(GetBoogiePath());
-            processInfo.Arguments = $"{Path.Combine(Directory.GetCurrentDirectory(), fileName)}";
-            processInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            Process process = new Process();
+          var processInfo = new ProcessStartInfo(GetBoogiePath())
+          {
+            Arguments = $"{Path.Combine(Directory.GetCurrentDirectory(), fileName)}",
+            WindowStyle = ProcessWindowStyle.Hidden
+          };
+          Process process = new Process();
             process.StartInfo = processInfo;
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
