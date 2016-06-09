@@ -4,6 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DafnyLanguage.DafnyMenu;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text.Editor;
 
 namespace DafnyLanguage
@@ -143,5 +146,6 @@ namespace DafnyLanguage
         }
       }
     }
-  }
+        
+    }
 }

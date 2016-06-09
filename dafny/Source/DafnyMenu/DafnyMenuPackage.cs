@@ -13,7 +13,6 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
 
-
 namespace DafnyLanguage.DafnyMenu
 {
 
@@ -65,6 +64,8 @@ namespace DafnyLanguage.DafnyMenu
 
 
     void DiagnoseTimeouts(IWpfTextView activeTextView);
+
+        
   }
 
 
@@ -102,6 +103,7 @@ namespace DafnyLanguage.DafnyMenu
     private OleMenuCommand toggleAutomaticInductionCommand;
     private OleMenuCommand toggleBVDCommand;
     private OleMenuCommand diagnoseTimeoutsCommand;
+    private OleMenuCommand newMenuItemCommand;
 
     bool BVDDisabled;
 
@@ -142,6 +144,11 @@ namespace DafnyLanguage.DafnyMenu
         compileCommand.Enabled = false;
         compileCommand.BeforeQueryStatus += compileCommand_BeforeQueryStatus;
         mcs.AddCommand(compileCommand);
+
+        var newMenuItemCommandID = new CommandID(GuidList.guidDafnyMenuPkgSet, (int)PkgCmdIDList.cmdidNewMenuItem);
+        newMenuItemCommand = new OleMenuCommand(DoNewMenuItemTaskCallback, newMenuItemCommandID);
+                newMenuItemCommand.Enabled = true;
+                mcs.AddCommand(newMenuItemCommand);
 
         var runVerifierCommandID = new CommandID(GuidList.guidDafnyMenuCmdSet, (int)PkgCmdIDList.cmdidRunVerifier);
         runVerifierCommand = new OleMenuCommand(RunVerifierCallback, runVerifierCommandID);
@@ -188,6 +195,7 @@ namespace DafnyLanguage.DafnyMenu
         menuCommand.BeforeQueryStatus += menuCommand_BeforeQueryStatus;
         menuCommand.Enabled = true;
         mcs.AddCommand(menuCommand);
+
       }
     }
 
@@ -225,8 +233,11 @@ namespace DafnyLanguage.DafnyMenu
       }
     }
 
+ 
+
     void ToggleSnapshotVerificationCallback(object sender, EventArgs e)
     {
+            DoNewMenuItemTaskCallback(sender, e);
       var atv = ActiveTextView;
       if (MenuProxy != null && atv != null)
       {
@@ -235,6 +246,12 @@ namespace DafnyLanguage.DafnyMenu
         toggleMoreAdvancedSnapshotVerificationCommand.Text = (mode == 2 ? "Disable" : "Enable") + " more advanced on-demand re-verification";
       }
     }
+     void DoNewMenuItemTaskCallback(object sender, EventArgs e)
+      {
+            var result = VsShellUtilities.ShowMessageBox(this, "This is a test message", "Testing...", OLEMSGICON.OLEMSGICON_INFO,
+                OLEMSGBUTTON.OLEMSGBUTTON_YESNO, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_SECOND);
+          //  newMenuItemCommand.Text = "Last Item Returned Value " + result;
+      }
 
     void ToggleMoreAdvancedSnapshotVerificationCallback(object sender, EventArgs e)
     {

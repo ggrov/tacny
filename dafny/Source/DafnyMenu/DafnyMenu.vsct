@@ -140,6 +140,15 @@
           <ButtonText>Re-verify to diagnose timeouts</ButtonText>
         </Strings>
       </Button>
+      
+    
+      <Button guid="guidDafnyMenuCmdSet" id="cmdidNewMenuItem" priority="0x0099" type="Button">
+        <Parent guid="guidDafnyMenuCmdSet" id="DafnyMenuGroup" />
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Press to show message</ButtonText>
+        </Strings>
+      </Button>
 
     </Buttons>
 
@@ -175,6 +184,7 @@
       <IDSymbol name="cmdidToggleMoreAdvancedSnapshotVerification" value="0x0105" />
       <IDSymbol name="cmdidToggleAutomaticInduction" value="0x0106" />
       <IDSymbol name="cmdidDiagnoseTimeouts" value="0x0107" />
+      <IDSymbol name="cmdidNewMenuItem" value="0x0099" />
     </GuidSymbol>
 
     <!--
