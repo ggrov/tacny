@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -151,29 +152,25 @@ namespace DafnyLanguage
 
     public bool CompileWithTacnyCommandEnabled(IWpfTextView activeTextView)
     {
-        //ResolverTagger resolver;
         return activeTextView != null;
-        /*&& DafnyLanguage.ResolverTagger.ResolverTaggers.TryGetValue(activeTextView.TextBuffer, out resolver)
-                        && resolver.Program != null;*/
         //just disable this  for now. Even if we've got errors, no harm in trying to compile
     }
 
-    public void CompileWithTacny(IWpfTextView activeTextView, IServiceProvider isp)
+    public void CompileWithTacny(IWpfTextView activeTextView, IServiceProvider isp, ITextDocumentFactoryService tdf)
     {
         if (activeTextView != null)
-            {
-                ITextDocument document;
-                ITextDocumentFactoryService textDocumentFactory = null;
-                textDocumentFactory.TryGetTextDocument(activeTextView.TextBuffer, out document);
+        {
+            ITextDocument document;
+            //tdf.TryGetTextDocument(activeTextView.TextBuffer, out document);
 
-                var outputWriter = new StringWriter();
+            var outputWriter = new StringWriter();
             Process p = new Process
             {
                 StartInfo =
                 {
                     FileName = "Tacny.exe",
                     UseShellExecute = false,
-                    //Arguments = System.IO.Path.GetFullPath(document.FilePath),
+                    //Arguments = document.FilePath,
                     Arguments = "/?",
                     CreateNoWindow = true,
                     RedirectStandardOutput = true

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing;
@@ -10,6 +11,7 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
 
@@ -54,7 +56,7 @@ namespace DafnyLanguage.DafnyMenu
 
     void Compile(IWpfTextView activeTextView);
 
-    void CompileWithTacny(IWpfTextView activeTextView, IServiceProvider isp);
+    void CompileWithTacny(IWpfTextView activeTextView, IServiceProvider isp, ITextDocumentFactoryService tdf);
 
     bool ShowErrorModelCommandEnabled(IWpfTextView activeTextView);
 
@@ -93,8 +95,11 @@ namespace DafnyLanguage.DafnyMenu
   [ProvideToolWindow(typeof(BvdToolWindow), Transient = true)]
   [ProvideToolWindowVisibility(typeof(BvdToolWindow), GuidList.guidDafnyMenuCmdSetString)]
   [Guid(GuidList.guidDafnyMenuPkgString)]
-  public sealed class DafnyMenuPackage : Package
+
+    public sealed class DafnyMenuPackage : Package
   {
+    [Import(typeof(Microsoft.VisualStudio.Text.ITextDocumentFactoryService))]
+    ITextDocumentFactoryService _textDocumentFactory;
 
     private OleMenuCommand compileCommand;
     private OleMenuCommand compileWithTacnyCommand;
@@ -348,12 +353,14 @@ namespace DafnyLanguage.DafnyMenu
         }
     }
 
-    void CompileWithTacnyCallback(object sender, EventArgs e)
+        void CompileWithTacnyCallback(object sender, EventArgs e)
     {
+
+
         var atv = ActiveTextView;
         if (MenuProxy != null && atv != null)
         {
-            MenuProxy.CompileWithTacny(atv, this);
+            MenuProxy.CompileWithTacny(atv, this, _textDocumentFactory);
         }
     }
 
