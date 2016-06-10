@@ -50,9 +50,11 @@ namespace DafnyLanguage.DafnyMenu
 
     bool CompileCommandEnabled(IWpfTextView activeTextView);
 
+    bool CompileWithTacnyCommandEnabled(IWpfTextView activeTextView);
 
     void Compile(IWpfTextView activeTextView);
 
+    void CompileWithTacny(IWpfTextView activeTextView, IServiceProvider isp);
 
     bool ShowErrorModelCommandEnabled(IWpfTextView activeTextView);
 
@@ -95,6 +97,7 @@ namespace DafnyLanguage.DafnyMenu
   {
 
     private OleMenuCommand compileCommand;
+    private OleMenuCommand compileWithTacnyCommand;
     private OleMenuCommand menuCommand;
     private OleMenuCommand runVerifierCommand;
     private OleMenuCommand stopVerifierCommand;
@@ -103,7 +106,6 @@ namespace DafnyLanguage.DafnyMenu
     private OleMenuCommand toggleAutomaticInductionCommand;
     private OleMenuCommand toggleBVDCommand;
     private OleMenuCommand diagnoseTimeoutsCommand;
-    private OleMenuCommand newMenuItemCommand;
 
     bool BVDDisabled;
 
@@ -145,11 +147,12 @@ namespace DafnyLanguage.DafnyMenu
         compileCommand.BeforeQueryStatus += compileCommand_BeforeQueryStatus;
         mcs.AddCommand(compileCommand);
 
-        var newMenuItemCommandID = new CommandID(GuidList.guidDafnyMenuPkgSet, (int)PkgCmdIDList.cmdidNewMenuItem);
-        newMenuItemCommand = new OleMenuCommand(DoNewMenuItemTaskCallback, newMenuItemCommandID);
-                newMenuItemCommand.Enabled = true;
-                mcs.AddCommand(newMenuItemCommand);
-
+        var compileWithTacnyCommandID = new CommandID(GuidList.guidDafnyMenuCmdSet, (int)PkgCmdIDList.cmdidCompileWithTacny);
+        compileWithTacnyCommand = new OleMenuCommand(CompileWithTacnyCallback, compileWithTacnyCommandID);
+        compileWithTacnyCommand.Enabled = false;
+        compileWithTacnyCommand.BeforeQueryStatus += compileWithTacnyCommand_BeforeQueryStatus;
+        mcs.AddCommand(compileWithTacnyCommand);
+        
         var runVerifierCommandID = new CommandID(GuidList.guidDafnyMenuCmdSet, (int)PkgCmdIDList.cmdidRunVerifier);
         runVerifierCommand = new OleMenuCommand(RunVerifierCallback, runVerifierCommandID);
         runVerifierCommand.Enabled = true;
@@ -237,7 +240,6 @@ namespace DafnyLanguage.DafnyMenu
 
     void ToggleSnapshotVerificationCallback(object sender, EventArgs e)
     {
-            DoNewMenuItemTaskCallback(sender, e);
       var atv = ActiveTextView;
       if (MenuProxy != null && atv != null)
       {
@@ -246,12 +248,6 @@ namespace DafnyLanguage.DafnyMenu
         toggleMoreAdvancedSnapshotVerificationCommand.Text = (mode == 2 ? "Disable" : "Enable") + " more advanced on-demand re-verification";
       }
     }
-     void DoNewMenuItemTaskCallback(object sender, EventArgs e)
-      {
-            var result = VsShellUtilities.ShowMessageBox(this, "This is a test message", "Testing...", OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_YESNO, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_SECOND);
-          //  newMenuItemCommand.Text = "Last Item Returned Value " + result;
-      }
 
     void ToggleMoreAdvancedSnapshotVerificationCallback(object sender, EventArgs e)
     {
@@ -340,6 +336,25 @@ namespace DafnyLanguage.DafnyMenu
       {
         MenuProxy.Compile(atv);
       }
+    }
+
+    void compileWithTacnyCommand_BeforeQueryStatus(object sender, EventArgs e)
+    {
+        var atv = ActiveTextView;
+        if (MenuProxy != null && atv != null)
+        {
+            var enabled = MenuProxy.CompileWithTacnyCommandEnabled(atv);
+            compileWithTacnyCommand.Enabled = enabled;
+        }
+    }
+
+    void CompileWithTacnyCallback(object sender, EventArgs e)
+    {
+        var atv = ActiveTextView;
+        if (MenuProxy != null && atv != null)
+        {
+            MenuProxy.CompileWithTacny(atv, this);
+        }
     }
 
     void showErrorModelCommand_BeforeQueryStatus(object sender, EventArgs e)

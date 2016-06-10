@@ -185,6 +185,9 @@
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xaml" />
+    <Reference Include="Tacny">
+      <HintPath>..\..\..\tacny\Binaries\Tacny.exe</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
@@ -280,7 +283,8 @@
     <PreBuildEvent>COPY /Y "$(ProjectDir)$(OutDir)DafnyPrelude.bpl"   "$(ProjectDir)"
 COPY /Y "$(ProjectDir)$(OutDir)DafnyRuntime.cs"   "$(ProjectDir)"
 COPY /Y "$(ProjectDir)$(OutDir)Z3-LICENSE.txt"       "$(ProjectDir)"
-COPY /Y "$(ProjectDir)..\..\..\tacny\binaries\z3.exe" "$(ProjectDir)"</PreBuildEvent>
+COPY /Y "$(ProjectDir)..\..\..\tacny\binaries\z3.exe" "$(ProjectDir)"
+COPY /Y "$(ProjectDir)..\..\..\tacny\binaries\Tacny.exe" "$(ProjectDir)"</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.

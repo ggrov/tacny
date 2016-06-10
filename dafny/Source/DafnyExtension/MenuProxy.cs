@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using DafnyLanguage.DafnyMenu;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 
 namespace DafnyLanguage
@@ -146,6 +148,57 @@ namespace DafnyLanguage
         }
       }
     }
-        
+
+    public bool CompileWithTacnyCommandEnabled(IWpfTextView activeTextView)
+    {
+        //ResolverTagger resolver;
+        return activeTextView != null;
+        /*&& DafnyLanguage.ResolverTagger.ResolverTaggers.TryGetValue(activeTextView.TextBuffer, out resolver)
+                        && resolver.Program != null;*/
+        //just disable this  for now. Even if we've got errors, no harm in trying to compile
+    }
+
+    public void CompileWithTacny(IWpfTextView activeTextView, IServiceProvider isp)
+    {
+        if (activeTextView != null)
+            {
+                ITextDocument document;
+                ITextDocumentFactoryService textDocumentFactory = null;
+                textDocumentFactory.TryGetTextDocument(activeTextView.TextBuffer, out document);
+
+                var outputWriter = new StringWriter();
+            Process p = new Process
+            {
+                StartInfo =
+                {
+                    FileName = "Tacny.exe",
+                    UseShellExecute = false,
+                    //Arguments = System.IO.Path.GetFullPath(document.FilePath),
+                    Arguments = "/?",
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true
+                }
+            };
+
+            IVsStatusbar statusBar = (IVsStatusbar)isp.GetService(typeof(SVsStatusbar));
+            uint cookie = 0;
+            statusBar.Progress(ref cookie, 1, "Compiling With Tacny...", 1, 2);
+
+            p.Start();
+            var output = p.StandardOutput.ReadToEndAsync();
+            p.WaitForExit();
+
+            var gowp = (IVsOutputWindowPane)isp.GetService(typeof(SVsGeneralOutputWindowPane));
+            if (gowp != null)
+            {
+                gowp.Clear();
+                gowp.Activate();
+                gowp.OutputString("Result of Compiling with Tacny:\n");
+                gowp.OutputString(output.Result);
+            }
+
+            statusBar.Progress(ref cookie, 1, "Tacny Compilation Complete", 2, 2);
+        }
+    }
     }
 }
