@@ -31,10 +31,18 @@ namespace DafnyLanguage
     [FileExtension(".dfy")]
     [ContentType("dafny")]
     internal static FileExtensionToContentTypeDefinition FileType = null;
+   }
 
-    [Export]
-    [FileExtension(".tacny")]
-    [ContentType("dafny")]
-    internal static FileExtensionToContentTypeDefinition TacticFileType = null;
+    class TacnyContentType
+    {
+        [Export]
+        [Name("tacny")]
+        [BaseDefinition("dafny")]
+        internal static ContentTypeDefinition ContentType = null;
+
+        [Export]
+        [FileExtension(".tacny")]
+        [ContentType("tacny")]
+        internal static FileExtensionToContentTypeDefinition FileType = null;
     }
 }
