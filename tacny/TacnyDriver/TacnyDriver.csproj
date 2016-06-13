@@ -14,6 +14,7 @@
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <CodeContractsAssemblyMode>1</CodeContractsAssemblyMode>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -26,7 +27,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -143,6 +143,10 @@
     <Reference Include="Boogie">
       <HintPath>..\..\boogie\Binaries\Boogie.exe</HintPath>
     </Reference>
+    <Reference Include="BoogieConcurrency, Version=1.0.0.0, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\BoogieConcurrency.dll</HintPath>
+    </Reference>
     <Reference Include="BoogieCore">
       <HintPath>..\..\boogie\Binaries\BoogieCore.dll</HintPath>
     </Reference>
@@ -152,11 +156,13 @@
     <Reference Include="BoogieParserHelper">
       <HintPath>..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
     </Reference>
-    <Reference Include="Concurrency">
-      <HintPath>..\..\boogie\Binaries\Concurrency.dll</HintPath>
+    <Reference Include="BoogieVCExpr, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\BoogieVCExpr.dll</HintPath>
     </Reference>
-    <Reference Include="Core">
-      <HintPath>..\..\boogie\Binaries\Core.dll</HintPath>
+    <Reference Include="BoogieVCGeneration, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\BoogieVCGeneration.dll</HintPath>
     </Reference>
     <Reference Include="Dafny, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -165,12 +171,6 @@
     <Reference Include="DafnyPipeline, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
-    </Reference>
-    <Reference Include="ExecutionEngine">
-      <HintPath>..\..\boogie\Binaries\ExecutionEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="ParserHelper">
-      <HintPath>..\..\boogie\Binaries\ParserHelper.dll</HintPath>
     </Reference>
     <Reference Include="Provers.SMTLib">
       <HintPath>..\..\boogie\Binaries\Provers.SMTLib.dll</HintPath>
@@ -182,12 +182,6 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="VCExpr">
-      <HintPath>..\..\boogie\Binaries\VCExpr.dll</HintPath>
-    </Reference>
-    <Reference Include="VCGeneration">
-      <HintPath>..\..\boogie\Binaries\VCGeneration.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="TacnyDriver.cs" />
@@ -230,10 +224,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>cd $(OutDir)
-del Dafny.*
-del DafnyPipeline.*
-</PreBuildEvent>
+    <PreBuildEvent>COPY /y $(SolutionDir)..\dafny\Binaries\DafnyPrelude.bpl $(TargetDir)
+COPY /y $(SolutionDir)..\dafny\Binaries\DafnyRuntime.cs $(TargetDir)
+COPY /y $(SolutionDir)..\dafny\Binaries\z3.exe $(TargetDir)</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
