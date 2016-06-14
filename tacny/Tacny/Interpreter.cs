@@ -9,7 +9,8 @@ namespace Tacny {
   public class Interpreter {
 
     private static Interpreter _i;
-
+    
+    
     public static MemberDecl ApplyTactic(Program program, MemberDecl target) {
       if (_i == null) {
         _i = new Interpreter(program);
