@@ -149,53 +149,6 @@ namespace DafnyLanguage
         }
       }
     }
-
-    public bool CompileWithTacnyCommandEnabled(IWpfTextView activeTextView)
-    {
-        return activeTextView != null;
-        //just disable this  for now. Even if we've got errors, no harm in trying to compile
-    }
-
-    public void CompileWithTacny(IWpfTextView activeTextView, IServiceProvider isp, ITextDocumentFactoryService tdf)
-    {
-        if (activeTextView != null)
-        {
-            ITextDocument document;
-            //tdf.TryGetTextDocument(activeTextView.TextBuffer, out document);
-
-            var outputWriter = new StringWriter();
-            Process p = new Process
-            {
-                StartInfo =
-                {
-                    FileName = "Tacny.exe",
-                    UseShellExecute = false,
-                    //Arguments = document.FilePath,
-                    Arguments = "/?",
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true
-                }
-            };
-
-            IVsStatusbar statusBar = (IVsStatusbar)isp.GetService(typeof(SVsStatusbar));
-            uint cookie = 0;
-            statusBar.Progress(ref cookie, 1, "Compiling With Tacny...", 1, 2);
-
-            p.Start();
-            var output = p.StandardOutput.ReadToEndAsync();
-            p.WaitForExit();
-
-            var gowp = (IVsOutputWindowPane)isp.GetService(typeof(SVsGeneralOutputWindowPane));
-            if (gowp != null)
-            {
-                gowp.Clear();
-                gowp.Activate();
-                gowp.OutputString("Result of Compiling with Tacny:\n");
-                gowp.OutputString(output.Result);
-            }
-
-            statusBar.Progress(ref cookie, 1, "Tacny Compilation Complete", 2, 2);
-        }
-    }
+        
     }
 }

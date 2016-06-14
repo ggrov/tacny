@@ -51,12 +51,10 @@ namespace DafnyLanguage.DafnyMenu
 
 
     bool CompileCommandEnabled(IWpfTextView activeTextView);
-
-    bool CompileWithTacnyCommandEnabled(IWpfTextView activeTextView);
+        
 
     void Compile(IWpfTextView activeTextView);
-
-    void CompileWithTacny(IWpfTextView activeTextView, IServiceProvider isp, ITextDocumentFactoryService tdf);
+        
 
     bool ShowErrorModelCommandEnabled(IWpfTextView activeTextView);
 
@@ -151,13 +149,7 @@ namespace DafnyLanguage.DafnyMenu
         compileCommand.Enabled = false;
         compileCommand.BeforeQueryStatus += compileCommand_BeforeQueryStatus;
         mcs.AddCommand(compileCommand);
-
-        var compileWithTacnyCommandID = new CommandID(GuidList.guidDafnyMenuCmdSet, (int)PkgCmdIDList.cmdidCompileWithTacny);
-        compileWithTacnyCommand = new OleMenuCommand(CompileWithTacnyCallback, compileWithTacnyCommandID);
-        compileWithTacnyCommand.Enabled = false;
-        compileWithTacnyCommand.BeforeQueryStatus += compileWithTacnyCommand_BeforeQueryStatus;
-        mcs.AddCommand(compileWithTacnyCommand);
-        
+                
         var runVerifierCommandID = new CommandID(GuidList.guidDafnyMenuCmdSet, (int)PkgCmdIDList.cmdidRunVerifier);
         runVerifierCommand = new OleMenuCommand(RunVerifierCallback, runVerifierCommandID);
         runVerifierCommand.Enabled = true;
@@ -342,28 +334,7 @@ namespace DafnyLanguage.DafnyMenu
         MenuProxy.Compile(atv);
       }
     }
-
-    void compileWithTacnyCommand_BeforeQueryStatus(object sender, EventArgs e)
-    {
-        var atv = ActiveTextView;
-        if (MenuProxy != null && atv != null)
-        {
-            var enabled = MenuProxy.CompileWithTacnyCommandEnabled(atv);
-            compileWithTacnyCommand.Enabled = enabled;
-        }
-    }
-
-        void CompileWithTacnyCallback(object sender, EventArgs e)
-    {
-
-
-        var atv = ActiveTextView;
-        if (MenuProxy != null && atv != null)
-        {
-            MenuProxy.CompileWithTacny(atv, this, _textDocumentFactory);
-        }
-    }
-
+        
     void showErrorModelCommand_BeforeQueryStatus(object sender, EventArgs e)
     {
       var atv = ActiveTextView;
