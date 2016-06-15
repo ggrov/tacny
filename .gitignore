@@ -1,3 +1,7 @@
+##Windows stuff
+*thumbs.db
+*.lnk
+
 ## Project specific files
 */Binaries/*.exe
 */Binaries/*.exe.*
