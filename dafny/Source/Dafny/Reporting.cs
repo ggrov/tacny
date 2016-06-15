@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Microsoft.Dafny {
   public enum ErrorLevel {
-    Info, Warning, Error
+    Info, Warning, Error, TacticsInfo
   }
 
   public enum MessageSource {
@@ -32,6 +32,7 @@ namespace Microsoft.Dafny {
       AllMessages[ErrorLevel.Error] = new List<ErrorMessage>();
       AllMessages[ErrorLevel.Warning] = new List<ErrorMessage>();
       AllMessages[ErrorLevel.Info] = new List<ErrorMessage>();
+        AllMessages[ErrorLevel.TacticsInfo] = new List<ErrorMessage>();
     }
 
     // This is the only thing that needs to be overriden
@@ -114,6 +115,11 @@ namespace Microsoft.Dafny {
       Contract.Requires(msg != null);
       Info(source, tok, String.Format(msg, args));
     }
+
+      public void Tactic(MessageSource source, IToken tok, string expandedValue)
+      {
+          Message(source, ErrorLevel.TacticsInfo, tok, expandedValue);
+      }
 
     public static string ErrorToString(ErrorLevel header, IToken tok, string msg) {
       return ErrorToString_Internal(": " + header.ToString(), tok.filename, tok.line, tok.col, ": " + msg);
