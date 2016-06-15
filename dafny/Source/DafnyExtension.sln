@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DafnyExtension", "DafnyExte
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DafnyMenu", "DafnyMenu\DafnyMenu.csproj", "{CA0848D3-3E4F-410E-8AC6-D6125A2B8E30}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DafnyItem", "DafnyItem\DafnyItem.csproj", "{AC3F666E-6447-4239-8446-35D941DFA00A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{CA0848D3-3E4F-410E-8AC6-D6125A2B8E30}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA0848D3-3E4F-410E-8AC6-D6125A2B8E30}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA0848D3-3E4F-410E-8AC6-D6125A2B8E30}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC3F666E-6447-4239-8446-35D941DFA00A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC3F666E-6447-4239-8446-35D941DFA00A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC3F666E-6447-4239-8446-35D941DFA00A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC3F666E-6447-4239-8446-35D941DFA00A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

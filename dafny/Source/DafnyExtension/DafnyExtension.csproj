@@ -261,6 +261,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DafnyItem\DafnyItem.csproj">
+      <Project>{AC3F666E-6447-4239-8446-35D941DFA00A}</Project>
+      <Name>DafnyItem</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
     <ProjectReference Include="..\DafnyMenu\DafnyMenu.csproj">
       <Project>{ca0848d3-3e4f-410e-8ac6-d6125a2b8e30}</Project>
       <Name>DafnyMenu</Name>
