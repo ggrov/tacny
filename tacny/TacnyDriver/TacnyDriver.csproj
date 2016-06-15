@@ -225,8 +225,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>COPY /y $(SolutionDir)..\dafny\Binaries\DafnyPrelude.bpl $(TargetDir)
-COPY /y $(SolutionDir)..\dafny\Binaries\DafnyRuntime.cs $(TargetDir)
-COPY /y $(SolutionDir)..\dafny\Binaries\z3.exe $(TargetDir)</PreBuildEvent>
+COPY /y $(SolutionDir)..\dafny\Binaries\DafnyRuntime.cs $(TargetDir)</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
