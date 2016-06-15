@@ -15,7 +15,7 @@ using Dafny = Microsoft.Dafny;
 namespace DafnyLanguage
 {
 
-  public class DafnyDriver
+  public class DafnyDriver : ToolDriver
   {
     readonly string _filename;
     readonly ITextSnapshot _snapshot;
@@ -111,7 +111,7 @@ namespace DafnyLanguage
 
     #region Parsing and type checking
 
-    internal Dafny.Program ProcessResolution(bool runResolver) {
+    internal override Dafny.Program ProcessResolution(bool runResolver) {
       if (!ParseAndTypeCheck(runResolver)) {
         return null;
       }

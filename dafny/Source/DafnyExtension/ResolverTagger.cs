@@ -128,6 +128,8 @@ namespace DafnyLanguage
     readonly ITextDocument _document;
     ErrorListProvider _errorProvider;
     private bool m_disposed;
+      private bool _isTacny;
+      private string _filename;
 
     // The 'Snapshot' and 'Program' fields should be updated and read together, so they are protected by "this"
     public ITextSnapshot Snapshot;  // may be null
@@ -227,7 +229,10 @@ namespace DafnyLanguage
       Snapshot = null;  // this makes sure the next snapshot will look different
       _errorProvider = new ErrorListProvider(serviceProvider);
 
-      BufferIdleEventUtil.AddBufferIdleEventListener(_buffer, ResolveBuffer);
+        _filename = _document != null ? _document.FilePath : "<program>";
+        _isTacny = _filename.Substring(_filename.Length - 6) == ".tacny";
+
+        BufferIdleEventUtil.AddBufferIdleEventListener(_buffer, ResolveBuffer);
     }
 
     public void Dispose()
@@ -322,18 +327,27 @@ namespace DafnyLanguage
       if (snapshot == Snapshot)
         return;  // we've already done this snapshot
 
-      string filename = _document != null ? _document.FilePath : "<program>";
-      var driver = new DafnyDriver(_buffer, filename);
+      ToolDriver driver;
+        if (_isTacny)
+        {
+            driver = new TacnyDriver(_buffer, _filename);
+        }
+        else
+        {
+            driver = new DafnyDriver(_buffer, _filename);
+        }
+
+        
       List<DafnyError> newErrors;
       Dafny.Program program;
       try
-      {
+        {
         program = driver.ProcessResolution(true);
         newErrors = driver.Errors;
       }
       catch (Exception e)
       {
-        newErrors = new List<DafnyError> { new DafnyError(filename, 0, 0, ErrorCategory.InternalError, "internal Dafny error: " + e.Message, snapshot, false) };
+        newErrors = new List<DafnyError> { new DafnyError(_filename, 0, 0, ErrorCategory.InternalError, "internal Dafny error: " + e.Message + "\n" + e.StackTrace, snapshot, false) };
         program = null;
       }
 
@@ -356,12 +370,12 @@ namespace DafnyLanguage
 
       UpdateErrorList(snapshot);
     }
-
-    public void UpdateErrorList(ITextSnapshot snapshot)
+        
+        public void UpdateErrorList(ITextSnapshot snapshot)
     {
       if (_errorProvider != null && !m_disposed)
       {
-        _errorProvider.SuspendRefresh();  // reduce flickering
+        _errorProvider.SuspendRefresh();  // reduce flickering //TODO: why cause crash when enabled?
         _errorProvider.Tasks.Clear();
         foreach (var err in AllErrors)
         { 
@@ -398,7 +412,15 @@ namespace DafnyLanguage
           }
           _errorProvider.Tasks.Add(task);
         }
-        _errorProvider.ResumeRefresh();
+
+        try
+        {
+            _errorProvider.ResumeRefresh();
+        }
+        catch (ArgumentException)
+        {
+                    Console.WriteLine("huh?");
+        }
       }
       var chng = TagsChanged;
       if (chng != null)

@@ -115,6 +115,10 @@
     <Reference Include="BoogieParserHelper">
       <HintPath>..\..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
     </Reference>
+    <Reference Include="ProgramInterpreter, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\tacny\Binaries\ProgramInterpreter.dll</HintPath>
+    </Reference>
     <Reference Include="Provers.SMTLib">
       <HintPath>..\..\..\boogie\Binaries\Provers.SMTLib.dll</HintPath>
     </Reference>
@@ -188,6 +192,14 @@
     <Reference Include="Tacny">
       <HintPath>..\..\..\tacny\Binaries\Tacny.exe</HintPath>
     </Reference>
+    <Reference Include="TacticInterpreter, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\tacny\Binaries\TacticInterpreter.dll</HintPath>
+    </Reference>
+    <Reference Include="Util, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\tacny\Binaries\Util.dll</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
@@ -207,6 +219,7 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HoverText.cs" />
     <Compile Include="IdentifierTagger.cs" />
+    <Compile Include="ToolDriver.cs" />
     <Compile Include="MenuProxy.cs" />
     <Compile Include="ProgressMargin.cs" />
     <Compile Include="OutliningTagger.cs" />
@@ -214,6 +227,7 @@
     <Compile Include="DafnyDriver.cs" />
     <Compile Include="ContentType.cs" />
     <Compile Include="BraceMatching.cs" />
+    <Compile Include="TacnyDriver.cs" />
     <Compile Include="WordHighlighter.cs" />
     <Compile Include="ErrorTagger.cs" />
     <Compile Include="TokenTagger.cs" />
