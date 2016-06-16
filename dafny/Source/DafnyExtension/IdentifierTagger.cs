@@ -144,10 +144,10 @@ namespace DafnyLanguage
       }
 
 
-        foreach (var info in program.reporter.AllMessages[ErrorLevel.TacticsInfo])
-        {
-            IdRegion.Add(newRegions, program, info.token, info.message, info.token.val.Length);
-        }
+     //  foreach (var info in program.reporter.AllMessages[ErrorLevel.TacticsInfo])
+     //  {
+     //      IdRegion.Add(newRegions, program, info.token, info.message, info.token.val.Length);
+     //  }
 
         foreach (var module in program.Modules) {
         if (module.IsFacade) {

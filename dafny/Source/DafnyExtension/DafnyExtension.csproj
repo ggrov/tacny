@@ -219,6 +219,7 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HoverText.cs" />
     <Compile Include="IdentifierTagger.cs" />
+    <Compile Include="TacticMarginGlyph.cs" />
     <Compile Include="ToolDriver.cs" />
     <Compile Include="MenuProxy.cs" />
     <Compile Include="ProgressMargin.cs" />
