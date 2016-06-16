@@ -140,9 +140,6 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Boogie">
-      <HintPath>..\..\boogie\Binaries\Boogie.exe</HintPath>
-    </Reference>
     <Reference Include="BoogieCore">
       <HintPath>..\..\boogie\Binaries\BoogieCore.dll</HintPath>
     </Reference>
@@ -152,42 +149,12 @@
     <Reference Include="BoogieParserHelper">
       <HintPath>..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
     </Reference>
-    <Reference Include="Concurrency">
-      <HintPath>..\..\boogie\Binaries\Concurrency.dll</HintPath>
-    </Reference>
-    <Reference Include="Core">
-      <HintPath>..\..\boogie\Binaries\Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Dafny, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\dafny\Binaries\Dafny.exe</HintPath>
-    </Reference>
     <Reference Include="DafnyPipeline, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
     </Reference>
-    <Reference Include="ExecutionEngine">
-      <HintPath>..\..\boogie\Binaries\ExecutionEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="ParserHelper">
-      <HintPath>..\..\boogie\Binaries\ParserHelper.dll</HintPath>
-    </Reference>
-    <Reference Include="Provers.SMTLib">
-      <HintPath>..\..\boogie\Binaries\Provers.SMTLib.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="VCExpr">
-      <HintPath>..\..\boogie\Binaries\VCExpr.dll</HintPath>
-    </Reference>
-    <Reference Include="VCGeneration">
-      <HintPath>..\..\boogie\Binaries\VCGeneration.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="TacnyDriver.cs" />
@@ -205,6 +172,10 @@
     <ProjectReference Include="..\StatementInterpreter\TacticInterpreter.csproj">
       <Project>{d68d70f0-bd07-4176-b3de-0b00612f84f7}</Project>
       <Name>TacticInterpreter</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Tacny\Tacny.csproj">
+      <Project>{a1e15edd-ebb0-4598-b54d-9f8ec8802149}</Project>
+      <Name>Tacny</Name>
     </ProjectReference>
     <ProjectReference Include="..\Util\Util.csproj">
       <Project>{15d5ae0c-9692-417f-b5c0-ceb12b79e785}</Project>

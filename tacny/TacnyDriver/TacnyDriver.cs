@@ -5,7 +5,6 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-using LazyTacny;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
 using Util;
@@ -41,13 +40,13 @@ namespace Tacny {
     /// <param name="args"></param>
     /// <returns></returns>
     public static int ExecuteTacny(string[] args) {
-      Contract.Requires(tcce.NonNullElements(args));
-      //Debug.Listeners.Clear();
+
+      Debug.Listeners.Clear();
       Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
-      //Debug.Listeners.Clear();
+
       Debug.AutoFlush = true;
       // install Dafny and Boogie commands
-      var options = new TacnyOptions {VerifySnapshots = 2};
+      var options = new TacnyOptions { VerifySnapshots = 2 };
       TacnyOptions.Install(options);
       _printer = new TacnyConsolePrinter();
       ExecutionEngine.printer = new ConsolePrinter();
@@ -77,7 +76,7 @@ namespace Tacny {
             if (!(val is int)) continue;
             var tmp = (int)val;
             if (tmp < 0) continue;
-            var name = (Strategy)tmp;
+            var name = (LazyTacny.Strategy)tmp;
             Console.Out.WriteLine($"# SearchStrategy : {name}");
           } else
             Console.Out.WriteLine($"# {field.Name} : {field.GetValue(tc)}");
@@ -98,7 +97,7 @@ namespace Tacny {
     /// <param name="programId"></param>
     /// <returns></returns>
     static ExitValue ProcessFiles(IList<string/*!*/>/*!*/ fileNames, string programId = null) {
-      Contract.Requires(tcce.NonNullElements(fileNames));
+      //Contract.Requires(Tacny.tcce.NonNullElements(fileNames));
 
       if (programId == null) {
         programId = ProgId;
@@ -117,8 +116,7 @@ namespace Tacny {
         return exitValue;
       }
 
-      using (new XmlFileScope(CommandLineOptions.Clo.XmlSink, fileNames[fileNames.Count - 1]))
-      {
+      using (new XmlFileScope(CommandLineOptions.Clo.XmlSink, fileNames[fileNames.Count - 1])) {
         Program tacnyProgram;
         string programName = fileNames.Count == 1 ? fileNames[0] : "the program";
         // install Util.Printer
@@ -134,6 +132,10 @@ namespace Tacny {
           return exitValue;
         }
 
+
+        var program = tacnyProgram.ParseProgram();
+        int qq = tacnyProgram.ResolveProgram(program);
+        Interpreter.ApplyTactic(program, ((ClassDecl)program.DefaultModuleDef.TopLevelDecls[0]).Members[0]);
         if (!CommandLineOptions.Clo.NoResolve && !CommandLineOptions.Clo.NoTypecheck && DafnyOptions.O.DafnyVerify) {
 
           Debug.WriteLine("Starting lazy tactic evaluation");

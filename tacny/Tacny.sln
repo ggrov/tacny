@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TacnyDriver", "TacnyDriver\TacnyDriver.csproj", "{6F761865-501E-4F68-9F6F-5DFE4923CCA3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A1E15EDD-EBB0-4598-B54D-9F8EC8802149} = {A1E15EDD-EBB0-4598-B54D-9F8EC8802149}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProgramInterpreter", "Core\ProgramInterpreter.csproj", "{5C725137-5006-44D6-AEE3-7E11AA446897}"
 	ProjectSection(ProjectDependencies) = postProject
