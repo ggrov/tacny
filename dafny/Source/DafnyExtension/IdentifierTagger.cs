@@ -142,12 +142,19 @@ namespace DafnyLanguage
       foreach (var info in program.reporter.AllMessages[ErrorLevel.Info]) {
         IdRegion.Add(newRegions, program, info.token, info.message, info.token.val.Length);
       }
+      
+      foreach (var tactic in program.reporter.AllMessages[ErrorLevel.TacticsInfo]) // do the thing here
+      {
+          //somehow add info to a span, which the tactic glyph factory will pick up
+          //dafny returns an IToken. Need to translate this into somethign that visual studio can use to identify the location
+          //
+          int pos = tactic.token.pos;
 
-
-     //  foreach (var info in program.reporter.AllMessages[ErrorLevel.TacticsInfo])
-     //  {
-     //      IdRegion.Add(newRegions, program, info.token, info.message, info.token.val.Length);
-     //  }
+                //we want to get and update a snapshot span with new information
+                //how to do this from the token
+                snapshot.TextBuffer.
+          IdRegion.Add(newRegions, program, tactic.token, tactic.message, tactic.token.val.Length);
+      }
 
         foreach (var module in program.Modules) {
         if (module.IsFacade) {

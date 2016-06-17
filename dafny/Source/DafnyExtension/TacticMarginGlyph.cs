@@ -23,7 +23,7 @@ namespace DafnyLanguage
     #region provider
 
     [Export(typeof(IGlyphFactoryProvider))]
-    [Name("TacticGlyph")]
+    [Name("TacticGlyphFactoryProvider")]
     [Order(After = "VsTextMarker")]
     [ContentType("dafny")]
     [TagType(typeof(TacticTag))]
@@ -137,6 +137,20 @@ namespace DafnyLanguage
 
         public IEnumerable<ITagSpan<TacticTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
+
+            //for the various spans, 
+            //we need some way of looking over and finding those that are tactic calls
+            //the only reasonable way to do this is to get this data back from 
+            //Tacny [eventually this is through dafny].
+            //This happens in either the resolver tagger or the progress margin.
+            //How about, have dafny give back a new piece of information 
+            //[maybe an error with errorlevel.tacticcall or something]
+            //and then call this tacticmarginglyph file directly. As opposed to just scanning over tags...
+            //that doesnt seem clean.
+
+            //see IdentifierTagger.cs
+            //https://msdn.microsoft.com/en-us/library/microsoft.visualstudio.text.classification.iclassificationtype.aspx
+
             foreach (SnapshotSpan span in spans)
             {
                 foreach (ClassificationSpan classification in _classifier.GetClassificationSpans(span))
