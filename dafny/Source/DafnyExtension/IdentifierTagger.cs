@@ -152,8 +152,8 @@ namespace DafnyLanguage
 
                 //we want to get and update a snapshot span with new information
                 //how to do this from the token
-                snapshot.TextBuffer.
-          IdRegion.Add(newRegions, program, tactic.token, tactic.message, tactic.token.val.Length);
+           //     snapshot.TextBuffer.
+          //IdRegion.Add(newRegions, program, tactic.token, tactic.message, tactic.token.val.Length);
       }
 
         foreach (var module in program.Modules) {

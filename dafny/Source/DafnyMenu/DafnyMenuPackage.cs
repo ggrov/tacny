@@ -96,11 +96,8 @@ namespace DafnyLanguage.DafnyMenu
 
     public sealed class DafnyMenuPackage : Package
   {
-    [Import(typeof(Microsoft.VisualStudio.Text.ITextDocumentFactoryService))]
-    ITextDocumentFactoryService _textDocumentFactory;
 
     private OleMenuCommand compileCommand;
-    private OleMenuCommand compileWithTacnyCommand;
     private OleMenuCommand menuCommand;
     private OleMenuCommand runVerifierCommand;
     private OleMenuCommand stopVerifierCommand;

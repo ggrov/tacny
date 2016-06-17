@@ -24,7 +24,7 @@ namespace DafnyLanguage
     static object bufferDafnyKey = new object();
 
     List<DafnyError> _errors = new List<DafnyError>();
-    public List<DafnyError> Errors { get { return _errors; } }
+    public new List<DafnyError> Errors { get { return _errors; } }
 
     public DafnyDriver(ITextBuffer buffer, string filename) {
       _buffer = buffer;

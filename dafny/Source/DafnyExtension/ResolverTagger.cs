@@ -375,7 +375,7 @@ namespace DafnyLanguage
     {
       if (_errorProvider != null && !m_disposed)
       {
-        _errorProvider.SuspendRefresh();  // reduce flickering //TODO: why cause crash when enabled?
+        _errorProvider.SuspendRefresh();  // reduce flickering
         _errorProvider.Tasks.Clear();
         foreach (var err in AllErrors)
         { 
@@ -441,6 +441,8 @@ namespace DafnyLanguage
           return TaskErrorCategory.Warning;
         case ErrorCategory.AuxInformation:
           return TaskErrorCategory.Message;
+        case ErrorCategory.TacticInformation:
+          return TaskErrorCategory.Message;
         default:
           Contract.Assert(false);  // unexpected category
           return TaskErrorCategory.Error;  // please compiler
@@ -503,7 +505,7 @@ namespace DafnyLanguage
 
   public enum ErrorCategory
   {
-    ProcessError, ParseWarning, ParseError, ResolveWarning, ResolveError, VerificationError, AuxInformation, InternalError
+    ProcessError, ParseWarning, ParseError, ResolveWarning, ResolveError, VerificationError, AuxInformation, InternalError, TacticInformation
   }
 
   public class DafnyError

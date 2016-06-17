@@ -22,7 +22,7 @@ namespace DafnyLanguage
         readonly ITextSnapshot _snapshot;
         readonly ITextBuffer _buffer;
         readonly List<DafnyError> _errors;
-        public List<DafnyError> Errors { get { return _errors; } }
+        public new List<DafnyError> Errors { get { return _errors; } }
         public TacnyDriver(ITextBuffer buffer, string filename)
         {
             _buffer = buffer;

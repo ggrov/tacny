@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Formatting;
 using System.ComponentModel.Composition;
-using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -41,7 +37,7 @@ namespace DafnyLanguage
     [TagType(typeof(TacticTag))]
     class TacticTaggerProvider : ITaggerProvider
     {
-        [Import] internal IClassifierAggregatorService AggregatorService;
+        [Import] internal IClassifierAggregatorService AggregatorService = null;
 
         public ITagger<T> CreateTagger<T>(ITextBuffer buffer) where T : ITag
         {
@@ -61,10 +57,10 @@ namespace DafnyLanguage
     [Name("TacticGlyphMouseProcessorProvider")]
     internal class TacticGlyphMouseProcessorProvider : IGlyphMouseProcessorProvider
     {
-        [Import(typeof(SVsServiceProvider))] IServiceProvider isp;
+        [Import(typeof(SVsServiceProvider))] private IServiceProvider _isp = null;
         public IMouseProcessor GetAssociatedMouseProcessor(IWpfTextViewHost wpfTextViewHost, IWpfTextViewMargin margin)
         {
-            return new TacticGlyphMouseProcessor(wpfTextViewHost, isp);
+            return new TacticGlyphMouseProcessor(wpfTextViewHost, margin, _isp);
         }
     }
 
@@ -76,24 +72,35 @@ namespace DafnyLanguage
     internal class TacticGlyphMouseProcessor : MouseProcessorBase
     {
         private readonly IWpfTextViewHost _tvh;
+        private readonly IWpfTextViewMargin _margin;
         private readonly IServiceProvider _isp;
 
-        public TacticGlyphMouseProcessor(IWpfTextViewHost tvh, IServiceProvider isp)
+        public TacticGlyphMouseProcessor(IWpfTextViewHost tvh, IWpfTextViewMargin margin, IServiceProvider isp)
         {
             _tvh = tvh;
+            _margin = margin;
             _isp = isp;
         }
 
         public override void PostprocessMouseDown(MouseButtonEventArgs e)
         {
+            var src = e.Source;
+            if (!(src is Ellipse))
+            {
+                return;
+            }
+            var glyph = (Ellipse) src;
+            if (glyph.Tag.ToString() != "TacticGlyph")
+            {
+                return;
+            }
             var tv = _tvh.TextView;
             var position = e.GetPosition(tv.VisualElement);
-            var line = tv.TextViewLines.GetTextViewLineContainingYCoordinate(position.Y);
+            var line = tv.TextViewLines.GetTextViewLineContainingYCoordinate(position.Y+tv.ViewportTop);
             var lineContents = line.Extent.GetText();
-
+                
             VsShellUtilities.ShowMessageBox(_isp, lineContents, "Picked Line:", 
-                OLEMSGICON.OLEMSGICON_INFO, OLEMSGBUTTON.OLEMSGBUTTON_YESNO, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_SECOND);
-
+                    OLEMSGICON.OLEMSGICON_INFO, OLEMSGBUTTON.OLEMSGBUTTON_OK, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
         }
     }
 
@@ -107,20 +114,18 @@ namespace DafnyLanguage
 
         public UIElement GenerateGlyph(IWpfTextViewLine line, IGlyphTag tag)
         {
-            if (!(tag is TacticTag))
+            if (tag is TacticTag)
             {
-                return null;
+                return new Ellipse
+                {
+                    Fill = Brushes.DarkCyan,
+                    Height = 8,
+                    Width = 8,
+                    ToolTip = "Show Tactic",
+                    Tag = "TacticGlyph"
+                };
             }
-
-            System.Windows.Shapes.Ellipse ellipse = new Ellipse
-            {
-                Fill = Brushes.DarkCyan,
-                Height = 8,
-                Width = 8,
-                ToolTip = "Show Tactic"
-            };
-            
-            return ellipse;
+            return null;
         }
     }
 
