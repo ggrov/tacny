@@ -9,6 +9,7 @@
 *.nuget/
 dafny/.hg/
 */Binaries/*.dfy
+*/Binaries/*.xml
 
 ## Ignore all dll's
 *.dll
