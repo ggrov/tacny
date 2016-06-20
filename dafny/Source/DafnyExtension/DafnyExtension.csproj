@@ -215,6 +215,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BufferIdleEventUtil.cs" />
+    <Compile Include="EmbeddedTacticViewer.cs" />
     <Compile Include="ErrorModelTagger.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HoverText.cs" />
