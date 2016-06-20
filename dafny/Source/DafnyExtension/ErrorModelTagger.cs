@@ -7,6 +7,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
@@ -28,8 +30,10 @@ namespace DafnyLanguage
   {
     [Import]
     internal IBufferTagAggregatorFactoryService BufferTagAggregatorFactoryService = null;
+        [Import(typeof(SVsServiceProvider))]
+        private IServiceProvider _isp = null;
 
-    public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag
+        public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag
     {
       if (textView == null)
         throw new ArgumentNullException("textView");
@@ -43,7 +47,7 @@ namespace DafnyLanguage
       return ErrorModelTagger.GetTagger(
                 (IWpfTextView)textView,
                 new Lazy<ITagAggregator<IDafnyResolverTag>>(
-                    () => BufferTagAggregatorFactoryService.CreateTagAggregator<IDafnyResolverTag>(textView.TextBuffer)))
+                    () => BufferTagAggregatorFactoryService.CreateTagAggregator<IDafnyResolverTag>(textView.TextBuffer)), _isp)
                 as ITagger<T>;
     }
   }
@@ -57,18 +61,20 @@ namespace DafnyLanguage
   {
     IWpfTextView _view;
     ITagAggregator<IDafnyResolverTag> _aggregator;
+      private IServiceProvider _isp;
 
-    internal static ITagger<IntraTextAdornmentTag> GetTagger(IWpfTextView view, Lazy<ITagAggregator<IDafnyResolverTag>> aggregator)
+    internal static ITagger<IntraTextAdornmentTag> GetTagger(IWpfTextView view, Lazy<ITagAggregator<IDafnyResolverTag>> aggregator, IServiceProvider isp)
     {
       return view.Properties.GetOrCreateSingletonProperty<ErrorModelTagger>(
-            () => new ErrorModelTagger(view, aggregator.Value));
+            () => new ErrorModelTagger(view, aggregator.Value, isp));
     }
 
-    private ErrorModelTagger(IWpfTextView view, ITagAggregator<IDafnyResolverTag> aggregator)
+    private ErrorModelTagger(IWpfTextView view, ITagAggregator<IDafnyResolverTag> aggregator, IServiceProvider isp)
     {
       _view = view;
       _aggregator = aggregator;
       _aggregator.TagsChanged += new EventHandler<TagsChangedEventArgs>(_aggregator_TagsChanged);
+        _isp = isp;
     }
 
     public void Dispose()
@@ -121,6 +127,23 @@ namespace DafnyLanguage
             adornmentsPerSnapshot.Add(span, new List<Ellipse> { adornment });
           }
         }
+
+            var ttag = tag.Tag as TacnyExpansionTag;
+            if (ttag != null)
+            {
+                var adornment = _view.VisualElement.Dispatcher.Invoke(() => CreateTacticExpansionAdornment(ttag));
+                var span = ttag.Span.GetSpan(snapshot);
+                List<Ellipse> adornments;
+                if (adornmentsPerSnapshot.TryGetValue(span, out adornments))
+                {
+                    adornments.Add(adornment);
+                }
+                else
+                {
+                    adornmentsPerSnapshot.Add(span, new List<Ellipse> { adornment });
+                }
+            }
+
       }
 
       foreach (var adornments in adornmentsPerSnapshot)
@@ -151,6 +174,34 @@ namespace DafnyLanguage
     {
       return string.Format("{0}{1}", isSelected ? "unselect state" : "select state", !string.IsNullOrEmpty(description) ? " [" + description + "]" : "");
     }
+
+      private Ellipse CreateTacticExpansionAdornment(TacnyExpansionTag ttag)
+      {
+            var result = new Ellipse
+            {
+                Fill = Brushes.DarkGreen,
+                Height = 12.0,
+                Width = 12.0,
+                ToolTip = "Expand Tactic",
+                Cursor = Cursors.Hand
+            };
+
+            result.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            result.MouseDown += new MouseButtonEventHandler((s, e) =>
+            {
+                _view.VisualElement.Dispatcher.Invoke(() =>
+                {
+                    var position = e.GetPosition(_view.VisualElement);
+                    var line = _view.TextViewLines.GetTextViewLineContainingYCoordinate(position.Y + _view.ViewportTop);
+                    var lineContents = line.Extent.GetText();
+                    VsShellUtilities.ShowMessageBox(_isp, lineContents, "Picked Line:",
+                            OLEMSGICON.OLEMSGICON_INFO, OLEMSGBUTTON.OLEMSGBUTTON_OK, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                    var textBlock = new TextBlock();
+                    textBlock.Text = lineContents;
+                });
+            });
+            return result;
+        }
 
     private Ellipse CreateErrorStateAdornment(DafnyErrorStateResolverTag esrtag)
     {

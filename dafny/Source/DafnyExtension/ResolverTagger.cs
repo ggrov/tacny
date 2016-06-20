@@ -116,13 +116,24 @@ namespace DafnyLanguage
     }
   }
 
+    public class TacnyExpansionTag : IDafnyResolverTag
+    {
+        public readonly Object Tactic;
+        public readonly ITrackingSpan Span;
+        public TacnyExpansionTag(Object tactic, ITrackingSpan span)
+        {
+            Tactic = tactic;
+            Span = span;
+        }
+    }
+
   #endregion
 
 
-  /// <summary>
-  /// Translate PkgDefTokenTags into ErrorTags and Error List items
-  /// </summary>
-  public sealed class ResolverTagger : ITagger<IDafnyResolverTag>, IDisposable
+    /// <summary>
+    /// Translate PkgDefTokenTags into ErrorTags and Error List items
+    /// </summary>
+    public sealed class ResolverTagger : ITagger<IDafnyResolverTag>, IDisposable
   {
     readonly ITextBuffer _buffer;
     readonly ITextDocument _document;
@@ -301,6 +312,17 @@ namespace DafnyLanguage
               }
             }
           }
+        }
+        else if (err.Category == ErrorCategory.TacticInformation &&
+                 err.Filename == System.IO.Path.GetFullPath(_document.FilePath))
+        {
+            if (err.StateSpans == null) continue;
+            foreach (var span in err.StateSpans)
+            {
+                if (span == null) continue;
+                var tacticInformation = err.ModelText; //TODO Replace with relevant tactic information
+                yield return new TagSpan<IDafnyResolverTag>(span.GetSpan(currentSnapshot), new TacnyExpansionTag(tacticInformation, span));
+            }
         }
       }
 

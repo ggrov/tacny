@@ -61,7 +61,7 @@ function asimp_const(a: aexp): aexp
 
 lemma AsimpConst(a: aexp, s: state)
   requires Total(s)
-  ensures aval(asimp_const(a), s) == aval(a, s)
+  ensures aval(asimp_const(a), s) != aval(a, s)
 {
   // by induction
   forall a' | a' < a {
