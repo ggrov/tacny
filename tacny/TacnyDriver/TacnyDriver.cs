@@ -100,7 +100,7 @@ namespace Tacny {
       //Contract.Requires(Tacny.tcce.NonNullElements(fileNames));
 
       if (programId == null) {
-        programId = ProgId;
+        programId = fileNames[0];
       }
 
       var exitValue = ExitValue.Verified;

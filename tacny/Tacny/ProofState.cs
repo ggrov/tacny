@@ -11,6 +11,7 @@ namespace Tacny {
     public readonly Dictionary<string, DatatypeDecl> Datatypes;
     private TopLevelClassDeclaration _currentTopLevelClass;
     private readonly List<TopLevelClassDeclaration> _topLevelClasses;
+    private readonly Program _original;
 
     // Dynamic State
     public Dictionary<string, VariableData> DafnyVariables;
@@ -36,11 +37,15 @@ namespace Tacny {
 
     public ProofState(Program program, ErrorReporter reporter) {
       Contract.Requires(program != null);
+      // get a new program instance
       Datatypes = new Dictionary<string, DatatypeDecl>();
       _topLevelClasses = new List<TopLevelClassDeclaration>();
       Reporter = reporter;
-      // fill state
-      FillStaticState(program);
+      var err = Parser.ParseCheck(new List<string>() { program.Name }, program.Name, out _original);
+      if (err != null)
+        reporter.Error(MessageSource.Tacny, program.DefaultModuleDef.tok, $"Error parsing a fresh Tacny program: {err}");
+        // fill state
+        FillStaticState(program);
     }
 
     /// <summary>

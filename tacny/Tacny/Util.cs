@@ -1,77 +1,97 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.Contracts;
+using System.IO;
 using System.Reflection;
 using Tacny.ArrayExtensions;
 using Microsoft.Dafny;
 using Type = System.Type;
-
+using Bpl = Microsoft.Boogie;
 
 namespace Tacny {
 
-  public static class ProgramGenerator {
+  public static class Parser {
+    #region Parser
+    /// <summary>
+    /// Returns null on success, or an error string otherwise.
+    /// </summary>
+    public static string ParseCheck(IList<string/*!*/>/*!*/ fileNames, string/*!*/ programName, out Program program) {
+      Contract.Requires(programName != null);
+      Contract.Requires(fileNames != null);
+      program = null;
+      ModuleDecl module = new LiteralModuleDecl(new DefaultModuleDecl(), null);
+      BuiltIns builtIns = new BuiltIns();
+      foreach (string dafnyFileName in fileNames) {
+        Contract.Assert(dafnyFileName != null);
 
-    //public static ErrorReporter reporter;
-    //public static Program GenerateProgram(Program prog, ProofState state) {
-      
-    //  var ac = state.Copy();
-    //  MemberDecl newMemberDecl;
-    //  if (!ac.IsFunction) {
-    //    var method = Tacny.Program.FindMember(prog, ac.DynamicContext.md.Name) as Method;
-    //    if (method == null)
-    //      throw new Exception("Method not found");
-    //    UpdateStmt tacCall = ac.GetTacticCall();
-    //    List<Statement> body = method.Body.Body;
-    //    body = InsertSolution(body, tacCall, ac.GetResolved());
-    //    if (body == null)
-    //      return null;
-    //    if (!isFinal) {
-    //      for (int i = 0; i < body.Count; i++) {
-    //        var us = body[i] as UpdateStmt;
-    //        if (us == null) continue;
-    //        if (State.StaticContext.program.IsTacticCall(us))
-    //          body.RemoveAt(i);
-    //      }
-    //    }
+        string err = ParseFile(dafnyFileName, Bpl.Token.NoToken, module, builtIns, new Errors(new ConsoleErrorReporter()));
+        if (err != null) {
+          return err;
+        }
+      }
 
-    //    newMemberDecl = GenerateMethod(method, body, ac.DynamicContext.newTarget as Method);
-    //  } else {
-    //    newMemberDecl = ac.GetNewTarget();
-    //  }
-    //  for (int i = 0; i < prog.DefaultModuleDef.TopLevelDecls.Count; i++) {
-    //    var curDecl = prog.DefaultModuleDef.TopLevelDecls[i] as ClassDecl;
-    //    if (curDecl != null) {
-    //      // scan each member for tactic calls and resolve if found
-    //      for (int j = 0; j < curDecl.Members.Count; j++) {
+      if (!DafnyOptions.O.DisallowIncludes) {
+        string errString = ParseIncludes(module, builtIns, fileNames, new Errors(new ConsoleErrorReporter()));
+        if (errString != null) {
+          return errString;
+        }
+      }
 
+      program = new Program(programName, module, builtIns, new ConsoleErrorReporter());
+      return null;
+    }
 
-    //        if (curDecl.Members[j].Name == newMemberDecl.Name)
-    //          curDecl.Members[j] = newMemberDecl;
-    //      }
+    // Lower-case file names before comparing them, since Windows uses case-insensitive file names
+    private class IncludeComparer : IComparer<Include> {
+      public int Compare(Include x, Include y) {
+        return string.Compare(x.fullPath.ToLower(), y.fullPath.ToLower(), StringComparison.Ordinal);
+      }
+    }
 
-    //      prog.DefaultModuleDef.TopLevelDecls[i] = Tacny.Program.RemoveTactics(curDecl);
-    //    }
-    //  }
+    public static string ParseIncludes(ModuleDecl module, BuiltIns builtIns, IList<string> excludeFiles, Errors errs) {
+      SortedSet<Include> includes = new SortedSet<Include>(new IncludeComparer());
+      foreach (string fileName in excludeFiles) {
+        includes.Add(new Include(null, fileName, Path.GetFullPath(fileName)));
+      }
+      bool newlyIncluded;
+      do {
+        newlyIncluded = false;
 
-    //  Debug.WriteLine("Dafny program generated");
-    //  return null;
-    //}
+        var newFilesToInclude = new List<Include>();
+        foreach (var include in ((LiteralModuleDecl)module).ModuleDef.Includes) {
+          bool isNew = includes.Add(include);
+          if (!isNew) continue;
+          newlyIncluded = true;
+          newFilesToInclude.Add(include);
+        }
 
-    //private static Method GenerateMethod(Method oldMd, List<Statement> body, Method source = null) {
-    //  var src = source ?? oldMd;
-    //  var mdBody = new BlockStmt(src.Body.Tok, src.Body.EndTok, body);
-    //  var type = src.GetType();
-    //  if (type == typeof(Lemma))
-    //    return new Lemma(src.tok, src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
-    //    src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
-    //  if (type == typeof(CoLemma))
-    //    return new CoLemma(src.tok, src.Name, src.HasStaticKeyword, src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod,
-    //      src.Ens, src.Decreases, mdBody, src.Attributes, src.SignatureEllipsis);
-    //  return new Method(src.tok, src.Name, src.HasStaticKeyword, src.IsGhost,
-    //    src.TypeArgs, src.Ins, src.Outs, src.Req, src.Mod, src.Ens, src.Decreases,
-    //    mdBody, src.Attributes, src.SignatureEllipsis);
-    //}
+        foreach (var include in newFilesToInclude) {
+          string ret = ParseFile(include.filename, include.tok, module, builtIns, errs, false);
+          if (ret != null) {
+            return ret;
+          }
+        }
+      } while (newlyIncluded);
 
+      return null; // Success
+    }
 
+    private static string ParseFile(string dafnyFileName, Bpl.IToken tok, ModuleDecl module, BuiltIns builtIns, Errors errs, bool verifyThisFile = true) {
+      string fn = Bpl.CommandLineOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(dafnyFileName) : dafnyFileName;
+      try {
+
+        int errorCount = Microsoft.Dafny.Parser.Parse(dafnyFileName, module, builtIns, errs, verifyThisFile);
+        if (errorCount != 0) {
+          return $"{errorCount} parse errors detected in {fn}";
+        }
+      } catch (IOException e) {
+        errs.SemErr(tok, "Unable to open included file");
+        return $"Error opening file \"{fn}\": {e.Message}";
+      }
+      return null; // Success
+    }
+    #endregion
   }
 
 

@@ -81,6 +81,10 @@
     <AssemblyOriginatorKeyFile>Signature.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="BoogieCore, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\BoogieCore.dll</HintPath>
+    </Reference>
     <Reference Include="BoogieParserHelper, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dafny\Binaries\BoogieParserHelper.dll</HintPath>
