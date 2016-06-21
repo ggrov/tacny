@@ -154,13 +154,10 @@ namespace DafnyLanguage
                                         + (adornments.Value.Any(a => a.Fill != Brushes.Crimson) ? 1 : 0); // number of error state adornments
           var p = new StackPanel
           {
-            Orientation = Orientation.Vertical,
-            Width = _view.ViewportWidth,
-            Height = 200.0 + (12*maxConcurrentAdornments),
-            Background = Brushes.Bisque
+            Orientation = Orientation.Horizontal,
+            Width = 12 * maxConcurrentAdornments,
+            Height = 12
           };
-            var oleIsp =(Microsoft.VisualStudio.OLE.Interop.IServiceProvider) _isp.GetService(typeof(Microsoft.VisualStudio.OLE.Interop.IServiceProvider));
-            EmbeddedTacticViewerFactory.CreateAndEmbeddedTacticViewerToCollection(p.Width, p.Height, ref p, oleIsp);
           foreach (var adornment in adornments.Value)
           {
             p.Children.Add(adornment);

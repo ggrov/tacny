@@ -8,20 +8,11 @@
 
 datatype List<T> = Nil | Cons(head: T, tail: List<T>)
 
-function append(xs: List, ys: List): List
-{
-  match xs
-  case Nil => ys
-  case Cons(x, tail) => Cons(x, append(tail, ys))
-}
-
-// ----- arithmetic expressions -----
-
-type vname = string  // variable names
-datatype aexp = N(n: int) | V(x: vname) | Plus(0: aexp, 1: aexp)  // arithmetic expressions
-
-type val = int
-type state = vname -> val
+function app
+   expanded();
+   //stuff would
+   go = here++;
+tate = vname -> val
 // In Dafny, functions can in general read the heap (which is not interesting to these examples--in fact, for
 // the examples in this file, the fact that functions can read the state is just a distraction, so you can
 // just ignore all the lines "reads s.reads" if you prefer) and may have preconditions (that is, the function

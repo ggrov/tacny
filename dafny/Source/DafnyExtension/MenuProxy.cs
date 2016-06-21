@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DafnyLanguage.DafnyMenu;
+using DafnyLanguage.TacnyLanguage;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
@@ -90,7 +91,13 @@ namespace DafnyLanguage
       }
     }
 
-    public bool MenuEnabled(IWpfTextView activeTextView)
+      public void UnfoldTacticUnderCaret(IWpfTextView activeTextView)
+      {
+          TacticReplacer tr = new TacticReplacer(activeTextView);
+          tr.Execute();
+      }
+
+      public bool MenuEnabled(IWpfTextView activeTextView)
     {
       return activeTextView != null && activeTextView.TextBuffer.ContentType.DisplayName == "dafny";
     }
