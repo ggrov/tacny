@@ -172,16 +172,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
     </Reference>
-    <Reference Include="Provers.SMTLib">
-      <HintPath>..\..\boogie\Binaries\Provers.SMTLib.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="TacnyDriver.cs" />
@@ -199,6 +191,10 @@
     <ProjectReference Include="..\StatementInterpreter\TacticInterpreter.csproj">
       <Project>{d68d70f0-bd07-4176-b3de-0b00612f84f7}</Project>
       <Name>TacticInterpreter</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Tacny\Tacny.csproj">
+      <Project>{a1e15edd-ebb0-4598-b54d-9f8ec8802149}</Project>
+      <Name>Tacny</Name>
     </ProjectReference>
     <ProjectReference Include="..\Util\Util.csproj">
       <Project>{15d5ae0c-9692-417f-b5c0-ceb12b79e785}</Project>
