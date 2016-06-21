@@ -22,7 +22,7 @@ namespace DafnyLanguage
         }
     }
 
-    internal class EmbeddedTacticViewer : ContentPresenter
+    internal class EmbeddedTacticViewer : ContentPresenter, IDisposable
     {
         private const string SampleTactic = @"H:\Dafny\tacny\examples\some_example_detritus.resolved_tactics";
         private readonly IServiceProvider _isp;
@@ -56,8 +56,14 @@ namespace DafnyLanguage
             
             IVsTextView textView;
             codeWindow.GetPrimaryView(out textView);
-            
             return editorAdapter.GetWpfTextViewHost(textView);
+        }
+
+        public void Dispose()
+        {
+            var contents = Content as IWpfTextViewHost;
+            try { contents?.Close(); }
+            catch (InvalidOperationException){}
         }
     }
     

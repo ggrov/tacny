@@ -61,7 +61,7 @@ function asimp_const(a: aexp): aexp
 
 lemma AsimpConst(a: aexp, s: state)
   requires Total(s)
-  ensures aval(asimp_const(a), s) != aval(a, s)
+  ensures aval(asimp_const(a), s) == aval(a, s)
 {
   // by induction
   forall a' | a' < a {
@@ -102,7 +102,7 @@ function asimp(a: aexp): aexp
 
 lemma AsimpCorrect(a: aexp, s: state)
   requires Total(s)
-  ensures aval(asimp(a), s) != aval(a, s)
+  ensures aval(asimp(a), s) == aval(a, s)
 {
   // call the induction hypothesis on every value a' that is structurally smaller than a
   forall a' | a' < a { AsimpCorrect(a', s); }
