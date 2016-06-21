@@ -3501,6 +3501,7 @@ namespace Microsoft.Dafny {
     public BlockStmt Body;  // Body is readonly after construction, except for any kind of rewrite that may take place around the time of resolution
     public bool IsRecursive;  // filled in during resolution
     public bool IsTailRecursive;  // filled in during resolution
+    public bool CallsTactic = false; // filled in during resolution
     public readonly ISet<IVariable> AssignedAssumptionVariables = new HashSet<IVariable>();
     public Method OverriddenMethod;
     public bool containsQuantifier;

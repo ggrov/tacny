@@ -1426,6 +1426,8 @@ namespace Microsoft.Dafny {
       }
 
       foreach (MemberDecl member in c.Members) {
+        if (member is ITactic)
+          continue;
         currentDeclaration = member;
         if (member is Field) {
           Field f = (Field)member;
@@ -1460,6 +1462,9 @@ namespace Microsoft.Dafny {
           this.fuelContext = oldFuelContext;
         } else if (member is Method) {
           Method m = (Method)member;
+          if (m.CallsTactic) {
+            m = Tacny.Interpreter.FindAndApplyTactic(program, m) as Method;
+          }
           FuelContext oldFuelContext = this.fuelContext;
           this.fuelContext = FuelSetting.NewFuelContext(m);
 

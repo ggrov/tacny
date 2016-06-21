@@ -13,7 +13,7 @@ namespace Microsoft.Dafny {
   public enum MessageSource {
     Parser, Resolver, Translator, Rewriter, Other,
     RefinementTransformer,
-    Cloner
+    Cloner, Tacny
   }
 
   public struct ErrorMessage {
