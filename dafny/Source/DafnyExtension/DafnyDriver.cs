@@ -73,6 +73,11 @@ namespace DafnyLanguage
       }
     }
 
+      public static string GetExpandedTactic(string methodName)
+      {
+          return "expanded version for" + " " + methodName +
+                 "()\n{\n   expanded();\n   //stuff would\n   go = here++;\n}";
+      }
 
     #region Output
 

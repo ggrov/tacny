@@ -140,14 +140,6 @@
           <ButtonText>Re-verify to diagnose timeouts</ButtonText>
         </Strings>
       </Button>
-      
-    
-      <Button guid="guidDafnyMenuCmdSet" id="cmdidUnfoldTacticUnderCaret" priority="0x0108" type="Button">
-        <Parent guid="guidDafnyMenuCmdSet" id="DafnyMenuGroup" />
-        <Strings>
-          <ButtonText>Unfold tactic under caret</ButtonText>
-        </Strings>
-      </Button>
 
     </Buttons>
 
@@ -183,7 +175,6 @@
       <IDSymbol name="cmdidToggleMoreAdvancedSnapshotVerification" value="0x0105" />
       <IDSymbol name="cmdidToggleAutomaticInduction" value="0x0106" />
       <IDSymbol name="cmdidDiagnoseTimeouts" value="0x0107" />
-      <IDSymbol name="cmdidUnfoldTacticUnderCaret" value="0x0108" />
     </GuidSymbol>
 
     <!--

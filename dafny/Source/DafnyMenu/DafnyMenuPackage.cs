@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
+using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace DafnyLanguage.DafnyMenu
@@ -66,9 +67,6 @@ namespace DafnyLanguage.DafnyMenu
 
         
     void DiagnoseTimeouts(IWpfTextView activeTextView);
-
-    void UnfoldTacticUnderCaret(IWpfTextView activeTextView);
-
         
   }
 
@@ -108,7 +106,6 @@ namespace DafnyLanguage.DafnyMenu
     private OleMenuCommand toggleAutomaticInductionCommand;
     private OleMenuCommand toggleBVDCommand;
     private OleMenuCommand diagnoseTimeoutsCommand;
-    private OleMenuCommand unfoldTacticUnderCaretCommand;
 
     bool BVDDisabled;
 
@@ -195,11 +192,6 @@ namespace DafnyLanguage.DafnyMenu
         menuCommand.BeforeQueryStatus += menuCommand_BeforeQueryStatus;
         menuCommand.Enabled = true;
         mcs.AddCommand(menuCommand);
-
-        var unfoldTacticUnderCaretCommandID = new CommandID(GuidList.guidDafnyMenuPkgSet, (int)PkgCmdIDList.cmdidUnfoldTacticUnderCaret);
-        unfoldTacticUnderCaretCommand = new OleMenuCommand(UnfoldTacticUnderCaretCallback, unfoldTacticUnderCaretCommandID);
-        unfoldTacticUnderCaretCommand.Enabled = true;
-        mcs.AddCommand(unfoldTacticUnderCaretCommand);
       }
     }
 
@@ -333,10 +325,9 @@ namespace DafnyLanguage.DafnyMenu
     void CompileCallback(object sender, EventArgs e)
     {
       var atv = ActiveTextView;
-            MenuProxy?.UnfoldTacticUnderCaret(atv);
       if (MenuProxy != null && atv != null)
       {
-      //  MenuProxy.Compile(atv);
+          MenuProxy.Compile(atv);
       }
     }
         
@@ -454,13 +445,7 @@ namespace DafnyLanguage.DafnyMenu
       }
       return result;
     }
-
-    public void UnfoldTacticUnderCaretCallback(object sender, EventArgs e)
-    {
-        var atv = ActiveTextView;
-        MenuProxy?.UnfoldTacticUnderCaret(atv);
-    }
-
+        
     #endregion
     }
 }

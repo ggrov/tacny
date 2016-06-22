@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
+using Microsoft.VisualStudio.Text.Operations;
 
 namespace DafnyLanguage
 {
@@ -91,13 +92,7 @@ namespace DafnyLanguage
       }
     }
 
-      public void UnfoldTacticUnderCaret(IWpfTextView activeTextView)
-      {
-          TacticReplacer tr = new TacticReplacer(activeTextView);
-          tr.Execute();
-      }
-
-      public bool MenuEnabled(IWpfTextView activeTextView)
+    public bool MenuEnabled(IWpfTextView activeTextView)
     {
       return activeTextView != null && activeTextView.TextBuffer.ContentType.DisplayName == "dafny";
     }
