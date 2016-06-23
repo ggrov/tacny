@@ -73,15 +73,18 @@ namespace DafnyLanguage
       }
     }
 
-      public static string GetExpandedTactic(string methodName)
-      {
-          return "expanded version for" + " " + methodName +
-                 "()\n{\n   expanded();\n   //stuff would\n   go = here++;\n}";
-      }
+        public delegate void Del(string str);
+        public static void GetExpandedTactic(string methodName, Del d)
+        {
+            var s = "expanded version for" + " " + methodName +
+                    "()\n{\n   expanded();\n   //stuff would\n   go = here++;\n}";
+            d(s);
+        }
 
-    #region Output
 
-    class DummyPrinter : OutputPrinter
+        #region Output
+
+        class DummyPrinter : OutputPrinter
     {
       public void AdvisoryWriteLine(string format, params object[] args)
       {

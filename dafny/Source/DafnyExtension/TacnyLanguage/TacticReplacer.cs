@@ -2,6 +2,7 @@
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Windows.Input;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.OLE.Interop;
@@ -51,50 +52,97 @@ namespace DafnyLanguage.TacnyLanguage
         private readonly ITextStructureNavigator _tsn;
         private readonly System.IServiceProvider _isp;
         internal IOleCommandTarget NextCmdTarget;
+        private bool _inChord;
+        internal static TacnyMenuCommandPackage Tcmp;
 
         public TacticReplacerCommandFilter(IWpfTextView textView, ITextStructureNavigator tsn, System.IServiceProvider sp)
         {
             _tv = textView;
             _tsn = tsn;
             _isp = sp;
-        }
+            _inChord = true;
 
+            if (Tcmp == null)
+            {
+                // Initialize the Dafny menu.
+                var shell = Package.GetGlobalService(typeof(Microsoft.VisualStudio.Shell.Interop.SVsShell)) as Microsoft.VisualStudio.Shell.Interop.IVsShell;
+                if (shell != null)
+                {
+                    Microsoft.VisualStudio.Shell.Interop.IVsPackage package;
+                    Guid packageToBeLoadedGuid = new Guid("95403e2e-1c26-4891-825b-2514d97519aa");
+                    if (shell.LoadPackage(ref packageToBeLoadedGuid, out package) == VSConstants.S_OK)
+                    {
+                        Tcmp = (TacnyMenuCommandPackage) package;
+                        Tcmp.TacnyMenuProxy = new TacnyMenuProxy(package);
+                    }
+                }
+            }
+
+        }
+        
         public int Exec(ref Guid pguidCmdGroup, uint nCmdId, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
             var status = TacticReplaceStatus.NoTactic;
-
-            if (VsShellUtilities.IsInAutomationFunction(_isp))
-                return NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
-            
-            if (pguidCmdGroup == VSConstants.VSStd2K && nCmdId == (uint)VSConstants.VSStd2KCmdID.TYPECHAR/*&& Keyboard.Modifiers==ModifierKeys.Alt */)
+            if (_inChord)
             {
-                var typedChar = (char)(ushort)Marshal.GetObjectForNativeVariant(pvaIn);
-                if (typedChar.Equals('#'))
+                if (VsShellUtilities.IsInAutomationFunction(_isp))
+                    return NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
+
+                if (pguidCmdGroup == VSConstants.VSStd2K && nCmdId == (uint)VSConstants.VSStd2KCmdID.TYPECHAR/*&& Keyboard.Modifiers==ModifierKeys.Alt */)
                 {
+                    var typedChar = (char)(ushort)Marshal.GetObjectForNativeVariant(pvaIn);
+                    if (typedChar.Equals('#'))
+                    {
                         status = ExecuteReplacement();
+                    }
                 }
             }
-            
+            else
+            {
+                if (VsShellUtilities.IsInAutomationFunction(_isp))
+                    return NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
+
+                if (pguidCmdGroup == VSConstants.VSStd2K && nCmdId == (uint)VSConstants.VSStd2KCmdID.TYPECHAR&& Keyboard.Modifiers==ModifierKeys.Control )
+                {
+                    var typedChar = (char)(ushort)Marshal.GetObjectForNativeVariant(pvaIn);
+                    if (typedChar.Equals('T'))
+                    {
+                        _inChord = true;
+                    }
+                }
+            }
             return status==TacticReplaceStatus.NoTactic ? NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) : VSConstants.S_OK; 
         }
 
         internal enum TacticReplaceStatus { Success, NoTactic }
-
+        
         private TacticReplaceStatus ExecuteReplacement()
         {
             var startingWordPosition = _tv.GetTextElementSpan(_tv.Caret.Position.BufferPosition);
             //probably want to check were not in a comment block
+            //probably want to check that everything compiled correctly
 
             var startingWordPoint = _tv.Caret.Position.Point.GetPoint(_tv.TextBuffer, PositionAffinity.Predecessor);
             if(startingWordPoint==null)return TacticReplaceStatus.NoTactic;
             var startingWord = _tv.TextSnapshot.GetText(_tsn.GetExtentOfWord(startingWordPoint.Value).Span);
 
+            DafnyDriver.Del del = delegate(string expandedTactic) { GetExpandedTacticCallback(startingWordPosition, expandedTactic); };
+
+            DafnyDriver.GetExpandedTactic(startingWord, del);
+            return TacticReplaceStatus.Success;
+        }
+
+        private TacticReplaceStatus GetExpandedTacticCallback(SnapshotSpan startingWordPosition, object expandedTactic)
+        {
+            var newSpan = expandedTactic.ToString();
+
+            if (newSpan == "") return TacticReplaceStatus.NoTactic;
+
             var startOfBlock = StartOfBlock(startingWordPosition);
             if (startOfBlock == -1) return TacticReplaceStatus.NoTactic;
 
             var lengthOfBlock = LengthOfBlock(startOfBlock);
-            
-            var newSpan = DafnyDriver.GetExpandedTactic(startingWord);
+
 
             var tedit = _tv.TextBuffer.CreateEdit();
             tedit.Replace(startOfBlock, lengthOfBlock, newSpan);
