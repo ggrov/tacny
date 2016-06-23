@@ -4,14 +4,14 @@ using Microsoft.Dafny;
 
 namespace Tacny.EAtomic {
   /// <summary>
-  /// Abstact class for Atomic Expressions
+  ///   Abstact class for Atomic Expressions
   /// </summary>
   [ContractClass(typeof(EAtomicContract))]
-  public abstract class EAtomic : ITactic {
-   public abstract string Signature { get; }
-    
+  public abstract class EAtomic : BaseTactic {
+    public abstract override string Signature { get; }
+
     /// <summary>
-    /// Common entry point for each atomic
+    ///   Common entry point for each atomic
     /// </summary>
     /// <param name="expression">Expression to be resolved</param>
     /// <param name="proofState">Current tactic ProofState</param>
@@ -21,8 +21,9 @@ namespace Tacny.EAtomic {
 
   [ContractClassFor(typeof(EAtomic))]
   public class EAtomicContract : EAtomic {
-
     public override string Signature { get; }
+    public override int ArgsCount { get; }
+
     public override IEnumerable<object> Generate(Expression expression, ProofState proofState) {
       Contract.Requires(expression != null);
       Contract.Requires(proofState != null);

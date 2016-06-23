@@ -100,7 +100,7 @@ namespace Tacny {
       //Contract.Requires(Tacny.tcce.NonNullElements(fileNames));
 
       if (programId == null) {
-        programId = ProgId;
+        programId = fileNames[0];
       }
 
       var exitValue = ExitValue.Verified;
@@ -135,7 +135,9 @@ namespace Tacny {
 
         var program = tacnyProgram.ParseProgram();
         int qq = tacnyProgram.ResolveProgram(program);
-        Interpreter.ApplyTactic(program, ((ClassDecl)program.DefaultModuleDef.TopLevelDecls[0]).Members[0]);
+        Interpreter.FindAndApplyTactic(tacnyProgram.ParseProgram(), ((ClassDecl) program.DefaultModuleDef.TopLevelDecls[0]).Members[0]);
+
+
         if (!CommandLineOptions.Clo.NoResolve && !CommandLineOptions.Clo.NoTypecheck && DafnyOptions.O.DafnyVerify) {
 
           Debug.WriteLine("Starting lazy tactic evaluation");

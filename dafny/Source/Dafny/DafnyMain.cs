@@ -69,7 +69,7 @@ namespace Microsoft.Dafny {
       Dafny.Resolver r = new Dafny.Resolver(program);
       r.ResolveProgram(program);
       MaybePrintProgram(program, DafnyOptions.O.DafnyPrintResolvedFile, true);
-
+        
       if (reporter.Count(ErrorLevel.Error) != 0) {
         return string.Format("{0} resolution/type errors detected in {1}", reporter.Count(ErrorLevel.Error), program.Name);
       }

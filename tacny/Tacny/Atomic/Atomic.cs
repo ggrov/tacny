@@ -4,14 +4,13 @@ using Microsoft.Dafny;
 
 namespace Tacny.Atomic {
   /// <summary>
-  /// Abstract class for Atomic Statement
+  ///   Abstract class for Atomic Statement
   /// </summary>
   [ContractClass(typeof(AtomicContract))]
-  public abstract class Atomic : ITactic {
+  public abstract class Atomic : BaseTactic {
+    public abstract override string Signature { get; }
 
-    public abstract string Signature { get; }
     /// <summary>
-    /// 
     /// </summary>
     /// <param name="statement"></param>
     /// <param name="state"></param>
@@ -21,8 +20,8 @@ namespace Tacny.Atomic {
 
   [ContractClassFor(typeof(Atomic))]
   public class AtomicContract : Atomic {
-
     public override string Signature { get; }
+    public override int ArgsCount { get; }
 
     public override IEnumerable<Solution> Generate(Statement statement, ProofState state) {
       Contract.Requires(statement != null);

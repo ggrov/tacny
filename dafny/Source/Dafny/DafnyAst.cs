@@ -2644,6 +2644,8 @@ namespace Microsoft.Dafny {
   public abstract class MemberDecl : Declaration {
     public abstract string WhatKind { get; }
     public readonly bool HasStaticKeyword;
+    public bool CallsTactic = false; // filled in during resolution
+    public bool EvaluateTactic = false;
     public bool IsStatic {
       get {
         return HasStaticKeyword || (EnclosingClass is ClassDecl && ((ClassDecl)EnclosingClass).IsDefaultClass);
@@ -3500,7 +3502,7 @@ namespace Microsoft.Dafny {
     public readonly Specification<Expression> Decreases;
     public BlockStmt Body;  // Body is readonly after construction, except for any kind of rewrite that may take place around the time of resolution
     public bool IsRecursive;  // filled in during resolution
-    public bool IsTailRecursive;  // filled in during resolution
+    public bool IsTailRecursive;  // filled in during resolutiond
     public readonly ISet<IVariable> AssignedAssumptionVariables = new HashSet<IVariable>();
     public Method OverriddenMethod;
     public bool containsQuantifier;

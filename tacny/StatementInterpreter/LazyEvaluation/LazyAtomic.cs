@@ -213,10 +213,10 @@ namespace LazyTacny {
 
       if (type != null) {
         Debug.WriteLine($"Resolving statement {type}");
-        var resolverInstance = Activator.CreateInstance(type, this) as IAtomicLazyStmt;
-        if (resolverInstance != null) {
-          return resolverInstance.Resolve(st, solution);
-        }
+          var resolverInstance = Activator.CreateInstance(type, this) as IAtomicLazyStmt;
+          if (resolverInstance != null) {
+            return resolverInstance.Resolve(st, solution);
+          }
         Contract.Assert(false, Error.MkErr(st, 18, type.ToString(), typeof(IAtomicLazyStmt)));
       } else {
 

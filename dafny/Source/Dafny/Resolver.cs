@@ -6630,6 +6630,24 @@ namespace Microsoft.Dafny {
       }
       ResolveAttributes(s.Attributes, s, new ResolveOpts(codeContext, true));
     }
+
+    bool IsTacticCall(UpdateStmt us) {
+      var er = us.Rhss[0] as ExprRhs;
+      Contract.Assert(er != null);
+
+      if (!(er.Expr is ApplySuffix)) return false;
+
+      var name = (er.Expr as ApplySuffix).Lhs.tok.val;
+      Dictionary<string, MemberDecl> members;
+      MemberDecl member = null;
+      if (currentClass != null && classMembers.TryGetValue(currentClass, out members) &&
+          members.TryGetValue(name, out member)) {
+        return member is ITactic;
+      }
+
+
+      return false;
+    }
     /// <summary>
     /// Resolve the RHSs and entire UpdateStmt (LHSs should already have been checked by the caller).
     /// errorCountBeforeCheckingLhs is passed in so that this method can determined if any resolution errors were found during
@@ -6641,6 +6659,13 @@ namespace Microsoft.Dafny {
       IToken firstEffectfulRhs = null;
       MethodCallInformation methodCallInfo = null;
       var j = 0;
+      if (IsTacticCall(update)) {
+        // ignore tactic application
+        if (codeContext is Method) {
+          ((Method)codeContext).CallsTactic = true;
+        }
+        return;
+      }
       foreach (var rhs in update.Rhss) {
         bool isEffectful;
         if (rhs is TypeRhs) {
@@ -6799,8 +6824,12 @@ namespace Microsoft.Dafny {
 
       var callee = s.Method;
       // ignore tactic application
-      if (callee is ITactic)
+      if (callee is ITactic) {
+        if (codeContext is Method) {
+          ((Method)codeContext).CallsTactic = true;
+        }
         return;
+      }
       Contract.Assert(callee != null);  // follows from the invariant of CallStmt
       if (!isInitCall && callee is Constructor) {
         reporter.Error(MessageSource.Resolver, s, "a constructor is allowed to be called only when an object is being allocated");
