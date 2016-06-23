@@ -9,12 +9,14 @@ namespace Tacny {
   public class ProofState {
     // Static State
     public readonly Dictionary<string, DatatypeDecl> Datatypes;
-    private TopLevelClassDeclaration _currentTopLevelClass;
+    public TopLevelClassDeclaration ActiveClass;
     private readonly List<TopLevelClassDeclaration> _topLevelClasses;
     private readonly Program _original;
 
+
     // Dynamic State
     public Dictionary<string, VariableData> DafnyVariables;
+    public MemberDecl TargetMethod;
     public ErrorReporter Reporter;
     public ITactic ActiveTactic {
       get {
@@ -63,16 +65,23 @@ namespace Tacny {
     }
 
     // Permanent state information
-    public Dictionary<string, ITactic> Tactics => _currentTopLevelClass.Tactics;
-    public Dictionary<string, MemberDecl> Members => _currentTopLevelClass.Members;
+    public Dictionary<string, ITactic> Tactics => ActiveClass.Tactics;
+    public Dictionary<string, MemberDecl> Members => ActiveClass.Members;
 
+
+    public Program GetDafnyProgram() {
+      //Contract.Requires(_original != null, "_original");
+      Contract.Ensures(Contract.Result<Program>() != null);
+      var copy = _original.Copy();
+      return copy;
+    }
 
     /// <summary>
     ///   Set active the enclosing TopLevelClass
     /// </summary>
     /// <param name="name"></param>
     public void SetTopLevelClass(string name) {
-      _currentTopLevelClass = _topLevelClasses.FirstOrDefault(x => x.Name == name);
+      ActiveClass = _topLevelClasses.FirstOrDefault(x => x.Name == name);
     }
 
     /// <summary>
@@ -325,7 +334,7 @@ namespace Tacny {
     }
 
     /// <summary>
-    /// Add a local key to the top level frame
+    /// Add a varialbe to the top level frame
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
@@ -334,11 +343,21 @@ namespace Tacny {
       _scope.Peek().AddLocalVariable(key, value);
     }
 
+    /// <summary>
+    /// Update a local variable
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
     public void UpdateVariable(IVariable key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
       UpdateVariable(key.Name, value);
     }
 
+    /// <summary>
+    /// Update a local variable
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
     public void UpdateVariable(string key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
       _scope.Peek().UpdateVariable(key, value);
@@ -365,7 +384,7 @@ namespace Tacny {
       return stmt;
     }
 
-    internal class TopLevelClassDeclaration {
+    public class TopLevelClassDeclaration {
       public readonly Dictionary<string, MemberDecl> Members;
       public readonly string Name;
       public readonly Dictionary<string, ITactic> Tactics;

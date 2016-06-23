@@ -97,8 +97,10 @@ namespace Microsoft.Dafny {
     // TODO(wuestholz): Enable this once Dafny's recommended Z3 version includes changeset 0592e765744497a089c42021990740f303901e67.
     public bool UseOptimizationInZ3 { get; set; }
 
+    // used to pass the tactic evaluation result back to the visual studio extension
+    public Delegate TacnyDelegate;
     [NotDelayed]
-    public Translator(ErrorReporter reporter) {
+    public Translator(ErrorReporter reporter, Delegate tacnyDelegate = null) {
       this.reporter = reporter;
       InsertChecksums = 0 < CommandLineOptions.Clo.VerifySnapshots;
       Bpl.Program boogieProgram = ReadPrelude();
@@ -106,6 +108,7 @@ namespace Microsoft.Dafny {
         sink = boogieProgram;
         predef = FindPredefinedDecls(boogieProgram);
       }
+      TacnyDelegate = tacnyDelegate;
     }
 
     // translation state

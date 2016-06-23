@@ -4,6 +4,9 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Dafny;
+using Microsoft.Boogie;
+using LiteralExpr = Microsoft.Dafny.LiteralExpr;
+using Program = Microsoft.Dafny.Program;
 using Type = Microsoft.Dafny.Type;
 
 namespace Tacny {
@@ -14,13 +17,14 @@ namespace Tacny {
     private readonly ProofState _state;
     private readonly ErrorReporter _errorReporter;
 
-
+    private Dictionary<UpdateStmt, List<Statement>> _resultList;
     private Interpreter(Program program) {
       Contract.Requires(tcce.NonNull(program));
       // initialize state
       _errorReporter = new ConsoleErrorReporter();
       _state = new ProofState(program, _errorReporter);
       _frame = new Stack<Dictionary<IVariable, Type>>();
+      _resultList = new Dictionary<UpdateStmt, List<Statement>>();
     }
 
 
@@ -48,6 +52,7 @@ namespace Tacny {
       var method = target as Method;
       if (method != null) {
         _state.SetTopLevelClass(method.EnclosingClass?.Name);
+        _state.TargetMethod = target;
         var dict = method.Ins.Concat(method.Outs)
           .ToDictionary<IVariable, IVariable, Type>(item => item, item => item.Type);
         _frame.Push(dict);
@@ -55,6 +60,22 @@ namespace Tacny {
         dict = _frame.Pop();
         // sanity check
         Contract.Assert(_frame.Count == 0);
+        BlockStmt body = null;
+        
+        var prog = _state.GetDafnyProgram();
+        var tld = prog.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x.Name == _state.ActiveClass.Name) as ClassDecl;
+        Contract.Assert(tld != null);
+        var member = tld.Members.FirstOrDefault(x => x.Name == _state.TargetMethod.Name) as Method;
+        body = member?.Body;
+        
+        foreach (var kvp in _resultList) {
+          body = InsertCode(_state, kvp.Value, kvp.Key, body);
+        }
+        var r = new Resolver(prog);
+        r.ResolveProgram(prog);
+        method.Body.Body.Clear();
+        method.Body.Body.AddRange(body.Body);
+
       }
       return method;
     }
@@ -62,7 +83,7 @@ namespace Tacny {
     // Find tactic application and resolve it
     private void SearchBlockStmt(BlockStmt body) {
       Contract.Requires(tcce.NonNull(body));
-
+      
       var dict = new Dictionary<IVariable, Type>();
       for (var i = 0; i < body.Body.Count; i++) {
         var stmt = body.Body[i];
@@ -93,8 +114,8 @@ namespace Tacny {
           if (_state.IsTacticCall(us)) {
             var list = StackToDict(_frame);
             var result = ApplyTopLevelTactic(list, us);
-            body.Body.RemoveAt(i);
-            body.Body.InsertRange(i, result.GetGeneratedCode());
+            _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
+            
           }
         }
       }
@@ -219,7 +240,7 @@ namespace Tacny {
             state.UpdateVariable(((NameSegment)us.Lhss[index]).Name, result);
           }
         } else if (exprRhs?.Expr is LiteralExpr) {
-          state.UpdateVariable(((NameSegment)us.Lhss[index]).Name, (LiteralExpr) exprRhs?.Expr);
+          state.UpdateVariable(((NameSegment)us.Lhss[index]).Name, (LiteralExpr)exprRhs?.Expr);
         } else {
           state.UpdateVariable(((NameSegment)us.Lhss[index]).Name, exprRhs?.Expr);
         }
@@ -238,6 +259,42 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       state.AddStatement(stmt);
       yield return state.Copy();
+    }
+
+    /// <summary>
+    /// Insert generated code into a method
+    /// </summary>
+    /// <param name="state"></param>
+    /// <param name="code"></param>
+    /// <returns></returns>
+    private BlockStmt InsertCode(ProofState state, List<Statement> code, UpdateStmt tacticCall, BlockStmt body = null) {
+      Contract.Requires<ArgumentNullException>(state != null, "state");
+      Contract.Requires<ArgumentNullException>(code != null, "code");
+      Contract.Requires<ArgumentNullException>(tacticCall != null, "tacticCall");
+      
+      return InsertCodeInternal(body, code, tacticCall);
+    }
+
+
+    private static BlockStmt InsertCodeInternal(BlockStmt body, List<Statement> code, UpdateStmt tacticCall) {
+      for (var i = 0; i < body.Body.Count; i++) {
+        var stmt = body.Body[i];
+        if (stmt is UpdateStmt) {
+          // compare tokens
+          if (Compare(tacticCall.Tok, stmt.Tok)) {
+            body.Body.RemoveAt(i);
+            body.Body.InsertRange(i, code);
+            return body;
+          }
+        }
+      }
+
+      return null;
+    }
+
+
+    public static bool Compare(IToken a, IToken b) {
+      return a.col == b.col && a.line == b.line && a.filename == b.filename;
     }
   }
 }
