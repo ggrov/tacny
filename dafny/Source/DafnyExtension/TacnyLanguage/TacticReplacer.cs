@@ -16,6 +16,7 @@ using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
 using Printer = Microsoft.Dafny.Printer;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace DafnyLanguage.TacnyLanguage
 {
@@ -65,6 +66,7 @@ namespace DafnyLanguage.TacnyLanguage
     private readonly System.IServiceProvider _isp;
     private readonly ITextDocumentFactoryService _tdf;
     private readonly ITagAggregator<DafnyTokenTag> _ta;
+    private readonly IVsStatusbar _status;
     private ITextDocument _document;
 
     public TacticReplacerCommandFilter(IWpfTextView textView, ITextStructureNavigator tsn, System.IServiceProvider sp,
@@ -76,6 +78,7 @@ namespace DafnyLanguage.TacnyLanguage
       _tdf = tdf;
       LoadAndCheckDocument();
       _ta = ta;
+      _status = (IVsStatusbar)_isp.GetService(typeof(SVsStatusbar));
     }
     
     public int Exec(ref Guid pguidCmdGroup, uint nCmdId, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
@@ -92,15 +95,39 @@ namespace DafnyLanguage.TacnyLanguage
           status = ExecuteReplacement();
         }
       }
+      NotifyOfReplacement(status);
       return status == TacticReplaceStatus.Success
         ? VSConstants.S_OK
         : NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
     }
 
+    private void NotifyOfReplacement(TacticReplaceStatus t)
+    {
+      switch (t)
+      {
+        case TacticReplaceStatus.NoDocumentPersistence:
+          _status.SetText("Document must be saved in order to expand tactics.");
+          break;
+        case TacticReplaceStatus.DriverFail:
+          _status.SetText("Tacny was unable to expand requested tactics.");
+          break;
+        case TacticReplaceStatus.NoTactic:
+          _status.SetText("There is no method signature name containing under the caret that has expandable tactics.");
+          break;
+        case TacticReplaceStatus.Success:
+          _status.SetText("Tactic expanded succesfully.");
+          break;
+        default:
+          throw new Exception("Escaped Switch with "+t);
+      }
+    }
+
     internal enum TacticReplaceStatus
     {
       Success,
-      NoTactic
+      NoDocumentPersistence,
+      NoTactic,
+      DriverFail
     }
     
     private bool LoadAndCheckDocument(bool checkDirty = false)
@@ -129,8 +156,10 @@ namespace DafnyLanguage.TacnyLanguage
       if (startOfBlock == -1) return TacticReplaceStatus.NoTactic;
       var lengthOfBlock = LengthOfBlock(startOfBlock);
 
-      var expandedTactic = GetExpandedTactic(startingWord);
-      if (expandedTactic == "") return TacticReplaceStatus.NoTactic;
+      string expandedTactic;
+      var expandedStatus = GetExpandedTactic(startingWord, out expandedTactic);
+      if (expandedStatus != TacticReplaceStatus.Success)
+        return expandedStatus;
 
       var tedit = _tv.TextBuffer.CreateEdit();
       tedit.Replace(startOfBlock, lengthOfBlock, expandedTactic);
@@ -139,14 +168,15 @@ namespace DafnyLanguage.TacnyLanguage
     }
 
 
-    private string GetExpandedTactic(string startingWord)
+    private TacticReplaceStatus GetExpandedTactic(string startingWord, out string expandedTactic)
     {
-      if (!LoadAndCheckDocument(true)) return "";
+      expandedTactic = "";
+      if (!LoadAndCheckDocument(true)) return TacticReplaceStatus.NoDocumentPersistence;
       var driver = new DafnyDriver(_tv.TextBuffer, _document.FilePath);
 
       driver.ProcessResolution(true);
       var ast = driver.Program;
-      if (ast == null) return "";
+      if (ast == null) return TacticReplaceStatus.DriverFail;
 
       MemberDecl member = null;
       foreach (var def in ast.DefaultModuleDef.TopLevelDecls)
@@ -161,7 +191,8 @@ namespace DafnyLanguage.TacnyLanguage
       var sr = new StringWriter();
       var printer = new Printer(sr);
       printer.PrintMembers(new List<MemberDecl> {evaluatedMember}, 0, ast.FullName);
-      return sr.ToString();
+      expandedTactic = sr.ToString();
+      return TacticReplaceStatus.Success;
     }
 
     private int LengthOfBlock(int startingPoint)
@@ -200,7 +231,7 @@ namespace DafnyLanguage.TacnyLanguage
       var currentSubling = _tsn.GetSpanOfNextSibling(startingWordPosition);
       
       var next = _tsn.GetSpanOfNextSibling(currentSubling).GetText();
-      if (next != "(" && next != "(){") return -1;
+      if (next != "(" && next != "(){" && next != "()") return -1;
 
       var prev = _tsn.GetSpanOfPreviousSibling(currentSubling);
       var s = prev.GetText();
