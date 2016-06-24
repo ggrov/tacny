@@ -5,3 +5,7 @@ tactic mytac(){
 lemma mylemma(){
   mytac();
 }
+
+//lemma mytactic(){
+//stuff
+//}

@@ -283,7 +283,6 @@
     <Compile Include="DafnyDriver.cs" />
     <Compile Include="ContentType.cs" />
     <Compile Include="BraceMatching.cs" />
-    <Compile Include="TacnyLanguage\TacnyDriver.cs" />
     <Compile Include="WordHighlighter.cs" />
     <Compile Include="ErrorTagger.cs" />
     <Compile Include="TokenTagger.cs" />

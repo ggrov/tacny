@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Operations;
+using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
 using Printer = Microsoft.Dafny.Printer;
@@ -35,12 +36,16 @@ namespace DafnyLanguage.TacnyLanguage
     [Import(typeof(SVsServiceProvider))]
     internal System.IServiceProvider ServiceProvider { get; set; }
 
+    [Import]
+    internal IViewTagAggregatorFactoryService Vtafs { get; set; }
+
     public void VsTextViewCreated(IVsTextView textViewAdapter)
     {
       var textView = EditorAdaptersFactory.GetWpfTextView(textViewAdapter);
       if (textView == null) return;
       var navigator = TextStructureNavigatorSelector.GetTextStructureNavigator(textView.TextBuffer);
-      AddCommandFilter(textViewAdapter, new TacticReplacerCommandFilter(textView, navigator, ServiceProvider, Tdf));
+      var ta = Vtafs.CreateTagAggregator<DafnyTokenTag>(textView);
+      AddCommandFilter(textViewAdapter, new TacticReplacerCommandFilter(textView, navigator, ServiceProvider, Tdf, ta));
     }
 
     private static void AddCommandFilter(IVsTextView viewAdapter, TacticReplacerCommandFilter commandFilter)
@@ -54,76 +59,42 @@ namespace DafnyLanguage.TacnyLanguage
 
   internal class TacticReplacerCommandFilter : IOleCommandTarget
   {
+    internal IOleCommandTarget NextCmdTarget;
     private readonly IWpfTextView _tv;
     private readonly ITextStructureNavigator _tsn;
     private readonly System.IServiceProvider _isp;
-    internal IOleCommandTarget NextCmdTarget;
-    //private readonly bool _inChord;
-    private ITextDocument _document;
     private readonly ITextDocumentFactoryService _tdf;
-    //internal static TacnyMenuCommandPackage Tcmp;
+    private readonly ITagAggregator<DafnyTokenTag> _ta;
+    private ITextDocument _document;
 
     public TacticReplacerCommandFilter(IWpfTextView textView, ITextStructureNavigator tsn, System.IServiceProvider sp,
-      ITextDocumentFactoryService tdf)
+      ITextDocumentFactoryService tdf, ITagAggregator<DafnyTokenTag> ta)
     {
       _tv = textView;
       _tsn = tsn;
       _isp = sp;
-      //_inChord = true;
       _tdf = tdf;
-      LoadDocument();
-      // if (Tcmp == null)
-      // {
-      //     // Initialize the Dafny menu.
-      //     var shell = Package.GetGlobalService(typeof(Microsoft.VisualStudio.Shell.Interop.SVsShell)) as Microsoft.VisualStudio.Shell.Interop.IVsShell;
-      //     if (shell != null)
-      //     {
-      //         Microsoft.VisualStudio.Shell.Interop.IVsPackage package;
-      //         Guid packageToBeLoadedGuid = new Guid("95403e2e-1c26-4891-825b-2514d97519aa");
-      //         if (shell.LoadPackage(ref packageToBeLoadedGuid, out package) == VSConstants.S_OK)
-      //         {
-      //             Tcmp = (TacnyMenuCommandPackage) package;
-      //             Tcmp.TacnyMenuProxy = new TacnyMenuProxy(package);
-      //         }
-      //     }
-      // }
+      LoadAndCheckDocument();
+      _ta = ta;
     }
-
+    
     public int Exec(ref Guid pguidCmdGroup, uint nCmdId, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
     {
       var status = TacticReplaceStatus.NoTactic;
-      //if (_inChord)
-      //{
-        if (VsShellUtilities.IsInAutomationFunction(_isp))
-          return NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
+      if (VsShellUtilities.IsInAutomationFunction(_isp))
+        return NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
 
-        if (pguidCmdGroup == VSConstants.VSStd2K && nCmdId == (uint) VSConstants.VSStd2KCmdID.TYPECHAR
-          /*&& Keyboard.Modifiers==ModifierKeys.Alt */)
+      if (pguidCmdGroup == VSConstants.VSStd2K && nCmdId == (uint) VSConstants.VSStd2KCmdID.TYPECHAR)
+      {
+        var typedChar = (char) (ushort) Marshal.GetObjectForNativeVariant(pvaIn);
+        if (typedChar.Equals('#'))
         {
-          var typedChar = (char) (ushort) Marshal.GetObjectForNativeVariant(pvaIn);
-          if (typedChar.Equals('#'))
-          {
-            status = ExecuteReplacement();
-          }
+          status = ExecuteReplacement();
         }
-      //}
-      //else
-      //{
-      //    if (VsShellUtilities.IsInAutomationFunction(_isp))
-      //        return NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
-      //
-      //    if (pguidCmdGroup == VSConstants.VSStd2K && nCmdId == (uint)VSConstants.VSStd2KCmdID.TYPECHAR&& Keyboard.Modifiers==ModifierKeys.Control )
-      //    {
-      //        var typedChar = (char)(ushort)Marshal.GetObjectForNativeVariant(pvaIn);
-      //        if (typedChar.Equals('T'))
-      //        {
-      //            _inChord = true;
-      //        }
-      //    }
-      //}
-      return status == TacticReplaceStatus.NoTactic
-        ? NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
-        : VSConstants.S_OK;
+      }
+      return status == TacticReplaceStatus.Success
+        ? VSConstants.S_OK
+        : NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
     }
 
     internal enum TacticReplaceStatus
@@ -131,19 +102,24 @@ namespace DafnyLanguage.TacnyLanguage
       Success,
       NoTactic
     }
-
-    private void LoadDocument()
+    
+    private bool LoadAndCheckDocument(bool checkDirty = false)
     {
-      if (_document == null)
-      {
-        _tdf.TryGetTextDocument(_tv.TextBuffer, out _document);
-      }
+      _tdf.TryGetTextDocument(_tv.TextBuffer, out _document);
+      return checkDirty ? _document!=null&&!_document.IsDirty : _document != null;
+    }
+
+    private bool IsSnapSpanInComment(SnapshotSpan s)
+    {
+      var tags = _ta.GetTags(s);
+      var foundComment = tags.FirstOrDefault(x => x.Tag.Kind == DafnyTokenKind.Comment);
+      return foundComment!=null;
     }
 
     private TacticReplaceStatus ExecuteReplacement()
     {
       var startingWordPosition = _tv.GetTextElementSpan(_tv.Caret.Position.BufferPosition);
-      //probably want to check were not in a comment block
+      if (IsSnapSpanInComment(startingWordPosition)) return TacticReplaceStatus.NoTactic;
 
       var startingWordPoint = _tv.Caret.Position.Point.GetPoint(_tv.TextBuffer, PositionAffinity.Predecessor);
       if (startingWordPoint == null) return TacticReplaceStatus.NoTactic;
@@ -162,14 +138,14 @@ namespace DafnyLanguage.TacnyLanguage
       return TacticReplaceStatus.Success;
     }
 
+
     private string GetExpandedTactic(string startingWord)
     {
-      LoadDocument();
-      if (_document == null) return "";
+      if (!LoadAndCheckDocument(true)) return "";
       var driver = new DafnyDriver(_tv.TextBuffer, _document.FilePath);
 
       driver.ProcessResolution(true);
-      var ast = driver.Program/*.Copy()*/;
+      var ast = driver.Program;
       if (ast == null) return "";
 
       MemberDecl member = null;
@@ -222,16 +198,7 @@ namespace DafnyLanguage.TacnyLanguage
       };
 
       var currentSubling = _tsn.GetSpanOfNextSibling(startingWordPosition);
-
-      //var xnext = currentSubling;
-      //var xprev = currentSubling;
-      //var x = 0;
-      //while (x-->0)
-      //{
-      //    xnext = _tsn.GetSpanOfNextSibling(xnext); //This doesnt like line breaks. Or periods.
-      //    xprev = _tsn.GetSpanOfPreviousSibling(xprev);
-      //}
-
+      
       var next = _tsn.GetSpanOfNextSibling(currentSubling).GetText();
       if (next != "(" && next != "(){") return -1;
 
