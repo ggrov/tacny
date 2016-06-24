@@ -43,7 +43,11 @@ namespace Tacny {
       Datatypes = new Dictionary<string, DatatypeDecl>();
       _topLevelClasses = new List<TopLevelClassDeclaration>();
       Reporter = reporter;
-      var err = Parser.ParseCheck(new List<string>() { program.Name }, program.Name, out _original);
+        //get some token such that _filename != null
+        var tld = (ClassDecl) program.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x is ClassDecl);
+        var member = tld.Members.FirstOrDefault();
+        var tok = member.tok;
+      var err = Parser.ParseCheck(new List<string>() { tok.filename ?? program.FullName }, program.Name, out _original);
       if (err != null)
         reporter.Error(MessageSource.Tacny, program.DefaultModuleDef.tok, $"Error parsing a fresh Tacny program: {err}");
         // fill state

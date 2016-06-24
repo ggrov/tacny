@@ -21,6 +21,7 @@ namespace DafnyLanguage
     readonly ITextSnapshot _snapshot;
     readonly ITextBuffer _buffer;
     Dafny.Program _program;
+    public Dafny.Program Program => _program;
     static object bufferDafnyKey = new object();
 
     List<DafnyError> _errors = new List<DafnyError>();
@@ -72,16 +73,6 @@ namespace DafnyLanguage
         ChangeIncrementalVerification(2);
       }
     }
-
-        public delegate void Del(string str);
-        public static void GetExpandedTactic(string methodName, Del d)
-        {
-            var s = "expanded version for" + " " + methodName +
-                    "()\n{\n   expanded();\n   //stuff would\n   go = here++;\n}";
-            d(s);
-        }
-
-
         #region Output
 
         class DummyPrinter : OutputPrinter

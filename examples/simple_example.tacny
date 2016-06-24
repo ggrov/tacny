@@ -1,0 +1,7 @@
+tactic mytac(){
+  assert true;
+}
+
+lemma mylemma(){
+  mytac();
+}

@@ -139,8 +139,7 @@ namespace DafnyLanguage
     readonly ITextDocument _document;
     ErrorListProvider _errorProvider;
     private bool m_disposed;
-      private bool _isTacny;
-      private string _filename;
+    private string _filename;
 
     // The 'Snapshot' and 'Program' fields should be updated and read together, so they are protected by "this"
     public ITextSnapshot Snapshot;  // may be null
@@ -241,7 +240,6 @@ namespace DafnyLanguage
       _errorProvider = new ErrorListProvider(serviceProvider);
 
         _filename = _document != null ? _document.FilePath : "<program>";
-        _isTacny = _filename.Substring(_filename.Length - 6) == ".tacny";
 
         BufferIdleEventUtil.AddBufferIdleEventListener(_buffer, ResolveBuffer);
     }
@@ -349,17 +347,8 @@ namespace DafnyLanguage
       if (snapshot == Snapshot)
         return;  // we've already done this snapshot
 
-      ToolDriver driver;
-        if (_isTacny)
-        {
-            driver = new TacnyDriver(_buffer, _filename);
-        }
-        else
-        {
-            driver = new DafnyDriver(_buffer, _filename);
-        }
-
-        
+      var driver = new DafnyDriver(_buffer, _filename);
+      
       List<DafnyError> newErrors;
       Dafny.Program program;
       try
