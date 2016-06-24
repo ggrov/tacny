@@ -11,6 +11,49 @@ using Bpl = Microsoft.Boogie;
 
 namespace Tacny {
 
+  public static class Util {
+
+    
+    public static NameSegment GetNameSegment(UpdateStmt us) {
+      Contract.Requires(us != null);
+      var rhs = us.Rhss[0] as ExprRhs;
+      return rhs == null ? null : GetNameSegment(rhs.Expr as ApplySuffix);
+    }
+
+    [Pure]
+    public static NameSegment GetNameSegment(ApplySuffix aps) {
+      Contract.Requires<ArgumentNullException>(aps != null, "aps");
+      var lhs = aps.Lhs as ExprDotName;
+      if (lhs == null) return aps?.Lhs as NameSegment;
+      var edn = lhs;
+      return edn.Lhs as NameSegment;
+    }
+
+    /// <summary>
+    ///   Return the string signature of an UpdateStmt
+    /// </summary>
+    /// <param name="us"></param>
+    /// <returns></returns>
+    public static string GetSignature(UpdateStmt us) {
+      Contract.Requires<ArgumentNullException>(tcce.NonNull(us));
+      Contract.Ensures(Contract.Result<string>() != null);
+      var er = us.Rhss[0] as ExprRhs;
+      Contract.Assert(er != null);
+      return GetSignature(er.Expr as ApplySuffix);
+    }
+
+    /// <summary>
+    ///   Return the string signature of an ApplySuffix
+    /// </summary>
+    /// <param name="aps"></param>
+    /// <returns></returns>
+    public static string GetSignature(ApplySuffix aps) {
+      Contract.Requires<ArgumentNullException>(tcce.NonNull(aps));
+      Contract.Ensures(Contract.Result<string>() != null);
+      return aps?.Lhs.tok.val;
+    }
+  }
+
   public static class Parser {
     #region Parser
     /// <summary>
@@ -64,7 +107,7 @@ namespace Tacny {
           if (!isNew) continue;
           newlyIncluded = true;
           newFilesToInclude.Add(include);
-        }
+        } 
 
         foreach (var include in newFilesToInclude) {
           string ret = ParseFile(include.filename, include.tok, module, builtIns, errs, false);
@@ -76,7 +119,7 @@ namespace Tacny {
 
       return null; // Success
     }
-
+      
     private static string ParseFile(string dafnyFileName, Bpl.IToken tok, ModuleDecl module, BuiltIns builtIns, Errors errs, bool verifyThisFile = true) {
       string fn = Bpl.CommandLineOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(dafnyFileName) : dafnyFileName;
       try {

@@ -226,7 +226,12 @@ namespace Tacny {
                     foreach (var member in curDecl.Members) {
                         Tactic tac = member as Tactic;
                         if (tac != null)
+                          try {
                             temp.Tactics.Add(tac.Name, tac);
+                          }
+                          catch (ArgumentException) {
+                            Contract.Assert(false, $"tactic {tac.Name} is already declared in the current context");
+                          }
                         else {
                             var tacFun = member as TacticFunction;
                             if (tacFun != null)

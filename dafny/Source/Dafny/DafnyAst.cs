@@ -3852,6 +3852,16 @@ namespace Microsoft.Dafny {
     }
   }
 
+  public abstract class TStatement : Statement {
+    public TStatement(IToken tok, IToken endTok, Attributes attrs) : base(tok, endTok, attrs) {
+      
+    }
+
+    public TStatement(IToken tok, IToken endTok) : base(tok, endTok) {
+      
+    }
+  }
+
   public class LList<T>
   {
     public readonly T Data;
@@ -3946,7 +3956,7 @@ namespace Microsoft.Dafny {
       Contract.Requires(expr != null);
     }
   }
-  public abstract class TacticPredicateStmt : Statement {
+  public abstract class TacticPredicateStmt : TStatement {
 
     public readonly Expression Expr;
     public bool IsObjectLevel = false;
@@ -4800,12 +4810,7 @@ namespace Microsoft.Dafny {
     }
   }
 
-  /// <summary>
-  /// ## TACNY ##
-  /// Used to correctly parse the add_if() statement
-  /// </summary>
-  /// 
-  public class TacnyBlockStmt : Statement {
+  public class TacnyBlockStmt : TStatement {
     public readonly Expression Guard;
     public readonly BlockStmt Body;
     public virtual string WhatKind => "BlockStmt";
@@ -4892,8 +4897,8 @@ namespace Microsoft.Dafny {
   public class IfStmt : Statement {
     public readonly bool IsExistentialGuard;
     public readonly Expression Guard;
-    public readonly BlockStmt Thn;
-    public readonly Statement Els;
+    public BlockStmt Thn;
+    public Statement Els;
     [ContractInvariantMethod]
     void ObjectInvariant() {
       Contract.Invariant(!IsExistentialGuard || (Guard is ExistsExpr && ((ExistsExpr)Guard).Range == null));
@@ -5044,7 +5049,7 @@ namespace Microsoft.Dafny {
   public class WhileStmt : LoopStmt
   {
     public readonly Expression Guard;
-    public readonly BlockStmt Body;
+    public BlockStmt Body;
     public Statement TacAps; // Tacny tactic application
 
     public WhileStmt(IToken tok, IToken endTok, Expression guard,

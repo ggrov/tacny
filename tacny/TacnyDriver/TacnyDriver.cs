@@ -135,7 +135,8 @@ namespace Tacny {
 
         var program = tacnyProgram.ParseProgram();
         int qq = tacnyProgram.ResolveProgram(program);
-        Interpreter.FindAndApplyTactic(tacnyProgram.ParseProgram(), ((ClassDecl) program.DefaultModuleDef.TopLevelDecls[0]).Members[0]);
+        var md = Interpreter.FindAndApplyTactic(tacnyProgram.ParseProgram(), ((ClassDecl) program.DefaultModuleDef.TopLevelDecls[0]).Members[0]);
+        Printer.P.GetConsolePrinter().PrintMethod(md as Method, 0, false);
 
 
         if (!CommandLineOptions.Clo.NoResolve && !CommandLineOptions.Clo.NoTypecheck && DafnyOptions.O.DafnyVerify) {

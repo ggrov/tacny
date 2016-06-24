@@ -61,13 +61,13 @@ namespace Tacny {
         // sanity check
         Contract.Assert(_frame.Count == 0);
         BlockStmt body = null;
-        
+
         var prog = _state.GetDafnyProgram();
         var tld = prog.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x.Name == _state.ActiveClass.Name) as ClassDecl;
         Contract.Assert(tld != null);
         var member = tld.Members.FirstOrDefault(x => x.Name == _state.TargetMethod.Name) as Method;
         body = member?.Body;
-        
+
         foreach (var kvp in _resultList) {
           body = InsertCode(_state, kvp.Value, kvp.Key, body);
         }
@@ -83,7 +83,7 @@ namespace Tacny {
     // Find tactic application and resolve it
     private void SearchBlockStmt(BlockStmt body) {
       Contract.Requires(tcce.NonNull(body));
-      
+
       var dict = new Dictionary<IVariable, Type>();
       for (var i = 0; i < body.Body.Count; i++) {
         var stmt = body.Body[i];
@@ -113,9 +113,9 @@ namespace Tacny {
           var us = stmt as UpdateStmt;
           if (_state.IsTacticCall(us)) {
             var list = StackToDict(_frame);
-            var result = ApplyTopLevelTactic(list, us);
+            var result = ApplyTactic(_state, list, us);
             _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
-            
+
           }
         }
       }
@@ -141,13 +141,25 @@ namespace Tacny {
       return stack.Aggregate(dict, (current, item) => current.Concat(item).ToDictionary(x => x.Key, x => x.Value));
     }
 
-    private ProofState ApplyTopLevelTactic(Dictionary<IVariable, Type> variables, UpdateStmt tacticApplication) {
+
+    public static ProofState ApplyTactic(ProofState state, Dictionary<IVariable, Type> variables,
+      UpdateStmt tacticApplication) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
       Contract.Requires<ArgumentNullException>(tcce.NonNull(tacticApplication));
-      // get the tactic
-      _state.InitState(tacticApplication, variables);
-      var search = new BaseSearchStrategy(_state.TacticInfo.SearchStrategy, true);
-      return search.Search(_state).FirstOrDefault();
+      Contract.Requires<ArgumentNullException>(state != null, "state");
+      state.InitState(tacticApplication, variables);
+      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
+      return search.Search(state).FirstOrDefault();
+    }
+
+    public static IEnumerable<ProofState> ApplyNestedTactic(ProofState state, Dictionary<IVariable, Type> variables,
+      UpdateStmt tacticApplication) {
+      Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
+      Contract.Requires<ArgumentNullException>(tcce.NonNull(tacticApplication));
+      Contract.Requires<ArgumentNullException>(state != null, "state");
+      state.InitState(tacticApplication, variables);
+      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
+      return search.Search(state);
     }
 
     public static void PrepareFrame(BlockStmt body, ProofState state) {
@@ -171,6 +183,10 @@ namespace Tacny {
         var us = stmt as UpdateStmt;
         if (state.IsLocalAssignment(us)) {
           return UpdateLocalValue(us, state);
+        } else if (state.IsArgumentApplication(us)) {
+          //TODO: argument application
+        } else if (state.IsTacticCall(us)) {
+          return ApplyNestedTactic(state.Copy(), state.DafnyVars(), us);
         }
       }
 
@@ -182,7 +198,7 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       Contract.Requires<ArgumentNullException>(aps != null, "aps");
 
-      string sig = ProofState.GetSignature(aps);
+      string sig = Util.GetSignature(aps);
       // using reflection find all classes that extend EAtomic
       var types =
         Assembly.GetAssembly(typeof(EAtomic.EAtomic)).GetTypes().Where(t => t.IsSubclassOf(typeof(EAtomic.EAtomic)));
@@ -271,12 +287,15 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       Contract.Requires<ArgumentNullException>(code != null, "code");
       Contract.Requires<ArgumentNullException>(tacticCall != null, "tacticCall");
-      
+
       return InsertCodeInternal(body, code, tacticCall);
     }
 
 
     private static BlockStmt InsertCodeInternal(BlockStmt body, List<Statement> code, UpdateStmt tacticCall) {
+      Contract.Requires<ArgumentNullException>(body != null, "body ");
+      Contract.Requires<ArgumentNullException>(tacticCall != null, "'tacticCall");
+
       for (var i = 0; i < body.Body.Count; i++) {
         var stmt = body.Body[i];
         if (stmt is UpdateStmt) {
@@ -286,12 +305,34 @@ namespace Tacny {
             body.Body.InsertRange(i, code);
             return body;
           }
+        } else if (stmt is IfStmt) {
+          body.Body[i] = InsertCodeIfStmt((IfStmt)stmt, code, tacticCall);
+        } else if (stmt is WhileStmt) {
+          ((WhileStmt) stmt).Body = InsertCodeInternal(((WhileStmt) stmt).Body, code, tacticCall);
+        } else if (stmt is MatchStmt) {
+          //TODO:
+        } else if (stmt is CalcStmt) {
+          //TODO:
         }
       }
 
-      return null;
+      return body;
     }
 
+
+    private static IfStmt InsertCodeIfStmt(IfStmt stmt, List<Statement> code, UpdateStmt tacticCall) {
+      Contract.Requires<ArgumentNullException>(stmt != null, "stmt");
+      Contract.Requires<ArgumentNullException>(code != null, "code");
+      Contract.Requires<ArgumentNullException>(tacticCall != null, "tacticCall");
+
+      stmt.Thn = InsertCodeInternal(stmt.Thn, code, tacticCall);
+      if (stmt.Els is BlockStmt) {
+        stmt.Els = InsertCodeInternal((BlockStmt)stmt.Els, code, tacticCall);
+      } else if (stmt.Els is IfStmt) {
+        stmt.Els = InsertCodeIfStmt((IfStmt)stmt.Els, code, tacticCall);
+      }
+      return stmt;
+    }
 
     public static bool Compare(IToken a, IToken b) {
       return a.col == b.col && a.line == b.line && a.filename == b.filename;

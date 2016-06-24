@@ -76,6 +76,10 @@ namespace Tacny {
       return copy;
     }
 
+    public Dictionary<IVariable, Dfy.Type> DafnyVars() {
+      return DafnyVariables.ToDictionary(kvp => kvp.Value.Variable, kvp => kvp.Value.Type);
+    }
+
     /// <summary>
     ///   Set active the enclosing TopLevelClass
     /// </summary>
@@ -223,30 +227,6 @@ namespace Tacny {
       throw new KeyNotFoundException($"Dafny variable {key} does not exist in the current context");
     }
 
-    /// <summary>
-    ///   Return the string signature of an UpdateStmt
-    /// </summary>
-    /// <param name="us"></param>
-    /// <returns></returns>
-    public static string GetSignature(UpdateStmt us) {
-      Contract.Requires<ArgumentNullException>(tcce.NonNull(us));
-      Contract.Ensures(Contract.Result<string>() != null);
-      var er = us.Rhss[0] as ExprRhs;
-      Contract.Assert(er != null);
-      return GetSignature(er.Expr as ApplySuffix);
-    }
-
-    /// <summary>
-    ///   Return the string signature of an ApplySuffix
-    /// </summary>
-    /// <param name="aps"></param>
-    /// <returns></returns>
-    public static string GetSignature(ApplySuffix aps) {
-      Contract.Requires<ArgumentNullException>(tcce.NonNull(aps));
-      Contract.Ensures(Contract.Result<string>() != null);
-      return aps?.Lhs.tok.val;
-    }
-
     private ITactic GetTactic(string name) {
       Contract.Requires<ArgumentNullException>(name != null);
       Contract.Requires<ArgumentNullException>(Tactics.ContainsKey(name), "Tactic does not exist in the current context");
@@ -266,7 +246,7 @@ namespace Tacny {
       Contract.Requires(us != null);
       Contract.Requires<ArgumentException>(IsTacticCall(us));
       Contract.Ensures(Contract.Result<ITactic>() != null);
-      return GetTactic(GetSignature(us));
+      return GetTactic(Util.GetSignature(us));
     }
 
     /// <summary>
@@ -280,7 +260,7 @@ namespace Tacny {
       Contract.Requires(aps != null);
       Contract.Requires(IsTacticCall(aps));
       Contract.Ensures(Contract.Result<ITactic>() != null);
-      return GetTactic(GetSignature(aps));
+      return GetTactic(Util.GetSignature(aps));
     }
     #endregion GETTERS
 
@@ -294,7 +274,7 @@ namespace Tacny {
     [Pure]
     public bool IsTacticCall(UpdateStmt us) {
       Contract.Requires(us != null);
-      return IsTacticCall(GetSignature(us));
+      return IsTacticCall(Util.GetSignature(us));
     }
 
     /// <summary>
@@ -305,7 +285,7 @@ namespace Tacny {
     [Pure]
     public bool IsTacticCall(ApplySuffix aps) {
       Contract.Requires(aps != null);
-      return IsTacticCall(GetSignature(aps));
+      return IsTacticCall(Util.GetSignature(aps));
     }
 
     private bool IsTacticCall(string name) {
@@ -321,7 +301,7 @@ namespace Tacny {
     /// <returns></returns>
     [Pure]
     public bool IsLocalAssignment(UpdateStmt us) {
-      if (us.Lhss == null)
+      if (us.Lhss.Count == 0)
         return false;
       foreach (var lhs in us.Lhss) {
         if (!(lhs is NameSegment))
@@ -332,6 +312,14 @@ namespace Tacny {
 
       return true;
     }
+
+    [Pure]
+    public bool IsArgumentApplication(UpdateStmt us) {
+      Contract.Requires<ArgumentNullException>(us != null, "us");
+      var ns = Util.GetNameSegment(us);
+      return _scope.Peek().HasLocal(ns);
+    }
+
 
     /// <summary>
     /// Add a varialbe to the top level frame
@@ -521,6 +509,18 @@ namespace Tacny {
           }
         }
       }
+
+      internal bool HasLocal(NameSegment key) {
+        Contract.Requires<ArgumentNullException>(key != null, "key");
+        return HasLocal(key.Name);
+      }
+
+      internal bool HasLocal(string key) {
+        Contract.Requires<ArgumentNullException>(key != null, "key");
+        return Parent?.HasLocal(key) ?? _declaredVariables.ContainsKey(key);
+      }
+
+     
 
       /// <summary>
       /// Add new dafny stmt to the top level frame
