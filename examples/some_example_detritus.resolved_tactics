@@ -1,8 +1,0 @@
-expanded_tactic_stuff();
-var l = 1;
-where(l>0)
-decreases l;
-{
-l = l - 1;
-}
-//comment

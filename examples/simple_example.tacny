@@ -1,11 +1,47 @@
-tactic mytac(){
+
+
+tactic failTac(){
+  assert 5==4;
+}
+
+tactic passTac(){
   assert true;
 }
-
-lemma mylemma(){
-  mytac();
+lemma badLemma(){
+  failTac();
 }
 
-//lemma mytactic(){
-//stuff
-//}
+lemma goodLemma(){
+  passTac();
+}
+
+method testingMethod() returns (x:int){
+  x := 2+2;
+  assert true;
+  badLemma();
+}
+
+function max(a:int, b:int) : int
+{
+if a > b then
+  a
+else
+  b
+  //comment inline
+}
+
+function giveFour() : int
+	ensures fourIsFour(4)
+{
+  4
+}
+
+/*multiline
+lemma mytactic(){
+  stuff
+} */
+
+predicate fourIsFour(a:int){
+  a==4 && 5!=a && true
+}
+

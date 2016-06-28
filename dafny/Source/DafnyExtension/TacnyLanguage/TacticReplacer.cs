@@ -17,6 +17,7 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
 using Printer = Microsoft.Dafny.Printer;
 using Microsoft.VisualStudio.Shell.Interop;
+using Util;
 
 namespace DafnyLanguage.TacnyLanguage
 {
@@ -175,6 +176,7 @@ namespace DafnyLanguage.TacnyLanguage
       var driver = new DafnyDriver(_tv.TextBuffer, _document.FilePath);
 
       driver.ProcessResolution(true);
+     // var ast = driver.Program.Copy();
       var ast = driver.Program;
       if (ast == null) return TacticReplaceStatus.DriverFail;
 
@@ -187,6 +189,7 @@ namespace DafnyLanguage.TacnyLanguage
         if (member != null) break;
       }
       var evaluatedMember = Tacny.Interpreter.FindAndApplyTactic(ast, member);
+      //if null, TacticReplaceStatus.DriverFail
 
       var sr = new StringWriter();
       var printer = new Printer(sr);
@@ -204,6 +207,7 @@ namespace DafnyLanguage.TacnyLanguage
       {
         var advancingSnapshot = new SnapshotPoint(_tv.TextSnapshot, ++advancingPoint);
         var currentChar = advancingSnapshot.GetChar();
+        //if in comment, continue / skip to end of linez
         switch (currentChar)
         {
           case '{':
@@ -225,7 +229,8 @@ namespace DafnyLanguage.TacnyLanguage
         "function",
         "lemma",
         "method",
-        "predicate"
+        "predicate",
+        "tactic"
       };
 
       var currentSubling = _tsn.GetSpanOfNextSibling(startingWordPosition);

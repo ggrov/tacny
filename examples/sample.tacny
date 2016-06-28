@@ -1,0 +1,17 @@
+
+method Section5RemarkThree()
+{
+  var x := 1;
+  var y := 2;
+  invartac();
+  invartac2(); // will fail
+}
+
+tactic invartac() {
+  invartax();
+  assert true;
+}
+
+tactic invartac2() {
+  assert false;
+}
