@@ -3,21 +3,18 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Editor;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
-using Printer = Microsoft.Dafny.Printer;
-using Microsoft.VisualStudio.Shell.Interop;
-using Util;
+using Tacny;
 
 namespace DafnyLanguage.TacnyLanguage
 {
@@ -36,7 +33,7 @@ namespace DafnyLanguage.TacnyLanguage
     internal ITextStructureNavigatorSelectorService TextStructureNavigatorSelector { get; set; }
 
     [Import(typeof(SVsServiceProvider))]
-    internal System.IServiceProvider ServiceProvider { get; set; }
+    internal IServiceProvider ServiceProvider { get; set; }
 
     [Import]
     internal IViewTagAggregatorFactoryService Vtafs { get; set; }
@@ -47,60 +44,45 @@ namespace DafnyLanguage.TacnyLanguage
       if (textView == null) return;
       var navigator = TextStructureNavigatorSelector.GetTextStructureNavigator(textView.TextBuffer);
       var ta = Vtafs.CreateTagAggregator<DafnyTokenTag>(textView);
-      AddCommandFilter(textViewAdapter, new TacticReplacerCommandFilter(textView, navigator, ServiceProvider, Tdf, ta));
-    }
 
-    private static void AddCommandFilter(IVsTextView viewAdapter, TacticReplacerCommandFilter commandFilter)
-    {
-      IOleCommandTarget next;
-      if (VSConstants.S_OK != viewAdapter.AddCommandFilter(commandFilter, out next)) return;
-      if (next != null)
-        commandFilter.NextCmdTarget = next;
+      IVsPackage package;
+      var shell = Package.GetGlobalService(typeof(SVsShell)) as IVsShell;
+      if (shell == null) return;
+      var packageToBeLoadedGuid = new Guid("f982f63a-aa1f-421d-9400-f3c10896146b");
+      if (shell.LoadPackage(ref packageToBeLoadedGuid, out package) != VSConstants.S_OK) return;
+      var trcp = (TacticReplacerCommandPackage)package;
+      var statusbar = (IVsStatusbar)ServiceProvider.GetService(typeof(SVsStatusbar));
+      trcp.Trcf = new TacticReplacerCommandFilter(textView, navigator, statusbar, Tdf, ta);
     }
+    
   }
 
-  internal class TacticReplacerCommandFilter : IOleCommandTarget
+  public class TacticReplacerCommandFilter
   {
-    internal IOleCommandTarget NextCmdTarget;
     private readonly IWpfTextView _tv;
     private readonly ITextStructureNavigator _tsn;
-    private readonly System.IServiceProvider _isp;
     private readonly ITextDocumentFactoryService _tdf;
     private readonly ITagAggregator<DafnyTokenTag> _ta;
     private readonly IVsStatusbar _status;
     private ITextDocument _document;
 
-    public TacticReplacerCommandFilter(IWpfTextView textView, ITextStructureNavigator tsn, System.IServiceProvider sp,
+    public TacticReplacerCommandFilter(IWpfTextView textView, ITextStructureNavigator tsn, IVsStatusbar sb,
       ITextDocumentFactoryService tdf, ITagAggregator<DafnyTokenTag> ta)
     {
       _tv = textView;
       _tsn = tsn;
-      _isp = sp;
       _tdf = tdf;
       LoadAndCheckDocument();
       _ta = ta;
-      _status = (IVsStatusbar)_isp.GetService(typeof(SVsStatusbar));
+      _status = sb;
+    }
+
+    public void Exec()
+    {
+      var status = ExecuteReplacement();
+      NotifyOfReplacement(status);
     }
     
-    public int Exec(ref Guid pguidCmdGroup, uint nCmdId, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
-    {
-      var status = TacticReplaceStatus.NoTactic;
-      if (VsShellUtilities.IsInAutomationFunction(_isp))
-        return NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
-
-      if (pguidCmdGroup == VSConstants.VSStd2K && nCmdId == (uint) VSConstants.VSStd2KCmdID.TYPECHAR)
-      {
-        var typedChar = (char) (ushort) Marshal.GetObjectForNativeVariant(pvaIn);
-        if (typedChar.Equals('#'))
-        {
-          status = ExecuteReplacement();
-        }
-      }
-      NotifyOfReplacement(status);
-      return status == TacticReplaceStatus.Success
-        ? VSConstants.S_OK
-        : NextCmdTarget.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
-    }
 
     private void NotifyOfReplacement(TacticReplaceStatus t)
     {
@@ -188,7 +170,7 @@ namespace DafnyLanguage.TacnyLanguage
         member = c.Members.FirstOrDefault(x => x.Name == startingWord);
         if (member != null) break;
       }
-      var evaluatedMember = Tacny.Interpreter.FindAndApplyTactic(ast, member);
+      var evaluatedMember = Interpreter.FindAndApplyTactic(ast, member);
       //if null, TacticReplaceStatus.DriverFail
 
       var sr = new StringWriter();
@@ -246,10 +228,6 @@ namespace DafnyLanguage.TacnyLanguage
       var ghostPrev = _tsn.GetSpanOfPreviousSibling(prev);
       return ghostPrev.GetText() == "ghost" ? ghostPrev.Start : startingPos;
     }
-
-    public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
-    {
-      return NextCmdTarget.QueryStatus(pguidCmdGroup, cCmds, prgCmds, pCmdText);
-    }
+    
   }
 }
