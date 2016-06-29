@@ -351,8 +351,8 @@ namespace DafnyLanguage
       DafnyDriver.SetDiagnoseTimeouts(diagnoseTimeouts);
       errorListHolder.FatalVerificationError = null;
 
-      try
-      {
+      //try
+      // {
         bool success = DafnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
         {
           if (!_disposed)
@@ -383,16 +383,16 @@ namespace DafnyLanguage
         {
           errorListHolder.AddError(new DafnyError("$$program$$", 0, 0, ErrorCategory.InternalError, "Verification process error", snapshot, false), "$$program$$", requestId);
         }
-      }
-      catch (Exception e)
-      {
-        errorListHolder.FatalVerificationError = new DafnyError("$$program$$", 0, 0, ErrorCategory.InternalError, "Fatal verification error: " + e.Message + "\n" + e.StackTrace, snapshot, false);
-        errorListHolder.UpdateErrorList(errorListHolder.Snapshot);
-      }
-      finally
-      {
+     // }
+     // catch (Exception e)
+     // {
+     //   errorListHolder.FatalVerificationError = new DafnyError("$$program$$", 0, 0, ErrorCategory.InternalError, "Fatal verification error: " + e.Message + "\n" + e.StackTrace, snapshot, false);
+     //   errorListHolder.UpdateErrorList(errorListHolder.Snapshot);
+     // }
+     // finally
+     // {
         DafnyDriver.SetDiagnoseTimeouts(!diagnoseTimeouts);
-      }
+     // }
 
       lock (this) {
         bufferChangesPreVerificationStart.Clear();

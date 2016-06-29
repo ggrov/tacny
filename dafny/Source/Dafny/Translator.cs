@@ -1466,7 +1466,7 @@ namespace Microsoft.Dafny {
         } else if (member is Method) {
           Method m = (Method)member;
           if (m.CallsTactic) {
-           // m = Tacny.Interpreter.FindAndApplyTactic(program, m) as Method;
+            m = Tacny.Interpreter.FindAndApplyTactic(program, m) as Method;
           }
           FuelContext oldFuelContext = this.fuelContext;
           this.fuelContext = FuelSetting.NewFuelContext(m);

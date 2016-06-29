@@ -343,6 +343,7 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HoverText.cs" />
     <Compile Include="IdentifierTagger.cs" />
+    <Compile Include="TacnyLanguage\TacnyPackageIdentifiers.cs" />
     <Compile Include="TacnyLanguage\TacticReplacerCommandPackage.cs" />
     <Compile Include="TacnyLanguage\TacticPeekableItem.cs" />
     <Compile Include="TacnyLanguage\TacticPeekResult.cs" />

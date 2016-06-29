@@ -3,7 +3,8 @@ method Section5RemarkThree()
 {
   var x := 1;
   var y := 2;
-  invartac();
+//  invartac();
+//assert false;
   //invartac2(); // will fail
 }
 

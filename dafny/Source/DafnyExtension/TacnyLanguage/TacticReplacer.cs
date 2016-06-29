@@ -41,17 +41,18 @@ namespace DafnyLanguage.TacnyLanguage
     public void VsTextViewCreated(IVsTextView textViewAdapter)
     {
       var textView = EditorAdaptersFactory.GetWpfTextView(textViewAdapter);
-      if (textView == null) return;
+      if (textView == null) throw new Exception("Failed to access WpfTextView");
       var navigator = TextStructureNavigatorSelector.GetTextStructureNavigator(textView.TextBuffer);
       var ta = Vtafs.CreateTagAggregator<DafnyTokenTag>(textView);
+      var statusbar = (IVsStatusbar)ServiceProvider.GetService(typeof(SVsStatusbar));
 
       IVsPackage package;
       var shell = Package.GetGlobalService(typeof(SVsShell)) as IVsShell;
       if (shell == null) return;
-      var packageToBeLoadedGuid = new Guid("f982f63a-aa1f-421d-9400-f3c10896146b");
+      var packageToBeLoadedGuid = TacnyPackageIdentifiers.PackageGuid;
       if (shell.LoadPackage(ref packageToBeLoadedGuid, out package) != VSConstants.S_OK) return;
+
       var trcp = (TacticReplacerCommandPackage)package;
-      var statusbar = (IVsStatusbar)ServiceProvider.GetService(typeof(SVsStatusbar));
       trcp.Trcf = new TacticReplacerCommandFilter(textView, navigator, statusbar, Tdf, ta);
     }
     
