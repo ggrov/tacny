@@ -133,7 +133,7 @@ namespace DafnyLanguage
     /// <summary>
     /// Translate PkgDefTokenTags into ErrorTags and Error List items
     /// </summary>
-    public sealed class ResolverTagger : ITagger<IDafnyResolverTag>, IDisposable
+  public sealed class ResolverTagger : ITagger<IDafnyResolverTag>, IDisposable
   {
     readonly ITextBuffer _buffer;
     readonly ITextDocument _document;
@@ -146,7 +146,8 @@ namespace DafnyLanguage
     public Dafny.Program Program;  // non-null only if the snapshot contains a Dafny program that type checks
 
     List<DafnyError> _resolutionErrors = new List<DafnyError>();  // if nonempty, then _snapshot is the snapshot from which the errors were produced
-
+    public DafnyError FatalVerificationError { get; set; }
+    
     internal void AddError(DafnyError error, string unitId, string requestId)
     {
       ErrorContainer entry;
@@ -225,6 +226,7 @@ namespace DafnyLanguage
               yield return err;
             }
           }
+          if(FatalVerificationError!=null) yield return FatalVerificationError;
         }
       }
     }

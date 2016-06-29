@@ -4,11 +4,11 @@ method Section5RemarkThree()
   var x := 1;
   var y := 2;
   invartac();
-  invartac2(); // will fail
+  //invartac2(); // will fail
 }
 
 tactic invartac() {
-  invartax();
+  //invartax();
   assert true;
 }
 
