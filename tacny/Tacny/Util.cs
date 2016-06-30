@@ -193,7 +193,6 @@ namespace Tacny {
       List<Bpl.ErrorInformation> errorList;
       Bpl.PipelineOutcome tmp = BoogiePipeline(boogieProg, new List<string> {program.Name}, program.Name, out stats, out errorList);
       return errorList;
-
     }
 
     public static Bpl.Program Translate(Program dafnyProgram, string uniqueIdPrefix) {
