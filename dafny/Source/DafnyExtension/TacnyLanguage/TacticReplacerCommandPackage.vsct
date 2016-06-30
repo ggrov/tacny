@@ -26,22 +26,22 @@
       <Button guid="guidTacnyMenuPackageCmdSet" id="ExpandTacticsCommand" priority="0x0100" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <Strings>
-          <ButtonText>Expand tactics in this Method</ButtonText>
+          <ButtonText>Expand and Pretty Print this Method</ButtonText>
         </Strings>
       </Button>
       
       <Button guid="guidTacnyMenuPackageCmdSet" id="ExpandAllTacticsCommand" priority="0x0101" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <Strings>
-          <ButtonText>Expand all tactics in file [NI]</ButtonText>
+          <ButtonText>Expand and Pretty Print Whole File [NI]</ButtonText>
         </Strings>
       </Button>
       
-      <Button guid="guidTacnyMenuPackageCmdSet" id="DisableTacnyCommand" priority="0x0102" type="Button">
+      <Button guid="guidTacnyMenuPackageCmdSet" id="ToggleTacnyCommand" priority="0x0102" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <CommandFlag>TextChanges</CommandFlag>
         <Strings>
-          <ButtonText>Enable/Disable tactic verification [NI]</ButtonText>
+          <ButtonText>Toggle Automatic Tactic Verification [NI]</ButtonText>
         </Strings>
       </Button>
     </Buttons>
@@ -60,14 +60,14 @@
       <IDSymbol name="TacnyMenuGroup" value="0x99" />
       <IDSymbol name="ExpandTacticsCommand" value="0x0100" />
       <IDSymbol name="ExpandAllTacticsCommand" value="0x0101" />
-      <IDSymbol name="DisableTacnyCommand" value="0x0102" />
+      <IDSymbol name="ToggleTacnyCommand" value="0x0102" />
     </GuidSymbol>
   </Symbols>
   
   <KeyBindings>
     <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="ExpandTacticsCommand" editor="GUID_TextEditorFactory" key1="0" mod1="Control" key2="T" mod2="Control"/>
     <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="ExpandAllTacticsCommand" editor="GUID_TextEditorFactory" key1="0" mod1="Control" key2="Y" mod2="Control"/>
-    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="DisableTacnyCommand" editor="GUID_TextEditorFactory" key1="0" mod1="Control" key2="U" mod2="Control"/>
+    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="ToggleTacnyCommand" editor="GUID_TextEditorFactory" key1="0" mod1="Control" key2="U" mod2="Control"/>
   </KeyBindings>
   
 </CommandTable>

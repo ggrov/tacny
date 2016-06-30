@@ -12,6 +12,6 @@ namespace DafnyLanguage.TacnyLanguage
 
     public const int ExpandTacticsCommandId = 0x0100;
     public const int ExpandAllTacticsCommandId = 0x0101;
-    public const int DisableTacnyCommandId = 0x0102;
+    public const int ToggleTacnyCommandId = 0x0102;
   }
 }

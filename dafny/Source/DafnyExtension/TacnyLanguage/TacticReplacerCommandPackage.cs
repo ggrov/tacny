@@ -27,7 +27,7 @@ namespace DafnyLanguage.TacnyLanguage
       var expandAllItem = new MenuCommand(NotImplemented, expandAllCommandId);
       commandService.AddCommand(expandAllItem);
 
-      var toggleCommandId = new CommandID(TacnyPackageIdentifiers.CommandSetGuid, TacnyPackageIdentifiers.DisableTacnyCommandId);
+      var toggleCommandId = new CommandID(TacnyPackageIdentifiers.CommandSetGuid, TacnyPackageIdentifiers.ToggleTacnyCommandId);
       var toggleItem = new MenuCommand(NotImplemented, toggleCommandId);
       commandService.AddCommand(toggleItem);
     }

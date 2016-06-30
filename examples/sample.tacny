@@ -1,5 +1,5 @@
 
-method Section5RemarkThree()
+method Section5RemarkThree(i: int)
 {
   var x := 1;
   var y := 2;

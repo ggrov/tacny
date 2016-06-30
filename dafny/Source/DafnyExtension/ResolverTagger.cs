@@ -380,6 +380,7 @@ namespace DafnyLanguage
       }
 
       _resolutionErrors = newErrors;
+      FatalVerificationError = null;
 
       UpdateErrorList(snapshot);
     }

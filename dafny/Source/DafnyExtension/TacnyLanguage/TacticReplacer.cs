@@ -158,11 +158,10 @@ namespace DafnyLanguage.TacnyLanguage
       if (!LoadAndCheckDocument(true)) return TacticReplaceStatus.NoDocumentPersistence;
       var driver = new DafnyDriver(_tv.TextBuffer, _document.FilePath);
 
-      driver.ProcessResolution(true);
-     // var ast = driver.Program.Copy();
-      var ast = driver.Program;
+      var result = driver.getParseResultFromBuffer();
+      var ast = result.Item2;
       if (ast == null) return TacticReplaceStatus.DriverFail;
-
+      
       MemberDecl member = null;
       foreach (var def in ast.DefaultModuleDef.TopLevelDecls)
       {
@@ -171,12 +170,11 @@ namespace DafnyLanguage.TacnyLanguage
         member = c.Members.FirstOrDefault(x => x.Name == startingWord);
         if (member != null) break;
       }
-      var evaluatedMember = Interpreter.FindAndApplyTactic(ast, member);
-      //if null, TacticReplaceStatus.DriverFail
+      if(member==null) return TacticReplaceStatus.DriverFail;
 
       var sr = new StringWriter();
       var printer = new Printer(sr);
-      printer.PrintMembers(new List<MemberDecl> {evaluatedMember}, 0, ast.FullName);
+      printer.PrintMembers(new List<MemberDecl> {member}, 0, ast.FullName);
       expandedTactic = sr.ToString();
       return TacticReplaceStatus.Success;
     }
@@ -190,7 +188,7 @@ namespace DafnyLanguage.TacnyLanguage
       {
         var advancingSnapshot = new SnapshotPoint(_tv.TextSnapshot, ++advancingPoint);
         var currentChar = advancingSnapshot.GetChar();
-        //if in comment, continue / skip to end of linez
+        if (IsSnapSpanInComment(_tv.GetTextElementSpan(advancingSnapshot))) continue;
         switch (currentChar)
         {
           case '{':

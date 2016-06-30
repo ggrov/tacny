@@ -348,7 +348,6 @@
     <Compile Include="TacnyLanguage\TacticPeekableItem.cs" />
     <Compile Include="TacnyLanguage\TacticPeekResult.cs" />
     <Compile Include="TacnyLanguage\TacticReplacer.cs" />
-    <Compile Include="ToolDriver.cs" />
     <Compile Include="MenuProxy.cs" />
     <Compile Include="ProgressMargin.cs" />
     <Compile Include="OutliningTagger.cs" />

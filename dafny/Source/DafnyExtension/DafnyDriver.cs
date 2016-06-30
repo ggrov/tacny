@@ -15,7 +15,7 @@ using Dafny = Microsoft.Dafny;
 namespace DafnyLanguage
 {
 
-  public class DafnyDriver : ToolDriver
+  public class DafnyDriver
   {
     readonly string _filename;
     readonly ITextSnapshot _snapshot;
@@ -31,6 +31,13 @@ namespace DafnyLanguage
       _buffer = buffer;
       _snapshot = buffer.CurrentSnapshot;
       _filename = filename;
+    }
+
+    public Tuple<ITextSnapshot, Microsoft.Dafny.Program, List<DafnyError>> getParseResultFromBuffer()
+    {
+      Tuple<ITextSnapshot, Microsoft.Dafny.Program, List<DafnyError>> parseResult;
+      _buffer.Properties.TryGetProperty(bufferDafnyKey, out parseResult);
+      return parseResult;
     }
 
     static DafnyDriver() {
@@ -110,19 +117,19 @@ namespace DafnyLanguage
 
     #region Parsing and type checking
 
-    internal override Dafny.Program ProcessResolution(bool runResolver) {
-      if (!ParseAndTypeCheck(runResolver)) {
+    internal Dafny.Program ProcessResolution(bool runResolver, bool forceNewProgram = false) {
+      if (!ParseAndTypeCheck(runResolver, forceNewProgram)) {
         return null;
       }
       return _program;
     }
 
-    bool ParseAndTypeCheck(bool runResolver) {
+    bool ParseAndTypeCheck(bool runResolver, bool forceNewProgram = false) {
       Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>> parseResult;
       Dafny.Program program;
       var errorReporter = new VSErrorReporter(this);
       if (_buffer.Properties.TryGetProperty(bufferDafnyKey, out parseResult) &&
-         (parseResult.Item1 == _snapshot)) {
+         (parseResult.Item1 == _snapshot) && !forceNewProgram) {
         // already parsed;
         program = parseResult.Item2;
         _errors = parseResult.Item3;
