@@ -92,6 +92,7 @@ namespace Tacny {
         else {
           //TODO: find which proof state verified (if any)
           //TODO: update verification results
+          return VerifyResult.Failed;
         }
       }
       return VerifyResult.Verified;

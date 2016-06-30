@@ -191,7 +191,7 @@ namespace Tacny {
       } else if (stmt is AssignSuchThatStmt) {
         enumerable = EvaluateSuchThatStmt((AssignSuchThatStmt) stmt, state);
       } else if (stmt is PredicateStmt) {
-        
+        enumerable = ResolvePredicateStmt((PredicateStmt) stmt, state);
       }
       else {
         enumerable = DefaultAction(stmt, state);
@@ -223,8 +223,8 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(expr != null, "expr");
       if (expr is NameSegment) {
         var ns = (NameSegment)expr;
-        if (state.ContainsVariable(ns)) {
-          yield return state.GetVariable(ns);
+        if (state.HasLocalValue(ns.Name)) {
+          yield return state.GetLocalValue(ns.Name);
         } else {
           yield return ns;
         }
