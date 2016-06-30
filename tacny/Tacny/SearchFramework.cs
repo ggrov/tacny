@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Microsoft.Dafny;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 
 namespace Tacny {
 
@@ -10,10 +12,17 @@ namespace Tacny {
     IEnumerable<ProofState> Search(ProofState state);
   }
 
+
   public enum Strategy {
     Undefined = 0,
     Bfs,
     Dfs
+  }
+
+  public enum VerifyResult {
+    Cached, // solution is cached for multi solution resolution
+    Verified,
+    Failed,
   }
 
   [ContractClassFor(typeof(ISearch))]
@@ -28,7 +37,7 @@ namespace Tacny {
   public class BaseSearchStrategy : ISearch {
     protected Strategy ActiveStrategy;
     protected static bool Verify;
-
+    protected const int SolutionCounter = 1;
     public BaseSearchStrategy(Strategy strategy, bool verify) {
       Verify = verify;
       ActiveStrategy = strategy;
@@ -59,10 +68,33 @@ namespace Tacny {
       return enumerable;
     }
 
-
-    internal static bool VerifyState(ProofState state) {
-      return true;
-
+    private static List<ProofState> _proofList;
+    internal static VerifyResult VerifyState(ProofState state) {
+      if (_proofList == null)
+        _proofList = new List<ProofState>();
+      if (_proofList.Count + 1 < SolutionCounter) {
+        _proofList.Add(state);
+        return VerifyResult.Cached;
+      } else {
+        _proofList.Add(state);
+        var bodyList = new Dictionary<ProofState, BlockStmt>();
+        foreach (var proofState in _proofList) {
+          bodyList.Add(proofState, Util.InsertCode(proofState,
+            new Dictionary<UpdateStmt, List<Statement>>() {
+              {proofState.TacticApplication, proofState.GetGeneratedCode()}
+            }));
+        }
+        var memberList = Util.GenerateMembers(state, bodyList);
+        var prog = Util.GenerateDafnyProgram(state, memberList.Values.ToList());
+        var result = Util.ResolveAndVerify(prog);
+        if (result.Count == 0)
+          return VerifyResult.Verified;
+        else {
+          //TODO: find which proof state verified (if any)
+          //TODO: update verification results
+        }
+      }
+      return VerifyResult.Verified;
     }
   }
 
@@ -84,23 +116,28 @@ namespace Tacny {
 
         if (Verify) {
           if (proofState.IsEvaluated() || proofState.IsPartiallyEvaluated()) {
-            if (VerifyState(proofState)) {
-              yield return proofState;
-              yield break;
-            }
-            /*
-             * verification failed, continue to the next state
-             */
-            if (proofState.IsEvaluated()) {
-              continue;
-            }
-            /*
-             * verification failed, but the evaluation is partial return
-             * but continue evaluating the proofState
-             */
-            if (proofState.IsPartiallyEvaluated()) {
-              yield return proofState;
-              queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
+            switch (VerifyState(proofState)) {
+              case VerifyResult.Cached:
+                if (proofState.IsPartiallyEvaluated()) {
+                  yield return proofState;
+                  queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
+                }
+                continue;
+              case VerifyResult.Verified:
+                yield return proofState;
+                yield break;
+              case VerifyResult.Failed:
+                /*
+                * verification failed, but the evaluation is partial return
+                * but continue evaluating the proofState
+                */
+                if (proofState.IsPartiallyEvaluated()) {
+                  yield return proofState;
+                  queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
+                }
+                continue;
+              default:
+                throw new ArgumentOutOfRangeException();
             }
           }
           queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
@@ -119,7 +156,6 @@ namespace Tacny {
   }
 
   internal class DepthFirstSeach : BaseSearchStrategy {
-
     public new static IEnumerable<ProofState> Search(ProofState state) {
       return null;
       /*

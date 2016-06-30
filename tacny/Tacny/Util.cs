@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Tacny.ArrayExtensions;
 using Microsoft.Dafny;
@@ -13,7 +13,11 @@ namespace Tacny {
 
   public static class Util {
 
-    
+    public static Expression VariableToExpression(IVariable variable) {
+      Contract.Requires(variable != null);
+      return new NameSegment(variable.Tok, variable.Name, null);
+    }
+
     public static NameSegment GetNameSegment(UpdateStmt us) {
       Contract.Requires(us != null);
       var rhs = us.Rhss[0] as ExprRhs;
@@ -52,10 +56,201 @@ namespace Tacny {
       Contract.Ensures(Contract.Result<string>() != null);
       return aps?.Lhs.tok.val;
     }
+
+    /// <summary>
+    /// Insert generated code into a method
+    /// </summary>
+    /// <param name="state"></param>
+    /// <param name="code"></param>
+    /// <returns></returns>
+    public static BlockStmt InsertCode(ProofState state, Dictionary<UpdateStmt, List<Statement>> code) {
+      Contract.Requires<ArgumentNullException>(state != null, "state");
+      Contract.Requires<ArgumentNullException>(code != null, "code");
+      var prog = state.GetDafnyProgram();
+      var tld = prog.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x.Name == state.ActiveClass.Name) as ClassDecl;
+      Contract.Assert(tld != null);
+      var member = tld.Members.FirstOrDefault(x => x.Name == state.TargetMethod.Name) as Method;
+      var body = member?.Body;
+
+      foreach (var kvp in code) {
+        body = InsertCodeInternal(body, kvp.Value, kvp.Key);
+      }
+      var r = new Resolver(prog);
+      r.ResolveProgram(prog);
+      return body;
+    }
+
+    private static BlockStmt InsertCodeInternal(BlockStmt body, List<Statement> code, UpdateStmt tacticCall) {
+      Contract.Requires<ArgumentNullException>(body != null, "body ");
+      Contract.Requires<ArgumentNullException>(tacticCall != null, "'tacticCall");
+
+      for (var i = 0; i < body.Body.Count; i++) {
+        var stmt = body.Body[i];
+        if (stmt is UpdateStmt) {
+          // compare tokens
+          if (Compare(tacticCall.Tok, stmt.Tok)) {
+            body.Body.RemoveAt(i);
+            body.Body.InsertRange(i, code);
+            return body;
+          }
+        } else if (stmt is IfStmt) {
+          body.Body[i] = InsertCodeIfStmt((IfStmt)stmt, code, tacticCall);
+        } else if (stmt is WhileStmt) {
+          ((WhileStmt)stmt).Body = InsertCodeInternal(((WhileStmt)stmt).Body, code, tacticCall);
+        } else if (stmt is MatchStmt) {
+          //TODO:
+        } else if (stmt is CalcStmt) {
+          //TODO:
+        }
+      }
+      return body;
+    }
+
+    private static IfStmt InsertCodeIfStmt(IfStmt stmt, List<Statement> code, UpdateStmt tacticCall) {
+      Contract.Requires<ArgumentNullException>(stmt != null, "stmt");
+      Contract.Requires<ArgumentNullException>(code != null, "code");
+      Contract.Requires<ArgumentNullException>(tacticCall != null, "tacticCall");
+
+      stmt.Thn = InsertCodeInternal(stmt.Thn, code, tacticCall);
+      if (stmt.Els is BlockStmt) {
+        stmt.Els = InsertCodeInternal((BlockStmt)stmt.Els, code, tacticCall);
+      } else if (stmt.Els is IfStmt) {
+        stmt.Els = InsertCodeIfStmt((IfStmt)stmt.Els, code, tacticCall);
+      }
+      return stmt;
+    }
+
+    public static bool Compare(Bpl.IToken a, Bpl.IToken b) {
+      Contract.Requires<ArgumentNullException>(a != null, "a");
+      Contract.Requires<ArgumentNullException>(b != null, "b");
+      return a.col == b.col && a.line == b.line && a.filename == b.filename;
+    }
+
+
+
+    public static Dictionary<ProofState, MemberDecl> GenerateMembers(ProofState state, Dictionary<ProofState, BlockStmt> bodies) {
+      Contract.Requires<ArgumentNullException>(state != null, "state");
+      Contract.Requires<ArgumentNullException>(bodies != null, "bodies");
+      var result = new Dictionary<ProofState, MemberDecl>();
+      var cl = new Cloner();
+      foreach (var body in bodies) {
+        var md = cl.CloneMember(state.TargetMethod) as Method;
+        md.Body.Body.Clear();
+        md.Body.Body.AddRange(body.Value.Body);
+        if (result.Values.All(x => x.Name != md.Name))
+          result.Add(body.Key, md);
+        else {
+          md = new Method(md.tok, FreshMemberName(md, result.Values.ToList()), md.HasStaticKeyword, md.IsGhost, md.TypeArgs, md.Ins,
+            md.Outs, md.Req, md.Mod, md.Ens, md.Decreases, md.Body, md.Attributes, md.SignatureEllipsis);
+          result.Add(body.Key, md);
+        }
+      }
+      return result;
+    }
+
+    public static Program GenerateDafnyProgram(ProofState state, List<MemberDecl> newMembers) {
+      var prog = state.GetDafnyProgram();
+      var tld = prog.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x.Name == state.TargetMethod.EnclosingClass.Name) as ClassDecl;
+      Contract.Assert(tld != null);
+      var member = tld.Members.FirstOrDefault(x => x.Name == state.TargetMethod.Name);
+      Contract.Assert(member != null);
+      int index = tld.Members.IndexOf(member);
+      tld.Members.RemoveAt(index);
+      // we can safely remove the tactics
+      tld.Members.RemoveAll(x => x is Tactic);
+      tld.Members.InsertRange(index, newMembers);
+      var filePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+      var tw = new StreamWriter(filePath);
+      var printer = new Printer(tw);
+      printer.PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, filePath);
+      tw.Close();
+      Parser.ParseCheck(new List<string>() { filePath}, prog.Name, out prog);
+      return prog;
+    }
+
+    public static string FreshMemberName(MemberDecl original, List<MemberDecl> context) {
+      Contract.Requires<ArgumentNullException>(original != null, "original");
+      Contract.Requires<ArgumentNullException>(context != null, "context");
+      int count = context.Count(m => m.Name == original.Name);
+      string name = $"{original.Name}_{count}";
+      while (count != 0) {
+        name = $"{original.Name}_{count}";
+        count = context.Count(m => m.Name == name);
+      }
+
+      return name;
+    }
+
+
+    public static List<Bpl.ErrorInformation> ResolveAndVerify(Program program) {
+      Contract.Requires<ArgumentNullException>(program != null);
+      var r = new Resolver(program);
+      //var start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
+      r.ResolveProgram(program);
+      //var end = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds
+      var boogieProg = Translate(program, program.Name);
+      Bpl.PipelineStatistics stats;
+      List<Bpl.ErrorInformation> errorList;
+      Bpl.PipelineOutcome tmp = BoogiePipeline(boogieProg, new List<string> {program.Name}, program.Name, out stats, out errorList);
+      return errorList;
+
+    }
+
+    public static Bpl.Program Translate(Program dafnyProgram, string uniqueIdPrefix) {
+      Contract.Requires<ArgumentNullException>(dafnyProgram != null, "dafnyProgram");
+      Contract.Requires<ArgumentNullException>(uniqueIdPrefix != null, "uniqueIdPrefix");
+      Contract.Ensures(Contract.Result<Bpl.Program>() != null);
+      var translator = new Translator(dafnyProgram.reporter) {
+        InsertChecksums = true,
+        UniqueIdPrefix = uniqueIdPrefix
+      };
+      return translator.Translate(dafnyProgram);
+    }
+
+
+    /// <summary>
+    /// Pipeline the boogie program to Dafny where it is valid
+    /// </summary>
+    /// <returns>Exit value</returns>
+    public static Bpl.PipelineOutcome BoogiePipeline(Bpl.Program program, IList<string> fileNames, string programId, out Bpl.PipelineStatistics stats, out List<Bpl.ErrorInformation> errorList) {
+      Contract.Requires(program != null);
+      Contract.Ensures(0 <= Contract.ValueAtReturn(out stats).InconclusiveCount && 0 <= Contract.ValueAtReturn(out stats).TimeoutCount);
+
+      Bpl.LinearTypeChecker ltc;
+      Bpl.CivlTypeChecker ctc;
+      string baseName = cce.NonNull(Path.GetFileName(fileNames[fileNames.Count - 1]));
+      baseName = cce.NonNull(Path.ChangeExtension(baseName, "bpl"));
+      string bplFileName = Path.Combine(Path.GetTempPath(), baseName);
+
+      errorList = new List<Bpl.ErrorInformation>();
+      stats = new Bpl.PipelineStatistics();
+
+    
+
+      Bpl.PipelineOutcome oc = Bpl.ExecutionEngine.ResolveAndTypecheck(program, bplFileName, out ltc, out ctc);
+      switch (oc) {
+        case Bpl.PipelineOutcome.ResolvedAndTypeChecked:
+          Bpl.ExecutionEngine.EliminateDeadVariables(program);
+          Bpl.ExecutionEngine.CollectModSets(program);
+          Bpl.ExecutionEngine.CoalesceBlocks(program);
+          Bpl.ExecutionEngine.Inline(program);
+          errorList = new List<Bpl.ErrorInformation>();
+          var tmp = new List<Bpl.ErrorInformation>();
+
+          oc = Bpl.ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo => {
+            tmp.Add(errorInfo);
+          });
+          errorList.AddRange(tmp);
+          
+          return oc;
+        default:
+          Contract.Assert(false); throw new cce.UnreachableException();  // unexpected outcome
+      }
+    }
   }
 
+  #region Parser
   public static class Parser {
-    #region Parser
     /// <summary>
     /// Returns null on success, or an error string otherwise.
     /// </summary>
@@ -107,7 +302,7 @@ namespace Tacny {
           if (!isNew) continue;
           newlyIncluded = true;
           newFilesToInclude.Add(include);
-        } 
+        }
 
         foreach (var include in newFilesToInclude) {
           string ret = ParseFile(include.filename, include.tok, module, builtIns, errs, false);
@@ -119,7 +314,7 @@ namespace Tacny {
 
       return null; // Success
     }
-      
+
     private static string ParseFile(string dafnyFileName, Bpl.IToken tok, ModuleDecl module, BuiltIns builtIns, Errors errs, bool verifyThisFile = true) {
       string fn = Bpl.CommandLineOptions.Clo.UseBaseNameForFileName ? Path.GetFileName(dafnyFileName) : dafnyFileName;
       try {
