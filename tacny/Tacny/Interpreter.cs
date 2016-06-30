@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using Microsoft.Dafny;
-using Microsoft.Boogie;
-using LiteralExpr = Microsoft.Dafny.LiteralExpr;
+//using LiteralExpr = Microsoft.Dafny.LiteralExpr;
+using Dafny = Microsoft.Dafny;
 using Program = Microsoft.Dafny.Program;
 using Type = Microsoft.Dafny.Type;
 
@@ -17,7 +19,7 @@ namespace Tacny {
     private readonly ProofState _state;
     private readonly ErrorReporter _errorReporter;
 
-    private Dictionary<UpdateStmt, List<Statement>> _resultList;
+    private readonly Dictionary<UpdateStmt, List<Statement>> _resultList;
     private Interpreter(Program program) {
       Contract.Requires(tcce.NonNull(program));
       // initialize state
@@ -49,6 +51,8 @@ namespace Tacny {
       Contract.Requires(tcce.NonNull(target));
       // initialize new stack for variables
       _frame = new Stack<Dictionary<IVariable, Type>>();
+      // clean up the result list
+      _resultList.Clear();
       var method = target as Method;
       if (method != null) {
         _state.SetTopLevelClass(method.EnclosingClass?.Name);
@@ -60,22 +64,13 @@ namespace Tacny {
         dict = _frame.Pop();
         // sanity check
         Contract.Assert(_frame.Count == 0);
-        BlockStmt body = null;
-        
-        var prog = _state.GetDafnyProgram();
-        var tld = prog.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x.Name == _state.ActiveClass.Name) as ClassDecl;
-        Contract.Assert(tld != null);
-        var member = tld.Members.FirstOrDefault(x => x.Name == _state.TargetMethod.Name) as Method;
-        body = member?.Body;
-        
-        foreach (var kvp in _resultList) {
-          body = InsertCode(_state, kvp.Value, kvp.Key, body);
-        }
-        var r = new Resolver(prog);
-        r.ResolveProgram(prog);
-        method.Body.Body.Clear();
-        method.Body.Body.AddRange(body.Body);
 
+
+        _state.ResultCache.Add(new ProofState.TacticCache(method?.Name, _resultList.Copy()));
+        var body = Util.InsertCode(_state, _resultList);
+        method.Body.Body.Clear();
+        if (body != null)
+          method.Body.Body.AddRange(body.Body);
       }
       return method;
     }
@@ -83,16 +78,15 @@ namespace Tacny {
     // Find tactic application and resolve it
     private void SearchBlockStmt(BlockStmt body) {
       Contract.Requires(tcce.NonNull(body));
-      
-      var dict = new Dictionary<IVariable, Type>();
-      for (var i = 0; i < body.Body.Count; i++) {
-        var stmt = body.Body[i];
+
+      _frame.Push(new Dictionary<IVariable, Type>());
+      foreach (var stmt in body.Body) {
         if (stmt is VarDeclStmt) {
           var vds = stmt as VarDeclStmt;
           // register local variable declarations
           foreach (var local in vds.Locals) {
             try {
-              dict.Add(local, local.Type);
+              _frame.Peek().Add(local, local.Type);
             } catch (Exception e) {
               //TODO: some error handling when target is not resolved
               Console.Out.WriteLine(e.Message);
@@ -100,25 +94,22 @@ namespace Tacny {
           }
         } else if (stmt is IfStmt) {
           var ifStmt = stmt as IfStmt;
-          _frame.Push(dict);
           SearchIfStmt(ifStmt);
-          // remove the top _frame
-          dict = _frame.Pop(); // BUG!!!
+          
         } else if (stmt is WhileStmt) {
           var whileStmt = stmt as WhileStmt;
-          _frame.Push(dict);
           SearchBlockStmt(whileStmt.Body);
-          dict = _frame.Pop();
         } else if (stmt is UpdateStmt) {
           var us = stmt as UpdateStmt;
           if (_state.IsTacticCall(us)) {
             var list = StackToDict(_frame);
-            var result = ApplyTopLevelTactic(list, us);
+            var result = ApplyTactic(_state, list, us);
             _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
-            
+
           }
         }
       }
+      _frame.Pop();
     }
 
     private void SearchIfStmt(IfStmt ifStmt) {
@@ -137,17 +128,36 @@ namespace Tacny {
     private static Dictionary<IVariable, Type> StackToDict(Stack<Dictionary<IVariable, Type>> stack) {
       Contract.Requires(stack != null);
       Contract.Ensures(Contract.Result<Dictionary<IVariable, Type>>() != null);
-      var dict = new Dictionary<IVariable, Type>();
-      return stack.Aggregate(dict, (current, item) => current.Concat(item).ToDictionary(x => x.Key, x => x.Value));
+      var result = new Dictionary<IVariable, Type>();
+      foreach (var dict in stack) {
+        dict.ToList().ForEach(x => result.Add(x.Key, x.Value));
+      }
+      return result;
     }
 
-    private ProofState ApplyTopLevelTactic(Dictionary<IVariable, Type> variables, UpdateStmt tacticApplication) {
+
+    public static ProofState ApplyTactic(ProofState state, Dictionary<IVariable, Type> variables,
+      UpdateStmt tacticApplication) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
       Contract.Requires<ArgumentNullException>(tcce.NonNull(tacticApplication));
-      // get the tactic
-      _state.InitState(tacticApplication, variables);
-      var search = new BaseSearchStrategy(_state.TacticInfo.SearchStrategy, true);
-      return search.Search(_state).FirstOrDefault();
+      Contract.Requires<ArgumentNullException>(state != null, "state");
+      state.InitState(tacticApplication, variables);
+      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
+      return search.Search(state).FirstOrDefault();
+    }
+
+    public static IEnumerable<ProofState> ApplyNestedTactic(ProofState state, Dictionary<IVariable, Type> variables,
+      UpdateStmt tacticApplication) {
+      Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
+      Contract.Requires<ArgumentNullException>(tcce.NonNull(tacticApplication));
+      Contract.Requires<ArgumentNullException>(state != null, "state");
+      state.InitState(tacticApplication, variables);
+      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, false);
+      foreach (var result in search.Search(state)) {
+        var c = state.Copy();
+        c.AddStatementRange(result.GetGeneratedCode());
+        yield return c;
+      }
     }
 
     public static void PrepareFrame(BlockStmt body, ProofState state) {
@@ -164,47 +174,225 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       // one step
       // call the 
+      IEnumerable<ProofState> enumerable = null;
       var stmt = state.GetStmt();
       if (stmt is TacticVarDeclStmt) {
-        return RegisterVariable(stmt as TacticVarDeclStmt, state);
+
+        enumerable = RegisterVariable(stmt as TacticVarDeclStmt, state);
       } else if (stmt is UpdateStmt) {
         var us = stmt as UpdateStmt;
         if (state.IsLocalAssignment(us)) {
-          return UpdateLocalValue(us, state);
+          enumerable = UpdateLocalValue(us, state);
+        } else if (state.IsArgumentApplication(us)) {
+          //TODO: argument application
+        } else if (state.IsTacticCall(us)) {
+          enumerable = ApplyNestedTactic(state.Copy(), state.DafnyVars(), us);
         }
+      } else if (stmt is AssignSuchThatStmt) {
+        enumerable = EvaluateSuchThatStmt((AssignSuchThatStmt) stmt, state);
+      } else if (stmt is PredicateStmt) {
+        
+      }
+      else {
+        enumerable = DefaultAction(stmt, state);
       }
 
-      return DefaultAction(stmt, state);
+      foreach (var item in enumerable)
+        yield return item.Copy();
     }
 
 
-    private static IEnumerable<object> EvaluateTacnyExpression(ProofState state, ApplySuffix aps) {
+    private static IEnumerable<ProofState> ResolvePredicateStmt(PredicateStmt predicate, ProofState state) {
+      Contract.Requires<ArgumentNullException>(predicate != null, "predicate");
+      foreach (var result in EvaluateTacnyExpression(state, predicate.Expr)) {
+        var resultExpression = result is IVariable ? Util.VariableToExpression(result as IVariable) : result as Expression;
+        PredicateStmt newPredicate;
+        if (predicate is AssertStmt) {
+          newPredicate = new AssertStmt(predicate.Tok, predicate.EndTok, resultExpression, predicate.Attributes);
+        } else {
+          newPredicate = new AssumeStmt(predicate.Tok, predicate.EndTok, resultExpression, predicate.Attributes);
+        }
+        var copy = state.Copy();
+        copy.AddStatement(newPredicate);
+        yield return copy;
+      }
+    }
+
+    public static IEnumerable<object> EvaluateTacnyExpression(ProofState state, Expression expr) {
       Contract.Requires<ArgumentNullException>(state != null, "state");
-      Contract.Requires<ArgumentNullException>(aps != null, "aps");
-
-      string sig = ProofState.GetSignature(aps);
-      // using reflection find all classes that extend EAtomic
-      var types =
-        Assembly.GetAssembly(typeof(EAtomic.EAtomic)).GetTypes().Where(t => t.IsSubclassOf(typeof(EAtomic.EAtomic)));
-      foreach (var type in types) {
-        var resolverInstance = Activator.CreateInstance(type) as EAtomic.EAtomic;
-        string resolverSig = resolverInstance?.Signature;
-        if (sig == resolverSig) {
-          //TODO: validate ins
-          return resolverInstance?.Generate(aps, state);
+      Contract.Requires<ArgumentNullException>(expr != null, "expr");
+      if (expr is NameSegment) {
+        var ns = (NameSegment)expr;
+        if (state.ContainsVariable(ns)) {
+          yield return state.GetVariable(ns);
+        } else {
+          yield return ns;
         }
-      }
+      } else if (expr is ApplySuffix) {
+        var aps = (ApplySuffix)expr;
+        if (state.IsTacticCall(aps)) {
+          var us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>() { aps.Lhs },
+            new List<AssignmentRhs>() { new ExprRhs(aps) });
+          foreach (var item in ApplyNestedTactic(state, state.DafnyVars(), us).Select(x => x.GetGeneratedCode())) {
+            yield return item;
+          }
+        }
+        // rewrite the expression
+        if (aps.Lhs is ExprDotName) {
+          foreach (var item in EvaluateTacnyExpression(state, aps.Lhs)) {
+            if (item is Expression) {
+              yield return new ApplySuffix(aps.tok, (Expression)item, aps.Args);
+            } else {
+              Contract.Assert(false, "Unexpected ExprNotName case");
+            }
+          }
+        } else {
+          // try to evaluate as tacny expression
+          string sig = Util.GetSignature(aps);
+          // using reflection find all classes that extend EAtomic
+          var types =
+            Assembly.GetAssembly(typeof(EAtomic.EAtomic)).GetTypes().Where(t => t.IsSubclassOf(typeof(EAtomic.EAtomic)));
+          foreach (var type in types) {
+            var resolverInstance = Activator.CreateInstance(type) as EAtomic.EAtomic;
+            if (sig == resolverInstance?.Signature) {
+              //TODO: validate input countx
+              foreach (var item in resolverInstance?.Generate(aps, state))
+                yield return item;
+            }
+            // if we reached this point, rewrite  the apply suffix
+            foreach (var item in EvaluateTacnyExpression(state, aps.Lhs)) {
+              if (!(item is NameSegment)) {
+                //TODO: warning
+              } else {
+                var argList = new List<Expression>();
+                foreach (var arg in aps.Args) {
+                  foreach (var result in EvaluateTacnyExpression(state, arg)) {
+                    if (result is Expression)
+                      argList.Add(result as Expression);
+                    else
+                      argList.Add(Util.VariableToExpression(result as IVariable));
+                    break;
+                  }
+                }
+                yield return new ApplySuffix(aps.tok, aps.Lhs, argList);
+              }
+            }
 
-      return null;
+          }
+        }
+      } else if (expr is ExprDotName) {
+        var edn = (ExprDotName)expr;
+        var ns = edn.Lhs as NameSegment;
+        if (ns != null && state.ContainsVariable(ns)) {
+          var newLhs = state.GetLocalValue(ns);
+          var lhs = newLhs as Expression;
+          if (lhs != null)
+            yield return new ExprDotName(edn.tok, lhs, edn.SuffixName, edn.OptTypeArguments);
+        }
+        yield return edn;
+      } else if (expr is UnaryOpExpr) {
+        var op = (UnaryOpExpr)expr;
+        foreach (var result in EvaluateTacnyExpression(state, op.E)) {
+          switch (op.Op) {
+            case UnaryOpExpr.Opcode.Cardinality:
+              if (!(result is IEnumerable)) {
+                var resultExp = result is IVariable
+                  ? Util.VariableToExpression(result as IVariable)
+                  : result as Expression;
+                yield return new UnaryOpExpr(op.tok, op.Op, resultExp);
+              } else {
+                var @enum = result as IList;
+                if (@enum != null)
+                  yield return new LiteralExpr(op.tok, @enum.Count);
+              }
+              yield break;
+            case UnaryOpExpr.Opcode.Not:
+              if (result is LiteralExpr) {
+                var lit = (LiteralExpr)result;
+                if (lit.Value is bool) {
+                  // inverse the bool value
+                  yield return new LiteralExpr(op.tok, !(bool)lit.Value);
+                } else {
+                  Contract.Assert(false);
+                  //TODO: error message
+                }
+              } else {
+                var resultExp = result is IVariable ? Util.VariableToExpression(result as IVariable) : result as Expression;
+                yield return new UnaryOpExpr(op.tok, op.Op, resultExp);
+              }
+              yield break;
+            default:
+              Contract.Assert(false, "Unsupported Unary Operator");
+              yield break;
+          }
+        }
+      } else if (expr is DisplayExpression) {
+        var dexpr = (DisplayExpression)expr;
+        if (dexpr.Elements.Count == 0) {
+          yield return dexpr.Copy();
+        } else {
+          foreach (var item in ResolveDisplayExpression(state, dexpr)) {
+            yield return item;
+          }
+
+        }
+      } else { yield return expr; }
     }
 
+
+    public static IEnumerable<IList<Expression>> ResolveDisplayExpression(ProofState state, DisplayExpression list) {
+      Contract.Requires<ArgumentNullException>(state != null, "state");
+      Contract.Requires<ArgumentNullException>(list != null, "list");
+      Contract.Ensures(Contract.Result<IEnumerable<IList<Expression>>>() != null);
+      var dict = list.Elements.ToDictionary(element => element, element => EvaluateTacnyExpression(state, element));
+      return GenerateList(dict, null);
+    }
+
+
+    private static IEnumerable<IList<Expression>> GenerateList(Dictionary<Expression, IEnumerable<object>> elements, IList<Expression> list) {
+      Contract.Requires(elements != null);
+
+      var tmp = list ?? new List<Expression>();
+      var kvp = elements.FirstOrDefault();
+      if (kvp.Equals(default(KeyValuePair<Expression, IEnumerable<Object>>))) {
+        if (list != null)
+          yield return list;
+        else {
+          yield return new List<Expression>();
+        }
+      } else {
+
+        elements.Remove(kvp.Key);
+        foreach (var result in kvp.Value) {
+          var resultExpr = result is IVariable ? Util.VariableToExpression(result as IVariable) : result as Expression;
+          tmp.Add(resultExpr);
+          foreach (var value in GenerateList(elements, tmp)) {
+            yield return value;
+          }
+        }
+      }
+    }
+
+    public static IEnumerable<ProofState> EvaluateSuchThatStmt(AssignSuchThatStmt stmt, ProofState state) {
+      var evaluator = new Atomic.SuchThatAtomic();
+      return evaluator.Generate(stmt, state);
+    }
 
     private static IEnumerable<ProofState> RegisterVariable(TacticVarDeclStmt declaration, ProofState state) {
       if (declaration.Update == null) yield break;
       var rhs = declaration.Update as UpdateStmt;
       if (rhs == null) {
-        foreach (var item in declaration.Locals)
-          state.AddLocal(item, null);
+        // check if rhs is SuchThatStmt
+        if (declaration.Update is AssignSuchThatStmt) {
+          foreach (var item in declaration.Locals)
+            state.AddLocal(item, null);
+          foreach (var item in EvaluateSuchThatStmt(declaration.Update as AssignSuchThatStmt, state)) {
+            yield return item.Copy();
+          }
+        } else {
+          foreach (var item in declaration.Locals)
+            state.AddLocal(item, null);
+        }
       } else {
         foreach (var item in rhs.Rhss) {
           int index = rhs.Rhss.IndexOf(item);
@@ -222,7 +410,7 @@ namespace Tacny {
           }
         }
       }
-      yield return state.Copy<ProofState>();
+      yield return state.Copy();
     }
 
     private static IEnumerable<ProofState> UpdateLocalValue(UpdateStmt us, ProofState state) {
@@ -237,12 +425,12 @@ namespace Tacny {
         if (exprRhs?.Expr is ApplySuffix) {
           var aps = (ApplySuffix)exprRhs.Expr;
           foreach (var result in EvaluateTacnyExpression(state, aps)) {
-            state.UpdateVariable(((NameSegment)us.Lhss[index]).Name, result);
+            state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, result);
           }
         } else if (exprRhs?.Expr is LiteralExpr) {
-          state.UpdateVariable(((NameSegment)us.Lhss[index]).Name, (LiteralExpr)exprRhs?.Expr);
+          state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, (LiteralExpr)exprRhs?.Expr);
         } else {
-          state.UpdateVariable(((NameSegment)us.Lhss[index]).Name, exprRhs?.Expr);
+          state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, exprRhs?.Expr);
         }
       }
       yield return state.Copy();
@@ -259,42 +447,6 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       state.AddStatement(stmt);
       yield return state.Copy();
-    }
-
-    /// <summary>
-    /// Insert generated code into a method
-    /// </summary>
-    /// <param name="state"></param>
-    /// <param name="code"></param>
-    /// <returns></returns>
-    private BlockStmt InsertCode(ProofState state, List<Statement> code, UpdateStmt tacticCall, BlockStmt body = null) {
-      Contract.Requires<ArgumentNullException>(state != null, "state");
-      Contract.Requires<ArgumentNullException>(code != null, "code");
-      Contract.Requires<ArgumentNullException>(tacticCall != null, "tacticCall");
-      
-      return InsertCodeInternal(body, code, tacticCall);
-    }
-
-
-    private static BlockStmt InsertCodeInternal(BlockStmt body, List<Statement> code, UpdateStmt tacticCall) {
-      for (var i = 0; i < body.Body.Count; i++) {
-        var stmt = body.Body[i];
-        if (stmt is UpdateStmt) {
-          // compare tokens
-          if (Compare(tacticCall.Tok, stmt.Tok)) {
-            body.Body.RemoveAt(i);
-            body.Body.InsertRange(i, code);
-            return body;
-          }
-        }
-      }
-
-      return null;
-    }
-
-
-    public static bool Compare(IToken a, IToken b) {
-      return a.col == b.col && a.line == b.line && a.filename == b.filename;
     }
   }
 }

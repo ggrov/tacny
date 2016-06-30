@@ -81,9 +81,19 @@
     <AssemblyOriginatorKeyFile>Tacny.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="BoogieBasetypes, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\boogie\Binaries\BoogieBasetypes.dll</HintPath>
+    </Reference>
+    <Reference Include="BoogieConcurrency">
+      <HintPath>..\..\dafny\Binaries\BoogieConcurrency.dll</HintPath>
+    </Reference>
     <Reference Include="BoogieCore, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dafny\Binaries\BoogieCore.dll</HintPath>
+    </Reference>
+    <Reference Include="BoogieExecutionEngine">
+      <HintPath>..\..\dafny\Binaries\BoogieExecutionEngine.dll</HintPath>
     </Reference>
     <Reference Include="BoogieParserHelper, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -94,11 +104,14 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Atomic\Atomic.cs" />
+    <Compile Include="Atomic\SuchThatAtomic.cs" />
     <Compile Include="EAtomic\EAtomic.cs" />
     <Compile Include="EAtomic\VariablesEAtomic.cs" />
+    <Compile Include="ExpressionTree.cs" />
     <Compile Include="Interpreter.cs" />
     <Compile Include="BaseTactic.cs" />
     <Compile Include="ProofState.cs" />

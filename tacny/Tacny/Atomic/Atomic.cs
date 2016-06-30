@@ -15,7 +15,7 @@ namespace Tacny.Atomic {
     /// <param name="statement"></param>
     /// <param name="state"></param>
     /// <returns></returns>
-    public abstract IEnumerable<Solution> Generate(Statement statement, ProofState state);
+    public abstract IEnumerable<ProofState> Generate(Statement statement, ProofState state);
   }
 
   [ContractClassFor(typeof(Atomic))]
@@ -23,7 +23,7 @@ namespace Tacny.Atomic {
     public override string Signature { get; }
     public override int ArgsCount { get; }
 
-    public override IEnumerable<Solution> Generate(Statement statement, ProofState state) {
+    public override IEnumerable<ProofState> Generate(Statement statement, ProofState state) {
       Contract.Requires(statement != null);
       Contract.Requires(state != null);
 
