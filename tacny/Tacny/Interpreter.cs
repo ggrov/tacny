@@ -95,7 +95,7 @@ namespace Tacny {
         } else if (stmt is IfStmt) {
           var ifStmt = stmt as IfStmt;
           SearchIfStmt(ifStmt);
-          
+
         } else if (stmt is WhileStmt) {
           var whileStmt = stmt as WhileStmt;
           SearchBlockStmt(whileStmt.Body);
@@ -189,11 +189,12 @@ namespace Tacny {
           enumerable = ApplyNestedTactic(state.Copy(), state.DafnyVars(), us);
         }
       } else if (stmt is AssignSuchThatStmt) {
-        enumerable = EvaluateSuchThatStmt((AssignSuchThatStmt) stmt, state);
+        enumerable = EvaluateSuchThatStmt((AssignSuchThatStmt)stmt, state);
       } else if (stmt is PredicateStmt) {
-        enumerable = ResolvePredicateStmt((PredicateStmt) stmt, state);
-      }
-      else {
+        enumerable = ResolvePredicateStmt((PredicateStmt)stmt, state);
+      } else if (stmt is TStatement || stmt is IfStmt || stmt is WhileStmt) {
+
+      } else {
         enumerable = DefaultAction(stmt, state);
       }
 

@@ -59,7 +59,6 @@ namespace Tacny.Atomic {
         BinaryExpr bexp = (BinaryExpr) expr;
         switch (bexp.Op) {
           case BinaryExpr.Opcode.In:
-            NameSegment var = bexp.E0 as NameSegment;
            // Contract.Assert(var != null, Error.MkErr(bexp, 6, declaration.Name));
           //  Contract.Assert(var.Name == declaration.Name, Error.MkErr(bexp, 6, var.Name));
             foreach (var result in Interpreter.EvaluateTacnyExpression(state, bexp.E1)) {
