@@ -117,19 +117,19 @@ namespace DafnyLanguage
 
     #region Parsing and type checking
 
-    internal Dafny.Program ProcessResolution(bool runResolver, bool forceNewProgram = false) {
-      if (!ParseAndTypeCheck(runResolver, forceNewProgram)) {
+    internal Dafny.Program ProcessResolution(bool runResolver, bool createIndependentProgram = false) {
+      if (!ParseAndTypeCheck(runResolver, createIndependentProgram)) {
         return null;
       }
       return _program;
     }
 
-    bool ParseAndTypeCheck(bool runResolver, bool forceNewProgram = false) {
+    bool ParseAndTypeCheck(bool runResolver, bool createIndependentProgram = false) {
       Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>> parseResult;
       Dafny.Program program;
       var errorReporter = new VSErrorReporter(this);
       if (_buffer.Properties.TryGetProperty(bufferDafnyKey, out parseResult) &&
-         (parseResult.Item1 == _snapshot) && !forceNewProgram) {
+         (parseResult.Item1 == _snapshot) && !createIndependentProgram) {
         // already parsed;
         program = parseResult.Item2;
         _errors = parseResult.Item3;
@@ -148,7 +148,9 @@ namespace DafnyLanguage
         } else {
           program = new Dafny.Program(_filename, module, builtIns, errorReporter);
         }
-        _buffer.Properties[bufferDafnyKey] = new Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>>(_snapshot, program, _errors);
+        if (!createIndependentProgram) { 
+          _buffer.Properties[bufferDafnyKey] = new Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>>(_snapshot, program, _errors);
+        }
       }
       if (!runResolver) {
         return false;
@@ -255,6 +257,7 @@ namespace DafnyLanguage
     {
       return Dafny.DafnyOptions.Clo.VerifySnapshots;
     }
+
 
     public static void SetDiagnoseTimeouts(bool v)
     {

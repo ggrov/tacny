@@ -78,7 +78,7 @@ namespace Tacny {
     // Find tactic application and resolve it
     private void SearchBlockStmt(BlockStmt body) {
       Contract.Requires(tcce.NonNull(body));
-
+      BaseSearchStrategy.ResetProofList();
       _frame.Push(new Dictionary<IVariable, Type>());
       foreach (var stmt in body.Body) {
         if (stmt is VarDeclStmt) {

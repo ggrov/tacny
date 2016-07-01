@@ -118,10 +118,10 @@ namespace DafnyLanguage.TacnyLanguage
       DriverFail
     }
     
-    private bool LoadAndCheckDocument(bool checkDirty = false)
+    private bool LoadAndCheckDocument()
     {
       _tdf.TryGetTextDocument(_tv.TextBuffer, out _document);
-      return checkDirty ? _document!=null&&!_document.IsDirty : _document != null;
+      return !string.IsNullOrEmpty(_document?.FilePath);
     }
 
     private bool IsSnapSpanInComment(SnapshotSpan s)
@@ -183,13 +183,11 @@ namespace DafnyLanguage.TacnyLanguage
     private TacticReplaceStatus GetExpandedTactic(string startingWord, out string expandedTactic)
     {
       expandedTactic = "";
-      if (!LoadAndCheckDocument(true)) return TacticReplaceStatus.NoDocumentPersistence;
+      if (!LoadAndCheckDocument()) return TacticReplaceStatus.NoDocumentPersistence;
       var driver = new DafnyDriver(_tv.TextBuffer, _document.FilePath);
 
-      driver.ProcessResolution(true);
+      driver.ProcessResolution(true, true);
       var program = driver.Program;
-      //var result = driver.GetParseResultFromBuffer();
-      //var program = result?.Item2;
       if (program == null) return TacticReplaceStatus.NotResolved;
       
       MemberDecl member = null;
@@ -201,8 +199,7 @@ namespace DafnyLanguage.TacnyLanguage
         if (member != null) break;
       }
       if (member == null) return TacticReplaceStatus.NotResolved;
-      //var mymember = member.Copy();
-      //var myprogram = program.Copy();
+      if (!member.CallsTactic) return TacticReplaceStatus.NoTactic;
       var evaluatedMember = Interpreter.FindAndApplyTactic(program, member);
       if (evaluatedMember == null) return TacticReplaceStatus.DriverFail;
 

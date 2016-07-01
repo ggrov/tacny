@@ -68,6 +68,11 @@ namespace Tacny {
       return enumerable;
     }
 
+    public static void ResetProofList()
+    {
+        _proofList = null;
+    }
+
     private static List<ProofState> _proofList;
     internal static VerifyResult VerifyState(ProofState state) {
       if (_proofList == null)
