@@ -161,15 +161,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Tacny-VS-Plugin\boogie\Binaries\BoogieModel.dll</HintPath>
     </Reference>
-    <Reference Include="BoogieModelViewer">
-      <HintPath>..\..\..\Tacny-VS-Plugin\boogie\Binaries\BoogieModelViewer.dll</HintPath>
-    </Reference>
     <Reference Include="BoogieParserHelper, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
-    </Reference>
-    <Reference Include="BoogiePredication">
-      <HintPath>..\..\..\Tacny-VS-Plugin\boogie\Binaries\BoogiePredication.dll</HintPath>
     </Reference>
     <Reference Include="BoogieVCExpr, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -178,10 +172,6 @@
     <Reference Include="BoogieVCGeneration, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Tacny-VS-Plugin\boogie\Binaries\BoogieVCGeneration.dll</HintPath>
-    </Reference>
-    <Reference Include="Dafny, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\dafny\Binaries\Dafny.exe</HintPath>
     </Reference>
     <Reference Include="DafnyPipeline, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

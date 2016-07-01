@@ -1,15 +1,11 @@
 
-method Section5RemarkThree(i: int)
-{
-  var x := 1;
-  var y := 2;
-//  invartac();
-//assert false;
-  //invartac2(); // will fail
+method Section5RemarkThree(){
+  var x := false;
+  var y := true;
+  invartac();
 }
 
 tactic invartac() {
-  //invartax();
   assert true;
 }
 

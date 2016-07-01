@@ -95,6 +95,9 @@ namespace DafnyLanguage.TacnyLanguage
         case TacticReplaceStatus.DriverFail:
           _status.SetText("Tacny was unable to expand requested tactics.");
           break;
+        case TacticReplaceStatus.NotResolved:
+          _status.SetText("File must first be resolvable to expand tactics.");
+          break;
         case TacticReplaceStatus.NoTactic:
           _status.SetText("There is no method signature name containing under the caret that has expandable tactics.");
           break;
@@ -111,6 +114,7 @@ namespace DafnyLanguage.TacnyLanguage
       Success,
       NoDocumentPersistence,
       NoTactic,
+      NotResolved,
       DriverFail
     }
     
@@ -151,30 +155,60 @@ namespace DafnyLanguage.TacnyLanguage
       return TacticReplaceStatus.Success;
     }
 
+    public static string GetStringForMethod(string methodName, string filename, ITextBuffer tb)
+    {
+      var driver = new DafnyDriver(tb, filename);
+      var result = driver.GetParseResultFromBuffer();
+      var ast = result.Item2;
+      if (ast == null) return "";
+  
+      MemberDecl member = null;
+      foreach (var def in ast.DefaultModuleDef.TopLevelDecls)
+      {
+        if (!(def is ClassDecl)) continue;
+        var c = (ClassDecl)def;
+        member = c.Members.FirstOrDefault(x => x.Name == methodName);
+        if (member != null) break;
+      }
+      if (member == null) return "";
+      var evaluatedMember = Interpreter.FindAndApplyTactic(ast, member);
+      if (evaluatedMember == null) return "";
 
+      var sr = new StringWriter();
+      var printer = new Printer(sr);
+      printer.PrintMembers(new List<MemberDecl> { evaluatedMember }, 0, ast.FullName);
+      return sr.ToString();
+    }
+        
     private TacticReplaceStatus GetExpandedTactic(string startingWord, out string expandedTactic)
     {
       expandedTactic = "";
       if (!LoadAndCheckDocument(true)) return TacticReplaceStatus.NoDocumentPersistence;
       var driver = new DafnyDriver(_tv.TextBuffer, _document.FilePath);
 
-      var result = driver.getParseResultFromBuffer();
-      var ast = result.Item2;
-      if (ast == null) return TacticReplaceStatus.DriverFail;
+      driver.ProcessResolution(true);
+      var program = driver.Program;
+      //var result = driver.GetParseResultFromBuffer();
+      //var program = result?.Item2;
+      if (program == null) return TacticReplaceStatus.NotResolved;
       
       MemberDecl member = null;
-      foreach (var def in ast.DefaultModuleDef.TopLevelDecls)
+      foreach (var def in program.DefaultModuleDef.TopLevelDecls)
       {
         if (!(def is ClassDecl)) continue;
         var c = (ClassDecl) def;
         member = c.Members.FirstOrDefault(x => x.Name == startingWord);
         if (member != null) break;
       }
-      if(member==null) return TacticReplaceStatus.DriverFail;
+      if (member == null) return TacticReplaceStatus.NotResolved;
+      //var mymember = member.Copy();
+      //var myprogram = program.Copy();
+      var evaluatedMember = Interpreter.FindAndApplyTactic(program, member);
+      if (evaluatedMember == null) return TacticReplaceStatus.DriverFail;
 
       var sr = new StringWriter();
       var printer = new Printer(sr);
-      printer.PrintMembers(new List<MemberDecl> {member}, 0, ast.FullName);
+      printer.PrintMembers(new List<MemberDecl> { evaluatedMember }, 0, program.FullName);
       expandedTactic = sr.ToString();
       return TacticReplaceStatus.Success;
     }

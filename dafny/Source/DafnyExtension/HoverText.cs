@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
+using DafnyLanguage.TacnyLanguage;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
@@ -48,12 +49,15 @@ namespace DafnyLanguage
       foreach (IMappingTagSpan<DafnyTokenTag> curTag in _aggregator.GetTags(new SnapshotSpan(triggerPoint, triggerPoint)))
       {
         var s = curTag.Tag.HoverText;
-        if (s != null)
-        {
-          var tagSpan = curTag.Span.GetSpans(_buffer).First();
-          applicableToSpan = _buffer.CurrentSnapshot.CreateTrackingSpan(tagSpan, SpanTrackingMode.EdgeExclusive);
-          quickInfoContent.Add(s);
-        }
+        if (s == null) continue;
+        var tagSpan = curTag.Span.GetSpans(_buffer).First();
+        applicableToSpan = _buffer.CurrentSnapshot.CreateTrackingSpan(tagSpan, SpanTrackingMode.EdgeExclusive);
+        quickInfoContent.Add(s);
+        
+        //if(currentTagIsMethodName){
+        //var expanded = TacticReplacerCommandFilter.GetStringForMethod(curTag as string, filename, _buffer);
+        //quickInfoContent.Add(expanded)
+        //}
       }
     }
     public void Dispose()

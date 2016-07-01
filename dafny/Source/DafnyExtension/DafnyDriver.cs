@@ -33,9 +33,9 @@ namespace DafnyLanguage
       _filename = filename;
     }
 
-    public Tuple<ITextSnapshot, Microsoft.Dafny.Program, List<DafnyError>> getParseResultFromBuffer()
+    public Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>> GetParseResultFromBuffer()
     {
-      Tuple<ITextSnapshot, Microsoft.Dafny.Program, List<DafnyError>> parseResult;
+      Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>> parseResult;
       _buffer.Properties.TryGetProperty(bufferDafnyKey, out parseResult);
       return parseResult;
     }
