@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using Microsoft.Boogie;
 
 namespace Tacny {
 
@@ -48,13 +49,13 @@ namespace Tacny {
 
     }
 
-    public IEnumerable<ProofState> Search(ProofState state) {
+    public IEnumerable<ProofState> Search(ProofState state, ErrorReporterDelegate er) {
       Contract.Requires<ArgumentNullException>(state != null, "rootState");
 
       IEnumerable<ProofState> enumerable;
       switch (ActiveStrategy) {
         case Strategy.Bfs:
-          enumerable = BreadthFirstSeach.Search(state);
+          enumerable = BreadthFirstSeach.Search(state, er);
           break;
         case Strategy.Dfs:
           enumerable = DepthFirstSeach.Search(state);
@@ -62,7 +63,7 @@ namespace Tacny {
         case Strategy.Undefined:
           throw new tcce.UnreachableException();
         default:
-          enumerable = BreadthFirstSeach.Search(state);
+          enumerable = BreadthFirstSeach.Search(state, er);
           break;
       }
       return enumerable;
@@ -74,7 +75,7 @@ namespace Tacny {
     }
 
     private static List<ProofState> _proofList;
-    internal static VerifyResult VerifyState(ProofState state) {
+    internal static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
       if (_proofList == null)
         _proofList = new List<ProofState>();
       if (_proofList.Count + 1 < SolutionCounter) {
@@ -91,7 +92,7 @@ namespace Tacny {
         }
         var memberList = Util.GenerateMembers(state, bodyList);
         var prog = Util.GenerateDafnyProgram(state, memberList.Values.ToList());
-        var result = Util.ResolveAndVerify(prog);
+        var result = Util.ResolveAndVerify(prog, er);
         if (result.Count == 0)
           return VerifyResult.Verified;
         else {
@@ -106,7 +107,7 @@ namespace Tacny {
 
   internal class BreadthFirstSeach : BaseSearchStrategy {
 
-    internal new static IEnumerable<ProofState> Search(ProofState rootState) {
+    internal new static IEnumerable<ProofState> Search(ProofState rootState, ErrorReporterDelegate er) {
 
       var queue = new Queue<IEnumerator<ProofState>>();
       queue.Enqueue(Interpreter.EvalStep(rootState).GetEnumerator());
@@ -122,7 +123,7 @@ namespace Tacny {
 
         if (Verify) {
           if (proofState.IsEvaluated() || proofState.IsPartiallyEvaluated()) {
-            switch (VerifyState(proofState)) {
+            switch (VerifyState(proofState, er)) {
               case VerifyResult.Cached:
                 if (proofState.IsPartiallyEvaluated()) {
                   yield return proofState;

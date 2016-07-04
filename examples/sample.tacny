@@ -2,7 +2,7 @@
 method Section5RemarkThree(){
   var x := false;
   var y := true;
-  invartac();
+  invartac2();
 }
 
 tactic invartac() {

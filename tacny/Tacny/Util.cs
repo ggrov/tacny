@@ -182,7 +182,7 @@ namespace Tacny {
     }
 
 
-    public static List<Bpl.ErrorInformation> ResolveAndVerify(Program program) {
+    public static List<Bpl.ErrorInformation> ResolveAndVerify(Program program, Bpl.ErrorReporterDelegate er) {
       Contract.Requires<ArgumentNullException>(program != null);
       var r = new Resolver(program);
       //var start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
@@ -191,7 +191,7 @@ namespace Tacny {
       var boogieProg = Translate(program, program.Name);
       Bpl.PipelineStatistics stats;
       List<Bpl.ErrorInformation> errorList;
-      Bpl.PipelineOutcome tmp = BoogiePipeline(boogieProg, new List<string> {program.Name}, program.Name, out stats, out errorList);
+      Bpl.PipelineOutcome tmp = BoogiePipeline(boogieProg, new List<string> {program.Name}, program.Name, er, out stats, out errorList);
       return errorList;
     }
 
@@ -211,7 +211,7 @@ namespace Tacny {
     /// Pipeline the boogie program to Dafny where it is valid
     /// </summary>
     /// <returns>Exit value</returns>
-    public static Bpl.PipelineOutcome BoogiePipeline(Bpl.Program program, IList<string> fileNames, string programId, out Bpl.PipelineStatistics stats, out List<Bpl.ErrorInformation> errorList) {
+    public static Bpl.PipelineOutcome BoogiePipeline(Bpl.Program program, IList<string> fileNames, string programId, Bpl.ErrorReporterDelegate er, out Bpl.PipelineStatistics stats, out List<Bpl.ErrorInformation> errorList) {
       Contract.Requires(program != null);
       Contract.Ensures(0 <= Contract.ValueAtReturn(out stats).InconclusiveCount && 0 <= Contract.ValueAtReturn(out stats).TimeoutCount);
 
@@ -238,6 +238,7 @@ namespace Tacny {
 
           oc = Bpl.ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo => {
             tmp.Add(errorInfo);
+            er(errorInfo);
           });
           errorList.AddRange(tmp);
           
