@@ -166,14 +166,11 @@ namespace DafnyLanguage
       }
       else if(unitId=="$$program_tactics$$") //These kinds of errors happen outside normal flow
       {
-        lock (entry)
-        {
           entry = new ErrorContainer() {
             RequestId = requestId
           };
           entry.Errors.Push(error);
           _verificationErrors.TryAdd(unitId, entry);
-        }
       }
     }
 
@@ -189,6 +186,7 @@ namespace DafnyLanguage
         foreach (var key in outOfDatekeys)
         {
           ErrorContainer oldError;
+          if (key == "$$program_tactics$$" || key == "$$program$$") continue;
           _verificationErrors.TryRemove(key, out oldError);
         }
 
