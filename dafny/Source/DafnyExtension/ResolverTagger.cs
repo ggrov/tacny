@@ -164,6 +164,17 @@ namespace DafnyLanguage
         entry.Errors.Push(error);
         UpdateErrorList(Snapshot);
       }
+      else if(unitId=="$$program_tactics$$") //These kinds of errors happen outside normal flow
+      {
+        lock (entry)
+        {
+          entry = new ErrorContainer() {
+            RequestId = requestId
+          };
+          entry.Errors.Push(error);
+          _verificationErrors.TryAdd(unitId, entry);
+        }
+      }
     }
 
     string MostRecentRequestId;
@@ -174,7 +185,7 @@ namespace DafnyLanguage
       lock (this)
       {
         MostRecentRequestId = mostRecentRequestId;
-        var outOfDatekeys = _verificationErrors.Keys.Except(implNames);
+        var outOfDatekeys = _verificationErrors.Keys.Except(implNames); //stop removing program/program_tactic errors
         foreach (var key in outOfDatekeys)
         {
           ErrorContainer oldError;
@@ -183,6 +194,7 @@ namespace DafnyLanguage
 
         var newKeys = implNames.Except(_verificationErrors.Keys).ToList();
         newKeys.Add("$$program$$");
+        newKeys.Add("$$program_tactics$$");
         foreach (var key in newKeys)
         {
           _verificationErrors.TryAdd(key, new ErrorContainer());
@@ -385,7 +397,7 @@ namespace DafnyLanguage
       UpdateErrorList(snapshot);
     }
         
-        public void UpdateErrorList(ITextSnapshot snapshot)
+    public void UpdateErrorList(ITextSnapshot snapshot)
     {
       if (_errorProvider != null && !m_disposed)
       {

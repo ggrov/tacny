@@ -133,6 +133,9 @@
     <Reference Include="BoogieCore">
       <HintPath>..\..\..\boogie\Binaries\BoogieCore.dll</HintPath>
     </Reference>
+    <Reference Include="BoogieExecutionEngine">
+      <HintPath>..\..\..\..\Tacny-VS-Plugin\boogie\Binaries\BoogieExecutionEngine.dll</HintPath>
+    </Reference>
     <Reference Include="BoogieParserHelper">
       <HintPath>..\..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
     </Reference>

@@ -1,9 +1,12 @@
-
 method Section5RemarkThree(){
   var x := false;
   var y := true;
+  var z := give1();
   invartac2();
+//  assert false;
 }
+
+function method give1(): int{ 1 }
 
 tactic invartac() {
   assert true;

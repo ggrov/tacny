@@ -188,18 +188,18 @@ namespace Tacny {
       //var start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       r.ResolveProgram(program);
       //var end = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds
-      var boogieProg = Translate(program, program.Name);
+      var boogieProg = Translate(program, program.Name, er);
       Bpl.PipelineStatistics stats;
       List<Bpl.ErrorInformation> errorList;
       Bpl.PipelineOutcome tmp = BoogiePipeline(boogieProg, new List<string> {program.Name}, program.Name, er, out stats, out errorList);
       return errorList;
     }
 
-    public static Bpl.Program Translate(Program dafnyProgram, string uniqueIdPrefix) {
+    public static Bpl.Program Translate(Program dafnyProgram, string uniqueIdPrefix, Bpl.ErrorReporterDelegate er) {
       Contract.Requires<ArgumentNullException>(dafnyProgram != null, "dafnyProgram");
       Contract.Requires<ArgumentNullException>(uniqueIdPrefix != null, "uniqueIdPrefix");
       Contract.Ensures(Contract.Result<Bpl.Program>() != null);
-      var translator = new Translator(dafnyProgram.reporter) {
+      var translator = new Translator(dafnyProgram.reporter, er) {
         InsertChecksums = true,
         UniqueIdPrefix = uniqueIdPrefix
       };
@@ -235,10 +235,11 @@ namespace Tacny {
           Bpl.ExecutionEngine.Inline(program);
           errorList = new List<Bpl.ErrorInformation>();
           var tmp = new List<Bpl.ErrorInformation>();
-
-          oc = Bpl.ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo => {
+          
+          oc = Bpl.ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo =>
+          {
             tmp.Add(errorInfo);
-            er(errorInfo);
+            er?.Invoke(errorInfo);
           });
           errorList.AddRange(tmp);
           

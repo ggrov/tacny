@@ -154,32 +154,7 @@ namespace DafnyLanguage.TacnyLanguage
       tedit.Apply();
       return TacticReplaceStatus.Success;
     }
-
-    public static string GetStringForMethod(string methodName, string filename, ITextBuffer tb)
-    {
-      var driver = new DafnyDriver(tb, filename);
-      var result = driver.GetParseResultFromBuffer();
-      var ast = result.Item2;
-      if (ast == null) return "";
-  
-      MemberDecl member = null;
-      foreach (var def in ast.DefaultModuleDef.TopLevelDecls)
-      {
-        if (!(def is ClassDecl)) continue;
-        var c = (ClassDecl)def;
-        member = c.Members.FirstOrDefault(x => x.Name == methodName);
-        if (member != null) break;
-      }
-      if (member == null) return "";
-      var evaluatedMember = Interpreter.FindAndApplyTactic(ast, member);
-      if (evaluatedMember == null) return "";
-
-      var sr = new StringWriter();
-      var printer = new Printer(sr);
-      printer.PrintMembers(new List<MemberDecl> { evaluatedMember }, 0, ast.FullName);
-      return sr.ToString();
-    }
-        
+    
     private TacticReplaceStatus GetExpandedTactic(string startingWord, out string expandedTactic)
     {
       expandedTactic = "";
@@ -200,8 +175,9 @@ namespace DafnyLanguage.TacnyLanguage
       }
       if (member == null) return TacticReplaceStatus.NotResolved;
       if (!member.CallsTactic) return TacticReplaceStatus.NoTactic;
-      var evaluatedMember = Interpreter.FindAndApplyTactic(program, member);
-      if (evaluatedMember == null) return TacticReplaceStatus.DriverFail;
+      var status = TacticReplaceStatus.Success;
+      var evaluatedMember = Interpreter.FindAndApplyTactic(program, member, errorInfo => {status = TacticReplaceStatus.DriverFail;});
+      if (evaluatedMember == null || status != TacticReplaceStatus.Success) return TacticReplaceStatus.DriverFail;
 
       var sr = new StringWriter();
       var printer = new Printer(sr);

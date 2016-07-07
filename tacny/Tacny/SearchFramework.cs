@@ -10,7 +10,7 @@ namespace Tacny {
 
   [ContractClass(typeof(BaseSearchContract))]
   public interface ISearch {
-    IEnumerable<ProofState> Search(ProofState state);
+    IEnumerable<ProofState> Search(ProofState state, ErrorReporterDelegate er);
   }
 
 
@@ -29,7 +29,7 @@ namespace Tacny {
   [ContractClassFor(typeof(ISearch))]
   // Validate the input before execution
   public abstract class BaseSearchContract : ISearch {
-    public IEnumerable<ProofState> Search(ProofState state) {
+    public IEnumerable<ProofState> Search(ProofState state, ErrorReporterDelegate er) {
       Contract.Requires(state != null);
       return default(IEnumerable<ProofState>);
     }
@@ -48,25 +48,20 @@ namespace Tacny {
     protected BaseSearchStrategy() {
 
     }
-
+    
     public IEnumerable<ProofState> Search(ProofState state, ErrorReporterDelegate er) {
       Contract.Requires<ArgumentNullException>(state != null, "rootState");
-
-      IEnumerable<ProofState> enumerable;
+      
       switch (ActiveStrategy) {
         case Strategy.Bfs:
-          enumerable = BreadthFirstSeach.Search(state, er);
-          break;
+          return BreadthFirstSeach.Search(state, er);
         case Strategy.Dfs:
-          enumerable = DepthFirstSeach.Search(state);
-          break;
+          return DepthFirstSeach.Search(state);
         case Strategy.Undefined:
           throw new tcce.UnreachableException();
         default:
-          enumerable = BreadthFirstSeach.Search(state, er);
-          break;
+          return BreadthFirstSeach.Search(state, er);
       }
-      return enumerable;
     }
 
     public static void ResetProofList()
@@ -98,6 +93,8 @@ namespace Tacny {
         else {
           //TODO: find which proof state verified (if any)
           //TODO: update verification results
+          
+          //  er();
           return VerifyResult.Failed;
         }
       }

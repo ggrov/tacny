@@ -371,11 +371,27 @@ namespace DafnyLanguage
             }
             if (s != null)
             {
-              errorListHolder.AddError(new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1, ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(), System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename), errorInfo.ImplementationName, requestId);
+              errorListHolder.AddError(
+                new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1,
+                  ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(),
+                  System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename),
+                errorInfo.ImplementationName, requestId);
               foreach (var aux in errorInfo.Aux)
               {
-                errorListHolder.AddError(new DafnyError(aux.Tok.filename, aux.Tok.line - 1, aux.Tok.col - 1, ErrorCategory.AuxInformation, aux.FullMsg, s, isRecycled, null, System.IO.Path.GetFullPath(_document.FilePath) == aux.Tok.filename), errorInfo.ImplementationName, requestId);
+                errorListHolder.AddError(
+                  new DafnyError(aux.Tok.filename, aux.Tok.line - 1, aux.Tok.col - 1, 
+                  ErrorCategory.AuxInformation, aux.FullMsg, s, isRecycled, null, 
+                  System.IO.Path.GetFullPath(_document.FilePath) == aux.Tok.filename),
+                  errorInfo.ImplementationName, requestId);
               }
+            }
+            else
+            {
+              errorListHolder.AddError(
+                new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1,
+                  ErrorCategory.VerificationError, errorInfo.FullMsg, null, isRecycled, errorInfo.Model.ToString(),
+                  System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename),
+                "$$program_tactics$$", requestId);
             }
           }
         });
@@ -387,7 +403,6 @@ namespace DafnyLanguage
       catch (Exception e)
       {
         errorListHolder.FatalVerificationError = new DafnyError("$$program$$", 0, 0, ErrorCategory.InternalError, "Fatal verification error: " + e.Message + "\n" + e.StackTrace, snapshot, false);
-        errorListHolder.UpdateErrorList(errorListHolder.Snapshot);
       }
       finally
       {

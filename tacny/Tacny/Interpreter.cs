@@ -23,10 +23,9 @@ namespace Tacny {
     private static ErrorReporterDelegate _errorReporterDelegate;
 
     private readonly Dictionary<UpdateStmt, List<Statement>> _resultList;
-    private Interpreter(Program program, ErrorReporterDelegate erd = null) {
+    private Interpreter(Program program) {
       Contract.Requires(tcce.NonNull(program));
       // initialize state
-      _errorReporterDelegate = erd;
       _errorReporter = new ConsoleErrorReporter();
       _state = new ProofState(program, _errorReporter);
       _frame = new Stack<Dictionary<IVariable, Type>>();
@@ -41,12 +40,13 @@ namespace Tacny {
       Contract.Invariant(_errorReporter != null);
     }
 
-    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd = null) {
+    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
       if (_i == null) {
-        _i = new Interpreter(program, erd);
+        _i = new Interpreter(program);
       }
+      _errorReporterDelegate = erd;
       return _i.FindTacticApplication(target);
     }
 
@@ -107,9 +107,15 @@ namespace Tacny {
           var us = stmt as UpdateStmt;
           if (_state.IsTacticCall(us)) {
             var list = StackToDict(_frame);
-            var result = ApplyTactic(_state, list, us, _errorReporterDelegate);
-            _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
-
+            var result = ApplyTactic(_state, list, us);
+            if (result != null)
+            {
+              _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
+            }
+            else
+            {
+              //TODO what should go here?
+            }
           }
         }
       }
@@ -147,7 +153,7 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       state.InitState(tacticApplication, variables);
       var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
-      return search.Search(state, erd).FirstOrDefault();
+      return search.Search(state, _errorReporterDelegate).FirstOrDefault();
     }
 
     public static IEnumerable<ProofState> ApplyNestedTactic(ProofState state, Dictionary<IVariable, Type> variables,
@@ -157,7 +163,7 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       state.InitState(tacticApplication, variables);
       var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, false);
-      foreach (var result in search.Search(state, erd)) {
+      foreach (var result in search.Search(state, _errorReporterDelegate)) {
         var c = state.Copy();
         c.AddStatementRange(result.GetGeneratedCode());
         yield return c;
@@ -170,7 +176,7 @@ namespace Tacny {
       state.AddNewFrame(body);
       // call the search engine
       var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
-      search.Search(state, erd);
+      search.Search(state, _errorReporterDelegate);
       state.RemoveFrame();
     }
 

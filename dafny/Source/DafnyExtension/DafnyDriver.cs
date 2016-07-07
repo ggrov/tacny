@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Text;
@@ -293,21 +291,22 @@ namespace DafnyLanguage
     }
 
     public static bool Verify(Dafny.Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er) {
-      Dafny.Translator translator = new Dafny.Translator(dafnyProgram.reporter);
-      translator.InsertChecksums = true;
-      translator.UniqueIdPrefix = uniqueIdPrefix;
-      Bpl.Program boogieProgram = translator.Translate(dafnyProgram);
+      var translator = new Translator(dafnyProgram.reporter, er)
+      {
+        InsertChecksums = true,
+        UniqueIdPrefix = uniqueIdPrefix
+      };
+      var boogieProgram = translator.Translate(dafnyProgram);
 
       resolver.ReInitializeVerificationErrors(requestId, boogieProgram.Implementations);
 
       // TODO(wuestholz): Maybe we should use a fixed program ID to limit the memory overhead due to the program cache in Boogie.
-      PipelineOutcome oc = BoogiePipeline(boogieProgram, 1 < Dafny.DafnyOptions.Clo.VerifySnapshots ? uniqueIdPrefix : null, requestId, er);
+      PipelineOutcome oc = BoogiePipeline(boogieProgram, 1 < CommandLineOptions.Clo.VerifySnapshots ? uniqueIdPrefix : null, requestId, er);
       switch (oc) {
         case PipelineOutcome.Done:
         case PipelineOutcome.VerificationCompleted:
           // TODO:  This would be the place to proceed to compile the program, if desired
           return true;
-        case PipelineOutcome.FatalError:
         default:
           return false;
       }
