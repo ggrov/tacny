@@ -52,6 +52,9 @@
       <Group guid="guidDafnyMenuCmdSet" id="DafnyMenuGroup" priority="0x0600">
         <Parent guid="guidDafnyMenuPkg" id="DafnyMenu"/>
       </Group>
+      <Group guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" priority="0x0610">
+        <Parent guid="guidDafnyMenuPkg" id="DafnyMenu"/>
+      </Group>
     </Groups>
 
     <!--Buttons section. -->
@@ -141,6 +144,27 @@
         </Strings>
       </Button>
 
+      <Button guid="guidTacnyMenuPackageCmdSet" id="ExpandTacticsCommand" priority="0x0108" type="Button">
+        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
+        <Strings>
+          <ButtonText>Expand and Pretty Print this Method</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidTacnyMenuPackageCmdSet" id="ExpandAllTacticsCommand" priority="0x0109" type="Button">
+        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
+        <Strings>
+          <ButtonText>Expand and Pretty Print Whole File [NI]</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidTacnyMenuPackageCmdSet" id="ToggleTacnyCommand" priority="0x0110" type="Button">
+        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Toggle Automatic Tactic Verification [NI]</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -177,16 +201,18 @@
       <IDSymbol name="cmdidDiagnoseTimeouts" value="0x0107" />
     </GuidSymbol>
 
-    <!--
-    <GuidSymbol name="guidImages" value="{0176b216-66c6-49f6-a97d-0273c57a7da6}" >
-      <IDSymbol name="bmpPic1" value="1" />
-      <IDSymbol name="bmpPic2" value="2" />
-      <IDSymbol name="bmpPicSearch" value="3" />
-      <IDSymbol name="bmpPicX" value="4" />
-      <IDSymbol name="bmpPicArrows" value="5" />
-      <IDSymbol name="bmpPicStrikethrough" value="6" />
+    <GuidSymbol name="guidTacnyMenuPackageCmdSet" value="{6800196a-f13c-4bd6-a795-456a2eb74164}">
+      <IDSymbol name="TacnyMenuGroup" value="0x1030" />
+      <IDSymbol name="ExpandTacticsCommand" value="0x0108" />
+      <IDSymbol name="ExpandAllTacticsCommand" value="0x0109" />
+      <IDSymbol name="ToggleTacnyCommand" value="0x0110" />
     </GuidSymbol>
-    -->
   </Symbols>
+
+  <KeyBindings>
+    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="ExpandTacticsCommand" editor="GUID_TextEditorFactory" key1="0" mod1="Control" key2="T" mod2="Control"/>
+    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="ExpandAllTacticsCommand" editor="GUID_TextEditorFactory" key1="0" mod1="Control" key2="Y" mod2="Control"/>
+    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="ToggleTacnyCommand" editor="GUID_TextEditorFactory" key1="0" mod1="Control" key2="U" mod2="Control"/>
+  </KeyBindings>
 
 </CommandTable>

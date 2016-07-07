@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using DafnyLanguage.DafnyMenu;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Editor;
@@ -45,17 +46,31 @@ namespace DafnyLanguage.TacnyLanguage
       var navigator = TextStructureNavigatorSelector.GetTextStructureNavigator(textView.TextBuffer);
       var ta = Vtafs.CreateTagAggregator<DafnyTokenTag>(textView);
       var statusbar = (IVsStatusbar)ServiceProvider.GetService(typeof(SVsStatusbar));
+      
+      var vsShell = Package.GetGlobalService(typeof(SVsShell)) as IVsShell;
+      if (vsShell == null) throw new NullReferenceException("VS Shell failed to Load");
+      IVsPackage shellPack;
+      var packToLoad = new Guid("e1baf989-88a6-4acf-8d97-e0dc243476aa");
+      if (vsShell.LoadPackage(ref packToLoad, out shellPack) != VSConstants.S_OK)
+        throw new NullReferenceException("Dafny Menu failed to Load");
+      var dafnyMenuPack = (DafnyMenuPackage)shellPack;
+      dafnyMenuPack.TacnyMenuProxy = new TacticReplacerProxy(new TacticReplacerCommandFilter(textView, navigator, statusbar, Tdf, ta));
+    }
+  }
 
-      IVsPackage package;
-      var shell = Package.GetGlobalService(typeof(SVsShell)) as IVsShell;
-      if (shell == null) return;
-      var packageToBeLoadedGuid = TacnyPackageIdentifiers.PackageGuid;
-      if (shell.LoadPackage(ref packageToBeLoadedGuid, out package) != VSConstants.S_OK) return;
+  public class TacticReplacerProxy : ITacnyMenuProxy
+  {
+    private readonly TacticReplacerCommandFilter _trcf;
 
-      var trcp = (TacticReplacerCommandPackage)package;
-      trcp.Trcf = new TacticReplacerCommandFilter(textView, navigator, statusbar, Tdf, ta);
+    public TacticReplacerProxy(TacticReplacerCommandFilter trcf)
+    {
+      _trcf = trcf;
     }
     
+    public void Exec()
+    {
+      _trcf.Exec();
+    }
   }
 
   public class TacticReplacerCommandFilter

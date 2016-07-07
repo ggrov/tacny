@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
-  <Import Project="..\packages\Microsoft.VSSDK.BuildTools.14.2.25123\build\Microsoft.VSSDK.BuildTools.props" Condition="Exists('..\packages\Microsoft.VSSDK.BuildTools.14.2.25123\build\Microsoft.VSSDK.BuildTools.props')" />
   <PropertyGroup>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
@@ -30,8 +29,6 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <CodeContractsAssemblyMode>1</CodeContractsAssemblyMode>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -62,7 +59,7 @@
     <CreateVsixContainer>True</CreateVsixContainer>
     <DeployExtension>True</DeployExtension>
     <CopyVsixExtensionFiles>false</CopyVsixExtensionFiles>
-    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <CopyVsixManifestToOutput>false</CopyVsixManifestToOutput>
     <CodeContractsEnableRuntimeChecking>True</CodeContractsEnableRuntimeChecking>
     <CodeContractsRuntimeOnlyPublicSurface>False</CodeContractsRuntimeOnlyPublicSurface>
@@ -343,8 +340,6 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HoverText.cs" />
     <Compile Include="IdentifierTagger.cs" />
-    <Compile Include="TacnyLanguage\TacnyPackageIdentifiers.cs" />
-    <Compile Include="TacnyLanguage\TacticReplacerCommandPackage.cs" />
     <Compile Include="TacnyLanguage\TacticPeekableItem.cs" />
     <Compile Include="TacnyLanguage\TacticPeekResult.cs" />
     <Compile Include="TacnyLanguage\TacticReplacer.cs" />
@@ -372,11 +367,6 @@
     <Content Include="DafnyRuntime.cs">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <VSCTCompile Include="TacnyLanguage\TacticReplacerCommandPackage.vsct">
-      <ResourceName>Menus.ctmenu</ResourceName>
-    </VSCTCompile>
-    <Resource Include="TacnyLanguage\Resources\TacticReplacerCommand.png" />
-    <Resource Include="TacnyLanguage\Resources\TacticReplacerCommandPackage.ico" />
     <Content Include="Z3-LICENSE.txt">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
@@ -405,6 +395,8 @@
     <ProjectReference Include="..\DafnyMenu\DafnyMenu.csproj">
       <Project>{ca0848d3-3e4f-410e-8ac6-d6125a2b8e30}</Project>
       <Name>DafnyMenu</Name>
+	  <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgdefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -427,13 +419,6 @@
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="TacnyLanguage\VSPackage.resx">
-      <MergeWithCTO>true</MergeWithCTO>
-      <ManifestResourceName>VSPackage</ManifestResourceName>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-  </ItemGroup>
   <PropertyGroup>
     <UseCodebase>true</UseCodebase>
   </PropertyGroup>
@@ -446,14 +431,6 @@ COPY /Y "$(ProjectDir)$(OutDir)Z3-LICENSE.txt"       "$(ProjectDir)"
 COPY /Y "$(ProjectDir)..\..\..\tacny\binaries\z3.exe" "$(ProjectDir)"
 COPY /Y "$(ProjectDir)..\..\..\tacny\binaries\Tacny.exe" "$(ProjectDir)"</PreBuildEvent>
   </PropertyGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Microsoft.VSSDK.BuildTools.14.2.25123\build\Microsoft.VSSDK.BuildTools.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VSSDK.BuildTools.14.2.25123\build\Microsoft.VSSDK.BuildTools.props'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.VSSDK.BuildTools.14.2.25123\build\Microsoft.VSSDK.BuildTools.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VSSDK.BuildTools.14.2.25123\build\Microsoft.VSSDK.BuildTools.targets'))" />
-  </Target>
-  <Import Project="..\packages\Microsoft.VSSDK.BuildTools.14.2.25123\build\Microsoft.VSSDK.BuildTools.targets" Condition="Exists('..\packages\Microsoft.VSSDK.BuildTools.14.2.25123\build\Microsoft.VSSDK.BuildTools.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

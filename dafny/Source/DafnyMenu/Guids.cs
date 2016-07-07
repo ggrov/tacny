@@ -17,5 +17,9 @@ namespace DafnyLanguage.DafnyMenu
     public const string guidToolWindowPersistanceString = "6f1cb50b-18fa-4d03-b480-71be56c50053";
 
     public static readonly Guid guidBvdToolboxCmdSet = new Guid(guidBvdToolboxCmdSetString);
+
+    
+    public const string guidTacnyMenuCmdSetString = "6800196a-f13c-4bd6-a795-456a2eb74164";
+    public static readonly Guid guidTacnyMenuCmdSet = new Guid(guidTacnyMenuCmdSetString);
   };
 }

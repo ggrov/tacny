@@ -70,6 +70,10 @@ namespace DafnyLanguage.DafnyMenu
         
   }
 
+  public interface ITacnyMenuProxy
+  {
+    void Exec();
+  }
 
   /// <summary>
   /// This is the class that implements the package exposed by this assembly.
@@ -106,10 +110,13 @@ namespace DafnyLanguage.DafnyMenu
     private OleMenuCommand toggleAutomaticInductionCommand;
     private OleMenuCommand toggleBVDCommand;
     private OleMenuCommand diagnoseTimeoutsCommand;
-
+    private MenuCommand expandTacticsItem;
+    private MenuCommand expandAllItem;
+    private MenuCommand toggleItem;
     bool BVDDisabled;
 
     public IMenuProxy MenuProxy { get; set; }
+    public ITacnyMenuProxy TacnyMenuProxy { get; set; }
 
 
     /// <summary>
@@ -192,6 +199,19 @@ namespace DafnyLanguage.DafnyMenu
         menuCommand.BeforeQueryStatus += menuCommand_BeforeQueryStatus;
         menuCommand.Enabled = true;
         mcs.AddCommand(menuCommand);
+
+
+        var expandTacticsCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ExpandTacticsCommandId);
+        expandTacticsItem = new MenuCommand(MenuItemCallback, expandTacticsCommandId);
+        mcs.AddCommand(expandTacticsItem);
+
+        var expandAllCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ExpandAllTacticsCommandId);
+        expandAllItem = new MenuCommand(NotImplemented, expandAllCommandId);
+        mcs.AddCommand(expandAllItem);
+
+        var toggleCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ToggleTacnyCommandId);
+        toggleItem = new MenuCommand(NotImplemented, toggleCommandId);
+        mcs.AddCommand(toggleItem);
       }
     }
 
@@ -445,7 +465,17 @@ namespace DafnyLanguage.DafnyMenu
       }
       return result;
     }
-        
-    #endregion
+
+
+    private void MenuItemCallback(object sender, EventArgs e)
+    {
+      TacnyMenuProxy.Exec();
     }
+
+    private static void NotImplemented(object s, EventArgs e)
+    {
+      throw new NotImplementedException();
+    }
+    #endregion
+  }
 }

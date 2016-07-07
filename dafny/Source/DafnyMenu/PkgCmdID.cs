@@ -15,5 +15,9 @@ namespace DafnyLanguage.DafnyMenu
     public static uint cmdidToggleMoreAdvancedSnapshotVerification = 0x105;
     public static uint cmdidToggleAutomaticInduction = 0x106;
     public static uint cmdidDiagnoseTimeouts = 0x107;
-    };
+    
+    public const int ExpandTacticsCommandId = 0x0108;
+    public const int ExpandAllTacticsCommandId = 0x0109;
+    public const int ToggleTacnyCommandId = 0x0110;
+  };
 }
