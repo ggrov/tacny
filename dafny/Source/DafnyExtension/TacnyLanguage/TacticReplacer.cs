@@ -71,6 +71,11 @@ namespace DafnyLanguage.TacnyLanguage
     {
       _trcf.Exec();
     }
+
+    public bool ToggleTacticEvaluation()
+    {
+      return DafnyDriver.ToggleTacticEvaluation();
+    }
   }
 
   public class TacticReplacerCommandFilter

@@ -162,7 +162,7 @@
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <CommandFlag>TextChanges</CommandFlag>
         <Strings>
-          <ButtonText>Toggle Automatic Tactic Verification [NI]</ButtonText>
+          <ButtonText>Disable Automatic Tactic Verification</ButtonText>
         </Strings>
       </Button>
     </Buttons>

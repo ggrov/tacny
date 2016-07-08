@@ -340,8 +340,6 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HoverText.cs" />
     <Compile Include="IdentifierTagger.cs" />
-    <Compile Include="TacnyLanguage\TacticPeekableItem.cs" />
-    <Compile Include="TacnyLanguage\TacticPeekResult.cs" />
     <Compile Include="TacnyLanguage\TacticReplacer.cs" />
     <Compile Include="MenuProxy.cs" />
     <Compile Include="ProgressMargin.cs" />
@@ -395,7 +393,7 @@
     <ProjectReference Include="..\DafnyMenu\DafnyMenu.csproj">
       <Project>{ca0848d3-3e4f-410e-8ac6-d6125a2b8e30}</Project>
       <Name>DafnyMenu</Name>
-	  <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgdefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgdefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
   </ItemGroup>

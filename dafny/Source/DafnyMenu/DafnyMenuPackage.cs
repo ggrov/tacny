@@ -67,12 +67,15 @@ namespace DafnyLanguage.DafnyMenu
 
         
     void DiagnoseTimeouts(IWpfTextView activeTextView);
-        
+
+
   }
 
   public interface ITacnyMenuProxy
   {
     void Exec();
+
+    bool ToggleTacticEvaluation();
   }
 
   /// <summary>
@@ -110,9 +113,9 @@ namespace DafnyLanguage.DafnyMenu
     private OleMenuCommand toggleAutomaticInductionCommand;
     private OleMenuCommand toggleBVDCommand;
     private OleMenuCommand diagnoseTimeoutsCommand;
-    private MenuCommand expandTacticsItem;
-    private MenuCommand expandAllItem;
-    private MenuCommand toggleItem;
+    private OleMenuCommand expandTacticsItem;
+    private OleMenuCommand expandAllItem;
+    private OleMenuCommand toggleItem;
     bool BVDDisabled;
 
     public IMenuProxy MenuProxy { get; set; }
@@ -202,15 +205,15 @@ namespace DafnyLanguage.DafnyMenu
 
 
         var expandTacticsCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ExpandTacticsCommandId);
-        expandTacticsItem = new MenuCommand(MenuItemCallback, expandTacticsCommandId);
+        expandTacticsItem = new OleMenuCommand(MenuItemCallback, expandTacticsCommandId);
         mcs.AddCommand(expandTacticsItem);
 
         var expandAllCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ExpandAllTacticsCommandId);
-        expandAllItem = new MenuCommand(NotImplemented, expandAllCommandId);
+        expandAllItem = new OleMenuCommand(NotImplemented, expandAllCommandId);
         mcs.AddCommand(expandAllItem);
 
         var toggleCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ToggleTacnyCommandId);
-        toggleItem = new MenuCommand(NotImplemented, toggleCommandId);
+        toggleItem = new OleMenuCommand(ToggleItemCallback, toggleCommandId);
         mcs.AddCommand(toggleItem);
       }
     }
@@ -470,6 +473,12 @@ namespace DafnyLanguage.DafnyMenu
     private void MenuItemCallback(object sender, EventArgs e)
     {
       TacnyMenuProxy.Exec();
+    }
+
+    private void ToggleItemCallback(object sender, EventArgs e)
+    {
+      var result = TacnyMenuProxy.ToggleTacticEvaluation() ? "Disable" : "Enable";
+      toggleItem.Text = result + " Automatic Tactic Verification";
     }
 
     private static void NotImplemented(object s, EventArgs e)

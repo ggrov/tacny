@@ -96,7 +96,8 @@ namespace Microsoft.Dafny {
     ErrorReporter reporter;
     // TODO(wuestholz): Enable this once Dafny's recommended Z3 version includes changeset 0592e765744497a089c42021990740f303901e67.
     public bool UseOptimizationInZ3 { get; set; }
-
+    public static bool TacticEvaluationIsEnabled { get; set; }
+    
     // used to pass the tactic evaluation result back to the visual studio extension
     private ErrorReporterDelegate _tacnyDelegate;
     [NotDelayed]
@@ -1465,7 +1466,7 @@ namespace Microsoft.Dafny {
           this.fuelContext = oldFuelContext;
         } else if (member is Method) {
           Method m = (Method)member;
-          if (m.CallsTactic) {
+          if (TacticEvaluationIsEnabled && m.CallsTactic) {
             m = Tacny.Interpreter.FindAndApplyTactic(program, m, _tacnyDelegate) as Method;
           }
           FuelContext oldFuelContext = this.fuelContext;

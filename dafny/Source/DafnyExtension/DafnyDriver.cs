@@ -21,6 +21,7 @@ namespace DafnyLanguage
     Dafny.Program _program;
     public Dafny.Program Program => _program;
     static object bufferDafnyKey = new object();
+    private static bool _tacticEvaluationIsEnabled = true;
 
     List<DafnyError> _errors = new List<DafnyError>();
     public new List<DafnyError> Errors { get { return _errors; } }
@@ -249,6 +250,13 @@ namespace DafnyLanguage
           Aux.Add(new AuxErrorInfo(tok, "Related location"));
         }
       }
+    }
+
+    public static bool ToggleTacticEvaluation()
+    {
+      _tacticEvaluationIsEnabled = !_tacticEvaluationIsEnabled;
+      Translator.TacticEvaluationIsEnabled = _tacticEvaluationIsEnabled;
+      return _tacticEvaluationIsEnabled;
     }
 
     public static int IncrementalVerificationMode()
