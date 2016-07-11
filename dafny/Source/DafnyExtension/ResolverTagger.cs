@@ -186,7 +186,12 @@ namespace DafnyLanguage
         foreach (var key in outOfDatekeys)
         {
           ErrorContainer oldError;
-          if (key == "$$program_tactics$$" || key == "$$program$$") continue;
+          if (key == "$$program_tactics$$")
+          {
+            if (!_verificationErrors.TryGetValue(key, out oldError)) continue;
+            if (oldError.RequestId != null &&
+                new DateTime(long.Parse(oldError.RequestId)) >= new DateTime(long.Parse(mostRecentRequestId))) continue;
+          }
           _verificationErrors.TryRemove(key, out oldError);
         }
 

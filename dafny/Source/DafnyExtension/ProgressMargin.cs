@@ -385,7 +385,7 @@ namespace DafnyLanguage
                   errorInfo.ImplementationName, requestId);
               }
             }
-            else
+            else if (errorInfo.Category == "TacticsError")
             {
               errorListHolder.AddError(
                 new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1,

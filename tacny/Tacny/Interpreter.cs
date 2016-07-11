@@ -43,11 +43,17 @@ namespace Tacny {
     public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
-      if (_i == null) {
+      // TODO Re-Enable with more permanent solution
+      // Currently, if the interpreter is the same, static across calls, each time the interpreter is
+      //   needed, it will just re-use the previous proof states, frames etc. Which will likely cause
+      //   problems in the extension, where it is called many times consecutively.
+      //if (_i == null) {
         _i = new Interpreter(program);
-      }
+      //}
       _errorReporterDelegate = erd;
-      return _i.FindTacticApplication(target);
+      var result = _i.FindTacticApplication(target);
+      _errorReporterDelegate = null;
+      return result;
     }
 
 
@@ -82,6 +88,11 @@ namespace Tacny {
     // Find tactic application and resolve it
     private void SearchBlockStmt(BlockStmt body) {
       Contract.Requires(tcce.NonNull(body));
+
+      // TODO Make sure this is an OK Thing to be doing
+      // Currently, if the proof list is not reset, then because it is static across
+      //   calls, it will start to build up old information, and the program will go
+      //   into a loop trying to figure out new fresh names for 'existing' methods.
       BaseSearchStrategy.ResetProofList();
       _frame.Push(new Dictionary<IVariable, Type>());
       foreach (var stmt in body.Body) {

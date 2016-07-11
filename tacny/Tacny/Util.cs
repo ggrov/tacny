@@ -238,6 +238,7 @@ namespace Tacny {
           
           oc = Bpl.ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo =>
           {
+            errorInfo.Category = "TacticsError";
             tmp.Add(errorInfo);
             er?.Invoke(errorInfo);
           });

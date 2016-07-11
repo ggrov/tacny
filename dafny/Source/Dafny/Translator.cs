@@ -96,7 +96,7 @@ namespace Microsoft.Dafny {
     ErrorReporter reporter;
     // TODO(wuestholz): Enable this once Dafny's recommended Z3 version includes changeset 0592e765744497a089c42021990740f303901e67.
     public bool UseOptimizationInZ3 { get; set; }
-    public static bool TacticEvaluationIsEnabled { get; set; }
+    public static bool TacticEvaluationIsEnabled = true;
     
     // used to pass the tactic evaluation result back to the visual studio extension
     private ErrorReporterDelegate _tacnyDelegate;
