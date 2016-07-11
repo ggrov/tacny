@@ -12,6 +12,10 @@ tactic invartac() {
   assert true;
 }
 
+lemma Another(){
+	invartac();
+}
+
 tactic invartac2() {
   assert false;
 }

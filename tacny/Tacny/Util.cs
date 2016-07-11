@@ -154,10 +154,10 @@ namespace Tacny {
       Contract.Assert(tld != null);
       var member = tld.Members.FirstOrDefault(x => x.Name == state.TargetMethod.Name);
       Contract.Assert(member != null);
+      // we can safely remove the tactics
+      tld.Members.RemoveAll(x => x is Tactic); //remove before else index will be wrong
       int index = tld.Members.IndexOf(member);
       tld.Members.RemoveAt(index);
-      // we can safely remove the tactics
-      tld.Members.RemoveAll(x => x is Tactic);
       tld.Members.InsertRange(index, newMembers);
       var filePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
       var tw = new StreamWriter(filePath);
