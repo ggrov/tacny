@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using DafnyLanguage.DafnyMenu;
@@ -24,9 +25,6 @@ namespace DafnyLanguage.TacnyLanguage
   [TextViewRole(PredefinedTextViewRoles.Editable)]
   internal class TacticReplacerFilterProvider : IVsTextViewCreationListener
   {
-    [Import(typeof(IVsEditorAdaptersFactoryService))]
-    internal IVsEditorAdaptersFactoryService EditorAdaptersFactory { get; set; }
-
     [Import(typeof(ITextDocumentFactoryService))]
     internal ITextDocumentFactoryService Tdf;
 
@@ -41,12 +39,6 @@ namespace DafnyLanguage.TacnyLanguage
 
     public void VsTextViewCreated(IVsTextView textViewAdapter)
     {
-      var textView = EditorAdaptersFactory.GetWpfTextView(textViewAdapter);
-      if (textView == null) throw new Exception("Failed to access WpfTextView");
-      var navigator = TextStructureNavigatorSelector.GetTextStructureNavigator(textView.TextBuffer);
-      var ta = Vtafs.CreateTagAggregator<DafnyTokenTag>(textView);
-      var statusbar = (IVsStatusbar)ServiceProvider.GetService(typeof(SVsStatusbar));
-      
       var vsShell = Package.GetGlobalService(typeof(SVsShell)) as IVsShell;
       if (vsShell == null) throw new NullReferenceException("VS Shell failed to Load");
       IVsPackage shellPack;
@@ -54,27 +46,37 @@ namespace DafnyLanguage.TacnyLanguage
       if (vsShell.LoadPackage(ref packToLoad, out shellPack) != VSConstants.S_OK)
         throw new NullReferenceException("Dafny Menu failed to Load");
       var dafnyMenuPack = (DafnyMenuPackage)shellPack;
-      dafnyMenuPack.TacnyMenuProxy = new TacticReplacerProxy(new TacticReplacerCommandFilter(textView, navigator, statusbar, Tdf, ta));
+      dafnyMenuPack.TacnyMenuProxy = new TacticReplacerProxy(Tdf, TextStructureNavigatorSelector, ServiceProvider, Vtafs);
     }
   }
 
   public class TacticReplacerProxy : ITacnyMenuProxy
   {
-    private readonly TacticReplacerCommandFilter _trcf;
+    private readonly ITextStructureNavigatorSelectorService _tsn;
+    private readonly IViewTagAggregatorFactoryService _vtaf;
+    private readonly ITextDocumentFactoryService _tdf;
+    private readonly IVsStatusbar _status;
 
-    public TacticReplacerProxy(TacticReplacerCommandFilter trcf)
-    {
-      _trcf = trcf;
+    public TacticReplacerProxy(ITextDocumentFactoryService tdf, ITextStructureNavigatorSelectorService tsn, IServiceProvider isp, IViewTagAggregatorFactoryService vtaf) {
+      _tdf = tdf;
+      _tsn = tsn;
+      _vtaf = vtaf;
+      _status = (IVsStatusbar) isp.GetService(typeof(SVsStatusbar));
     }
     
-    public void Exec()
+    public void Exec(IWpfTextView atv)
     {
-      _trcf.Exec();
-    }
-
-    public bool ToggleTacticEvaluation()
-    {
-      return DafnyDriver.ToggleTacticEvaluation();
+      Contract.Requires<NullReferenceException>(atv != null);
+      //var navigator = atv.Options.IsOptionDefined("textStructureNaviagtor", true) ?
+      //  (ITextStructureNavigator)atv.Options.GetOptionValue("textStructureNaviagtor") : _tsn.GetTextStructureNavigator(atv.TextBuffer);
+      //atv.Options.SetOptionValue("textStructureNavigator", navigator);
+      //var ta = atv.Options.IsOptionDefined("tagAggregator", true) ? 
+      //  (ITagAggregator<DafnyTokenTag>)atv.Options.GetOptionValue("tagAggregator") : _vtaf.CreateTagAggregator<DafnyTokenTag>(atv);
+      //atv.Options.SetOptionValue("tagAggregator", ta);
+      var navigator = _tsn.GetTextStructureNavigator(atv.TextBuffer);
+      var ta = _vtaf.CreateTagAggregator<DafnyTokenTag>(atv);
+      var trcf = new TacticReplacerCommandFilter(atv, navigator, _status, _tdf, ta);
+      trcf.Exec();
     }
   }
 
@@ -254,6 +256,5 @@ namespace DafnyLanguage.TacnyLanguage
       var ghostPrev = _tsn.GetSpanOfPreviousSibling(prev);
       return ghostPrev.GetText() == "ghost" ? ghostPrev.Start : startingPos;
     }
-    
   }
 }

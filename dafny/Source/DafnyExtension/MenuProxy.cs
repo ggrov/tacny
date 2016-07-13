@@ -151,6 +151,10 @@ namespace DafnyLanguage
         }
       }
     }
-        
+
+    public bool ToggleTacticEvaluation()
+    {
+      return DafnyDriver.ToggleTacticEvaluation();
     }
+  }
 }

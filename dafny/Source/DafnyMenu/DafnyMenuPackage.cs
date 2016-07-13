@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Operations;
+using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace DafnyLanguage.DafnyMenu
@@ -67,15 +68,14 @@ namespace DafnyLanguage.DafnyMenu
 
         
     void DiagnoseTimeouts(IWpfTextView activeTextView);
+    
 
-
+    bool ToggleTacticEvaluation();
   }
 
   public interface ITacnyMenuProxy
   {
-    void Exec();
-
-    bool ToggleTacticEvaluation();
+    void Exec(IWpfTextView atv);
   }
 
   /// <summary>
@@ -205,7 +205,7 @@ namespace DafnyLanguage.DafnyMenu
 
 
         var expandTacticsCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ExpandTacticsCommandId);
-        expandTacticsItem = new OleMenuCommand(MenuItemCallback, expandTacticsCommandId);
+        expandTacticsItem = new OleMenuCommand(TacticReplaceCallback, expandTacticsCommandId);
         mcs.AddCommand(expandTacticsItem);
 
         var expandAllCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ExpandAllTacticsCommandId);
@@ -470,14 +470,19 @@ namespace DafnyLanguage.DafnyMenu
     }
 
 
-    private void MenuItemCallback(object sender, EventArgs e)
+    private void TacticReplaceCallback(object sender, EventArgs e)
     {
-      TacnyMenuProxy.Exec();
+      var atv = ActiveTextView;
+      if (TacnyMenuProxy != null && atv != null)
+      {
+        TacnyMenuProxy.Exec(atv);
+      }
     }
 
     private void ToggleItemCallback(object sender, EventArgs e)
     {
-      var result = TacnyMenuProxy.ToggleTacticEvaluation() ? "Disable" : "Enable";
+      if (MenuProxy == null) return;
+      var result = MenuProxy.ToggleTacticEvaluation() ? "Disable" : "Enable";
       toggleItem.Text = result + " Automatic Tactic Verification";
     }
 
