@@ -82,6 +82,7 @@ namespace DafnyLanguage
           return "compiler warning";  // COLOR: blue
         case ErrorCategory.InternalError:
         case ErrorCategory.VerificationError:
+        case ErrorCategory.TacticError:
           return "error";  // COLOR: red
         case ErrorCategory.AuxInformation:
           return "other error";  // COLOR: purple red
@@ -328,7 +329,7 @@ namespace DafnyLanguage
             }
           }
         }
-        else if (err.Category == ErrorCategory.TacticInformation &&
+        else if (err.Category == ErrorCategory.TacticError &&
                  err.Filename == System.IO.Path.GetFullPath(_document.FilePath))
         {
             if (err.StateSpans == null) continue;
@@ -464,13 +465,12 @@ namespace DafnyLanguage
         case ErrorCategory.ResolveError:
         case ErrorCategory.VerificationError:
         case ErrorCategory.InternalError:
+        case ErrorCategory.TacticError:
           return TaskErrorCategory.Error;
         case ErrorCategory.ParseWarning:
         case ErrorCategory.ResolveWarning:
           return TaskErrorCategory.Warning;
         case ErrorCategory.AuxInformation:
-          return TaskErrorCategory.Message;
-        case ErrorCategory.TacticInformation:
           return TaskErrorCategory.Message;
         default:
           Contract.Assert(false);  // unexpected category
@@ -534,7 +534,7 @@ namespace DafnyLanguage
 
   public enum ErrorCategory
   {
-    ProcessError, ParseWarning, ParseError, ResolveWarning, ResolveError, VerificationError, AuxInformation, InternalError, TacticInformation
+    ProcessError, ParseWarning, ParseError, ResolveWarning, ResolveError, VerificationError, AuxInformation, InternalError, TacticError
   }
 
   public class DafnyError
