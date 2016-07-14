@@ -351,75 +351,66 @@ namespace DafnyLanguage
 
       DafnyDriver.SetDiagnoseTimeouts(diagnoseTimeouts);
       errorListHolder.FatalVerificationError = null;
-
       var tacticsErrorList = new List<ErrorInformation>();
-      Program boogieProgram = null;
 
       try
       {
         bool success = DafnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
         {
-          if (!_disposed)
+          if (_disposed) return;
+          if (errorInfo.Category == "TacticsError")
           {
-            if (errorInfo.Category == "TacticsError")
-            {
-              tacticsErrorList.Add(errorInfo);
-              return;
-            }
-            errorInfo.BoogieErrorCode = null;
-            var isRecycled = false;
-            ITextSnapshot s = null;
-            if (errorInfo.OriginalRequestId != null)
-            {
-              isRecycled = errorInfo.OriginalRequestId != requestId;
-              RequestIdToSnapshot.TryGetValue(errorInfo.OriginalRequestId, out s);
-            }
-            if (s == null && errorInfo.RequestId != null)
-            {
-              RequestIdToSnapshot.TryGetValue(errorInfo.RequestId, out s);
-            }
-            if (s != null)
-            {
-              errorListHolder.AddError(
-                new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1,
-                  ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(),
-                  System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename),
-                errorInfo.ImplementationName, requestId);
-              foreach (var aux in errorInfo.Aux)
-              {
-                errorListHolder.AddError(
-                  new DafnyError(aux.Tok.filename, aux.Tok.line - 1, aux.Tok.col - 1, 
-                  ErrorCategory.AuxInformation, aux.FullMsg, s, isRecycled, null, 
-                  System.IO.Path.GetFullPath(_document.FilePath) == aux.Tok.filename),
-                  errorInfo.ImplementationName, requestId);
-              }
-            }
+            tacticsErrorList.Add(errorInfo);
+            return;
           }
-        }, out boogieProgram);
+          errorInfo.BoogieErrorCode = null;
+          var isRecycled = false;
+          ITextSnapshot s = null;
+          if (errorInfo.OriginalRequestId != null)
+          {
+            isRecycled = errorInfo.OriginalRequestId != requestId;
+            RequestIdToSnapshot.TryGetValue(errorInfo.OriginalRequestId, out s);
+          }
+          if (s == null && errorInfo.RequestId != null)
+          {
+            RequestIdToSnapshot.TryGetValue(errorInfo.RequestId, out s);
+          }
+          if (s == null) return;
+          errorListHolder.AddError(
+            new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1,
+              ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(),
+              System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename),
+            errorInfo.ImplementationName, requestId);
+          foreach (var aux in errorInfo.Aux)
+          {
+            errorListHolder.AddError(
+              new DafnyError(aux.Tok.filename, aux.Tok.line - 1, aux.Tok.col - 1, 
+                ErrorCategory.AuxInformation, aux.FullMsg, s, isRecycled, null, 
+                System.IO.Path.GetFullPath(_document.FilePath) == aux.Tok.filename),
+              errorInfo.ImplementationName, requestId);
+          }
+        });
         if (!success)
         {
-          errorListHolder.AddError(new DafnyError("$$program$$", 0, 0, ErrorCategory.InternalError, "Verification process error", snapshot, false), "$$program$$", requestId);
+          errorListHolder.AddError(
+            new DafnyError("$$program$$", 0, 0, ErrorCategory.InternalError, "Verification process error", snapshot, false),
+          "$$program$$", requestId);
         }
       }
       catch (Exception e)
       {
-        errorListHolder.FatalVerificationError = new DafnyError("$$program$$", 0, 0, ErrorCategory.InternalError, "Fatal verification error: " + e.Message + "\n" + e.StackTrace, snapshot, false);
+        errorListHolder.FatalVerificationError = new DafnyError("$$program$$", 0, 0,
+          ErrorCategory.InternalError, "Fatal verification error: " + e.Message + "\n" + e.StackTrace, snapshot, false);
       }
       finally
       {
+        ITextSnapshot s;
+        RequestIdToSnapshot.TryGetValue(requestId, out s);
         foreach (var errorInfo in tacticsErrorList)
         {
-          int mappedLine, mappedCol;
-          var mapStatus = FindCorrectLocation(errorInfo, boogieProgram, out mappedLine, out mappedCol);
-          var fullMsg = errorInfo.FullMsg;
-          ITextSnapshot s;
-          RequestIdToSnapshot.TryGetValue(requestId, out s);
-          fullMsg += mapStatus ? "" : ", Failed to map correct position data for token";
-          fullMsg += ", FYI: The original tmp file can be found at " + errorInfo.Tok.filename;
-          errorListHolder.AddError(
-                 new DafnyError(_document.FilePath, mappedLine - 1, mappedCol - 1,
-                   ErrorCategory.TacticError, fullMsg, s, true, ""/*errorInfo.Model.ToString()*/),
-                 "$$program_tactics$$", requestId);
+          var terr = new TacnyLanguage.TacticErrorReportingResolver(errorInfo, resolver.Program, null);
+          terr.ResolveCorrectLocations();
+          terr.AddTacticErrors(errorListHolder, s, requestId, _document.FilePath);
         }
         DafnyDriver.SetDiagnoseTimeouts(!diagnoseTimeouts);
       }
@@ -437,24 +428,6 @@ namespace DafnyLanguage
       // If new changes took place since we started the verification, we may need to kick off another verification
       // immediately.
       UponIdle(null, null);
-    }
-
-    private static bool FindCorrectLocation(ErrorInformation errorInfo, Program program, out int mappedLine, out int mappedCol) {
-      foreach (var tld in program.TopLevelDeclarations)
-      {
-          if (tld.tok.filename != null && tld.tok.filename.Substring(tld.tok.filename.Length-3)!="bpl")
-          {
-              var x = 0; //get caught here
-          }
-        var nameDecl = tld as NamedDeclaration;
-        if (nameDecl == null || nameDecl.Name != errorInfo.ImplementationName || nameDecl.GetType() != typeof(Implementation)) continue;
-        mappedLine = nameDecl.tok.line;
-        mappedCol = nameDecl.tok.col;
-        return false;
-      }
-      mappedLine = errorInfo.Tok.line;
-      mappedCol = errorInfo.Tok.col;
-      return false;
     }
 
     public event EventHandler<SnapshotSpanEventArgs> TagsChanged;

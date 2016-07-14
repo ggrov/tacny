@@ -298,13 +298,13 @@ namespace DafnyLanguage
       return Dafny.DafnyOptions.O.Induction == 3;
     }
 
-    public static bool Verify(Dafny.Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er, out Bpl.Program boogieProgram) {
+    public static bool Verify(Dafny.Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er) {
       var translator = new Translator(dafnyProgram.reporter, er)
       {
         InsertChecksums = true,
         UniqueIdPrefix = uniqueIdPrefix
       };
-      boogieProgram = translator.Translate(dafnyProgram);
+      var boogieProgram = translator.Translate(dafnyProgram);
 
       resolver.ReInitializeVerificationErrors(requestId, boogieProgram.Implementations);
 
