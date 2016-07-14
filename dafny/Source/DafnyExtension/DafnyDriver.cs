@@ -24,7 +24,7 @@ namespace DafnyLanguage
     private static bool _tacticEvaluationIsEnabled = true;
 
     List<DafnyError> _errors = new List<DafnyError>();
-    public new List<DafnyError> Errors { get { return _errors; } }
+    public List<DafnyError> Errors { get { return _errors; } }
 
     public DafnyDriver(ITextBuffer buffer, string filename) {
       _buffer = buffer;

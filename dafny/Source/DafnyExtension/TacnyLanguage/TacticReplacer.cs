@@ -26,7 +26,7 @@ namespace DafnyLanguage.TacnyLanguage
   internal class TacticReplacerFilterProvider : IVsTextViewCreationListener
   {
     [Import(typeof(ITextDocumentFactoryService))]
-    internal ITextDocumentFactoryService Tdf;
+    internal ITextDocumentFactoryService Tdf { get; set; }
 
     [Import(typeof(ITextStructureNavigatorSelectorService))]
     internal ITextStructureNavigatorSelectorService TextStructureNavigatorSelector { get; set; }
@@ -66,7 +66,7 @@ namespace DafnyLanguage.TacnyLanguage
     
     public void Exec(IWpfTextView atv)
     {
-      Contract.Requires<NullReferenceException>(atv != null);
+      Contract.Assume(atv!=null);
       //var navigator = atv.Options.IsOptionDefined("textStructureNaviagtor", true) ?
       //  (ITextStructureNavigator)atv.Options.GetOptionValue("textStructureNaviagtor") : _tsn.GetTextStructureNavigator(atv.TextBuffer);
       //atv.Options.SetOptionValue("textStructureNavigator", navigator);
