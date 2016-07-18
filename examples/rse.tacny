@@ -1,5 +1,5 @@
 tactic mytac(){
-  assert false;
+  assert true;
 }
 
 lemma mylemma(){

@@ -67,12 +67,6 @@ namespace DafnyLanguage.TacnyLanguage
     public void Exec(IWpfTextView atv)
     {
       Contract.Assume(atv!=null);
-      //var navigator = atv.Options.IsOptionDefined("textStructureNaviagtor", true) ?
-      //  (ITextStructureNavigator)atv.Options.GetOptionValue("textStructureNaviagtor") : _tsn.GetTextStructureNavigator(atv.TextBuffer);
-      //atv.Options.SetOptionValue("textStructureNavigator", navigator);
-      //var ta = atv.Options.IsOptionDefined("tagAggregator", true) ? 
-      //  (ITagAggregator<DafnyTokenTag>)atv.Options.GetOptionValue("tagAggregator") : _vtaf.CreateTagAggregator<DafnyTokenTag>(atv);
-      //atv.Options.SetOptionValue("tagAggregator", ta);
       var navigator = _tsn.GetTextStructureNavigator(atv.TextBuffer);
       var ta = _vtaf.CreateTagAggregator<DafnyTokenTag>(atv);
       var trcf = new TacticReplacerCommandFilter(atv, navigator, _status, _tdf, ta);
@@ -106,7 +100,6 @@ namespace DafnyLanguage.TacnyLanguage
       NotifyOfReplacement(status);
     }
     
-
     private void NotifyOfReplacement(TacticReplaceStatus t)
     {
       switch (t)
@@ -114,14 +107,14 @@ namespace DafnyLanguage.TacnyLanguage
         case TacticReplaceStatus.NoDocumentPersistence:
           _status.SetText("Document must be saved in order to expand tactics.");
           break;
-        case TacticReplaceStatus.DriverFail:
+        case TacticReplaceStatus.TranslatorFail:
           _status.SetText("Tacny was unable to expand requested tactics.");
           break;
         case TacticReplaceStatus.NotResolved:
           _status.SetText("File must first be resolvable to expand tactics.");
           break;
         case TacticReplaceStatus.NoTactic:
-          _status.SetText("There is no method signature name containing under the caret that has expandable tactics.");
+          _status.SetText("There is no method under the caret that has expandable tactics.");
           break;
         case TacticReplaceStatus.Success:
           _status.SetText("Tactic expanded succesfully.");
@@ -137,7 +130,7 @@ namespace DafnyLanguage.TacnyLanguage
       NoDocumentPersistence,
       NoTactic,
       NotResolved,
-      DriverFail
+      TranslatorFail
     }
     
     private bool LoadAndCheckDocument()
@@ -145,29 +138,20 @@ namespace DafnyLanguage.TacnyLanguage
       _tdf.TryGetTextDocument(_tv.TextBuffer, out _document);
       return !string.IsNullOrEmpty(_document?.FilePath);
     }
-
-    private bool IsSnapSpanInComment(SnapshotSpan s)
-    {
-      var tags = _ta.GetTags(s);
-      var foundComment = tags.FirstOrDefault(x => x.Tag.Kind == DafnyTokenKind.Comment);
-      return foundComment!=null;
-    }
-
+    
     private TacticReplaceStatus ExecuteReplacement()
     {
-      var startingWordPosition = _tv.GetTextElementSpan(_tv.Caret.Position.BufferPosition);
-      if (IsSnapSpanInComment(startingWordPosition)) return TacticReplaceStatus.NoTactic;
+      Microsoft.Dafny.Program program;
+      MemberDecl member;
+      
+      var resolveStatus = LoadResolveForCaretPosition(out program, out member);
+      if (resolveStatus != TacticReplaceStatus.Success) return resolveStatus;
 
-      var startingWordPoint = _tv.Caret.Position.Point.GetPoint(_tv.TextBuffer, PositionAffinity.Predecessor);
-      if (startingWordPoint == null) return TacticReplaceStatus.NoTactic;
-      var startingWord = _tv.TextSnapshot.GetText(_tsn.GetExtentOfWord(startingWordPoint.Value).Span);
-
-      var startOfBlock = StartOfBlock(startingWordPosition);
-      if (startOfBlock == -1) return TacticReplaceStatus.NoTactic;
-      var lengthOfBlock = LengthOfBlock(startOfBlock);
+      var startOfBlock = member.tok.pos;
+      var lengthOfBlock = member.BodyEndTok.pos - startOfBlock + 1;
 
       string expandedTactic;
-      var expandedStatus = GetExpandedTactic(startingWord, out expandedTactic);
+      var expandedStatus = GetExpandedTactic(program, member, out expandedTactic);
       if (expandedStatus != TacticReplaceStatus.Success)
         return expandedStatus;
 
@@ -176,85 +160,54 @@ namespace DafnyLanguage.TacnyLanguage
       tedit.Apply();
       return TacticReplaceStatus.Success;
     }
+
+    private TacticReplaceStatus LoadResolveForCaretPosition(out Microsoft.Dafny.Program program, out MemberDecl member)
+    {
+      program = null;
+      member = null;
+      if (!LoadAndCheckDocument()) return TacticReplaceStatus.NoDocumentPersistence;
+      var caretPos = _tv.Caret.Position.BufferPosition.Position;
+
+      var driver = new DafnyDriver(_tv.TextBuffer, _document.FilePath);
+      program = driver.ProcessResolution(true, true);
+      var tld = (DefaultClassDecl)program?.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
+      if (tld == null) return TacticReplaceStatus.NotResolved;
+      
+      member = (from m in tld.Members
+                          where m.tok.pos <= caretPos && caretPos <= m.BodyEndTok.pos+1
+                          select m).FirstOrDefault();
+      return member==null ? TacticReplaceStatus.NoTactic : TacticReplaceStatus.Success;
+    }
     
-    private TacticReplaceStatus GetExpandedTactic(string startingWord, out string expandedTactic)
+    private static TacticReplaceStatus GetExpandedTactic(Microsoft.Dafny.Program program, MemberDecl member, out string expandedTactic)
     {
       expandedTactic = "";
-      if (!LoadAndCheckDocument()) return TacticReplaceStatus.NoDocumentPersistence;
-      var driver = new DafnyDriver(_tv.TextBuffer, _document.FilePath);
-
-      driver.ProcessResolution(true, true);
-      var program = driver.Program;
-      if (program == null) return TacticReplaceStatus.NotResolved;
-      
-      MemberDecl member = null;
-      foreach (var def in program.DefaultModuleDef.TopLevelDecls)
-      {
-        if (!(def is ClassDecl)) continue;
-        var c = (ClassDecl) def;
-        member = c.Members.FirstOrDefault(x => x.Name == startingWord);
-        if (member != null) break;
-      }
-      if (member == null) return TacticReplaceStatus.NotResolved;
       if (!member.CallsTactic) return TacticReplaceStatus.NoTactic;
+      
       var status = TacticReplaceStatus.Success;
-      var evaluatedMember = Interpreter.FindAndApplyTactic(program, member, errorInfo => {status = TacticReplaceStatus.DriverFail;});
-      if (evaluatedMember == null || status != TacticReplaceStatus.Success) return TacticReplaceStatus.DriverFail;
+      var evaluatedMember = Interpreter.FindAndApplyTactic(program, member, errorInfo => {status = TacticReplaceStatus.TranslatorFail;});
+      if (evaluatedMember == null || status != TacticReplaceStatus.Success) return TacticReplaceStatus.TranslatorFail;
 
       var sr = new StringWriter();
       var printer = new Printer(sr);
       printer.PrintMembers(new List<MemberDecl> { evaluatedMember }, 0, program.FullName);
-      expandedTactic = sr.ToString();
+      expandedTactic = StripExtraContentFromExpanded(sr.ToString());
       return TacticReplaceStatus.Success;
     }
 
-    private int LengthOfBlock(int startingPoint)
+    private static string StripExtraContentFromExpanded(string expandedTactic)
     {
-      var advancingPoint = startingPoint;
-      var bodyOpened = false;
-      var braceDepth = 0;
-      while (braceDepth > 0 || !bodyOpened)
-      {
-        var advancingSnapshot = new SnapshotPoint(_tv.TextSnapshot, ++advancingPoint);
-        var currentChar = advancingSnapshot.GetChar();
-        if (IsSnapSpanInComment(_tv.GetTextElementSpan(advancingSnapshot))) continue;
-        switch (currentChar)
-        {
-          case '{':
-            braceDepth++;
-            bodyOpened = true;
-            break;
-          case '}':
-            braceDepth--;
-            break;
-        }
-      }
-      return advancingPoint - startingPoint + 1;
+      expandedTactic = RazeFringe(expandedTactic, "ghost ");
+      expandedTactic = RazeFringe(expandedTactic, "lemma ");
+      expandedTactic = RazeFringe(expandedTactic, "method ");
+      expandedTactic = RazeFringe(expandedTactic, "function ");
+      expandedTactic = RazeFringe(expandedTactic, "tactic ");
+      return expandedTactic;
     }
 
-    private int StartOfBlock(SnapshotSpan startingWordPosition)
+    private static string RazeFringe(string head, string fringe)
     {
-      var listOfStarters = new[]
-      {
-        "function",
-        "lemma",
-        "method",
-        "predicate",
-        "tactic"
-      };
-
-      var currentSubling = _tsn.GetSpanOfNextSibling(startingWordPosition);
-      
-      var next = _tsn.GetSpanOfNextSibling(currentSubling).GetText();
-      if (next != "(" && next != "(){" && next != "()") return -1;
-
-      var prev = _tsn.GetSpanOfPreviousSibling(currentSubling);
-      var s = prev.GetText();
-      if (!listOfStarters.Contains(s)) return -1;
-
-      var startingPos = prev.Start;
-      var ghostPrev = _tsn.GetSpanOfPreviousSibling(prev);
-      return ghostPrev.GetText() == "ghost" ? ghostPrev.Start : startingPos;
+      return head.Substring(0, fringe.Length)==fringe ? head.Substring(fringe.Length) : head;
     }
   }
 }

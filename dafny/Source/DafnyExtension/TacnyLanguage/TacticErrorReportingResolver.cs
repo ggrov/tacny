@@ -91,27 +91,20 @@ namespace DafnyLanguage.TacnyLanguage
       Contract.Requires(FoundCalling && FoundTactic);
 
       errorListHolder.AddError(
-        new DafnyError(_errorInfo.Tok.filename, 0, 0,
-          ErrorCategory.AuxInformation, "Temp file for tactics", null, false, "", false),
+        new DafnyError(_errorInfo.Tok.filename, 0, 0, ErrorCategory.AuxInformation, 
+        _errorInfo.FullMsg + $" at ({_errorInfo.Tok.line},{_errorInfo.Tok.col-1})", null, false, "", false),
         "$$program_tactics$$", requestId);
-
-      if (!FoundCalling) return;
+      
       errorListHolder.AddError(
         new DafnyError(file, CallingLine - 1, CallingCol - 1, ErrorCategory.TacticError,
-        "Failing Tactic Call - " + _errorInfo.FullMsg, snap, true, ""),
+        "Failing Call to " + _activeTactic, snap, true, ""),
         "$$program_tactics$$", requestId);
-
-      if (!FoundFailing) {
-        errorListHolder.AddError(
-          new DafnyError(file, TacticLine - 1, TacticCol - 1, ErrorCategory.TacticError,
-            "Failing Tactic - " + _errorInfo.FullMsg, snap, true, ""),
-          "$$program_tactics$$", requestId);
-      } else {
-        errorListHolder.AddError(
-          new DafnyError(file, FailingLine - 1, FailingCol - 1, ErrorCategory.TacticError,
-            "Failing Tactic - " + _errorInfo.FullMsg, snap, true, ""),
-          "$$program_tactics$$", requestId);
-      }
+      
+      errorListHolder.AddError(
+        new DafnyError(file, (FoundFailing ? FailingLine : TacticLine) - 1,
+        (FoundFailing ? FailingCol : TacticCol) - 1, ErrorCategory.TacticError,
+        _errorInfo.FullMsg, snap, true, ""),
+        "$$program_tactics$$", requestId);
     }
   }
 }
