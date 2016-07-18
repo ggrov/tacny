@@ -3,6 +3,11 @@ tactic mytac(){
 }
 
 lemma mylemma(){
+  myothertac();
   mytac();
+  assert true;
 }
 
+tactic myothertac(){
+  assert false;
+}

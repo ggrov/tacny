@@ -191,7 +191,7 @@ namespace Tacny {
       var boogieProg = Translate(program, program.Name, er);
       Bpl.PipelineStatistics stats;
       List<Bpl.ErrorInformation> errorList;
-      Bpl.PipelineOutcome tmp = BoogiePipeline(boogieProg, new List<string> {program.Name}, program.Name, er, out stats, out errorList);
+      Bpl.PipelineOutcome tmp = BoogiePipeline(boogieProg, new List<string> {program.Name}, program.Name, er, out stats, out errorList, program);
       return errorList;
     }
 
@@ -211,7 +211,7 @@ namespace Tacny {
     /// Pipeline the boogie program to Dafny where it is valid
     /// </summary>
     /// <returns>Exit value</returns>
-    public static Bpl.PipelineOutcome BoogiePipeline(Bpl.Program program, IList<string> fileNames, string programId, Bpl.ErrorReporterDelegate er, out Bpl.PipelineStatistics stats, out List<Bpl.ErrorInformation> errorList) {
+    public static Bpl.PipelineOutcome BoogiePipeline(Bpl.Program program, IList<string> fileNames, string programId, Bpl.ErrorReporterDelegate er, out Bpl.PipelineStatistics stats, out List<Bpl.ErrorInformation> errorList, Program tmpDafnyProgram = null) {
       Contract.Requires(program != null);
       Contract.Ensures(0 <= Contract.ValueAtReturn(out stats).InconclusiveCount && 0 <= Contract.ValueAtReturn(out stats).TimeoutCount);
 
@@ -238,9 +238,8 @@ namespace Tacny {
           
           oc = Bpl.ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo =>
           {
-            errorInfo.Category = "TacticsError";
             tmp.Add(errorInfo);
-            er?.Invoke(errorInfo);
+            er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, tmpDafnyProgram));
           });
           errorList.AddRange(tmp);
           
@@ -248,6 +247,24 @@ namespace Tacny {
         default:
           Contract.Assert(false); throw new cce.UnreachableException();  // unexpected outcome
       }
+    }
+
+  }
+
+  public class CompoundErrorInformation : Bpl.ErrorInformation
+  {
+    public readonly Program P;
+    public readonly Bpl.ErrorInformation E;
+    public readonly ProofState S;
+    public CompoundErrorInformation(Bpl.IToken tok, string msg, Bpl.ErrorInformation e, Program p) : base(tok, msg)
+    {
+      E = e;
+      P = p;
+    }
+    public CompoundErrorInformation(Bpl.IToken tok, string msg, Bpl.ErrorInformation e, ProofState s) : base(tok, msg)
+    {
+      E = e;
+      S = s;
     }
   }
 

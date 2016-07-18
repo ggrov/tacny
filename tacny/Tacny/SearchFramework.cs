@@ -87,7 +87,7 @@ namespace Tacny {
         }
         var memberList = Util.GenerateMembers(state, bodyList);
         var prog = Util.GenerateDafnyProgram(state, memberList.Values.ToList());
-        var result = Util.ResolveAndVerify(prog, er);
+        var result = Util.ResolveAndVerify(prog, errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); });
         if (result.Count == 0)
           return VerifyResult.Verified;
         else {

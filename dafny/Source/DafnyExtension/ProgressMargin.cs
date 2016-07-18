@@ -351,18 +351,21 @@ namespace DafnyLanguage
 
       DafnyDriver.SetDiagnoseTimeouts(diagnoseTimeouts);
       errorListHolder.FatalVerificationError = null;
-      var tacticsErrorList = new List<ErrorInformation>();
+      var tacticsErrorList = new List<Tacny.CompoundErrorInformation>();
 
       try
       {
         bool success = DafnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
         {
           if (_disposed) return;
-          if (errorInfo.Category == "TacticsError")
+
+          var tacticErrorInfo = errorInfo as Tacny.CompoundErrorInformation;
+          if (tacticErrorInfo!=null)
           {
-            tacticsErrorList.Add(errorInfo);
+            tacticsErrorList.Add(tacticErrorInfo); //TODO figure out why we might get more than 1 error back
             return;
           }
+
           errorInfo.BoogieErrorCode = null;
           var isRecycled = false;
           ITextSnapshot s = null;
@@ -376,6 +379,7 @@ namespace DafnyLanguage
             RequestIdToSnapshot.TryGetValue(errorInfo.RequestId, out s);
           }
           if (s == null) return;
+
           errorListHolder.AddError(
             new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1,
               ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(),
@@ -408,9 +412,18 @@ namespace DafnyLanguage
         RequestIdToSnapshot.TryGetValue(requestId, out s);
         foreach (var errorInfo in tacticsErrorList)
         {
-          var terr = new TacnyLanguage.TacticErrorReportingResolver(errorInfo, resolver.Program, null);
-          terr.ResolveCorrectLocations();
-          terr.AddTacticErrors(errorListHolder, s, requestId, _document.FilePath);
+          try
+          {
+            var terr = new TacnyLanguage.TacticErrorReportingResolver(errorInfo);
+            terr.AddTacticErrors(errorListHolder, s, requestId, _document.FilePath);
+          }
+          catch (TacnyLanguage.TacticErrorResolutionException e)
+          {
+            errorListHolder.AddError(
+              new DafnyError("$$program_tactics$$", 0, 0, 
+              ErrorCategory.InternalError, "Error resolving tactics error " + e.Message + "\n" + e.StackTrace, snapshot, false),
+            "$$program_tactics$$", requestId);
+          }
         }
         DafnyDriver.SetDiagnoseTimeouts(!diagnoseTimeouts);
       }

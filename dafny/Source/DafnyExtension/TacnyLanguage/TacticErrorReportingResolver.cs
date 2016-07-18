@@ -8,92 +8,110 @@ using Microsoft.VisualStudio.Text;
 
 namespace DafnyLanguage.TacnyLanguage
 {
+  internal class TacticErrorResolutionException : Exception
+  {
+    public TacticErrorResolutionException(string msg) : base(msg){}
+  }
   internal class TacticErrorReportingResolver
   {
-    public readonly Bpl.ErrorInformation ErrorInfo;
-    public readonly Program Program, TmpProgram;
+    private readonly Bpl.ErrorInformation _errorInfo;
+    private readonly DefaultClassDecl  _tmpModule;
+    private readonly UpdateStmt _tacticCall;
+    private readonly Tactic _activeTactic;
+    private readonly string _implTargetName;
     public int FailingLine, FailingCol, TacticLine, TacticCol, CallingLine, CallingCol;
-    // failing is the line in the tactic that causes the failure
-    // tactic is the signature of the tactic
-    // calling is the line that makes a call tot he tactic in the original method
-    // TODO move comments like this into documentation instead
 
     public bool FoundFailing => !(FailingLine == -1 || FailingCol == -1);
     public bool FoundTactic => !(TacticLine == -1 || TacticCol == -1);
     public bool FoundCalling => !(CallingLine == -1 || CallingCol == -1);
 
-    public TacticErrorReportingResolver(Bpl.ErrorInformation errorInfo, Program program, Program tmpProgram)
+    public TacticErrorReportingResolver(Tacny.CompoundErrorInformation errorInfo)
     {
-      Contract.Requires<NullReferenceException>(errorInfo != null);
-      Contract.Requires<NullReferenceException>(program != null);
-      //Contract.Requires<NullReferenceException>(tmpProgram != null); //TODO figure out the whole tmp program situation
-      ErrorInfo = errorInfo;
-      Program = program;
-      TmpProgram = tmpProgram;
+      Contract.Ensures(_errorInfo != null);
+      Contract.Ensures(_tmpModule != null);
+      Contract.Ensures(_tacticCall != null);
+      Contract.Ensures(_activeTactic != null);
+      Contract.Ensures(!string.IsNullOrEmpty(_implTargetName));
+      var proofState = errorInfo.S;
+      var tmpProgram = ((Tacny.CompoundErrorInformation)errorInfo.E).P;
+
+      _errorInfo = ((Tacny.CompoundErrorInformation)errorInfo.E).E;
+      _tmpModule = (DefaultClassDecl)tmpProgram.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
+      _implTargetName = MethodNameFromImpl(_errorInfo.ImplementationName);
+      _tacticCall = proofState.TacticApplication;
+      _activeTactic = proofState.GetTactic(_tacticCall) as Tactic;
+
       FailingLine = FailingCol = TacticLine = TacticCol = CallingLine = CallingCol = -1;
+      ResolveCorrectLocations();
     }
 
-    public void ResolveCorrectLocations()
+    private static string MethodNameFromImpl(string implName)
     {
-      var matches = Regex.Match(ErrorInfo.ImplementationName, @".*\$\$.*\..*\.(.*)");
-      if (matches.Groups.Count != 2) return;
-      var methodName = matches.Groups[1].Value;
+      Contract.Ensures(!string.IsNullOrEmpty(Contract.Result<string>()));
+      var matches = Regex.Match(implName, @".*\$\$.*\..*\.(.*)");
+      return matches.Groups[1].Value;
+    }
+    
+    private int OffsetFromStartOfAddedLinesToFailingLine()
+    {
+      Contract.Ensures(Contract.Result<int>() >= 0);
+      var tmpFailingMethod = _tmpModule.Members.FirstOrDefault(x => x.CompileName == _implTargetName) as Method;
+      if (tmpFailingMethod == null) throw new TacticErrorResolutionException("The failing method must exist in tmp file");
+      return _errorInfo.Tok.line - tmpFailingMethod.BodyStartTok.line;
+    }
 
-      var module = (DefaultClassDecl)Program.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
-      var callingMethod = module?.Members.FirstOrDefault(x => x.CompileName == methodName) as Method;
-      if (callingMethod == null) return;
-
-      var bodyStatements = callingMethod.Body.SubStatements;
-      var tacticCall = (from updater in bodyStatements.OfType<UpdateStmt>()
-                        where updater.IsGhost && updater.Lhss.Count == 0
-                        select (ExprRhs)updater.Rhss[0]).FirstOrDefault();
-      if (tacticCall == null) return;
-      
-      var tacticName = ((NameSegment)((ApplySuffix)tacticCall.Expr).Lhs).Name;
-      CallingLine = tacticCall.Tok.line;
-      CallingCol = tacticCall.Tok.col;
-      
-      var tactic = (Tactic)module.Members.FirstOrDefault(x => x.CompileName == tacticName);
-      if (tactic == null) return;
-      TacticLine = tactic.BodyStartTok.line;
-      TacticCol = tactic.BodyStartTok.col;
-      var tacE = tactic.BodyEndTok.line;
-      
-      var tacticStatements = tactic.Body.SubStatements;
-      var offsetToFailure = 0; //TODO obviously this is just temporary
-      var failing = (from stmt in tacticStatements.ToArray()
-                     where stmt.Tok.line == TacticLine + Math.Min(offsetToFailure, tacE)
+    private Bpl.IToken GetFailingLine()
+    {
+      var offsetToFailure = TacticLine + OffsetFromStartOfAddedLinesToFailingLine();
+      return (from stmt in _activeTactic.Body.SubStatements.ToArray()
+                     where stmt.Tok.line == offsetToFailure
                      select stmt.Tok).FirstOrDefault();
-      if (failing == null) return;
+    }
+    
+    private void ResolveCorrectLocations()
+    { 
+      CallingLine = _tacticCall.Tok.line;
+      CallingCol = _tacticCall.Tok.col;
+      
+      TacticLine = _activeTactic.BodyStartTok.line;
+      TacticCol = _activeTactic.BodyStartTok.col;
 
+      var failing = GetFailingLine(); //NOTE: Currently, the failing line is assuming a macro-style of tactic
+      if (failing == null) return;
       FailingCol = failing.col;
       FailingLine = failing.line;
     }
 
     public void AddTacticErrors(ResolverTagger errorListHolder, ITextSnapshot snap, string requestId, string file)
     {
-      Contract.Requires<NullReferenceException>(errorListHolder != null);
-      Contract.Requires<NullReferenceException>(snap != null);
-      Contract.Requires<NullReferenceException>(!string.IsNullOrEmpty(requestId));
-      Contract.Requires<NullReferenceException>(!string.IsNullOrEmpty(file));
+      Contract.Requires(errorListHolder != null);
+      Contract.Requires(snap != null);
+      Contract.Requires(!string.IsNullOrEmpty(requestId));
+      Contract.Requires(!string.IsNullOrEmpty(file));
+      Contract.Requires(FoundCalling && FoundTactic);
+
+      errorListHolder.AddError(
+        new DafnyError(_errorInfo.Tok.filename, 0, 0,
+          ErrorCategory.AuxInformation, "Temp file for tactics", null, false, "", false),
+        "$$program_tactics$$", requestId);
 
       if (!FoundCalling) return;
       errorListHolder.AddError(
-             new DafnyError(file, CallingLine - 1, CallingCol - 1,
-               ErrorCategory.TacticError, ErrorInfo.FullMsg, snap, true, ""),
-             "$$program_tactics$$", requestId);
-      
-      if (!FoundTactic) return;
-      errorListHolder.AddError(
-             new DafnyError(file, TacticLine - 1, TacticCol - 1,
-               ErrorCategory.TacticError, ErrorInfo.FullMsg, snap, true, ""),
-             "$$program_tactics$$", requestId);
+        new DafnyError(file, CallingLine - 1, CallingCol - 1, ErrorCategory.TacticError,
+        "Failing Tactic Call - " + _errorInfo.FullMsg, snap, true, ""),
+        "$$program_tactics$$", requestId);
 
-      if (!FoundFailing) return;
-      errorListHolder.AddError(
-             new DafnyError(file, FailingLine - 1, FailingCol - 1,
-               ErrorCategory.TacticError, ErrorInfo.FullMsg, snap, true, ""),
-             "$$program_tactics$$", requestId);
+      if (!FoundFailing) {
+        errorListHolder.AddError(
+          new DafnyError(file, TacticLine - 1, TacticCol - 1, ErrorCategory.TacticError,
+            "Failing Tactic - " + _errorInfo.FullMsg, snap, true, ""),
+          "$$program_tactics$$", requestId);
+      } else {
+        errorListHolder.AddError(
+          new DafnyError(file, FailingLine - 1, FailingCol - 1, ErrorCategory.TacticError,
+            "Failing Tactic - " + _errorInfo.FullMsg, snap, true, ""),
+          "$$program_tactics$$", requestId);
+      }
     }
   }
 }
