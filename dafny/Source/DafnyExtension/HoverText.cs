@@ -53,12 +53,14 @@ namespace DafnyLanguage
         var tagSpan = curTag.Span.GetSpans(_buffer).First();
         applicableToSpan = _buffer.CurrentSnapshot.CreateTrackingSpan(tagSpan, SpanTrackingMode.EdgeExclusive);
         quickInfoContent.Add(s);
-        
-        //if(currentTagIsMethodName){
-        //var expanded = TacticReplacerCommandFilter.GetStringForMethod(curTag as string, filename, _buffer);
-        //quickInfoContent.Add(expanded)
-        //}
       }
+
+      if (applicableToSpan != null) return;
+      var methodName = new SnapshotSpan();
+      var expanded = TacticReplacer.GetExpandedTactic(triggerPoint.Position, _buffer, ref methodName);
+      if (string.IsNullOrEmpty(expanded)) return;
+      applicableToSpan = _buffer.CurrentSnapshot.CreateTrackingSpan(methodName, SpanTrackingMode.EdgeExclusive);
+      quickInfoContent.Add(expanded);
     }
     public void Dispose()
     {

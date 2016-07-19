@@ -44,44 +44,37 @@ namespace DafnyLanguage.TacnyLanguage
 
   public class TacticReplacerProxy : ITacnyMenuProxy
   {
-    private readonly ITextDocumentFactoryService _tdf;
-    private readonly IVsStatusbar _status;
+    private readonly TacticReplacer _tr;
 
     public TacticReplacerProxy(ITextDocumentFactoryService tdf, IServiceProvider isp) {
-      _tdf = tdf;
-      _status = (IVsStatusbar) isp.GetService(typeof(SVsStatusbar));
+      var status = (IVsStatusbar) isp.GetService(typeof(SVsStatusbar));
+      _tr = new TacticReplacer(status, tdf);
     }
     
     public void Exec(IWpfTextView atv)
     {
       Contract.Assume(atv!=null);
-      var trcf = new TacticReplacerCommandFilter(atv, _status, _tdf);
-      trcf.Exec();
+      _tr.Exec(atv);
     }
   }
 
-  public class TacticReplacerCommandFilter
+  public class TacticReplacer
   {
-    private readonly IWpfTextView _tv;
-    private readonly ITextDocumentFactoryService _tdf;
-    private readonly IVsStatusbar _status;
-    private ITextDocument _document;
+    private static IVsStatusbar _status;
+    private static ITextDocumentFactoryService _tdf;
 
-    public TacticReplacerCommandFilter(IWpfTextView textView, IVsStatusbar sb, ITextDocumentFactoryService tdf)
-    {
-      _tv = textView;
-      _tdf = tdf;
-      LoadAndCheckDocument();
+    public TacticReplacer(IVsStatusbar sb, ITextDocumentFactoryService tdf) {
       _status = sb;
+      _tdf = tdf;
     }
-
-    public void Exec()
+    
+    public void Exec(IWpfTextView tv)
     {
-      var status = ExecuteReplacement();
+      var status = ExecuteReplacement(tv);
       NotifyOfReplacement(status);
     }
     
-    private void NotifyOfReplacement(TacticReplaceStatus t)
+    private static void NotifyOfReplacement(TacticReplaceStatus t)
     {
       switch (t)
       {
@@ -114,18 +107,22 @@ namespace DafnyLanguage.TacnyLanguage
       TranslatorFail
     }
     
-    private bool LoadAndCheckDocument()
-    {
-      _tdf.TryGetTextDocument(_tv.TextBuffer, out _document);
-      return !string.IsNullOrEmpty(_document?.FilePath);
+    private static bool LoadAndCheckDocument(ITextBuffer tb, out string filePath) {
+      ITextDocument doc;
+      _tdf.TryGetTextDocument(tb, out doc);
+      filePath = doc?.FilePath;
+      return !string.IsNullOrEmpty(filePath);
     }
     
-    private TacticReplaceStatus ExecuteReplacement()
+    private static TacticReplaceStatus ExecuteReplacement(IWpfTextView tv)
     {
       Microsoft.Dafny.Program program;
       MemberDecl member;
+      string filePath;
       
-      var resolveStatus = LoadResolveForCaretPosition(out program, out member);
+      if (!LoadAndCheckDocument(tv.TextBuffer, out filePath)) return TacticReplaceStatus.NoDocumentPersistence;
+      var caretPos = tv.Caret.Position.BufferPosition.Position;
+      var resolveStatus = LoadResolveForPosition(caretPos, filePath, tv.TextBuffer, out program, out member);
       if (resolveStatus != TacticReplaceStatus.Success) return resolveStatus;
 
       var startOfBlock = member.tok.pos;
@@ -136,28 +133,40 @@ namespace DafnyLanguage.TacnyLanguage
       if (expandedStatus != TacticReplaceStatus.Success)
         return expandedStatus;
 
-      var tedit = _tv.TextBuffer.CreateEdit();
+      var tedit = tv.TextBuffer.CreateEdit();
       tedit.Replace(startOfBlock, lengthOfBlock, expandedTactic);
       tedit.Apply();
       return TacticReplaceStatus.Success;
     }
 
-    private TacticReplaceStatus LoadResolveForCaretPosition(out Microsoft.Dafny.Program program, out MemberDecl member)
+    private static TacticReplaceStatus LoadResolveForPosition(int position, string file, ITextBuffer tb, out Microsoft.Dafny.Program program, out MemberDecl member)
     {
-      program = null;
       member = null;
-      if (!LoadAndCheckDocument()) return TacticReplaceStatus.NoDocumentPersistence;
-      var caretPos = _tv.Caret.Position.BufferPosition.Position;
-
-      var driver = new DafnyDriver(_tv.TextBuffer, _document.FilePath);
+      var driver = new DafnyDriver(tb, file);
       program = driver.ProcessResolution(true, true);
       var tld = (DefaultClassDecl)program?.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
       if (tld == null) return TacticReplaceStatus.NotResolved;
       
       member = (from m in tld.Members
-                          where m.tok.pos <= caretPos && caretPos <= m.BodyEndTok.pos+1
-                          select m).FirstOrDefault();
+                where m.tok.pos <= position && position <= m.BodyEndTok.pos+1
+                select m).FirstOrDefault();
       return member==null ? TacticReplaceStatus.NoTactic : TacticReplaceStatus.Success;
+    }
+
+    public static string GetExpandedTactic(int position, ITextBuffer buffer, ref SnapshotSpan methodName)
+    {
+      Microsoft.Dafny.Program program;
+      MemberDecl member;
+      string file;
+      
+      if (!LoadAndCheckDocument(buffer, out file)) return null;
+      var resolveStatus = LoadResolveForPosition(position, file, buffer, out program, out member);
+      if (resolveStatus != TacticReplaceStatus.Success) return null;
+      methodName = new SnapshotSpan(buffer.CurrentSnapshot, member.tok.pos, member.CompileName.Length);
+
+      string expanded;
+      GetExpandedTactic(program, member, out expanded);
+      return expanded;
     }
     
     private static TacticReplaceStatus GetExpandedTactic(Microsoft.Dafny.Program program, MemberDecl member, out string expandedTactic)
@@ -181,9 +190,11 @@ namespace DafnyLanguage.TacnyLanguage
       return words.Aggregate(expandedTactic, RazeFringe);
     }
 
-    private static string RazeFringe(string head, string fringe)
+    private static string RazeFringe(string body, string fringe)
     {
-      return head.Substring(0, fringe.Length)==fringe ? head.Substring(fringe.Length) : head;
+      return body.Substring(0, fringe.Length)==fringe ? body.Substring(fringe.Length) : body;
     }
   }
+
+
 }
