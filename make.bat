@@ -6,7 +6,7 @@ echo .
 if NOT "%errorlevel%"=="0" ( 
  echo ========================================================
  echo Please reuse the script inside an MSBuild command prompt
- echo Default located under Start > Visual Studio > Tools
+ echo Default located under Start - Visual Studio - Tools
  echo ========================================================
  goto end
 )

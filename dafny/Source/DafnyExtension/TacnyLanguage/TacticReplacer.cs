@@ -12,8 +12,6 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.Text.Operations;
-using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
 using Tacny;
@@ -27,16 +25,10 @@ namespace DafnyLanguage.TacnyLanguage
   {
     [Import(typeof(ITextDocumentFactoryService))]
     internal ITextDocumentFactoryService Tdf { get; set; }
-
-    [Import(typeof(ITextStructureNavigatorSelectorService))]
-    internal ITextStructureNavigatorSelectorService TextStructureNavigatorSelector { get; set; }
-
+    
     [Import(typeof(SVsServiceProvider))]
     internal IServiceProvider ServiceProvider { get; set; }
-
-    [Import]
-    internal IViewTagAggregatorFactoryService Vtafs { get; set; }
-
+    
     public void VsTextViewCreated(IVsTextView textViewAdapter)
     {
       var vsShell = Package.GetGlobalService(typeof(SVsShell)) as IVsShell;
@@ -46,30 +38,24 @@ namespace DafnyLanguage.TacnyLanguage
       if (vsShell.LoadPackage(ref packToLoad, out shellPack) != VSConstants.S_OK)
         throw new NullReferenceException("Dafny Menu failed to Load");
       var dafnyMenuPack = (DafnyMenuPackage)shellPack;
-      dafnyMenuPack.TacnyMenuProxy = new TacticReplacerProxy(Tdf, TextStructureNavigatorSelector, ServiceProvider, Vtafs);
+      dafnyMenuPack.TacnyMenuProxy = new TacticReplacerProxy(Tdf, ServiceProvider);
     }
   }
 
   public class TacticReplacerProxy : ITacnyMenuProxy
   {
-    private readonly ITextStructureNavigatorSelectorService _tsn;
-    private readonly IViewTagAggregatorFactoryService _vtaf;
     private readonly ITextDocumentFactoryService _tdf;
     private readonly IVsStatusbar _status;
 
-    public TacticReplacerProxy(ITextDocumentFactoryService tdf, ITextStructureNavigatorSelectorService tsn, IServiceProvider isp, IViewTagAggregatorFactoryService vtaf) {
+    public TacticReplacerProxy(ITextDocumentFactoryService tdf, IServiceProvider isp) {
       _tdf = tdf;
-      _tsn = tsn;
-      _vtaf = vtaf;
       _status = (IVsStatusbar) isp.GetService(typeof(SVsStatusbar));
     }
     
     public void Exec(IWpfTextView atv)
     {
       Contract.Assume(atv!=null);
-      var navigator = _tsn.GetTextStructureNavigator(atv.TextBuffer);
-      var ta = _vtaf.CreateTagAggregator<DafnyTokenTag>(atv);
-      var trcf = new TacticReplacerCommandFilter(atv, navigator, _status, _tdf, ta);
+      var trcf = new TacticReplacerCommandFilter(atv, _status, _tdf);
       trcf.Exec();
     }
   }
@@ -77,20 +63,15 @@ namespace DafnyLanguage.TacnyLanguage
   public class TacticReplacerCommandFilter
   {
     private readonly IWpfTextView _tv;
-    private readonly ITextStructureNavigator _tsn;
     private readonly ITextDocumentFactoryService _tdf;
-    private readonly ITagAggregator<DafnyTokenTag> _ta;
     private readonly IVsStatusbar _status;
     private ITextDocument _document;
 
-    public TacticReplacerCommandFilter(IWpfTextView textView, ITextStructureNavigator tsn, IVsStatusbar sb,
-      ITextDocumentFactoryService tdf, ITagAggregator<DafnyTokenTag> ta)
+    public TacticReplacerCommandFilter(IWpfTextView textView, IVsStatusbar sb, ITextDocumentFactoryService tdf)
     {
       _tv = textView;
-      _tsn = tsn;
       _tdf = tdf;
       LoadAndCheckDocument();
-      _ta = ta;
       _status = sb;
     }
 
@@ -195,14 +176,9 @@ namespace DafnyLanguage.TacnyLanguage
       return TacticReplaceStatus.Success;
     }
 
-    private static string StripExtraContentFromExpanded(string expandedTactic)
-    {
-      expandedTactic = RazeFringe(expandedTactic, "ghost ");
-      expandedTactic = RazeFringe(expandedTactic, "lemma ");
-      expandedTactic = RazeFringe(expandedTactic, "method ");
-      expandedTactic = RazeFringe(expandedTactic, "function ");
-      expandedTactic = RazeFringe(expandedTactic, "tactic ");
-      return expandedTactic;
+    private static string StripExtraContentFromExpanded(string expandedTactic) {
+      var words = new [] {"ghost ", "lemma ", "method ", "function ", "tactic "};
+      return words.Aggregate(expandedTactic, RazeFringe);
     }
 
     private static string RazeFringe(string head, string fringe)
