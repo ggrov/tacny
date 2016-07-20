@@ -154,7 +154,7 @@
       <Button guid="guidTacnyMenuPackageCmdSet" id="ExpandAllTacticsCommand" priority="0x0109" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <Strings>
-          <ButtonText>Expand and Pretty Print Whole File [NI]</ButtonText>
+          <ButtonText>Expand and Pretty Print All Methods</ButtonText>
         </Strings>
       </Button>
 

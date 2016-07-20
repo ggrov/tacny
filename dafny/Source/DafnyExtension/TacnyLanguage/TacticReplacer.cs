@@ -42,6 +42,15 @@ namespace DafnyLanguage.TacnyLanguage
     }
   }
 
+  public enum TacticReplaceStatus
+  {
+    Success,
+    NoDocumentPersistence,
+    NoTactic,
+    NotResolved,
+    TranslatorFail
+  }
+
   public class TacticReplacerProxy : ITacnyMenuProxy
   {
     private readonly TacticReplacer _tr;
@@ -51,10 +60,16 @@ namespace DafnyLanguage.TacnyLanguage
       _tr = new TacticReplacer(status, tdf);
     }
     
-    public void Exec(IWpfTextView atv)
+    public void ReplaceOne(IWpfTextView atv)
     {
       Contract.Assume(atv!=null);
-      _tr.Exec(atv);
+      _tr.ReplaceMethodUnderCaret(atv);
+    }
+
+    public void ReplaceAll(ITextBuffer tb)
+    {
+      Contract.Assume(tb!=null);
+      _tr.ReplaceAll(tb);
     }
   }
 
@@ -68,13 +83,63 @@ namespace DafnyLanguage.TacnyLanguage
       _tdf = tdf;
     }
     
-    public void Exec(IWpfTextView tv)
-    {
-      var status = ExecuteReplacement(tv);
-      NotifyOfReplacement(status);
+    public TacticReplaceStatus ReplaceAll(ITextBuffer tb) {
+      string file;
+      Microsoft.Dafny.Program program;
+      if (!LoadAndCheckDocument(tb, out file))
+        return NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
+      var tld = LoadAndResolveTld(tb, file, out program);
+
+      var tedit = tb.CreateEdit();
+      var status = TacticReplaceStatus.NoTactic;
+      foreach (var member in tld.Members)
+      {
+        if (!member.CallsTactic) continue;
+        status = ReplaceMember(member, program, tedit);
+        if (status != TacticReplaceStatus.Success) break;
+      }
+      if (status == TacticReplaceStatus.Success) {
+        tedit.Apply();
+      } else {
+        tedit.Dispose();
+      }
+      return NotifyOfReplacement(status);
     }
-    
-    private static void NotifyOfReplacement(TacticReplaceStatus t)
+
+    public TacticReplaceStatus ReplaceMethodUnderCaret(IWpfTextView tv)
+    {
+      Microsoft.Dafny.Program program;
+      MemberDecl member;
+      string filePath;
+
+      if (!LoadAndCheckDocument(tv.TextBuffer, out filePath)) return NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
+      var caretPos = tv.Caret.Position.BufferPosition.Position;
+      var resolveStatus = LoadAndResolveMemberAtPosition(caretPos, filePath, tv.TextBuffer, out program, out member);
+      if (resolveStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(resolveStatus);
+
+      var tedit = tv.TextBuffer.CreateEdit();
+      var status = ReplaceMember(member, program, tedit);
+      if (status == TacticReplaceStatus.Success) tedit.Apply();
+      return NotifyOfReplacement(status);
+    }
+
+    public static string GetExpandedTactic(int position, ITextBuffer buffer, ref SnapshotSpan methodName)
+    {
+      Microsoft.Dafny.Program program;
+      MemberDecl member;
+      string file;
+      
+      if (!LoadAndCheckDocument(buffer, out file)) return null;
+      var resolveStatus = LoadAndResolveMemberAtPosition(position, file, buffer, out program, out member);
+      if (resolveStatus != TacticReplaceStatus.Success) return null;
+      methodName = new SnapshotSpan(buffer.CurrentSnapshot, member.tok.pos, member.CompileName.Length);
+
+      string expanded;
+      ExpandTactic(program, member, out expanded);
+      return expanded;
+    }
+
+    private static TacticReplaceStatus NotifyOfReplacement(TacticReplaceStatus t)
     {
       switch (t)
       {
@@ -96,55 +161,33 @@ namespace DafnyLanguage.TacnyLanguage
         default:
           throw new Exception("Escaped Switch with "+t);
       }
+      return t;
     }
 
-    internal enum TacticReplaceStatus
-    {
-      Success,
-      NoDocumentPersistence,
-      NoTactic,
-      NotResolved,
-      TranslatorFail
-    }
-    
     private static bool LoadAndCheckDocument(ITextBuffer tb, out string filePath) {
       ITextDocument doc;
       _tdf.TryGetTextDocument(tb, out doc);
       filePath = doc?.FilePath;
       return !string.IsNullOrEmpty(filePath);
     }
-    
-    private static TacticReplaceStatus ExecuteReplacement(IWpfTextView tv)
-    {
-      Microsoft.Dafny.Program program;
-      MemberDecl member;
-      string filePath;
-      
-      if (!LoadAndCheckDocument(tv.TextBuffer, out filePath)) return TacticReplaceStatus.NoDocumentPersistence;
-      var caretPos = tv.Caret.Position.BufferPosition.Position;
-      var resolveStatus = LoadResolveForPosition(caretPos, filePath, tv.TextBuffer, out program, out member);
-      if (resolveStatus != TacticReplaceStatus.Success) return resolveStatus;
 
+    private static TacticReplaceStatus ReplaceMember(MemberDecl member, Microsoft.Dafny.Program program, ITextEdit tedit) {
       var startOfBlock = member.tok.pos;
       var lengthOfBlock = member.BodyEndTok.pos - startOfBlock + 1;
 
       string expandedTactic;
-      var expandedStatus = GetExpandedTactic(program, member, out expandedTactic);
+      var expandedStatus = ExpandTactic(program, member, out expandedTactic);
       if (expandedStatus != TacticReplaceStatus.Success)
         return expandedStatus;
 
-      var tedit = tv.TextBuffer.CreateEdit();
       tedit.Replace(startOfBlock, lengthOfBlock, expandedTactic);
-      tedit.Apply();
       return TacticReplaceStatus.Success;
     }
-
-    private static TacticReplaceStatus LoadResolveForPosition(int position, string file, ITextBuffer tb, out Microsoft.Dafny.Program program, out MemberDecl member)
+    
+    private static TacticReplaceStatus LoadAndResolveMemberAtPosition(int position, string file, ITextBuffer tb, out Microsoft.Dafny.Program program, out MemberDecl member)
     {
       member = null;
-      var driver = new DafnyDriver(tb, file);
-      program = driver.ProcessResolution(true, true);
-      var tld = (DefaultClassDecl)program?.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
+      var tld = LoadAndResolveTld(tb, file, out program);
       if (tld == null) return TacticReplaceStatus.NotResolved;
       
       member = (from m in tld.Members
@@ -153,23 +196,13 @@ namespace DafnyLanguage.TacnyLanguage
       return member==null ? TacticReplaceStatus.NoTactic : TacticReplaceStatus.Success;
     }
 
-    public static string GetExpandedTactic(int position, ITextBuffer buffer, ref SnapshotSpan methodName)
-    {
-      Microsoft.Dafny.Program program;
-      MemberDecl member;
-      string file;
-      
-      if (!LoadAndCheckDocument(buffer, out file)) return null;
-      var resolveStatus = LoadResolveForPosition(position, file, buffer, out program, out member);
-      if (resolveStatus != TacticReplaceStatus.Success) return null;
-      methodName = new SnapshotSpan(buffer.CurrentSnapshot, member.tok.pos, member.CompileName.Length);
-
-      string expanded;
-      GetExpandedTactic(program, member, out expanded);
-      return expanded;
+    private static DefaultClassDecl LoadAndResolveTld(ITextBuffer tb, string file, out Microsoft.Dafny.Program program) {
+      var driver = new DafnyDriver(tb, file);
+      program = driver.ProcessResolution(true, true);
+      return (DefaultClassDecl)program?.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
     }
-    
-    private static TacticReplaceStatus GetExpandedTactic(Microsoft.Dafny.Program program, MemberDecl member, out string expandedTactic)
+
+    private static TacticReplaceStatus ExpandTactic(Microsoft.Dafny.Program program, MemberDecl member, out string expandedTactic)
     {
       expandedTactic = "";
       if (!member.CallsTactic) return TacticReplaceStatus.NoTactic;
@@ -195,6 +228,4 @@ namespace DafnyLanguage.TacnyLanguage
       return body.Substring(0, fringe.Length)==fringe ? body.Substring(fringe.Length) : body;
     }
   }
-
-
 }

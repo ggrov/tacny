@@ -75,7 +75,9 @@ namespace DafnyLanguage.DafnyMenu
 
   public interface ITacnyMenuProxy
   {
-    void Exec(IWpfTextView atv);
+    void ReplaceOne(IWpfTextView atv);
+
+    void ReplaceAll(ITextBuffer tb);
   }
 
   /// <summary>
@@ -209,7 +211,7 @@ namespace DafnyLanguage.DafnyMenu
         mcs.AddCommand(expandTacticsItem);
 
         var expandAllCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ExpandAllTacticsCommandId);
-        expandAllItem = new OleMenuCommand(NotImplemented, expandAllCommandId);
+        expandAllItem = new OleMenuCommand(TacticReplaceAllCallback, expandAllCommandId);
         mcs.AddCommand(expandAllItem);
 
         var toggleCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ToggleTacnyCommandId);
@@ -475,7 +477,7 @@ namespace DafnyLanguage.DafnyMenu
       var atv = ActiveTextView;
       if (TacnyMenuProxy != null && atv != null)
       {
-        TacnyMenuProxy.Exec(atv);
+        TacnyMenuProxy.ReplaceOne(atv);
       }
     }
 
@@ -486,9 +488,13 @@ namespace DafnyLanguage.DafnyMenu
       toggleItem.Text = result + " Automatic Tactic Verification";
     }
 
-    private static void NotImplemented(object s, EventArgs e)
+    private void TacticReplaceAllCallback(object s, EventArgs e)
     {
-      throw new NotImplementedException();
+      var atv = ActiveTextView;
+      if (TacnyMenuProxy != null && atv?.TextBuffer != null)
+      {
+        TacnyMenuProxy.ReplaceAll(atv.TextBuffer);
+      }
     }
     #endregion
   }
