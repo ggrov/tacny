@@ -19,5 +19,7 @@ namespace DafnyLanguage.DafnyMenu
     public const int ExpandTacticsCommandId = 0x0108;
     public const int ExpandAllTacticsCommandId = 0x0109;
     public const int ToggleTacnyCommandId = 0x0110;
+    
+    public const int ContextExpandTacticsCommandId = 0x0140;
   };
 }

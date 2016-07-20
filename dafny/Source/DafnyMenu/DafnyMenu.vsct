@@ -55,6 +55,9 @@
       <Group guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" priority="0x0610">
         <Parent guid="guidDafnyMenuPkg" id="DafnyMenu"/>
       </Group>
+      <Group guid="guidTacnyMenuPackageCmdSet" id="TacnyContextGroup" priority="0x0610">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN" />
+      </Group>
     </Groups>
 
     <!--Buttons section. -->
@@ -150,6 +153,15 @@
           <ButtonText>Expand and Pretty Print this Method</ButtonText>
         </Strings>
       </Button>
+      
+      <Button guid="guidTacnyMenuPackageCmdSet" id="ContextExpandTacticsCommand" priority="0x0108" type="Button">
+        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyContextGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Expand and Pretty Print this Method</ButtonText>
+        </Strings>
+      </Button>
 
       <Button guid="guidTacnyMenuPackageCmdSet" id="ExpandAllTacticsCommand" priority="0x0109" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
@@ -206,6 +218,9 @@
       <IDSymbol name="ExpandTacticsCommand" value="0x0108" />
       <IDSymbol name="ExpandAllTacticsCommand" value="0x0109" />
       <IDSymbol name="ToggleTacnyCommand" value="0x0110" />
+      
+      <IDSymbol name="TacnyContextGroup" value="0x1040" />
+      <IDSymbol name="ContextExpandTacticsCommand" value="0x0140" />
     </GuidSymbol>
   </Symbols>
 

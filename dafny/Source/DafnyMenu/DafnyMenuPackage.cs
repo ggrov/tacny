@@ -118,6 +118,7 @@ namespace DafnyLanguage.DafnyMenu
     private OleMenuCommand expandTacticsItem;
     private OleMenuCommand expandAllItem;
     private OleMenuCommand toggleItem;
+    private OleMenuCommand contextExpandTacticsItem;
     bool BVDDisabled;
 
     public IMenuProxy MenuProxy { get; set; }
@@ -217,6 +218,11 @@ namespace DafnyLanguage.DafnyMenu
         var toggleCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ToggleTacnyCommandId);
         toggleItem = new OleMenuCommand(ToggleItemCallback, toggleCommandId);
         mcs.AddCommand(toggleItem);
+        
+        var contextExpandTacticsCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ContextExpandTacticsCommandId);
+        contextExpandTacticsItem = new OleMenuCommand(TacticReplaceCallback, contextExpandTacticsCommandId);
+        contextExpandTacticsItem.BeforeQueryStatus += contextItem_beforeQuery;
+        mcs.AddCommand(contextExpandTacticsItem);
       }
     }
 
@@ -495,6 +501,14 @@ namespace DafnyLanguage.DafnyMenu
       {
         TacnyMenuProxy.ReplaceAll(atv.TextBuffer);
       }
+    }
+
+    private void contextItem_beforeQuery(object s, EventArgs e)
+    {
+      var atv = ActiveTextView;
+      var enabled = TacnyMenuProxy != null && atv?.TextBuffer != null && atv.TextBuffer.ContentType.IsOfType("dafny");
+      contextExpandTacticsItem.Visible = enabled;
+      contextExpandTacticsItem.Enabled = enabled;
     }
     #endregion
   }
