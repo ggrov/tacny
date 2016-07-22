@@ -410,20 +410,14 @@ namespace DafnyLanguage
       {
         ITextSnapshot s;
         RequestIdToSnapshot.TryGetValue(requestId, out s);
-        foreach (var errorInfo in tacticsErrorList)
-        {
-          try
-          {
-            var terr = new TacnyLanguage.TacticErrorReportingResolver(errorInfo);
-            terr.AddTacticErrors(errorListHolder, s, requestId, _document.FilePath);
-          }
-          catch (TacnyLanguage.TacticErrorResolutionException e)
-          {
-            errorListHolder.AddError(
-              new DafnyError("$$program_tactics$$", 0, 0, 
-              ErrorCategory.InternalError, "Error resolving tactics error " + e.Message + "\n" + e.StackTrace, snapshot, false),
-            "$$program_tactics$$", requestId);
-          }
+        try {
+          tacticsErrorList.ForEach(errorInfo => new TacnyLanguage.TacticErrorReportingResolver(errorInfo)
+            .AddTacticErrors(errorListHolder, s, requestId, _document.FilePath));
+        } catch (TacnyLanguage.TacticErrorResolutionException e) {
+          errorListHolder.AddError(
+            new DafnyError("$$program_tactics$$", 0, 0, ErrorCategory.InternalError,
+            "Error resolving tactics error " + e.Message + "\n" + e.StackTrace, snapshot, false),
+          "$$program_tactics$$", requestId);
         }
         DafnyDriver.SetDiagnoseTimeouts(!diagnoseTimeouts);
       }

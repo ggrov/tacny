@@ -14,11 +14,11 @@ namespace DafnyLanguage.TacnyLanguage
   }
   internal class TacticErrorReportingResolver
   {
-    private readonly Bpl.ErrorInformation _errorInfo;
+    private readonly Bpl.Token _errTok;
     private readonly DefaultClassDecl  _tmpModule;
     private readonly UpdateStmt _tacticCall;
     private readonly Tactic _activeTactic;
-    private readonly string _implTargetName;
+    private readonly string _errMessage, _implTargetName;
     public int FailingLine, FailingCol, TacticLine, TacticCol, CallingLine, CallingCol;
 
     public bool FoundFailing => !(FailingLine == -1 || FailingCol == -1);
@@ -27,17 +27,21 @@ namespace DafnyLanguage.TacnyLanguage
 
     public TacticErrorReportingResolver(Tacny.CompoundErrorInformation errorInfo)
     {
-      Contract.Ensures(_errorInfo != null);
+      Contract.Ensures(_errTok != null);
+      Contract.Ensures(_errMessage != null);
       Contract.Ensures(_tmpModule != null);
       Contract.Ensures(_tacticCall != null);
       Contract.Ensures(_activeTactic != null);
       Contract.Ensures(!string.IsNullOrEmpty(_implTargetName));
       var proofState = errorInfo.S;
       var tmpProgram = ((Tacny.CompoundErrorInformation)errorInfo.E).P;
+      var innerError = ((Tacny.CompoundErrorInformation)errorInfo.E).E;
 
-      _errorInfo = ((Tacny.CompoundErrorInformation)errorInfo.E).E;
+      _errTok = (Bpl.Token)innerError.Tok;
+      _errMessage = innerError.FullMsg;
+
       _tmpModule = (DefaultClassDecl)tmpProgram.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
-      _implTargetName = MethodNameFromImpl(_errorInfo.ImplementationName);
+      _implTargetName = MethodNameFromImpl(innerError.ImplementationName);
       _tacticCall = proofState.TacticApplication;
       _activeTactic = proofState.GetTactic(_tacticCall) as Tactic;
 
@@ -57,15 +61,15 @@ namespace DafnyLanguage.TacnyLanguage
       Contract.Ensures(Contract.Result<int>() >= 0);
       var tmpFailingMethod = _tmpModule.Members.FirstOrDefault(x => x.CompileName == _implTargetName) as Method;
       if (tmpFailingMethod == null) throw new TacticErrorResolutionException("The failing method must exist in tmp file");
-      return _errorInfo.Tok.line - tmpFailingMethod.BodyStartTok.line;
+      return _errTok.line - tmpFailingMethod.BodyStartTok.line;
     }
 
     private Bpl.IToken GetFailingLine()
     {
       var offsetToFailure = TacticLine + OffsetFromStartOfAddedLinesToFailingLine();
       return (from stmt in _activeTactic.Body.SubStatements.ToArray()
-                     where stmt.Tok.line == offsetToFailure
-                     select stmt.Tok).FirstOrDefault();
+              where stmt.Tok.line == offsetToFailure
+              select stmt.Tok).FirstOrDefault();
     }
     
     private void ResolveCorrectLocations()
@@ -76,7 +80,7 @@ namespace DafnyLanguage.TacnyLanguage
       TacticLine = _activeTactic.BodyStartTok.line;
       TacticCol = _activeTactic.BodyStartTok.col;
 
-      var failing = GetFailingLine(); //NOTE: Currently, the failing line is assuming a macro-style of tactic
+      var failing = GetFailingLine();
       if (failing == null) return;
       FailingCol = failing.col;
       FailingLine = failing.line;
@@ -91,8 +95,8 @@ namespace DafnyLanguage.TacnyLanguage
       Contract.Requires(FoundCalling && FoundTactic);
 
       errorListHolder.AddError(
-        new DafnyError(_errorInfo.Tok.filename, 0, 0, ErrorCategory.AuxInformation, 
-        _errorInfo.FullMsg + $" at ({_errorInfo.Tok.line},{_errorInfo.Tok.col-1})", null, false, "", false),
+        new DafnyError(_errTok.filename, 0, 0, ErrorCategory.AuxInformation, 
+        _errMessage + $" at ({_errTok.line},{_errTok.col-1})", null, false, null, false),
         "$$program_tactics$$", requestId);
       
       errorListHolder.AddError(
@@ -103,7 +107,7 @@ namespace DafnyLanguage.TacnyLanguage
       errorListHolder.AddError(
         new DafnyError(file, (FoundFailing ? FailingLine : TacticLine) - 1,
         (FoundFailing ? FailingCol : TacticCol) - 1, ErrorCategory.TacticError,
-        _errorInfo.FullMsg, snap, true, ""),
+        _errMessage, snap, true, ""),
         "$$program_tactics$$", requestId);
     }
   }

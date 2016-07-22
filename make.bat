@@ -11,6 +11,16 @@ if NOT "%errorlevel%"=="0" (
  goto end
 )
 
+echo "Testing NuGet..."
+nuget config
+echo .
+if NOT "%errorlevel%"=="0" ( 
+ echo ====================================================
+ echo Please install nuget command line and add it to path
+ echo ====================================================
+ goto end
+)
+
 if "%1"=="all" ( goto boogie )
 if "%1"=="boogie" ( goto boogie )
 if "%1"=="dafny" ( goto dafnyprimary )
@@ -28,15 +38,18 @@ if NOT "%1"=="" (
 )
 
 :boogie
+ nuget restore boogie\Source\Boogie.sln
  msbuild boogie\Source\Boogie.sln /p:Configuration=Debug /p:Platform="Any CPU"
  if NOT "%errorlevel%"=="0" ( goto end )
  if "%1"=="boogie" ( goto end )
  
 :dafnyprimary
+ nuget restore dafny\Source\Dafny.sln
  msbuild dafny\Source\Dafny.sln /p:Configuration=Debug /p:Platform="Any CPU"
  if NOT "%errorlevel%"=="0" ( goto end )
  
 :tacny
+ nuget restore tacny\Tacny.sln
  msbuild tacny\Tacny.sln /p:Configuration=Debug /p:Platform="Any CPU"
  if NOT "%errorlevel%"=="0" ( goto end )
  
@@ -48,6 +61,7 @@ if NOT "%1"=="" (
  if NOT "%2"=="ext" ( goto end )
  
 :ext
+ nuget restore dafny\Source\DafnyExtension.sln
  msbuild dafny\Source\DafnyExtension.sln /p:Configuration=Debug /p:Platform="Any CPU"
 
 :end
