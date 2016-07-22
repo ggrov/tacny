@@ -147,14 +147,36 @@
         </Strings>
       </Button>
 
-      <Button guid="guidTacnyMenuPackageCmdSet" id="ExpandTacticsCommand" priority="0x0108" type="Button">
+      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandTactics" priority="0x0100" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <Strings>
           <ButtonText>Expand and Pretty Print this Method</ButtonText>
         </Strings>
       </Button>
       
-      <Button guid="guidTacnyMenuPackageCmdSet" id="ContextExpandTacticsCommand" priority="0x0108" type="Button">
+      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandRot" priority="0x0102" type="Button">
+        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
+        <Strings>
+          <ButtonText>Read-Only Peek Tactics in this Method</ButtonText>
+        </Strings>
+      </Button>
+      
+      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandAllTactics" priority="0x0103" type="Button">
+        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
+        <Strings>
+          <ButtonText>Expand and Pretty Print All Methods</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidToggleTacny" priority="0x0104" type="Button">
+        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Disable Automatic Tactic Verification</ButtonText>
+        </Strings>
+      </Button>
+      
+      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidContextExpandTactics" priority="0x0100" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyContextGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
@@ -162,47 +184,28 @@
           <ButtonText>Expand and Pretty Print this Method</ButtonText>
         </Strings>
       </Button>
-
-      <Button guid="guidTacnyMenuPackageCmdSet" id="ExpandAllTacticsCommand" priority="0x0109" type="Button">
-        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
+      
+      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidContextExpandRot" priority="0x0101" type="Button">
+        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyContextGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
-          <ButtonText>Expand and Pretty Print All Methods</ButtonText>
-        </Strings>
-      </Button>
-
-      <Button guid="guidTacnyMenuPackageCmdSet" id="ToggleTacnyCommand" priority="0x0110" type="Button">
-        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
-        <CommandFlag>TextChanges</CommandFlag>
-        <Strings>
-          <ButtonText>Disable Automatic Tactic Verification</ButtonText>
+          <ButtonText>Read-Only Peek Tactics in this Method</ButtonText>
         </Strings>
       </Button>
     </Buttons>
-
-    <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
-    <Bitmaps>
-      <!--  The bitmap id is defined in a way that is a little bit different from the others: 
-            the declaration starts with a guid for the bitmap strip, then there is the resource id of the 
-            bitmap strip containing the bitmaps and then there are the numeric ids of the elements used 
-            inside a button definition. An important aspect of this declaration is that the element id 
-            must be the actual index (1-based) of the bitmap inside the bitmap strip. -->
-
-      <!--
-      <Bitmap guid="guidImages" href="Resources\Images.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
-      -->
-    </Bitmaps>
-
   </Commands>
 
   <Symbols>
     <!-- This is the package guid. -->
     <GuidSymbol name="guidDafnyMenuPkg" value="{e1baf989-88a6-4acf-8d97-e0dc243476aa}">
-      <IDSymbol name="DafnyMenu" value="0x1021" />
+      <IDSymbol name="DafnyMenu" value="0x1020" />
     </GuidSymbol>
 
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="guidDafnyMenuCmdSet" value="{393ad46d-e125-41ce-84ee-b4d552d5ba16}">
-      <IDSymbol name="DafnyMenuGroup" value="0x1020" />
+      <IDSymbol name="DafnyMenuGroup" value="0x1021" />
+      
       <IDSymbol name="cmdidCompile" value="0x0100" />
       <IDSymbol name="cmdidRunVerifier" value="0x0101" />
       <IDSymbol name="cmdidStopVerifier" value="0x0102" />
@@ -214,20 +217,24 @@
     </GuidSymbol>
 
     <GuidSymbol name="guidTacnyMenuPackageCmdSet" value="{6800196a-f13c-4bd6-a795-456a2eb74164}">
-      <IDSymbol name="TacnyMenuGroup" value="0x1030" />
-      <IDSymbol name="ExpandTacticsCommand" value="0x0108" />
-      <IDSymbol name="ExpandAllTacticsCommand" value="0x0109" />
-      <IDSymbol name="ToggleTacnyCommand" value="0x0110" />
+      <IDSymbol name="TacnyMenuGroup" value="0x1022" />
+      <IDSymbol name="TacnyContextGroup" value="0x1023" />
       
-      <IDSymbol name="TacnyContextGroup" value="0x1040" />
-      <IDSymbol name="ContextExpandTacticsCommand" value="0x0140" />
+      <IDSymbol name="cmdidExpandTactics" value="0x0108" />
+      <IDSymbol name="cmdidExpandRot" value="0x0109" />
+      <IDSymbol name="cmdidExpandAllTactics" value="0x010a" />
+      <IDSymbol name="cmdidToggleTacny" value="0x010b" />
+      
+      <IDSymbol name="cmdidContextExpandTactics" value="0x010c" />
+      <IDSymbol name="cmdidContextExpandRot" value="0x010d" />
     </GuidSymbol>
   </Symbols>
 
   <KeyBindings>
-    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="ExpandTacticsCommand" editor="GUID_TextEditorFactory" key1="0" mod1="Control" key2="T" mod2="Control"/>
-    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="ExpandAllTacticsCommand" editor="GUID_TextEditorFactory" key1="0" mod1="Control" key2="Y" mod2="Control"/>
-    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="ToggleTacnyCommand" editor="GUID_TextEditorFactory" key1="0" mod1="Control" key2="U" mod2="Control"/>
-  </KeyBindings>
-
-</CommandTable>
+    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandTactics"    editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="T"/>
+    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandRot"        editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="Y"/>
+    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandAllTactics" editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="U"/>
+    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidToggleTacny"      editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="I"/>
+  </KeyBindings>                                                                                             
+                                                                                                             
+</CommandTable>                                                                                              

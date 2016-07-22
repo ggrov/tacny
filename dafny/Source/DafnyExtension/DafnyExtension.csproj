@@ -340,6 +340,8 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HoverText.cs" />
     <Compile Include="IdentifierTagger.cs" />
+    <Compile Include="TacnyLanguage\RotPeekableItem.cs" />
+    <Compile Include="TacnyLanguage\RotPeekResult.cs" />
     <Compile Include="TacnyLanguage\TacticErrorReportingResolver.cs" />
     <Compile Include="TacnyLanguage\TacticReplacer.cs" />
     <Compile Include="MenuProxy.cs" />

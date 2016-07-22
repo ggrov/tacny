@@ -8,6 +8,7 @@ using DafnyLanguage.DafnyMenu;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
@@ -20,15 +21,19 @@ namespace DafnyLanguage.TacnyLanguage
 {
   [Export(typeof(IVsTextViewCreationListener))]
   [ContentType("dafny")]
+  [Name("TacticReplacerProvider")]
   [TextViewRole(PredefinedTextViewRoles.Editable)]
-  internal class TacticReplacerFilterProvider : IVsTextViewCreationListener
+  internal class TacticReplacerProvider : IVsTextViewCreationListener
   {
     [Import(typeof(ITextDocumentFactoryService))]
     internal ITextDocumentFactoryService Tdf { get; set; }
     
     [Import(typeof(SVsServiceProvider))]
     internal IServiceProvider ServiceProvider { get; set; }
-    
+
+    [Import]
+    internal IPeekBroker Pb { get; set; }
+
     public void VsTextViewCreated(IVsTextView textViewAdapter)
     {
       var vsShell = Package.GetGlobalService(typeof(SVsShell)) as IVsShell;
@@ -38,7 +43,7 @@ namespace DafnyLanguage.TacnyLanguage
       if (vsShell.LoadPackage(ref packToLoad, out shellPack) != VSConstants.S_OK)
         throw new NullReferenceException("Dafny Menu failed to Load");
       var dafnyMenuPack = (DafnyMenuPackage)shellPack;
-      dafnyMenuPack.TacnyMenuProxy = new TacticReplacerProxy(Tdf, ServiceProvider);
+      dafnyMenuPack.TacnyMenuProxy = new TacticReplacerProxy(Tdf, ServiceProvider, Pb);
     }
   }
 
@@ -55,15 +60,21 @@ namespace DafnyLanguage.TacnyLanguage
   {
     private readonly TacticReplacer _tr;
 
-    public TacticReplacerProxy(ITextDocumentFactoryService tdf, IServiceProvider isp) {
+    public TacticReplacerProxy(ITextDocumentFactoryService tdf, IServiceProvider isp, IPeekBroker pb) {
       var status = (IVsStatusbar) isp.GetService(typeof(SVsStatusbar));
-      _tr = new TacticReplacer(status, tdf);
+      _tr = new TacticReplacer(status, tdf, pb);
     }
     
     public void ReplaceOne(IWpfTextView atv)
     {
       Contract.Assume(atv!=null);
       _tr.ReplaceMethodUnderCaret(atv);
+    }
+
+    public void ShowRot(IWpfTextView atv)
+    {
+      Contract.Assume(atv != null);
+      _tr.ShowRotPeekForMethod(atv);
     }
 
     public void ReplaceAll(ITextBuffer tb)
@@ -77,10 +88,12 @@ namespace DafnyLanguage.TacnyLanguage
   {
     private static IVsStatusbar _status;
     private static ITextDocumentFactoryService _tdf;
+    private static IPeekBroker _pb;
 
-    public TacticReplacer(IVsStatusbar sb, ITextDocumentFactoryService tdf) {
+    public TacticReplacer(IVsStatusbar sb, ITextDocumentFactoryService tdf, IPeekBroker pb) {
       _status = sb;
       _tdf = tdf;
+      _pb = pb;
     }
     
     public TacticReplaceStatus ReplaceAll(ITextBuffer tb) {
@@ -106,8 +119,22 @@ namespace DafnyLanguage.TacnyLanguage
       return NotifyOfReplacement(status);
     }
 
-    public TacticReplaceStatus ReplaceMethodUnderCaret(IWpfTextView tv)
-    {
+    public TacticReplaceStatus ShowRotPeekForMethod(IWpfTextView tv) {
+      Microsoft.Dafny.Program program;
+      MemberDecl member;
+      string filePath;
+      
+      if (!LoadAndCheckDocument(tv.TextBuffer, out filePath)) return NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
+      var caretPos = tv.Caret.Position.BufferPosition.Position;
+      var resolveStatus = LoadAndResolveMemberAtPosition(caretPos, filePath, tv.TextBuffer, out program, out member);
+      if (resolveStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(resolveStatus);
+
+      var trigger = tv.TextBuffer.CurrentSnapshot.CreateTrackingPoint(member.BodyStartTok.pos-1, PointTrackingMode.Positive);
+      _pb.TriggerPeekSession(tv, trigger, new RotPeekRelationship().Name);
+      return NotifyOfReplacement(TacticReplaceStatus.Success);
+    }
+
+    public TacticReplaceStatus ReplaceMethodUnderCaret(IWpfTextView tv) {
       Microsoft.Dafny.Program program;
       MemberDecl member;
       string filePath;
@@ -128,7 +155,7 @@ namespace DafnyLanguage.TacnyLanguage
       Microsoft.Dafny.Program program;
       MemberDecl member;
       string file;
-      
+
       if (!LoadAndCheckDocument(buffer, out file)) return null;
       var resolveStatus = LoadAndResolveMemberAtPosition(position, file, buffer, out program, out member);
       if (resolveStatus != TacticReplaceStatus.Success) return null;

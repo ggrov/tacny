@@ -24,58 +24,44 @@ namespace DafnyLanguage.DafnyMenu
   {
     int ToggleSnapshotVerification(IWpfTextView activeTextView);
 
-
     int ToggleMoreAdvancedSnapshotVerification(IWpfTextView activeTextView);
-
 
     bool MoreAdvancedSnapshotVerificationCommandEnabled(IWpfTextView activeTextView);
 
-
     bool ToggleAutomaticInduction(IWpfTextView activeTextView);
 
-
     bool AutomaticInductionCommandEnabled(IWpfTextView activeTextView);
-
     
     bool StopVerifierCommandEnabled(IWpfTextView activeTextView);
 
-
     void StopVerifier(IWpfTextView activeTextView);
-
 
     bool RunVerifierCommandEnabled(IWpfTextView activeTextView);
 
-
     void RunVerifier(IWpfTextView activeTextView);
-
-
+    
     bool MenuEnabled(IWpfTextView activeTextView);
-
-
+    
     bool CompileCommandEnabled(IWpfTextView activeTextView);
-        
-
+    
     void Compile(IWpfTextView activeTextView);
-        
-
+    
     bool ShowErrorModelCommandEnabled(IWpfTextView activeTextView);
-
-
+    
     void ShowErrorModel(IWpfTextView activeTextView);
-
-
+    
     bool DiagnoseTimeoutsCommandEnabled(IWpfTextView activeTextView);
-
-        
+    
     void DiagnoseTimeouts(IWpfTextView activeTextView);
     
-
     bool ToggleTacticEvaluation();
   }
 
   public interface ITacnyMenuProxy
   {
     void ReplaceOne(IWpfTextView atv);
+
+    void ShowRot(IWpfTextView atv);
 
     void ReplaceAll(ITextBuffer tb);
   }
@@ -102,10 +88,8 @@ namespace DafnyLanguage.DafnyMenu
   [ProvideToolWindow(typeof(BvdToolWindow), Transient = true)]
   [ProvideToolWindowVisibility(typeof(BvdToolWindow), GuidList.guidDafnyMenuCmdSetString)]
   [Guid(GuidList.guidDafnyMenuPkgString)]
-
-    public sealed class DafnyMenuPackage : Package
+  public sealed class DafnyMenuPackage : Package
   {
-
     private OleMenuCommand compileCommand;
     private OleMenuCommand menuCommand;
     private OleMenuCommand runVerifierCommand;
@@ -115,10 +99,13 @@ namespace DafnyLanguage.DafnyMenu
     private OleMenuCommand toggleAutomaticInductionCommand;
     private OleMenuCommand toggleBVDCommand;
     private OleMenuCommand diagnoseTimeoutsCommand;
-    private OleMenuCommand expandTacticsItem;
-    private OleMenuCommand expandAllItem;
-    private OleMenuCommand toggleItem;
-    private OleMenuCommand contextExpandTacticsItem;
+    private OleMenuCommand expandTacticsCommand;
+    private OleMenuCommand expandRotCommand;
+    private OleMenuCommand expandAllCommand;
+    private OleMenuCommand toggleCommand;
+    private OleMenuCommand contextExpandTacticsCommand;
+    private OleMenuCommand contextExpandRotCommand;
+
     bool BVDDisabled;
 
     public IMenuProxy MenuProxy { get; set; }
@@ -200,29 +187,37 @@ namespace DafnyLanguage.DafnyMenu
         diagnoseTimeoutsCommand.BeforeQueryStatus += diagnoseTimeoutsCommand_BeforeQueryStatus;
         mcs.AddCommand(diagnoseTimeoutsCommand);
 
-        var menuCommandID = new CommandID(GuidList.guidDafnyMenuPkgSet, (int)PkgCmdIDList.cmdidMenu);
+        var menuCommandID = new CommandID(GuidList.guidDafnyMenuPkgSet, (int)PkgCmdIDList.DafnyMenu);
         menuCommand = new OleMenuCommand(new EventHandler((sender, e) => { }), menuCommandID);
         menuCommand.BeforeQueryStatus += menuCommand_BeforeQueryStatus;
         menuCommand.Enabled = true;
         mcs.AddCommand(menuCommand);
-
-
-        var expandTacticsCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ExpandTacticsCommandId);
-        expandTacticsItem = new OleMenuCommand(TacticReplaceCallback, expandTacticsCommandId);
-        mcs.AddCommand(expandTacticsItem);
-
-        var expandAllCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ExpandAllTacticsCommandId);
-        expandAllItem = new OleMenuCommand(TacticReplaceAllCallback, expandAllCommandId);
-        mcs.AddCommand(expandAllItem);
-
-        var toggleCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ToggleTacnyCommandId);
-        toggleItem = new OleMenuCommand(ToggleItemCallback, toggleCommandId);
-        mcs.AddCommand(toggleItem);
         
-        var contextExpandTacticsCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, PkgCmdIDList.ContextExpandTacticsCommandId);
-        contextExpandTacticsItem = new OleMenuCommand(TacticReplaceCallback, contextExpandTacticsCommandId);
-        contextExpandTacticsItem.BeforeQueryStatus += contextItem_beforeQuery;
-        mcs.AddCommand(contextExpandTacticsItem);
+        var expandTacticsCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidExpandTactics);
+        expandTacticsCommand = new OleMenuCommand(TacticReplaceCallback, expandTacticsCommandId);
+        mcs.AddCommand(expandTacticsCommand);
+
+        var expandRotCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidExpandRot);
+        expandRotCommand = new OleMenuCommand(ShowRotCallback, expandRotCommandId);
+        mcs.AddCommand(expandRotCommand);
+
+        var expandAllCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidExpandAllTactics);
+        expandAllCommand = new OleMenuCommand(TacticReplaceAllCallback, expandAllCommandId);
+        mcs.AddCommand(expandAllCommand);
+
+        var toggleCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidToggleTacny);
+        toggleCommand = new OleMenuCommand(ToggleItemCallback, toggleCommandId);
+        mcs.AddCommand(toggleCommand);
+        
+        var contextExpandTacticsCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidContextExpandTactics);
+        contextExpandTacticsCommand = new OleMenuCommand(TacticReplaceCallback, contextExpandTacticsCommandId);
+        contextExpandTacticsCommand.BeforeQueryStatus += ContextCommandBeforeQuery;
+        mcs.AddCommand(contextExpandTacticsCommand);
+
+        var contextExpandRotCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidContextExpandRot);
+        contextExpandRotCommand = new OleMenuCommand(ShowRotCallback, contextExpandRotCommandId);
+        contextExpandRotCommand.BeforeQueryStatus += ContextCommandBeforeQuery;
+        mcs.AddCommand(contextExpandRotCommand);
       }
     }
 
@@ -477,7 +472,6 @@ namespace DafnyLanguage.DafnyMenu
       return result;
     }
 
-
     private void TacticReplaceCallback(object sender, EventArgs e)
     {
       var atv = ActiveTextView;
@@ -487,11 +481,13 @@ namespace DafnyLanguage.DafnyMenu
       }
     }
 
-    private void ToggleItemCallback(object sender, EventArgs e)
+    private void ShowRotCallback(object sender, EventArgs e)
     {
-      if (MenuProxy == null) return;
-      var result = MenuProxy.ToggleTacticEvaluation() ? "Disable" : "Enable";
-      toggleItem.Text = result + " Automatic Tactic Verification";
+      var atv = ActiveTextView;
+      if (TacnyMenuProxy != null && atv != null)
+      {
+        TacnyMenuProxy.ShowRot(atv);
+      }
     }
 
     private void TacticReplaceAllCallback(object s, EventArgs e)
@@ -503,12 +499,21 @@ namespace DafnyLanguage.DafnyMenu
       }
     }
 
-    private void contextItem_beforeQuery(object s, EventArgs e)
+    private void ToggleItemCallback(object sender, EventArgs e)
+    {
+      if (MenuProxy == null) return;
+      var result = MenuProxy.ToggleTacticEvaluation() ? "Disable" : "Enable";
+      toggleCommand.Text = result + " Automatic Tactic Verification";
+    }
+
+    private void ContextCommandBeforeQuery(object s, EventArgs e)
     {
       var atv = ActiveTextView;
       var enabled = TacnyMenuProxy != null && atv?.TextBuffer != null && atv.TextBuffer.ContentType.IsOfType("dafny");
-      contextExpandTacticsItem.Visible = enabled;
-      contextExpandTacticsItem.Enabled = enabled;
+      contextExpandTacticsCommand.Visible = enabled;
+      contextExpandTacticsCommand.Enabled = enabled;
+      contextExpandRotCommand.Visible = enabled;
+      contextExpandRotCommand.Enabled = enabled;
     }
     #endregion
   }
