@@ -128,10 +128,19 @@ namespace DafnyLanguage.TacnyLanguage
       var caretPos = tv.Caret.Position.BufferPosition.Position;
       var resolveStatus = LoadAndResolveMemberAtPosition(caretPos, filePath, tv.TextBuffer, out program, out member);
       if (resolveStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(resolveStatus);
+      if (!member.CallsTactic) return NotifyOfReplacement(TacticReplaceStatus.NoTactic);
 
       var trigger = tv.TextBuffer.CurrentSnapshot.CreateTrackingPoint(member.BodyStartTok.pos-1, PointTrackingMode.Positive);
-      _pb.TriggerPeekSession(tv, trigger, new RotPeekRelationship().Name);
+      _pb.TriggerPeekSession(tv, trigger, RotPeekRelationship.SName);
       return NotifyOfReplacement(TacticReplaceStatus.Success);
+    }
+
+    public static string GetStringForRot(int position, ITextBuffer tb)
+    {
+      var methodName = new SnapshotSpan();
+      var fullMethod = GetExpandedTactic(position, tb, ref methodName);
+      var splitMethod = fullMethod.Split('\n');
+      return splitMethod.Where((t, i) => i >= 2 && i <= splitMethod.Length - 3).Aggregate("", (current, t) => current + t + "\n");
     }
 
     public TacticReplaceStatus ReplaceMethodUnderCaret(IWpfTextView tv) {

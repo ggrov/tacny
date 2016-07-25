@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Threading;
 using System.Windows;
@@ -10,14 +9,12 @@ using Microsoft.VisualStudio.Utilities;
 
 namespace DafnyLanguage.TacnyLanguage
 {
-  //PeekResult* is the wpf side of things
-
   #region provider
 
   [Export(typeof(IPeekResultPresenter))]
   [ContentType("dafny")]
   [Name("ReadOnlyTacticPeekResultPresenter")]
-  internal class RotPeekResultPresenter : IPeekResultPresenter //gets the PeekResultPresentation
+  internal class RotPeekResultPresenter : IPeekResultPresenter
   {
     public IPeekResultPresentation TryCreatePeekResultPresentation(IPeekResult result) {
       return new RotPeekResultPresentation(result);
@@ -26,48 +23,62 @@ namespace DafnyLanguage.TacnyLanguage
 
   #endregion provider
 
-  internal class RotPeekResult : IPeekResult //the result of querying an iPeekableItem fora given relationship
+  internal class RotPeekResult : IPeekResult
   {
-    public void Dispose() {}
-
-    public void NavigateTo(object data) {
-      //just scroll it into view... ? wat? TODO
+    public RotPeekResult(string expandedTactic)
+    {
+      ExpandedTactic = expandedTactic;
     }
 
-    public IPeekResultDisplayInfo DisplayInfo => new PeekResultDisplayInfo("label", "tooltip", "title", "titletoolTip");
-    public bool CanNavigateTo => true; //i think
-    public Action<IPeekResult, object, object> PostNavigationCallback => (pr, o, data) => { }; //do we need to do anything after navigation
+    public string ExpandedTactic;
+    private const string Title = "Expanded Tactics";
+    private const string Tip = "Text previewing expanded tactics";
+    
+    public void Dispose() {}
+
+    public void NavigateTo(object data) {} //TODO maybe
+
+    public IPeekResultDisplayInfo DisplayInfo => new PeekResultDisplayInfo(Title, Tip, Title, Tip);
+    public bool CanNavigateTo => false; //TODO i think
+    public Action<IPeekResult, object, object> PostNavigationCallback => (pr, o, data) => { }; //TODO do we need to do anything after navigation
     public event EventHandler Disposed { add{} remove{} }
   }
 
-  internal class RotPeekResultPresentation : IPeekResultPresentation //defines a wpf representation for a PeekableItem
+  internal class RotPeekResultPresentation : IPeekResultPresentation
   {
-    private readonly IPeekResult _result;
+    private readonly string _expandedTactic;
     private TextBox _tb;
 
-    public RotPeekResultPresentation(IPeekResult result) {
-      _result = result;
+    public RotPeekResultPresentation(IPeekResult result)
+    {
+      var rotResult = result as RotPeekResult;
+      _expandedTactic = rotResult?.ExpandedTactic ?? "Failed to Expand Tactic";
     }
-    // https://msdn.microsoft.com/en-us/library/microsoft.visualstudio.language.intellisense.ipeekresultpresentation.aspx
+
     public void Dispose() {
       _tb = null;
     }
 
-    public bool TryOpen(IPeekResult otherResult) => _result==otherResult; //dont opn a new one if already open. true or false?
+    public bool TryOpen(IPeekResult otherResult)
+    {
+      var other = otherResult as RotPeekResult;
+      return _expandedTactic==other?.ExpandedTactic;
+    } 
 
     public bool TryPrepareToClose() => true;
 
-    public UIElement Create(IPeekSession session, IPeekResultScrollState scrollState) { //document viewer / text box/ whaetever goes here
+    public UIElement Create(IPeekSession session, IPeekResultScrollState scrollState) {
       _tb = new TextBox {
-        Text = "BCBF4EDC - C032 - 4946 - A448 - 15D7465EFD30",
-        Height = 20,
-        Background = Brushes.LightSalmon
+        Text = _expandedTactic,
+        Background = Brushes.AliceBlue,
+        IsReadOnly = true
       };
+      _tb.MinHeight = _tb.Text.Split('\n').Length + 1 * _tb.FontSize;
       return _tb;
     }
 
     public void ScrollIntoView(IPeekResultScrollState scrollState) {
-      //surely this is the job of the textvie,w not the peek?
+      //TODO surely this is the job of the textvie,w not the peek?
     }
 
     public IPeekResultScrollState CaptureScrollState() {
@@ -90,33 +101,34 @@ namespace DafnyLanguage.TacnyLanguage
     public double ZoomLevel { get; set; }
     public bool IsDirty => false;
     public bool IsReadOnly => true;
-    public event EventHandler<RecreateContentEventArgs> RecreateContent {add{} remove{}}
+    public event EventHandler<RecreateContentEventArgs> RecreateContent {add{} remove{}} //TODO
     public event EventHandler IsDirtyChanged {add{} remove{}}
-  public event EventHandler IsReadOnlyChanged {add{} remove{}}
+    public event EventHandler IsReadOnlyChanged {add{} remove{}}
   }
 
-  internal class RotPeekResultScrollState : IPeekResultScrollState //gets (scroll) state of results in a peek?
+  internal class RotPeekResultScrollState : IPeekResultScrollState //TODO  gets (scroll) state of results in a peek?
   {
     public void Dispose() {}
 
     public void RestoreScrollState(IPeekResultPresentation presentation) {
-      //there is no scroll state to return to?
+      //TODO there is no scroll state to return to?
     }
   }
 
-  internal class RotPeekResultSource : IPeekResultSource //Content-type Peek providers implement this to provide results of querying IPeekableItems?
-
+  internal class RotPeekResultSource : IPeekResultSource
   {
-    private readonly string _relName;
+    private readonly string _relName, _expandedTactic;
 
-    public RotPeekResultSource(string relationshipName) {
+    public RotPeekResultSource(string relationshipName, string expandedTactic)
+    {
       _relName = relationshipName;
+      _expandedTactic = expandedTactic;
     }
 
     public void FindResults(string relationshipName, IPeekResultCollection resultCollection, 
       CancellationToken cancellationToken, IFindPeekResultsCallback callback)
     {
-      if(relationshipName==_relName) resultCollection.Add(new RotPeekResult());
+      if(relationshipName==_relName) resultCollection.Add(new RotPeekResult(_expandedTactic));
     }
   }
 }

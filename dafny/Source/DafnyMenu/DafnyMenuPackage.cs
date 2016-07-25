@@ -510,10 +510,10 @@ namespace DafnyLanguage.DafnyMenu
     {
       var atv = ActiveTextView;
       var enabled = TacnyMenuProxy != null && atv?.TextBuffer != null && atv.TextBuffer.ContentType.IsOfType("dafny");
-      contextExpandTacticsCommand.Visible = enabled;
-      contextExpandTacticsCommand.Enabled = enabled;
-      contextExpandRotCommand.Visible = enabled;
-      contextExpandRotCommand.Enabled = enabled;
+      var contextCommand = s as OleMenuCommand;
+      if (contextCommand == null) return;
+      contextCommand.Visible = enabled;
+      contextCommand.Enabled = enabled;
     }
     #endregion
   }

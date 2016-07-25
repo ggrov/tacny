@@ -1,17 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using DafnyLanguage.TacnyLanguage;
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Language.Intellisense;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Editor;
+using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
 
 namespace DafnyLanguage.TacnyLanguage
 {
-  //Peekable* is the data representation
 
   #region provider
- //TODO copy all comment notes into docs
-  internal sealed class RotPeekRelationship : IPeekRelationship //Defines name of peek
+  internal sealed class RotPeekRelationship : IPeekRelationship
   {
     public static string SName => "RotPeek";
     public static string SDisplayName => "Read Only Tactic Peek";
@@ -23,7 +26,7 @@ namespace DafnyLanguage.TacnyLanguage
   [Export(typeof(IPeekableItemSourceProvider))]
   [ContentType("dafny")]
   [Name("RotPeekableItemSourceProvider")]
-  internal class RotPeekableItemSourceProvider : IPeekableItemSourceProvider //This initializes / activates / gets the peek item source
+  internal class RotPeekableItemSourceProvider : IPeekableItemSourceProvider
   {
     public IPeekableItemSource TryCreatePeekableItemSource(ITextBuffer textBuffer) {
       return new RotPeekableItemSource(textBuffer);
@@ -33,10 +36,16 @@ namespace DafnyLanguage.TacnyLanguage
   #endregion provider
 
   internal class RotPeekableItem : IPeekableItem
-    //an object that represents something peekable. This object can be a source of a PeekSession
   {
+    private readonly string _expandedTactic;
+
+    public RotPeekableItem(string expandedTactic)
+    {
+      _expandedTactic = expandedTactic;
+    }
+
     public IPeekResultSource GetOrCreateResultSource(string relationshipName) {
-      return new RotPeekResultSource(relationshipName);
+      return new RotPeekResultSource(relationshipName, _expandedTactic);
     }
 
     public string DisplayName => RotPeekRelationship.SDisplayName;
@@ -45,18 +54,38 @@ namespace DafnyLanguage.TacnyLanguage
       new IPeekRelationship[] { new RotPeekRelationship() };
   }
 
-  internal class RotPeekableItemSource : IPeekableItemSource //for a content type, provides PeekableItems
+  internal class RotPeekableItemSource : IPeekableItemSource
   {
     private readonly ITextBuffer _textBuffer;
+    
+    private static IWpfTextView ActiveTextView {
+      get {
+        IVsTextView view = null;
+        var textManager = (IVsTextManager) ServiceProvider.GlobalProvider.GetService(typeof(SVsTextManager));
+        if (textManager?.GetActiveView(1, null, out view) != Microsoft.VisualStudio.VSConstants.S_OK) return null;
+        var cm = (IComponentModel) ServiceProvider.GlobalProvider.GetService(typeof(SComponentModel));
+        var ea = cm?.GetService<IVsEditorAdaptersFactoryService>();
+        var textView = ea?.GetWpfTextView(view);
+        return textView;
+      }
+    }
 
     public RotPeekableItemSource(ITextBuffer textBuffer) {
       _textBuffer = textBuffer;
     }
 
+    private string ExpandTactic()
+    {
+      var atv = ActiveTextView;
+      if(atv==null) throw new NullReferenceException("Text View Not Accessible");
+      var caret = atv.Caret.Position.BufferPosition.Position;
+      return TacticReplacer.GetStringForRot(caret, _textBuffer);
+    }
+
     public void Dispose() {}
 
     public void AugmentPeekSession(IPeekSession session, IList<IPeekableItem> peekableItems) {
-      if(session.RelationshipName == RotPeekRelationship.SName) peekableItems.Add(new RotPeekableItem());
+      if(session.RelationshipName == RotPeekRelationship.SName) peekableItems.Add(new RotPeekableItem(ExpandTactic()));
     }
   }
 }

@@ -1,5 +1,15 @@
 tactic mytac(){
   assert true;
+  assert true;
+  assert true;
+  assert true;
+  assert true;
+  assert true;
+  assert false;
+  assert true;
+  assert true;
+  assert true;
+  assert true;
 }
 
 lemma mylemma(){
@@ -9,5 +19,5 @@ lemma mylemma(){
 }
 
 tactic myothertac(){
-  assert false;
+  assert true;
 }
