@@ -26,6 +26,7 @@ namespace DafnyLanguage.TacnyLanguage
   [Export(typeof(IPeekableItemSourceProvider))]
   [ContentType("dafny")]
   [Name("RotPeekableItemSourceProvider")]
+  [SupportsStandaloneFiles(true)]
   internal class RotPeekableItemSourceProvider : IPeekableItemSourceProvider
   {
     public IPeekableItemSource TryCreatePeekableItemSource(ITextBuffer textBuffer) {

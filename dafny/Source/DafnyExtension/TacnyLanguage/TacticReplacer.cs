@@ -15,7 +15,6 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
-using Tacny;
 
 namespace DafnyLanguage.TacnyLanguage
 {
@@ -98,7 +97,7 @@ namespace DafnyLanguage.TacnyLanguage
     
     public TacticReplaceStatus ReplaceAll(ITextBuffer tb) {
       string file;
-      Microsoft.Dafny.Program program;
+      Program program;
       if (!LoadAndCheckDocument(tb, out file))
         return NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
       var tld = LoadAndResolveTld(tb, file, out program);
@@ -120,15 +119,17 @@ namespace DafnyLanguage.TacnyLanguage
     }
 
     public TacticReplaceStatus ShowRotPeekForMethod(IWpfTextView tv) {
-      Microsoft.Dafny.Program program;
+      Program program;
       MemberDecl member;
-      string filePath;
+      string filePath, expandedString;
       
       if (!LoadAndCheckDocument(tv.TextBuffer, out filePath)) return NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
       var caretPos = tv.Caret.Position.BufferPosition.Position;
       var resolveStatus = LoadAndResolveMemberAtPosition(caretPos, filePath, tv.TextBuffer, out program, out member);
       if (resolveStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(resolveStatus);
       if (!member.CallsTactic) return NotifyOfReplacement(TacticReplaceStatus.NoTactic);
+      var expandStatus = ExpandTactic(program, member, out expandedString);
+      if (expandStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(expandStatus);
 
       var trigger = tv.TextBuffer.CurrentSnapshot.CreateTrackingPoint(member.BodyStartTok.pos-1, PointTrackingMode.Positive);
       _pb.TriggerPeekSession(tv, trigger, RotPeekRelationship.SName);
@@ -144,7 +145,7 @@ namespace DafnyLanguage.TacnyLanguage
     }
 
     public TacticReplaceStatus ReplaceMethodUnderCaret(IWpfTextView tv) {
-      Microsoft.Dafny.Program program;
+      Program program;
       MemberDecl member;
       string filePath;
 
@@ -161,7 +162,7 @@ namespace DafnyLanguage.TacnyLanguage
 
     public static string GetExpandedTactic(int position, ITextBuffer buffer, ref SnapshotSpan methodName)
     {
-      Microsoft.Dafny.Program program;
+      Program program;
       MemberDecl member;
       string file;
 
@@ -207,7 +208,7 @@ namespace DafnyLanguage.TacnyLanguage
       return !string.IsNullOrEmpty(filePath);
     }
 
-    private static TacticReplaceStatus ReplaceMember(MemberDecl member, Microsoft.Dafny.Program program, ITextEdit tedit) {
+    private static TacticReplaceStatus ReplaceMember(MemberDecl member, Program program, ITextEdit tedit) {
       var startOfBlock = member.tok.pos;
       var lengthOfBlock = member.BodyEndTok.pos - startOfBlock + 1;
 
@@ -220,7 +221,7 @@ namespace DafnyLanguage.TacnyLanguage
       return TacticReplaceStatus.Success;
     }
     
-    private static TacticReplaceStatus LoadAndResolveMemberAtPosition(int position, string file, ITextBuffer tb, out Microsoft.Dafny.Program program, out MemberDecl member)
+    private static TacticReplaceStatus LoadAndResolveMemberAtPosition(int position, string file, ITextBuffer tb, out Program program, out MemberDecl member)
     {
       member = null;
       var tld = LoadAndResolveTld(tb, file, out program);
@@ -232,19 +233,19 @@ namespace DafnyLanguage.TacnyLanguage
       return member==null ? TacticReplaceStatus.NoTactic : TacticReplaceStatus.Success;
     }
 
-    private static DefaultClassDecl LoadAndResolveTld(ITextBuffer tb, string file, out Microsoft.Dafny.Program program) {
+    private static DefaultClassDecl LoadAndResolveTld(ITextBuffer tb, string file, out Program program) {
       var driver = new DafnyDriver(tb, file);
       program = driver.ProcessResolution(true, true);
       return (DefaultClassDecl)program?.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
     }
 
-    private static TacticReplaceStatus ExpandTactic(Microsoft.Dafny.Program program, MemberDecl member, out string expandedTactic)
+    private static TacticReplaceStatus ExpandTactic(Program program, MemberDecl member, out string expandedTactic)
     {
-      expandedTactic = "";
+      expandedTactic = null;
       if (!member.CallsTactic) return TacticReplaceStatus.NoTactic;
-      
+
       var status = TacticReplaceStatus.Success;
-      var evaluatedMember = Interpreter.FindAndApplyTactic(program, member, errorInfo => {status = TacticReplaceStatus.TranslatorFail;});
+      var evaluatedMember = Tacny.Interpreter.FindAndApplyTactic(program, member, errorInfo => {status = TacticReplaceStatus.TranslatorFail;});
       if (evaluatedMember == null || status != TacticReplaceStatus.Success) return TacticReplaceStatus.TranslatorFail;
 
       var sr = new StringWriter();

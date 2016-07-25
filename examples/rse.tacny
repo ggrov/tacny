@@ -4,8 +4,8 @@ tactic mytac(){
   assert true;
   assert true;
   assert true;
-  assert true;
   assert false;
+  assert true;
   assert true;
   assert true;
   assert true;
