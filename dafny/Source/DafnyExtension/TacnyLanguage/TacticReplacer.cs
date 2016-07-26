@@ -101,13 +101,14 @@ namespace DafnyLanguage.TacnyLanguage
       if (!LoadAndCheckDocument(tb, out file))
         return NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
       var tld = LoadAndResolveTld(tb, file, out program);
+      var unresolvedProgram = GetUnresolvedProgram(tb, file);
 
       var tedit = tb.CreateEdit();
       var status = TacticReplaceStatus.NoTactic;
       foreach (var member in tld.Members)
       {
         if (!member.CallsTactic) continue;
-        status = ReplaceMember(member, program, tedit);
+        status = ReplaceMember(member, program, unresolvedProgram, tedit);
         if (status != TacticReplaceStatus.Success) break;
       }
       if (status == TacticReplaceStatus.Success) {
@@ -126,14 +127,20 @@ namespace DafnyLanguage.TacnyLanguage
       if (!LoadAndCheckDocument(tv.TextBuffer, out filePath)) return NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
       var caretPos = tv.Caret.Position.BufferPosition.Position;
       var resolveStatus = LoadAndResolveMemberAtPosition(caretPos, filePath, tv.TextBuffer, out program, out member);
+      var unresolvedProgram = GetUnresolvedProgram(tv.TextBuffer, filePath);
       if (resolveStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(resolveStatus);
       if (!member.CallsTactic) return NotifyOfReplacement(TacticReplaceStatus.NoTactic);
-      var expandStatus = ExpandTactic(program, member, out expandedString);
+      var expandStatus = ExpandTactic(program, member, unresolvedProgram, out expandedString);
       if (expandStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(expandStatus);
 
       var trigger = tv.TextBuffer.CurrentSnapshot.CreateTrackingPoint(member.BodyStartTok.pos-1, PointTrackingMode.Positive);
       _pb.TriggerPeekSession(tv, trigger, RotPeekRelationship.SName);
       return NotifyOfReplacement(TacticReplaceStatus.Success);
+    }
+
+    private static Program GetUnresolvedProgram(ITextBuffer tb, string filename) {
+      var driver = new DafnyDriver(tb, filename);
+      return driver.ProcessResolution(false, false, true);
     }
 
     public static string GetStringForRot(int position, ITextBuffer tb)
@@ -152,10 +159,11 @@ namespace DafnyLanguage.TacnyLanguage
       if (!LoadAndCheckDocument(tv.TextBuffer, out filePath)) return NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
       var caretPos = tv.Caret.Position.BufferPosition.Position;
       var resolveStatus = LoadAndResolveMemberAtPosition(caretPos, filePath, tv.TextBuffer, out program, out member);
+      var unresolvedProgram = GetUnresolvedProgram(tv.TextBuffer, filePath);
       if (resolveStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(resolveStatus);
 
       var tedit = tv.TextBuffer.CreateEdit();
-      var status = ReplaceMember(member, program, tedit);
+      var status = ReplaceMember(member, program, unresolvedProgram, tedit);
       if (status == TacticReplaceStatus.Success) tedit.Apply();
       return NotifyOfReplacement(status);
     }
@@ -168,11 +176,12 @@ namespace DafnyLanguage.TacnyLanguage
 
       if (!LoadAndCheckDocument(buffer, out file)) return null;
       var resolveStatus = LoadAndResolveMemberAtPosition(position, file, buffer, out program, out member);
+      var unresolvedProgram = GetUnresolvedProgram(buffer, file);
       if (resolveStatus != TacticReplaceStatus.Success) return null;
       methodName = new SnapshotSpan(buffer.CurrentSnapshot, member.tok.pos, member.CompileName.Length);
 
       string expanded;
-      ExpandTactic(program, member, out expanded);
+      ExpandTactic(program, member, unresolvedProgram, out expanded);
       return expanded;
     }
 
@@ -208,12 +217,12 @@ namespace DafnyLanguage.TacnyLanguage
       return !string.IsNullOrEmpty(filePath);
     }
 
-    private static TacticReplaceStatus ReplaceMember(MemberDecl member, Program program, ITextEdit tedit) {
+    private static TacticReplaceStatus ReplaceMember(MemberDecl member, Program program, Program unresolvedProgram, ITextEdit tedit) {
       var startOfBlock = member.tok.pos;
       var lengthOfBlock = member.BodyEndTok.pos - startOfBlock + 1;
 
       string expandedTactic;
-      var expandedStatus = ExpandTactic(program, member, out expandedTactic);
+      var expandedStatus = ExpandTactic(program, member, unresolvedProgram, out expandedTactic);
       if (expandedStatus != TacticReplaceStatus.Success)
         return expandedStatus;
 
@@ -239,13 +248,13 @@ namespace DafnyLanguage.TacnyLanguage
       return (DefaultClassDecl)program?.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
     }
 
-    private static TacticReplaceStatus ExpandTactic(Program program, MemberDecl member, out string expandedTactic)
+    private static TacticReplaceStatus ExpandTactic(Program program, MemberDecl member, Program unresolvedProgram, out string expandedTactic)
     {
       expandedTactic = null;
       if (!member.CallsTactic) return TacticReplaceStatus.NoTactic;
 
       var status = TacticReplaceStatus.Success;
-      var evaluatedMember = Tacny.Interpreter.FindAndApplyTactic(program, member, errorInfo => {status = TacticReplaceStatus.TranslatorFail;});
+      var evaluatedMember = Tacny.Interpreter.FindAndApplyTactic(program, member, errorInfo => {status = TacticReplaceStatus.TranslatorFail;}, unresolvedProgram);
       if (evaluatedMember == null || status != TacticReplaceStatus.Success) return TacticReplaceStatus.TranslatorFail;
 
       var sr = new StringWriter();

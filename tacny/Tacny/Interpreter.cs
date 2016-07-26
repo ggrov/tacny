@@ -23,11 +23,11 @@ namespace Tacny {
     private static ErrorReporterDelegate _errorReporterDelegate;
 
     private readonly Dictionary<UpdateStmt, List<Statement>> _resultList;
-    private Interpreter(Program program) {
+    private Interpreter(Program program, Program unresolvedProgram = null) {
       Contract.Requires(tcce.NonNull(program));
       // initialize state
       _errorReporter = new ConsoleErrorReporter();
-      _state = new ProofState(program, _errorReporter);
+      _state = new ProofState(program, _errorReporter, unresolvedProgram);
       _frame = new Stack<Dictionary<IVariable, Type>>();
       _resultList = new Dictionary<UpdateStmt, List<Statement>>();
     }
@@ -40,7 +40,7 @@ namespace Tacny {
       Contract.Invariant(_errorReporter != null);
     }
 
-    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd) {
+    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
       // TODO Re-Enable with more permanent solution
@@ -48,7 +48,7 @@ namespace Tacny {
       //   needed, it will just re-use the previous proof states, frames etc. Which will likely cause
       //   problems in the extension, where it is called many times consecutively.
       //if (_i == null) {
-        _i = new Interpreter(program);
+        _i = new Interpreter(program, unresolvedProgram);
       //}
       _errorReporterDelegate = erd;
       var result = _i.FindTacticApplication(target);

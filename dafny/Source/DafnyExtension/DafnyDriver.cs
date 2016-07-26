@@ -116,14 +116,11 @@ namespace DafnyLanguage
 
     #region Parsing and type checking
 
-    internal Dafny.Program ProcessResolution(bool runResolver, bool createIndependentProgram = false) {
-      if (!ParseAndTypeCheck(runResolver, createIndependentProgram)) {
-        return null;
-      }
-      return _program;
+    internal Dafny.Program ProcessResolution(bool runResolver, bool createIndependentProgram = false, bool useConsoleErrorReporter = false) {
+      return ParseAndTypeCheck(runResolver, createIndependentProgram, useConsoleErrorReporter) ? _program : null;
     }
 
-    bool ParseAndTypeCheck(bool runResolver, bool createIndependentProgram = false) {
+    bool ParseAndTypeCheck(bool runResolver, bool createIndependentProgram = false, bool useConsoleErrorReporter = false) {
       Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>> parseResult;
       Dafny.Program program;
       var errorReporter = new VSErrorReporter(this);
@@ -145,7 +142,9 @@ namespace DafnyLanguage
           runResolver = false;
           program = null;
         } else {
-          program = new Dafny.Program(_filename, module, builtIns, errorReporter);
+          program = useConsoleErrorReporter 
+            ? new Dafny.Program(_filename, module, builtIns, new ConsoleErrorReporter())
+            : new Dafny.Program(_filename, module, builtIns, errorReporter);
         }
         if (!createIndependentProgram) { 
           _buffer.Properties[bufferDafnyKey] = new Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>>(_snapshot, program, _errors);

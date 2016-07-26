@@ -41,19 +41,23 @@ namespace Tacny {
 
 
 
-    public ProofState(Program program, ErrorReporter reporter) {
+    public ProofState(Program program, ErrorReporter reporter, Program unresolvedProgram = null) {
       Contract.Requires(program != null);
       // get a new program instance
       Datatypes = new Dictionary<string, DatatypeDecl>();
       _topLevelClasses = new List<TopLevelClassDeclaration>();
       Reporter = reporter;
-        //get some token such that _filename != null
-        var tld = (ClassDecl) program.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x is ClassDecl);
-        var member = tld.Members.FirstOrDefault();
-        var tok = member.tok;
-      var err = Parser.ParseCheck(new List<string>() { tok.filename ?? program.FullName }, program.Name, out _original);
-      if (err != null)
-        reporter.Error(MessageSource.Tacny, program.DefaultModuleDef.tok, $"Error parsing a fresh Tacny program: {err}");
+      //get some token such that _filename != null
+      var tld = (ClassDecl) program.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x is ClassDecl);
+      var member = tld?.Members.FirstOrDefault();
+      var tok = member?.tok;
+      if (unresolvedProgram == null) {
+        var err = Parser.ParseCheck(new List<string>() {tok?.filename ?? program.FullName}, program.Name, out _original);
+        if (err != null)
+          reporter.Error(MessageSource.Tacny, program.DefaultModuleDef.tok, $"Error parsing a fresh Tacny program: {err}");
+      } else {
+        _original = unresolvedProgram ;
+      }
       ResultCache = new List<TacticCache>();
       // fill state
       FillStaticState(program);
