@@ -80,7 +80,7 @@ namespace DafnyLanguage.TacnyLanguage
       var atv = ActiveTextView;
       if(atv==null) throw new NullReferenceException("Text View Not Accessible");
       var caret = atv.Caret.Position.BufferPosition.Position;
-      return TacticReplacer.GetStringForRot(caret, _textBuffer);
+      return TacticReplacerProxy.GetExpandedForRot(caret, _textBuffer);
     }
 
     public void Dispose() {}

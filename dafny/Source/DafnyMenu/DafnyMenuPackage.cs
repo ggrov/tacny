@@ -73,11 +73,11 @@ namespace DafnyLanguage.DafnyMenu
 
   public interface ITacnyMenuProxy
   {
-    void ReplaceOne(IWpfTextView atv);
+    bool ReplaceOne(IWpfTextView atv);
 
-    void ShowRot(IWpfTextView atv);
+    bool ShowRot(IWpfTextView atv);
 
-    void ReplaceAll(ITextBuffer tb);
+    bool ReplaceAll(ITextBuffer tb);
   }
 
   /// <summary>

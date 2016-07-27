@@ -57,221 +57,209 @@ namespace DafnyLanguage.TacnyLanguage
 
   public class TacticReplacerProxy : ITacnyMenuProxy
   {
-    private readonly TacticReplacer _tr;
+    private readonly IPeekBroker _pb;
 
     public TacticReplacerProxy(ITextDocumentFactoryService tdf, IServiceProvider isp, IPeekBroker pb) {
-      var status = (IVsStatusbar) isp.GetService(typeof(SVsStatusbar));
-      _tr = new TacticReplacer(status, tdf, pb);
-    }
-    
-    public void ReplaceOne(IWpfTextView atv)
-    {
-      Contract.Assume(atv!=null);
-      _tr.ReplaceMethodUnderCaret(atv);
-    }
-
-    public void ShowRot(IWpfTextView atv)
-    {
-      Contract.Assume(atv != null);
-      _tr.ShowRotPeekForMethod(atv);
-    }
-
-    public void ReplaceAll(ITextBuffer tb)
-    {
-      Contract.Assume(tb!=null);
-      _tr.ReplaceAll(tb);
-    }
-  }
-
-  public class TacticReplacer
-  {
-    private static IVsStatusbar _status;
-    private static ITextDocumentFactoryService _tdf;
-    private static IPeekBroker _pb;
-
-    public TacticReplacer(IVsStatusbar sb, ITextDocumentFactoryService tdf, IPeekBroker pb) {
-      _status = sb;
-      _tdf = tdf;
+      Util.Status = (IVsStatusbar) isp.GetService(typeof(SVsStatusbar));
+      Util.Tdf = tdf;
       _pb = pb;
     }
     
-    public TacticReplaceStatus ReplaceAll(ITextBuffer tb) {
-      string file;
-      Program program;
-      if (!LoadAndCheckDocument(tb, out file))
-        return NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
-      var tld = LoadAndResolveTld(tb, file, out program);
-      var unresolvedProgram = GetUnresolvedProgram(tb, file);
-
-      var tedit = tb.CreateEdit();
-      var status = TacticReplaceStatus.NoTactic;
-      foreach (var member in tld.Members)
-      {
-        if (!member.CallsTactic) continue;
-        status = ReplaceMember(member, program, unresolvedProgram, tedit);
-        if (status != TacticReplaceStatus.Success) break;
-      }
-      if (status == TacticReplaceStatus.Success) {
-        tedit.Apply();
-      } else {
-        tedit.Dispose();
-      }
-      return NotifyOfReplacement(status);
-    }
-
-    public TacticReplaceStatus ShowRotPeekForMethod(IWpfTextView tv) {
-      Program program;
-      MemberDecl member;
-      string filePath, expandedString;
-      
-      if (!LoadAndCheckDocument(tv.TextBuffer, out filePath)) return NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
-      var caretPos = tv.Caret.Position.BufferPosition.Position;
-      var resolveStatus = LoadAndResolveMemberAtPosition(caretPos, filePath, tv.TextBuffer, out program, out member);
-      var unresolvedProgram = GetUnresolvedProgram(tv.TextBuffer, filePath);
-      if (resolveStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(resolveStatus);
-      if (!member.CallsTactic) return NotifyOfReplacement(TacticReplaceStatus.NoTactic);
-      var expandStatus = ExpandTactic(program, member, unresolvedProgram, out expandedString);
-      if (expandStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(expandStatus);
-
-      var trigger = tv.TextBuffer.CurrentSnapshot.CreateTrackingPoint(member.BodyStartTok.pos-1, PointTrackingMode.Positive);
-      _pb.TriggerPeekSession(tv, trigger, RotPeekRelationship.SName);
-      return NotifyOfReplacement(TacticReplaceStatus.Success);
-    }
-
-    private static Program GetUnresolvedProgram(ITextBuffer tb, string filename) {
-      var driver = new TacnyDriver(tb, filename);
-      return driver.ParseAndTypeCheck(false);
-    }
-
-    public static string GetStringForRot(int position, ITextBuffer tb)
+    public bool ReplaceOne(IWpfTextView atv)
     {
-      var methodName = new SnapshotSpan();
-      var fullMethod = GetExpandedTactic(position, tb, ref methodName);
+      Contract.Assume(atv!=null);
+      var tra = new TacticReplacerActor(atv.TextBuffer, atv.Caret.Position.BufferPosition.Position);
+      if (tra.LoadStatus != TacticReplaceStatus.Success)  return Util.NotifyOfReplacement(tra.LoadStatus);
+      var tedit = atv.TextBuffer.CreateEdit();
+      var status = tra.ReplaceMember(tedit);
+      if (status == TacticReplaceStatus.Success) { tedit.Apply(); } else { tedit.Dispose(); }
+      return Util.NotifyOfReplacement(status);
+    }
+
+    public bool ShowRot(IWpfTextView atv)
+    {
+      Contract.Assume(atv != null);
+
+      string testString;
+      var tra = new TacticReplacerActor(atv.TextBuffer, atv.Caret.Position.BufferPosition.Position);
+      if (tra.LoadStatus != TacticReplaceStatus.Success) return Util.NotifyOfReplacement(tra.LoadStatus);
+      var status = tra.ExpandTactic(out testString);
+      if (status != TacticReplaceStatus.Success)
+        return Util.NotifyOfReplacement(status);
+      
+      var trigger = atv.TextBuffer.CurrentSnapshot.CreateTrackingPoint(tra.MemberBodyStart - 1, PointTrackingMode.Positive);
+      _pb.TriggerPeekSession(atv, trigger, RotPeekRelationship.SName);
+      return Util.NotifyOfReplacement(TacticReplaceStatus.Success);
+    }
+
+    public bool ReplaceAll(ITextBuffer tb)
+    {
+      Contract.Assume(tb!=null);
+
+      var tra = new TacticReplacerActor(tb);
+      var isMoreMembers = tra.NextMemberInTld();
+      var replaceStatus = TacticReplaceStatus.Success;
+      var tedit = tb.CreateEdit();
+
+      while (isMoreMembers && (replaceStatus==TacticReplaceStatus.Success || replaceStatus==TacticReplaceStatus.NoTactic))
+      {
+        replaceStatus = tra.ReplaceMember(tedit);
+        isMoreMembers = tra.NextMemberInTld();
+      }
+
+      if(replaceStatus==TacticReplaceStatus.Success || replaceStatus == TacticReplaceStatus.NoTactic)
+        { tedit.Apply();} else { tedit.Dispose();}
+      return Util.NotifyOfReplacement(replaceStatus);
+    }
+
+    public static string GetExpandedForRot(int position, ITextBuffer tb)
+    {
+      string fullMethod;
+      var tra = new TacticReplacerActor(tb, position);
+      if(tra.ExpandTactic(out fullMethod) != TacticReplaceStatus.Success) return null;
       var splitMethod = fullMethod.Split('\n');
       return splitMethod.Where((t, i) => i >= 2 && i <= splitMethod.Length - 3).Aggregate("", (current, t) => current + t + "\n");
     }
 
-    public TacticReplaceStatus ReplaceMethodUnderCaret(IWpfTextView tv) {
-      Program program;
-      MemberDecl member;
-      string filePath;
-
-      if (!LoadAndCheckDocument(tv.TextBuffer, out filePath)) return NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
-      var caretPos = tv.Caret.Position.BufferPosition.Position;
-      var resolveStatus = LoadAndResolveMemberAtPosition(caretPos, filePath, tv.TextBuffer, out program, out member);
-      var unresolvedProgram = GetUnresolvedProgram(tv.TextBuffer, filePath);
-      if (resolveStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(resolveStatus);
-
-      var tedit = tv.TextBuffer.CreateEdit();
-      var status = ReplaceMember(member, program, unresolvedProgram, tedit);
-      if (status == TacticReplaceStatus.Success) tedit.Apply();
-      return NotifyOfReplacement(status);
-    }
-
-    public static string GetExpandedTactic(int position, ITextBuffer buffer, ref SnapshotSpan methodName)
+    public static string GetExpandedForPreview(int position, ITextBuffer buffer, ref SnapshotSpan methodName)
     {
-      Program program;
-      MemberDecl member;
-      string file;
+      var tra = new TacticReplacerActor(buffer, position);
+      if (!tra.MemberReady) return null;
 
-      if (!LoadAndCheckDocument(buffer, out file)) return null;
-      var resolveStatus = LoadAndResolveMemberAtPosition(position, file, buffer, out program, out member);
-      var unresolvedProgram = GetUnresolvedProgram(buffer, file);
-      if (resolveStatus != TacticReplaceStatus.Success) return null;
-      methodName = new SnapshotSpan(buffer.CurrentSnapshot, member.tok.pos, member.CompileName.Length);
-
+      methodName = new SnapshotSpan(buffer.CurrentSnapshot, tra.MemberNameStart, tra.MemberName.Length);
       string expanded;
-      ExpandTactic(program, member, unresolvedProgram, out expanded);
+      tra.ExpandTactic(out expanded);
       return expanded;
     }
+  }
 
-    private static TacticReplaceStatus NotifyOfReplacement(TacticReplaceStatus t)
+  public static class Util
+  {
+    public static ITextDocumentFactoryService Tdf;
+    public static IVsStatusbar Status;
+    public static bool LoadAndCheckDocument(ITextBuffer tb, out string filePath)
     {
-      switch (t)
-      {
-        case TacticReplaceStatus.NoDocumentPersistence:
-          _status.SetText("Document must be saved in order to expand tactics.");
-          break;
-        case TacticReplaceStatus.TranslatorFail:
-          _status.SetText("Tacny was unable to expand requested tactics.");
-          break;
-        case TacticReplaceStatus.NotResolved:
-          _status.SetText("File must first be resolvable to expand tactics.");
-          break;
-        case TacticReplaceStatus.NoTactic:
-          _status.SetText("There is no method under the caret that has expandable tactics.");
-          break;
-        case TacticReplaceStatus.Success:
-          _status.SetText("Tactic expanded succesfully.");
-          break;
-        default:
-          throw new Exception("Escaped Switch with "+t);
-      }
-      return t;
-    }
-
-    private static bool LoadAndCheckDocument(ITextBuffer tb, out string filePath) {
-      ITextDocument doc;
-      _tdf.TryGetTextDocument(tb, out doc);
+      ITextDocument doc = null;
+      Tdf?.TryGetTextDocument(tb, out doc);
       filePath = doc?.FilePath;
       return !string.IsNullOrEmpty(filePath);
     }
+    public static Program GetProgram(ITextBuffer tb, string file, bool resolved) => new TacnyDriver(tb, file).ParseAndTypeCheck(resolved);
+    
+    public static TacticReplaceStatus GetMemberFromPosition(DefaultClassDecl tld, int position, out MemberDecl member)
+    {
+      member = (from m in tld.Members
+                where m.tok.pos <= position && position <= m.BodyEndTok.pos + 1
+                select m).FirstOrDefault();
+      return member == null ? TacticReplaceStatus.NoTactic : TacticReplaceStatus.Success;
+    }
 
-    private static TacticReplaceStatus ReplaceMember(MemberDecl member, Program program, Program unresolvedProgram, ITextEdit tedit) {
-      var startOfBlock = member.tok.pos;
-      var lengthOfBlock = member.BodyEndTok.pos - startOfBlock + 1;
+    public static string StripExtraContentFromExpanded(string expandedTactic)
+    {
+      var words = new[] { "ghost ", "lemma ", "method ", "function ", "tactic " };
+      return words.Aggregate(expandedTactic, RazeFringe);
+    }
+
+    public static string RazeFringe(string body, string fringe)
+    {
+      return body.Substring(0, fringe.Length) == fringe ? body.Substring(fringe.Length) : body;
+    }
+    public static bool NotifyOfReplacement(TacticReplaceStatus t)
+    {
+      if (Status == null) return false;
+      switch (t)
+      {
+        case TacticReplaceStatus.NoDocumentPersistence:
+          Status.SetText("Document must be saved in order to expand tactics.");
+          break;
+        case TacticReplaceStatus.TranslatorFail:
+          Status.SetText("Tacny was unable to expand requested tactics.");
+          break;
+        case TacticReplaceStatus.NotResolved:
+          Status.SetText("File must first be resolvable to expand tactics.");
+          break;
+        case TacticReplaceStatus.NoTactic:
+          Status.SetText("There is no method under the caret that has expandable tactics.");
+          break;
+        case TacticReplaceStatus.Success:
+          Status.SetText("Tactic expanded succesfully.");
+          break;
+        default:
+          throw new Exception("Escaped Switch with " + t);
+      }
+      return true;
+    }
+  }
+
+  public class TacticReplacerActor
+  {
+    private readonly Program _program, _unresolvedProgram;
+    private readonly DefaultClassDecl _tld;
+    private IEnumerator<MemberDecl> _tldMembers;
+    private MemberDecl _member;
+
+    public int MemberBodyStart => _member.BodyStartTok.pos;
+    public int MemberNameStart => _member.tok.pos;
+    public string MemberName => _member.CompileName;
+    public bool MemberReady => _member!=null && _member.CallsTactic;
+    public TacticReplaceStatus LoadStatus;
+
+    public TacticReplacerActor(ITextBuffer tb, int position = -1)
+    {
+      string currentFileName;
+      LoadStatus = Util.LoadAndCheckDocument(tb, out currentFileName) ? TacticReplaceStatus.Success : TacticReplaceStatus.NoDocumentPersistence;
+      if(LoadStatus!=TacticReplaceStatus.Success) return;
+      _program = Util.GetProgram(tb, currentFileName, true);
+      _unresolvedProgram = Util.GetProgram(tb, currentFileName, false);
+      _tld = (DefaultClassDecl)_program?.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
+      LoadStatus = _tld != null ? TacticReplaceStatus.Success : TacticReplaceStatus.NotResolved;
+      if (LoadStatus != TacticReplaceStatus.Success) return;
+      if (position != -1) SetMember(position);
+    }
+
+    public TacticReplaceStatus SetMember(int position)
+    {
+      return Util.GetMemberFromPosition(_tld, position, out _member);
+    }
+
+    public bool NextMemberInTld()
+    {
+      if (_tldMembers == null) _tldMembers = _tld.Members.GetEnumerator();
+      var isMore = _tldMembers.MoveNext();
+      if (isMore) _member = _tldMembers.Current;
+      return isMore;
+    }
+
+    public TacticReplaceStatus ReplaceMember(ITextEdit tedit)
+    {
+      if(!MemberReady) return TacticReplaceStatus.NoTactic;
+
+      var startOfBlock = _member.tok.pos;
+      var lengthOfBlock = _member.BodyEndTok.pos - startOfBlock + 1;
 
       string expandedTactic;
-      var expandedStatus = ExpandTactic(program, member, unresolvedProgram, out expandedTactic);
+      var expandedStatus = ExpandTactic(out expandedTactic);
       if (expandedStatus != TacticReplaceStatus.Success)
         return expandedStatus;
 
       tedit.Replace(startOfBlock, lengthOfBlock, expandedTactic);
       return TacticReplaceStatus.Success;
     }
-    
-    private static TacticReplaceStatus LoadAndResolveMemberAtPosition(int position, string file, ITextBuffer tb, out Program program, out MemberDecl member)
-    {
-      member = null;
-      var tld = LoadAndResolveTld(tb, file, out program);
-      if (tld == null) return TacticReplaceStatus.NotResolved;
-      
-      member = (from m in tld.Members
-                where m.tok.pos <= position && position <= m.BodyEndTok.pos+1
-                select m).FirstOrDefault();
-      return member==null ? TacticReplaceStatus.NoTactic : TacticReplaceStatus.Success;
-    }
 
-    private static DefaultClassDecl LoadAndResolveTld(ITextBuffer tb, string file, out Program program) {
-      var driver = new TacnyDriver(tb, file);
-      program = driver.ParseAndTypeCheck(true);
-      return (DefaultClassDecl)program?.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
-    }
-
-    private static TacticReplaceStatus ExpandTactic(Program program, MemberDecl member, Program unresolvedProgram, out string expandedTactic)
+    public TacticReplaceStatus ExpandTactic(out string expandedTactic)
     {
       expandedTactic = null;
-      if (!member.CallsTactic) return TacticReplaceStatus.NoTactic;
+      if (!MemberReady) return TacticReplaceStatus.NoTactic;
 
       var status = TacticReplaceStatus.Success;
-      var evaluatedMember = Tacny.Interpreter.FindAndApplyTactic(program, member, errorInfo => {status = TacticReplaceStatus.TranslatorFail;}, unresolvedProgram);
+      var evaluatedMember = Tacny.Interpreter.FindAndApplyTactic(_program, _member, errorInfo => { status = TacticReplaceStatus.TranslatorFail; }, _unresolvedProgram);
       if (evaluatedMember == null || status != TacticReplaceStatus.Success) return TacticReplaceStatus.TranslatorFail;
 
       var sr = new StringWriter();
       var printer = new Printer(sr);
-      printer.PrintMembers(new List<MemberDecl> { evaluatedMember }, 0, program.FullName);
-      expandedTactic = StripExtraContentFromExpanded(sr.ToString());
-      return TacticReplaceStatus.Success;
-    }
-
-    private static string StripExtraContentFromExpanded(string expandedTactic) {
-      var words = new [] {"ghost ", "lemma ", "method ", "function ", "tactic "};
-      return words.Aggregate(expandedTactic, RazeFringe);
-    }
-
-    private static string RazeFringe(string body, string fringe)
-    {
-      return body.Substring(0, fringe.Length)==fringe ? body.Substring(fringe.Length) : body;
+      printer.PrintMembers(new List<MemberDecl> { evaluatedMember }, 0, _program.FullName);
+      expandedTactic = Util.StripExtraContentFromExpanded(sr.ToString());
+      return !string.IsNullOrEmpty(expandedTactic) ? TacticReplaceStatus.Success : TacticReplaceStatus.NoTactic;
     }
   }
 }
