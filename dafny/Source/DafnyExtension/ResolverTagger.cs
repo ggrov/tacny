@@ -119,9 +119,9 @@ namespace DafnyLanguage
   #endregion
 
 
-    /// <summary>
-    /// Translate PkgDefTokenTags into ErrorTags and Error List items
-    /// </summary>
+  /// <summary>
+  /// Translate PkgDefTokenTags into ErrorTags and Error List items
+  /// </summary>
   public sealed class ResolverTagger : ITagger<IDafnyResolverTag>, IDisposable
   {
     readonly ITextBuffer _buffer;
@@ -171,7 +171,7 @@ namespace DafnyLanguage
       lock (this)
       {
         MostRecentRequestId = mostRecentRequestId;
-        var outOfDatekeys = _verificationErrors.Keys.Except(implNames); //stop removing program/program_tactic errors
+        var outOfDatekeys = _verificationErrors.Keys.Except(implNames);
         foreach (var key in outOfDatekeys)
         {
           ErrorContainer oldError;
@@ -245,9 +245,8 @@ namespace DafnyLanguage
       Snapshot = null;  // this makes sure the next snapshot will look different
       _errorProvider = new ErrorListProvider(serviceProvider);
 
-        _filename = _document != null ? _document.FilePath : "<program>";
-
-        BufferIdleEventUtil.AddBufferIdleEventListener(_buffer, ResolveBuffer);
+      _filename = _document != null ? _document.FilePath : "<program>";
+      BufferIdleEventUtil.AddBufferIdleEventListener(_buffer, ResolveBuffer);
     }
 
     public void Dispose()
@@ -347,7 +346,7 @@ namespace DafnyLanguage
       List<DafnyError> newErrors;
       Dafny.Program program;
       try
-        {
+      {
         program = driver.ProcessResolution(true);
         newErrors = driver.Errors;
       }
@@ -377,7 +376,7 @@ namespace DafnyLanguage
 
       UpdateErrorList(snapshot);
     }
-        
+
     public void UpdateErrorList(ITextSnapshot snapshot)
     {
       if (_errorProvider != null && !m_disposed)
@@ -419,15 +418,7 @@ namespace DafnyLanguage
           }
           _errorProvider.Tasks.Add(task);
         }
-
-        try
-        {
-            _errorProvider.ResumeRefresh();
-        }
-        catch (ArgumentException)
-        {
-                    Console.WriteLine("huh?");
-        }
+        _errorProvider.ResumeRefresh();
       }
       var chng = TagsChanged;
       if (chng != null)

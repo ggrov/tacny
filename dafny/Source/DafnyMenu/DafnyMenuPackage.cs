@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing;
@@ -13,9 +12,8 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.Text.Operations;
-using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.TextManager.Interop;
+
 
 namespace DafnyLanguage.DafnyMenu
 {
@@ -24,36 +22,52 @@ namespace DafnyLanguage.DafnyMenu
   {
     int ToggleSnapshotVerification(IWpfTextView activeTextView);
 
+
     int ToggleMoreAdvancedSnapshotVerification(IWpfTextView activeTextView);
+
 
     bool MoreAdvancedSnapshotVerificationCommandEnabled(IWpfTextView activeTextView);
 
+
     bool ToggleAutomaticInduction(IWpfTextView activeTextView);
 
+
     bool AutomaticInductionCommandEnabled(IWpfTextView activeTextView);
-    
+
+
     bool StopVerifierCommandEnabled(IWpfTextView activeTextView);
+
 
     void StopVerifier(IWpfTextView activeTextView);
 
+
     bool RunVerifierCommandEnabled(IWpfTextView activeTextView);
 
+
     void RunVerifier(IWpfTextView activeTextView);
-    
+
+
     bool MenuEnabled(IWpfTextView activeTextView);
-    
+
+
     bool CompileCommandEnabled(IWpfTextView activeTextView);
-    
+
+
     void Compile(IWpfTextView activeTextView);
-    
+
+
     bool ShowErrorModelCommandEnabled(IWpfTextView activeTextView);
-    
+
+
     void ShowErrorModel(IWpfTextView activeTextView);
-    
+
+
     bool DiagnoseTimeoutsCommandEnabled(IWpfTextView activeTextView);
-    
+
+
     void DiagnoseTimeouts(IWpfTextView activeTextView);
-    
+
+
     bool ToggleTacticEvaluation();
   }
 
@@ -146,7 +160,7 @@ namespace DafnyLanguage.DafnyMenu
         compileCommand.Enabled = false;
         compileCommand.BeforeQueryStatus += compileCommand_BeforeQueryStatus;
         mcs.AddCommand(compileCommand);
-                
+
         var runVerifierCommandID = new CommandID(GuidList.guidDafnyMenuCmdSet, (int)PkgCmdIDList.cmdidRunVerifier);
         runVerifierCommand = new OleMenuCommand(RunVerifierCallback, runVerifierCommandID);
         runVerifierCommand.Enabled = true;
@@ -255,8 +269,7 @@ namespace DafnyLanguage.DafnyMenu
       }
     }
 
- 
-
+    
     void ToggleSnapshotVerificationCallback(object sender, EventArgs e)
     {
       var atv = ActiveTextView;
@@ -353,10 +366,10 @@ namespace DafnyLanguage.DafnyMenu
       var atv = ActiveTextView;
       if (MenuProxy != null && atv != null)
       {
-          MenuProxy.Compile(atv);
+        MenuProxy.Compile(atv);
       }
     }
-        
+    
     void showErrorModelCommand_BeforeQueryStatus(object sender, EventArgs e)
     {
       var atv = ActiveTextView;

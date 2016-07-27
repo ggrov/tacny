@@ -132,8 +132,8 @@ namespace DafnyLanguage
           var p = new StackPanel
           {
             Orientation = Orientation.Horizontal,
-            Width = 12 * maxConcurrentAdornments,
-            Height = 12
+            Width = 12.0 * maxConcurrentAdornments,
+            Height = 12.0,
           };
           foreach (var adornment in adornments.Value)
           {
@@ -151,7 +151,7 @@ namespace DafnyLanguage
     {
       return string.Format("{0}{1}", isSelected ? "unselect state" : "select state", !string.IsNullOrEmpty(description) ? " [" + description + "]" : "");
     }
-    
+
     private Ellipse CreateErrorStateAdornment(DafnyErrorStateResolverTag esrtag)
     {
       var result = new Ellipse

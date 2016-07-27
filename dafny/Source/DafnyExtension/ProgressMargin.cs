@@ -11,7 +11,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using Microsoft.Boogie;
+using DafnyLanguage.TacnyLanguage;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
@@ -331,7 +331,7 @@ namespace DafnyLanguage
       }
     }
 
-    void RunVerifier(Dafny.Program program, ITextSnapshot snapshot, string requestId, ResolverTagger errorListHolder, bool diagnoseTimeouts) {
+    private void RunVerifier(Dafny.Program program, ITextSnapshot snapshot, string requestId, ResolverTagger errorListHolder, bool diagnoseTimeouts) {
       Contract.Requires(program != null);
       Contract.Requires(snapshot != null);
       Contract.Requires(requestId != null);
@@ -352,17 +352,18 @@ namespace DafnyLanguage
       DafnyDriver.SetDiagnoseTimeouts(diagnoseTimeouts);
       errorListHolder.FatalVerificationError = null;
       var tacticsErrorList = new List<Tacny.CompoundErrorInformation>();
+      var unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ParseAndTypeCheck(false);
 
       try
       {
-        bool success = DafnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
+        bool success = TacnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
         {
           if (_disposed) return;
 
           var tacticErrorInfo = errorInfo as Tacny.CompoundErrorInformation;
           if (tacticErrorInfo!=null)
           {
-            tacticsErrorList.Add(tacticErrorInfo); //TODO figure out why we might get more than 1 error back
+            tacticsErrorList.Add(tacticErrorInfo);
             return;
           }
 
@@ -393,7 +394,7 @@ namespace DafnyLanguage
                 System.IO.Path.GetFullPath(_document.FilePath) == aux.Tok.filename),
               errorInfo.ImplementationName, requestId);
           }
-        });
+        }, unresolvedProgram);
         if (!success)
         {
           errorListHolder.AddError(
@@ -411,9 +412,9 @@ namespace DafnyLanguage
         ITextSnapshot s;
         RequestIdToSnapshot.TryGetValue(requestId, out s);
         try {
-          tacticsErrorList.ForEach(errorInfo => new TacnyLanguage.TacticErrorReportingResolver(errorInfo)
+          tacticsErrorList.ForEach(errorInfo => new TacticErrorReportingResolver(errorInfo)
             .AddTacticErrors(errorListHolder, s, requestId, _document.FilePath));
-        } catch (TacnyLanguage.TacticErrorResolutionException e) {
+        } catch (TacticErrorResolutionException e) {
           errorListHolder.AddError(
             new DafnyError("$$program_tactics$$", 0, 0, ErrorCategory.InternalError,
             "Error resolving tactics error " + e.Message + "\n" + e.StackTrace, snapshot, false),

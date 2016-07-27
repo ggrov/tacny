@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.Contracts;
 using System.IO;
+using System.Linq;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Text;
@@ -15,28 +17,19 @@ namespace DafnyLanguage
 
   public class DafnyDriver
   {
-    readonly string _filename;
-    readonly ITextSnapshot _snapshot;
-    readonly ITextBuffer _buffer;
-    Dafny.Program _program;
-    public Dafny.Program Program => _program;
-    static object bufferDafnyKey = new object();
-    private static bool _tacticEvaluationIsEnabled = true;
+    protected readonly string _filename;
+    protected readonly ITextSnapshot _snapshot;
+    protected readonly ITextBuffer _buffer;
+    protected Dafny.Program _program;
+    protected static object bufferDafnyKey = new object();
 
-    List<DafnyError> _errors = new List<DafnyError>();
+    protected List<DafnyError> _errors = new List<DafnyError>();
     public List<DafnyError> Errors { get { return _errors; } }
 
     public DafnyDriver(ITextBuffer buffer, string filename) {
       _buffer = buffer;
       _snapshot = buffer.CurrentSnapshot;
       _filename = filename;
-    }
-
-    public Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>> GetParseResultFromBuffer()
-    {
-      Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>> parseResult;
-      _buffer.Properties.TryGetProperty(bufferDafnyKey, out parseResult);
-      return parseResult;
     }
 
     static DafnyDriver() {
@@ -79,9 +72,11 @@ namespace DafnyLanguage
         ChangeIncrementalVerification(2);
       }
     }
-        #region Output
 
-        class DummyPrinter : OutputPrinter
+
+    #region Output
+
+    class DummyPrinter : OutputPrinter
     {
       public void AdvisoryWriteLine(string format, params object[] args)
       {
@@ -116,16 +111,19 @@ namespace DafnyLanguage
 
     #region Parsing and type checking
 
-    internal Dafny.Program ProcessResolution(bool runResolver, bool createIndependentProgram = false, bool useConsoleErrorReporter = false) {
-      return ParseAndTypeCheck(runResolver, createIndependentProgram, useConsoleErrorReporter) ? _program : null;
+    internal Dafny.Program ProcessResolution(bool runResolver) {
+      if (!ParseAndTypeCheck(runResolver)) {
+        return null;
+      }
+      return _program;
     }
 
-    bool ParseAndTypeCheck(bool runResolver, bool createIndependentProgram = false, bool useConsoleErrorReporter = false) {
+    bool ParseAndTypeCheck(bool runResolver) {
       Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>> parseResult;
       Dafny.Program program;
       var errorReporter = new VSErrorReporter(this);
       if (_buffer.Properties.TryGetProperty(bufferDafnyKey, out parseResult) &&
-         (parseResult.Item1 == _snapshot) && !createIndependentProgram) {
+         (parseResult.Item1 == _snapshot)) {
         // already parsed;
         program = parseResult.Item2;
         _errors = parseResult.Item3;
@@ -142,13 +140,9 @@ namespace DafnyLanguage
           runResolver = false;
           program = null;
         } else {
-          program = useConsoleErrorReporter 
-            ? new Dafny.Program(_filename, module, builtIns, new ConsoleErrorReporter())
-            : new Dafny.Program(_filename, module, builtIns, errorReporter);
+          program = new Dafny.Program(_filename, module, builtIns, errorReporter);
         }
-        if (!createIndependentProgram) { 
-          _buffer.Properties[bufferDafnyKey] = new Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>>(_snapshot, program, _errors);
-        }
+        _buffer.Properties[bufferDafnyKey] = new Tuple<ITextSnapshot, Dafny.Program, List<DafnyError>>(_snapshot, program, _errors);
       }
       if (!runResolver) {
         return false;
@@ -169,7 +163,7 @@ namespace DafnyLanguage
       _errors.Add(new DafnyError(filename, line - 1, col - 1, cat, msg, _snapshot, isRecycled, null, System.IO.Path.GetFullPath(this._filename) == filename));
     }
 
-    class VSErrorReporter : Dafny.ErrorReporter
+    protected class VSErrorReporter : Dafny.ErrorReporter
     {
       DafnyDriver dd;
 
@@ -251,18 +245,10 @@ namespace DafnyLanguage
       }
     }
 
-    public static bool ToggleTacticEvaluation()
-    {
-      _tacticEvaluationIsEnabled = !_tacticEvaluationIsEnabled;
-      Translator.TacticEvaluationIsEnabled = _tacticEvaluationIsEnabled;
-      return _tacticEvaluationIsEnabled;
-    }
-
     public static int IncrementalVerificationMode()
     {
       return Dafny.DafnyOptions.Clo.VerifySnapshots;
     }
-
 
     public static void SetDiagnoseTimeouts(bool v)
     {
@@ -298,22 +284,21 @@ namespace DafnyLanguage
     }
 
     public static bool Verify(Dafny.Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er) {
-      var translator = new Translator(dafnyProgram.reporter, er)
-      {
-        InsertChecksums = true,
-        UniqueIdPrefix = uniqueIdPrefix
-      };
-      var boogieProgram = translator.Translate(dafnyProgram);
+      Dafny.Translator translator = new Dafny.Translator(dafnyProgram.reporter, er);
+      translator.InsertChecksums = true;
+      translator.UniqueIdPrefix = uniqueIdPrefix;
+      Bpl.Program boogieProgram = translator.Translate(dafnyProgram);
 
       resolver.ReInitializeVerificationErrors(requestId, boogieProgram.Implementations);
 
       // TODO(wuestholz): Maybe we should use a fixed program ID to limit the memory overhead due to the program cache in Boogie.
-      PipelineOutcome oc = BoogiePipeline(boogieProgram, 1 < CommandLineOptions.Clo.VerifySnapshots ? uniqueIdPrefix : null, requestId, er);
+      PipelineOutcome oc = BoogiePipeline(boogieProgram, 1 < Dafny.DafnyOptions.Clo.VerifySnapshots ? uniqueIdPrefix : null, requestId, er);
       switch (oc) {
         case PipelineOutcome.Done:
         case PipelineOutcome.VerificationCompleted:
           // TODO:  This would be the place to proceed to compile the program, if desired
           return true;
+        case PipelineOutcome.FatalError:
         default:
           return false;
       }
@@ -325,7 +310,7 @@ namespace DafnyLanguage
     /// else.  Hence, any resolution errors and type checking errors are due to errors in
     /// the translation.
     /// </summary>
-    static PipelineOutcome BoogiePipeline(Bpl.Program/*!*/ program, string programId, string requestId, ErrorReporterDelegate er)
+    protected static PipelineOutcome BoogiePipeline(Bpl.Program/*!*/ program, string programId, string requestId, ErrorReporterDelegate er)
     {
       Contract.Requires(program != null);
 

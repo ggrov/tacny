@@ -139,8 +139,8 @@ namespace DafnyLanguage.TacnyLanguage
     }
 
     private static Program GetUnresolvedProgram(ITextBuffer tb, string filename) {
-      var driver = new DafnyDriver(tb, filename);
-      return driver.ProcessResolution(false, false, true);
+      var driver = new TacnyDriver(tb, filename);
+      return driver.ParseAndTypeCheck(false);
     }
 
     public static string GetStringForRot(int position, ITextBuffer tb)
@@ -243,8 +243,8 @@ namespace DafnyLanguage.TacnyLanguage
     }
 
     private static DefaultClassDecl LoadAndResolveTld(ITextBuffer tb, string file, out Program program) {
-      var driver = new DafnyDriver(tb, file);
-      program = driver.ProcessResolution(true, true);
+      var driver = new TacnyDriver(tb, file);
+      program = driver.ParseAndTypeCheck(true);
       return (DefaultClassDecl)program?.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
     }
 

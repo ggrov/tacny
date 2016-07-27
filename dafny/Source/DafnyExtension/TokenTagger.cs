@@ -32,7 +32,7 @@ namespace DafnyLanguage
   {
     Keyword, SpecificationClause, BuiltInType, Number, String, Char, Comment,
     VariableIdentifier, VariableIdentifierDefinition,
-    AdditionalInformation, Attribute, RecognizedAttributeId, TacticCall
+    AdditionalInformation, Attribute, RecognizedAttributeId
   }
 
   public class DafnyTokenTag : ITag
@@ -504,8 +504,6 @@ namespace DafnyLanguage
                   ty = DafnyTokenKind.BuiltInType;
                   break;
                 default:
-                    //want to see if it is a method call
-                    //but then how to find if its for a tactic...
                   continue;  // it was an identifier, so we don't color it
               }
             }

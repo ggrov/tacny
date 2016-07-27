@@ -9,6 +9,7 @@ function method give1(): int{ 1 }
 
 tactic invartac() {
   assert true;
+  assert true;
 }
 
 lemma Another(){
@@ -16,5 +17,5 @@ lemma Another(){
 }
 
 tactic invartac2() {
-  assert false;
+  assert true;
 }
