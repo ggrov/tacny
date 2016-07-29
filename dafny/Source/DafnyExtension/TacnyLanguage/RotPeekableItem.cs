@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -59,7 +58,7 @@ namespace DafnyLanguage.TacnyLanguage
   {
     private readonly ITextBuffer _textBuffer;
     
-    private static IWpfTextView ActiveTextView {
+    private static ITextView ActiveTextView {
       get {
         IVsTextView view = null;
         var textManager = (IVsTextManager) ServiceProvider.GlobalProvider.GetService(typeof(SVsTextManager));
@@ -75,18 +74,15 @@ namespace DafnyLanguage.TacnyLanguage
       _textBuffer = textBuffer;
     }
 
-    private string ExpandTactic()
-    {
-      var atv = ActiveTextView;
-      if(atv==null) throw new NullReferenceException("Text View Not Accessible");
-      var caret = atv.Caret.Position.BufferPosition.Position;
+    private string ExpandTactic(ITextView tv) {
+      var caret = tv.Caret.Position.BufferPosition.Position;
       return TacticReplacerProxy.GetExpandedForRot(caret, _textBuffer);
     }
 
-    public void Dispose() {}
-
     public void AugmentPeekSession(IPeekSession session, IList<IPeekableItem> peekableItems) {
-      if(session.RelationshipName == RotPeekRelationship.SName) peekableItems.Add(new RotPeekableItem(ExpandTactic()));
+      if(session.RelationshipName == RotPeekRelationship.SName) peekableItems.Add(new RotPeekableItem(ExpandTactic(ActiveTextView)));
     }
+
+    public void Dispose() {}
   }
 }

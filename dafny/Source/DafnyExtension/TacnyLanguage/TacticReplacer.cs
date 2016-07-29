@@ -67,7 +67,7 @@ namespace DafnyLanguage.TacnyLanguage
     
     public bool ReplaceOne(IWpfTextView atv)
     {
-      Contract.Assume(atv!=null);
+      Contract.Assume(atv != null);
       var tra = new TacticReplacerActor(atv.TextBuffer, atv.Caret.Position.BufferPosition.Position);
       if (tra.LoadStatus != TacticReplaceStatus.Success)  return Util.NotifyOfReplacement(tra.LoadStatus);
       var tedit = atv.TextBuffer.CreateEdit();
@@ -94,7 +94,7 @@ namespace DafnyLanguage.TacnyLanguage
 
     public bool ReplaceAll(ITextBuffer tb)
     {
-      Contract.Assume(tb!=null);
+      Contract.Assume(tb != null);
 
       var tra = new TacticReplacerActor(tb);
       var isMoreMembers = tra.NextMemberInTld();
@@ -114,6 +114,7 @@ namespace DafnyLanguage.TacnyLanguage
 
     public static string GetExpandedForRot(int position, ITextBuffer tb)
     {
+      Contract.Assume(tb != null);
       string fullMethod;
       var tra = new TacticReplacerActor(tb, position);
       if(tra.ExpandTactic(out fullMethod) != TacticReplaceStatus.Success) return null;
@@ -123,6 +124,7 @@ namespace DafnyLanguage.TacnyLanguage
 
     public static string GetExpandedForPreview(int position, ITextBuffer buffer, ref SnapshotSpan methodName)
     {
+      Contract.Assume(buffer != null);
       var tra = new TacticReplacerActor(buffer, position);
       if (!tra.MemberReady) return null;
 
@@ -137,8 +139,10 @@ namespace DafnyLanguage.TacnyLanguage
   {
     public static ITextDocumentFactoryService Tdf;
     public static IVsStatusbar Status;
+
     public static bool LoadAndCheckDocument(ITextBuffer tb, out string filePath)
     {
+      Contract.Requires(tb != null);
       ITextDocument doc = null;
       Tdf?.TryGetTextDocument(tb, out doc);
       filePath = doc?.FilePath;
@@ -148,6 +152,7 @@ namespace DafnyLanguage.TacnyLanguage
     
     public static TacticReplaceStatus GetMemberFromPosition(DefaultClassDecl tld, int position, out MemberDecl member)
     {
+      Contract.Requires(tld != null);
       member = (from m in tld.Members
                 where m.tok.pos <= position && position <= m.BodyEndTok.pos + 1
                 select m).FirstOrDefault();
@@ -162,8 +167,10 @@ namespace DafnyLanguage.TacnyLanguage
 
     public static string RazeFringe(string body, string fringe)
     {
+      Contract.Requires(body.Length > fringe.Length);
       return body.Substring(0, fringe.Length) == fringe ? body.Substring(fringe.Length) : body;
     }
+
     public static bool NotifyOfReplacement(TacticReplaceStatus t)
     {
       if (Status == null) return false;
@@ -206,6 +213,7 @@ namespace DafnyLanguage.TacnyLanguage
 
     public TacticReplacerActor(ITextBuffer tb, int position = -1)
     {
+      Contract.Requires(tb != null);
       string currentFileName;
       LoadStatus = Util.LoadAndCheckDocument(tb, out currentFileName) ? TacticReplaceStatus.Success : TacticReplaceStatus.NoDocumentPersistence;
       if(LoadStatus!=TacticReplaceStatus.Success) return;
@@ -232,7 +240,8 @@ namespace DafnyLanguage.TacnyLanguage
 
     public TacticReplaceStatus ReplaceMember(ITextEdit tedit)
     {
-      if(!MemberReady) return TacticReplaceStatus.NoTactic;
+      Contract.Requires(tedit != null);
+      if (!MemberReady) return TacticReplaceStatus.NoTactic;
 
       var startOfBlock = _member.tok.pos;
       var lengthOfBlock = _member.BodyEndTok.pos - startOfBlock + 1;

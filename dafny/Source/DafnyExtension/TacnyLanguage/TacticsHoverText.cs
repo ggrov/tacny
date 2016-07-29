@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using Microsoft.VisualStudio.Text;
 
 namespace DafnyLanguage.TacnyLanguage
@@ -7,6 +8,8 @@ namespace DafnyLanguage.TacnyLanguage
   {
     public static void TestForAndAddHoverText(ref ITrackingSpan applicableToSpan, SnapshotPoint trigger, ITextBuffer tb, IList<object> quickInfoContent)
     {
+      Contract.Requires(trigger != null);
+      Contract.Requires(tb != null);
       var methodName = new SnapshotSpan();
       var expanded = TacticReplacerProxy.GetExpandedForPreview(trigger.Position, tb, ref methodName);
       if (string.IsNullOrEmpty(expanded)) return;

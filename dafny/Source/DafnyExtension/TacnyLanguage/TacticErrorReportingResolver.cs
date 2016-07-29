@@ -15,9 +15,10 @@ namespace DafnyLanguage.TacnyLanguage
   internal class TacticErrorReportingResolver
   {
     private readonly Bpl.Token _errTok;
-    private readonly DefaultClassDecl  _tmpModule;
     private readonly UpdateStmt _tacticCall;
     private readonly Tactic _activeTactic;
+    private readonly MemberDecl _callingMember;
+    private readonly MemberDecl _tmpFailingMember;
     private readonly string _errMessage, _implTargetName;
     public int FailingLine, FailingCol, TacticLine, TacticCol, CallingLine, CallingCol;
 
@@ -29,21 +30,25 @@ namespace DafnyLanguage.TacnyLanguage
     {
       Contract.Ensures(_errTok != null);
       Contract.Ensures(_errMessage != null);
-      Contract.Ensures(_tmpModule != null);
       Contract.Ensures(_tacticCall != null);
       Contract.Ensures(_activeTactic != null);
+      Contract.Ensures(_callingMember != null);
+      Contract.Ensures(_tmpFailingMember != null);
       Contract.Ensures(!string.IsNullOrEmpty(_implTargetName));
       var proofState = errorInfo.S;
       var tmpProgram = ((Tacny.CompoundErrorInformation)errorInfo.E).P;
       var innerError = ((Tacny.CompoundErrorInformation)errorInfo.E).E;
+      var tmpModule = (DefaultClassDecl)tmpProgram.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
 
       _errTok = (Bpl.Token)innerError.Tok;
       _errMessage = innerError.FullMsg;
 
-      _tmpModule = (DefaultClassDecl)tmpProgram.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
       _implTargetName = MethodNameFromImpl(innerError.ImplementationName);
       _tacticCall = proofState.TacticApplication;
       _activeTactic = proofState.GetTactic(_tacticCall) as Tactic;
+
+      _callingMember = proofState.TargetMethod;
+      _tmpFailingMember = tmpModule?.Members.FirstOrDefault(x => x.CompileName == _implTargetName);
 
       FailingLine = FailingCol = TacticLine = TacticCol = CallingLine = CallingCol = -1;
       ResolveCorrectLocations();
@@ -56,24 +61,24 @@ namespace DafnyLanguage.TacnyLanguage
       return matches.Groups[1].Value;
     }
     
-    private int OffsetFromStartOfAddedLinesToFailingLine()
-    {
-      Contract.Ensures(Contract.Result<int>() >= 0);
-      var tmpFailingMethod = _tmpModule.Members.FirstOrDefault(x => x.CompileName == _implTargetName) as Method;
-      if (tmpFailingMethod == null) throw new TacticErrorResolutionException("The failing method must exist in tmp file");
-      return _errTok.line - tmpFailingMethod.BodyStartTok.line;
-    }
-
     private Bpl.IToken GetFailingLine()
     {
-      var offsetToFailure = TacticLine + OffsetFromStartOfAddedLinesToFailingLine();
+      var offsetToCallingLineInSource = CallingLine - _callingMember.BodyStartTok.line;
+      var offsetToInsertedLinesInTmp = _tmpFailingMember.BodyStartTok.line + offsetToCallingLineInSource;
+      var offsetToFailingLineInTemp = _errTok.line - offsetToInsertedLinesInTmp;
+      var offsetToFailingLineInSource = _activeTactic.BodyStartTok.line + offsetToFailingLineInTemp;
+
       return (from stmt in _activeTactic.Body.SubStatements.ToArray()
-              where stmt.Tok.line == offsetToFailure
+              where stmt.Tok.line == offsetToFailingLineInSource + 1
               select stmt.Tok).FirstOrDefault();
     }
-    
+
     private void ResolveCorrectLocations()
     { 
+      Contract.Ensures(CallingLine!=-1);
+      Contract.Ensures(CallingCol != -1);
+      Contract.Ensures(TacticLine != -1);
+      Contract.Ensures(TacticCol != -1);
       CallingLine = _tacticCall.Tok.line;
       CallingCol = _tacticCall.Tok.col;
       
@@ -95,8 +100,8 @@ namespace DafnyLanguage.TacnyLanguage
       Contract.Requires(FoundCalling && FoundTactic);
 
       errorListHolder.AddError(
-        new DafnyError(_errTok.filename, 0, 0, ErrorCategory.AuxInformation, 
-        _errMessage + $" at ({_errTok.line},{_errTok.col-1})", null, false, null, false),
+        new DafnyError(_errTok.filename, _errTok.line -1, _errTok.col - 1, ErrorCategory.AuxInformation, 
+         $"Tacny Generated File: {_errMessage} at ({_errTok.line},{_errTok.col - 1})", null, false, null, false),
         "$$program_tactics$$", requestId);
       
       errorListHolder.AddError(

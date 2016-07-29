@@ -33,14 +33,13 @@ namespace DafnyLanguage.TacnyLanguage
     public string ExpandedTactic;
     private const string Title = "Expanded Tactics";
     private const string Tip = "Text previewing expanded tactics";
-    
-    public void Dispose() {}
-
-    public void NavigateTo(object data) {} //TODO maybe
 
     public IPeekResultDisplayInfo DisplayInfo => new PeekResultDisplayInfo(Title, Tip, Title, Tip);
-    public bool CanNavigateTo => false; //TODO i think
-    public Action<IPeekResult, object, object> PostNavigationCallback => (pr, o, data) => { }; //TODO do we need to do anything after navigation
+    
+    public void Dispose() {}
+    public void NavigateTo(object data) {}
+    public bool CanNavigateTo => false;
+    public Action<IPeekResult, object, object> PostNavigationCallback => (pr, o, data) => { };
     public event EventHandler Disposed { add{} remove{} }
   }
 
@@ -54,19 +53,7 @@ namespace DafnyLanguage.TacnyLanguage
       var rotResult = result as RotPeekResult;
       _expandedTactic = rotResult?.ExpandedTactic ?? "Failed to Expand Tactic";
     }
-
-    public void Dispose() {
-      _tb = null;
-    }
-
-    public bool TryOpen(IPeekResult otherResult)
-    {
-      var other = otherResult as RotPeekResult;
-      return _expandedTactic==other?.ExpandedTactic;
-    } 
-
-    public bool TryPrepareToClose() => true;
-
+    
     public UIElement Create(IPeekSession session, IPeekResultScrollState scrollState) {
       _tb = new TextBox {
         Text = _expandedTactic,
@@ -77,42 +64,39 @@ namespace DafnyLanguage.TacnyLanguage
       return _tb;
     }
 
-    public void ScrollIntoView(IPeekResultScrollState scrollState) {
-      //TODO surely this is the job of the textvie,w not the peek?
-    }
-
-    public IPeekResultScrollState CaptureScrollState() {
-      return new RotPeekResultScrollState();
-    }
-
-    public void Close() {}
-
-    public void SetKeyboardFocus() {
-      _tb.Focus();
-    }
-
+    public bool TryOpen(IPeekResult otherResult)
+    {
+      var other = otherResult as RotPeekResult;
+      return _expandedTactic==other?.ExpandedTactic;
+    } 
+    
     public bool CanSave(out string defaultPath) {
       defaultPath = null;
       return false;
     }
 
-    public bool TrySave(bool saveAs) => true;
+    public IPeekResultScrollState CaptureScrollState() => new RotPeekResultScrollState();
+    public void SetKeyboardFocus() => _tb.Focus();
+    
+    public void Close() {}
+    public void Dispose() {}
+    public void ScrollIntoView(IPeekResultScrollState scrollState) {}
 
-    public double ZoomLevel { get; set; }
+    public bool TrySave(bool saveAs) => true;
+    public bool TryPrepareToClose() => true;
     public bool IsDirty => false;
     public bool IsReadOnly => true;
-    public event EventHandler<RecreateContentEventArgs> RecreateContent {add{} remove{}} //TODO
+
+    public double ZoomLevel { get; set; }
+    public event EventHandler<RecreateContentEventArgs> RecreateContent {add{} remove{}}
     public event EventHandler IsDirtyChanged {add{} remove{}}
     public event EventHandler IsReadOnlyChanged {add{} remove{}}
   }
 
-  internal class RotPeekResultScrollState : IPeekResultScrollState //TODO  gets (scroll) state of results in a peek?
+  internal class RotPeekResultScrollState : IPeekResultScrollState
   {
     public void Dispose() {}
-
-    public void RestoreScrollState(IPeekResultPresentation presentation) {
-      //TODO there is no scroll state to return to?
-    }
+    public void RestoreScrollState(IPeekResultPresentation presentation) {}
   }
 
   internal class RotPeekResultSource : IPeekResultSource
