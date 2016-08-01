@@ -14,6 +14,7 @@
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <CodeContractsAssemblyMode>1</CodeContractsAssemblyMode>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -26,7 +27,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -140,6 +140,13 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Boogie">
+      <HintPath>..\..\boogie\Binaries\Boogie.exe</HintPath>
+    </Reference>
+    <Reference Include="BoogieConcurrency, Version=1.0.0.0, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\BoogieConcurrency.dll</HintPath>
+    </Reference>
     <Reference Include="BoogieCore">
       <HintPath>..\..\boogie\Binaries\BoogieCore.dll</HintPath>
     </Reference>
@@ -148,6 +155,18 @@
     </Reference>
     <Reference Include="BoogieParserHelper">
       <HintPath>..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
+    </Reference>
+    <Reference Include="BoogieVCExpr, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\BoogieVCExpr.dll</HintPath>
+    </Reference>
+    <Reference Include="BoogieVCGeneration, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\BoogieVCGeneration.dll</HintPath>
+    </Reference>
+    <Reference Include="Dafny, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dafny\Binaries\Dafny.exe</HintPath>
     </Reference>
     <Reference Include="DafnyPipeline, Version=1.9.5.20511, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -201,10 +220,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>cd $(OutDir)
-del Dafny.*
-del DafnyPipeline.*
-</PreBuildEvent>
+    <PreBuildEvent>COPY /y $(SolutionDir)..\dafny\Binaries\DafnyPrelude.bpl $(TargetDir)
+COPY /y $(SolutionDir)..\dafny\Binaries\DafnyRuntime.cs $(TargetDir)</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

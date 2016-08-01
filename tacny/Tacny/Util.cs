@@ -154,10 +154,10 @@ namespace Tacny {
       Contract.Assert(tld != null);
       var member = tld.Members.FirstOrDefault(x => x.Name == state.TargetMethod.Name);
       Contract.Assert(member != null);
+      // we can safely remove the tactics
+      tld.Members.RemoveAll(x => x is Tactic); //remove before else index will be wrong
       int index = tld.Members.IndexOf(member);
       tld.Members.RemoveAt(index);
-      // we can safely remove the tactics
-      tld.Members.RemoveAll(x => x is Tactic);
       tld.Members.InsertRange(index, newMembers);
       var filePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
       var tw = new StreamWriter(filePath);
@@ -182,24 +182,24 @@ namespace Tacny {
     }
 
 
-    public static List<Bpl.ErrorInformation> ResolveAndVerify(Program program) {
+    public static List<Bpl.ErrorInformation> ResolveAndVerify(Program program, Bpl.ErrorReporterDelegate er) {
       Contract.Requires<ArgumentNullException>(program != null);
       var r = new Resolver(program);
       //var start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       r.ResolveProgram(program);
       //var end = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds
-      var boogieProg = Translate(program, program.Name);
+      var boogieProg = Translate(program, program.Name, er);
       Bpl.PipelineStatistics stats;
       List<Bpl.ErrorInformation> errorList;
-      Bpl.PipelineOutcome tmp = BoogiePipeline(boogieProg, new List<string> {program.Name}, program.Name, out stats, out errorList);
+      Bpl.PipelineOutcome tmp = BoogiePipeline(boogieProg, new List<string> {program.Name}, program.Name, er, out stats, out errorList, program);
       return errorList;
     }
 
-    public static Bpl.Program Translate(Program dafnyProgram, string uniqueIdPrefix) {
+    public static Bpl.Program Translate(Program dafnyProgram, string uniqueIdPrefix, Bpl.ErrorReporterDelegate er) {
       Contract.Requires<ArgumentNullException>(dafnyProgram != null, "dafnyProgram");
       Contract.Requires<ArgumentNullException>(uniqueIdPrefix != null, "uniqueIdPrefix");
       Contract.Ensures(Contract.Result<Bpl.Program>() != null);
-      var translator = new Translator(dafnyProgram.reporter) {
+      var translator = new Translator(dafnyProgram.reporter, er) {
         InsertChecksums = true,
         UniqueIdPrefix = uniqueIdPrefix
       };
@@ -211,7 +211,7 @@ namespace Tacny {
     /// Pipeline the boogie program to Dafny where it is valid
     /// </summary>
     /// <returns>Exit value</returns>
-    public static Bpl.PipelineOutcome BoogiePipeline(Bpl.Program program, IList<string> fileNames, string programId, out Bpl.PipelineStatistics stats, out List<Bpl.ErrorInformation> errorList) {
+    public static Bpl.PipelineOutcome BoogiePipeline(Bpl.Program program, IList<string> fileNames, string programId, Bpl.ErrorReporterDelegate er, out Bpl.PipelineStatistics stats, out List<Bpl.ErrorInformation> errorList, Program tmpDafnyProgram = null) {
       Contract.Requires(program != null);
       Contract.Ensures(0 <= Contract.ValueAtReturn(out stats).InconclusiveCount && 0 <= Contract.ValueAtReturn(out stats).TimeoutCount);
 
@@ -235,9 +235,11 @@ namespace Tacny {
           Bpl.ExecutionEngine.Inline(program);
           errorList = new List<Bpl.ErrorInformation>();
           var tmp = new List<Bpl.ErrorInformation>();
-
-          oc = Bpl.ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo => {
+          
+          oc = Bpl.ExecutionEngine.InferAndVerify(program, stats, programId, errorInfo =>
+          {
             tmp.Add(errorInfo);
+            er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, tmpDafnyProgram));
           });
           errorList.AddRange(tmp);
           
@@ -245,6 +247,24 @@ namespace Tacny {
         default:
           Contract.Assert(false); throw new cce.UnreachableException();  // unexpected outcome
       }
+    }
+
+  }
+
+  public class CompoundErrorInformation : Bpl.ErrorInformation
+  {
+    public readonly Program P;
+    public readonly Bpl.ErrorInformation E;
+    public readonly ProofState S;
+    public CompoundErrorInformation(Bpl.IToken tok, string msg, Bpl.ErrorInformation e, Program p) : base(tok, msg)
+    {
+      E = e;
+      P = p;
+    }
+    public CompoundErrorInformation(Bpl.IToken tok, string msg, Bpl.ErrorInformation e, ProofState s) : base(tok, msg)
+    {
+      E = e;
+      S = s;
     }
   }
 
