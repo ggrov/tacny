@@ -51,7 +51,20 @@ namespace DafnyLanguage.TacnyLanguage
       _tmpFailingMember = tmpModule?.Members.FirstOrDefault(x => x.CompileName == _implTargetName);
 
       FailingLine = FailingCol = TacticLine = TacticCol = CallingLine = CallingCol = -1;
-      ResolveCorrectLocations();
+
+      if(!ActiveTacticWasNotUsed()) ResolveCorrectLocations();
+    }
+
+    private bool ActiveTacticWasNotUsed()
+    {
+      var x =_tmpFailingMember as Method;
+      return (from stmt in x?.Body.Body
+              select stmt as UpdateStmt into upstmt
+              where upstmt?.Lhss.Count == 0 && upstmt.Rhss.Count > 0
+              select upstmt.Rhss[0] as ExprRhs into rhs
+              select rhs?.Expr as ApplySuffix into rhsExpr
+              select rhsExpr?.Lhs as NameSegment into callName
+              select callName?.Name == _activeTactic.Name).FirstOrDefault();
     }
 
     private static string MethodNameFromImpl(string implName)
@@ -97,7 +110,7 @@ namespace DafnyLanguage.TacnyLanguage
       Contract.Requires(snap != null);
       Contract.Requires(!string.IsNullOrEmpty(requestId));
       Contract.Requires(!string.IsNullOrEmpty(file));
-      Contract.Requires(FoundCalling && FoundTactic);
+      if (!(FoundCalling && FoundTactic)) return;
 
       errorListHolder.AddError(
         new DafnyError(_errTok.filename, _errTok.line -1, _errTok.col - 1, ErrorCategory.AuxInformation, 

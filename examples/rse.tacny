@@ -4,8 +4,8 @@ tactic mytac(){
 
 lemma mylemma(){
   myothertac();
-  mytac();
   assert true;
+  mytac();
 }
 
 tactic myothertac(){

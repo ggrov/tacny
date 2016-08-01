@@ -353,6 +353,7 @@ namespace DafnyLanguage
       errorListHolder.FatalVerificationError = null;
       var tacticsErrorList = new List<Tacny.CompoundErrorInformation>();
       var unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ParseAndTypeCheck(false);
+      var foundNonTacticError = false;
 
       try
       {
@@ -381,6 +382,7 @@ namespace DafnyLanguage
           }
           if (s == null) return;
 
+          foundNonTacticError = true;
           errorListHolder.AddError(
             new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1,
               ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(),
@@ -411,14 +413,16 @@ namespace DafnyLanguage
       {
         ITextSnapshot s;
         RequestIdToSnapshot.TryGetValue(requestId, out s);
-        try {
-          tacticsErrorList.ForEach(errorInfo => new TacticErrorReportingResolver(errorInfo)
-            .AddTacticErrors(errorListHolder, s, requestId, _document.FilePath));
-        } catch (TacticErrorResolutionException e) {
-          errorListHolder.AddError(
-            new DafnyError("$$program_tactics$$", 0, 0, ErrorCategory.InternalError,
-            "Error resolving tactics error " + e.Message + "\n" + e.StackTrace, snapshot, false),
-          "$$program_tactics$$", requestId);
+        if (!foundNonTacticError) {
+          try {
+            tacticsErrorList.ForEach(errorInfo => new TacticErrorReportingResolver(errorInfo)
+              .AddTacticErrors(errorListHolder, s, requestId, _document.FilePath));
+          } catch (TacticErrorResolutionException e) {
+            errorListHolder.AddError(
+              new DafnyError("$$program_tactics$$", 0, 0, ErrorCategory.InternalError,
+              "Error resolving tactics error " + e.Message + "\n" + e.StackTrace, snapshot, false),
+            "$$program_tactics$$", requestId);
+          }
         }
         DafnyDriver.SetDiagnoseTimeouts(!diagnoseTimeouts);
       }

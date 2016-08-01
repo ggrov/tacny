@@ -13,7 +13,7 @@ tactic invartac() {
 }
 
 lemma Another(){
-  invartac();
+  invartac2();
 }
 
 tactic invartac2() {
