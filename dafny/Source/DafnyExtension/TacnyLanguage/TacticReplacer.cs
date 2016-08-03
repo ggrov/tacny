@@ -15,6 +15,8 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
+using Printer = Microsoft.Dafny.Printer;
+using Program = Microsoft.Dafny.Program;
 
 namespace DafnyLanguage.TacnyLanguage
 {
@@ -65,14 +67,18 @@ namespace DafnyLanguage.TacnyLanguage
       _pb = pb;
     }
     
-    public bool ReplaceOne(IWpfTextView atv)
+    public bool ReplaceOneCall(IWpfTextView atv)
     {
       Contract.Assume(atv != null);
-      var tra = new TacticReplacerActor(atv.TextBuffer, atv.Caret.Position.BufferPosition.Position);
+      var caret = atv.Caret.Position.BufferPosition.Position;
+      var tra = new TacticReplacerActor(atv.TextBuffer, caret);
       if (tra.LoadStatus != TacticReplaceStatus.Success)  return Util.NotifyOfReplacement(tra.LoadStatus);
       var tedit = atv.TextBuffer.CreateEdit();
-      var status = tra.ReplaceMember(tedit);
-      if (status == TacticReplaceStatus.Success) { tedit.Apply(); } else { tedit.Dispose(); }
+      var status = TacticReplaceStatus.TranslatorFail;
+      try {
+        status = tra.ReplaceSingleTacticCall(tedit);
+        if (status == TacticReplaceStatus.Success) { tedit.Apply(); } else { tedit.Dispose(); }
+      } catch {  tedit.Dispose(); }
       return Util.NotifyOfReplacement(status);
     }
 
@@ -81,14 +87,14 @@ namespace DafnyLanguage.TacnyLanguage
       Contract.Assume(atv != null);
 
       string testString;
-      var tra = new TacticReplacerActor(atv.TextBuffer, atv.Caret.Position.BufferPosition.Position);
+      var caret = atv.Caret.Position.BufferPosition.Position;
+      var tra = new TacticReplacerActor(atv.TextBuffer, caret);
       if (tra.LoadStatus != TacticReplaceStatus.Success) return Util.NotifyOfReplacement(tra.LoadStatus);
-      var status = tra.ExpandTactic(out testString);
+      var status = tra.ExpandSingleTacticCall(caret, out testString);
       if (status != TacticReplaceStatus.Success)
         return Util.NotifyOfReplacement(status);
       
-      var trigger = atv.TextBuffer.CurrentSnapshot.CreateTrackingPoint(tra.MemberBodyStart - 1, PointTrackingMode.Positive);
-      _pb.TriggerPeekSession(atv, trigger, RotPeekRelationship.SName);
+      _pb.TriggerPeekSession(new PeekSessionCreationOptions(atv, RotPeekRelationship.SName, null, 0, false, null, false));
       return Util.NotifyOfReplacement(TacticReplaceStatus.Success);
     }
 
@@ -100,15 +106,22 @@ namespace DafnyLanguage.TacnyLanguage
       var isMoreMembers = tra.NextMemberInTld();
       var replaceStatus = TacticReplaceStatus.Success;
       var tedit = tb.CreateEdit();
-
-      while (isMoreMembers && (replaceStatus==TacticReplaceStatus.Success || replaceStatus==TacticReplaceStatus.NoTactic))
+      try
       {
-        replaceStatus = tra.ReplaceMember(tedit);
-        isMoreMembers = tra.NextMemberInTld();
-      }
+        while (isMoreMembers && (replaceStatus == TacticReplaceStatus.Success || replaceStatus == TacticReplaceStatus.NoTactic))
+        {
+          var isMoreTactics = tra.NextTacticCallInMember();
+          while (isMoreTactics && (replaceStatus == TacticReplaceStatus.Success || replaceStatus == TacticReplaceStatus.NoTactic))
+          {
+            replaceStatus = tra.ReplaceSingleTacticCall(tedit);
+            isMoreTactics = tra.NextTacticCallInMember();
+          }
+          isMoreMembers = tra.NextMemberInTld();
+        }
 
-      if(replaceStatus==TacticReplaceStatus.Success || replaceStatus == TacticReplaceStatus.NoTactic)
-        { tedit.Apply();} else { tedit.Dispose();}
+        if(replaceStatus==TacticReplaceStatus.Success || replaceStatus == TacticReplaceStatus.NoTactic)
+          { tedit.Apply();} else { tedit.Dispose();}
+      } catch { tedit.Dispose(); }
       return Util.NotifyOfReplacement(replaceStatus);
     }
 
@@ -117,9 +130,9 @@ namespace DafnyLanguage.TacnyLanguage
       Contract.Assume(tb != null);
       string fullMethod;
       var tra = new TacticReplacerActor(tb, position);
-      if(tra.ExpandTactic(out fullMethod) != TacticReplaceStatus.Success) return null;
-      var splitMethod = fullMethod.Split('\n');
-      return splitMethod.Where((t, i) => i >= 2 && i <= splitMethod.Length - 3).Aggregate("", (current, t) => current + t + "\n");
+      return tra.ExpandSingleTacticCall(position, out fullMethod)==TacticReplaceStatus.Success ? fullMethod : null;
+      //var splitMethod = fullMethod.Split('\n');
+      //return splitMethod.Where((t, i) => i >= 2 && i <= splitMethod.Length - 3).Aggregate("", (current, t) => current + t + "\n");
     }
 
     public static string GetExpandedForPreview(int position, ITextBuffer buffer, ref SnapshotSpan methodName)
@@ -146,8 +159,9 @@ namespace DafnyLanguage.TacnyLanguage
       ITextDocument doc = null;
       Tdf?.TryGetTextDocument(tb, out doc);
       filePath = doc?.FilePath;
-      return !string.IsNullOrEmpty(filePath);
+      return !String.IsNullOrEmpty(filePath);
     }
+
     public static Program GetProgram(ITextBuffer tb, string file, bool resolved) => new TacnyDriver(tb, file).ParseAndTypeCheck(resolved);
     
     public static TacticReplaceStatus GetMemberFromPosition(DefaultClassDecl tld, int position, out MemberDecl member)
@@ -169,6 +183,46 @@ namespace DafnyLanguage.TacnyLanguage
     {
       Contract.Requires(body.Length > fringe.Length);
       return body.Substring(0, fringe.Length) == fringe ? body.Substring(fringe.Length) : body;
+    }
+
+    public static bool SameStatement(Statement a, Statement b)
+    {
+      if (a == null || b == null) return false;
+      var sr = new StringWriter();
+      var printer = new Printer(sr);
+      printer.PrintStatement(a, 0);
+      var sa = sr.ToString();
+      sr.Flush();
+      printer.PrintStatement(b, 0);
+      var sb = sr.ToString();
+      return sa == sb;
+    }
+
+    public static TacticReplaceStatus GetTacticCallAtPosition(Method m, int p, out Tuple<UpdateStmt, int, int> us) {
+      us = (from stmt in m?.Body.Body
+              let u = stmt as UpdateStmt
+              let rhs = u?.Rhss[0] as ExprRhs
+              let expr = rhs?.Expr as ApplySuffix
+              let name = expr?.Lhs as NameSegment
+              where name != null
+              let start = expr.tok.pos - name.Name.Length
+              let end = rhs.Tok.pos + 3
+              where start < p && p < end
+              select new Tuple<UpdateStmt, int, int>(stmt as UpdateStmt, start, end))
+              .FirstOrDefault();
+      return us != null ? TacticReplaceStatus.Success : TacticReplaceStatus.NoTactic;
+    }
+
+    public static IEnumerator<Tuple<UpdateStmt, int, int>> GetTacticCallsInMember(Method m) {
+      if (m?.Body.Body == null) yield break;
+      foreach (var stmt in m.Body.Body)
+      {
+        var us = stmt as UpdateStmt;
+        if (us == null || us.Lhss.Count != 0 || !us.IsGhost) continue;
+        Tuple<UpdateStmt, int, int> current;
+        if(GetTacticCallAtPosition(m, us.Tok.pos, out current) != TacticReplaceStatus.Success) continue;
+        yield return current;
+      }
     }
 
     public static bool NotifyOfReplacement(TacticReplaceStatus t)
@@ -202,8 +256,10 @@ namespace DafnyLanguage.TacnyLanguage
   {
     private readonly Program _program, _unresolvedProgram;
     private readonly DefaultClassDecl _tld;
-    private IEnumerator<MemberDecl> _tldMembers;
+    private readonly IEnumerator<MemberDecl> _tldMembers;
     private MemberDecl _member;
+    private Tuple<UpdateStmt, int, int> _tacticCall;
+    private IEnumerator<Tuple<UpdateStmt, int, int>> _tacticCalls;
 
     public int MemberBodyStart => _member.BodyStartTok.pos;
     public int MemberNameStart => _member.tok.pos;
@@ -220,38 +276,82 @@ namespace DafnyLanguage.TacnyLanguage
       _program = Util.GetProgram(tb, currentFileName, true);
       _unresolvedProgram = Util.GetProgram(tb, currentFileName, false);
       _tld = (DefaultClassDecl)_program?.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
+      _tldMembers = _tld?.Members.GetEnumerator();
       LoadStatus = _tld != null ? TacticReplaceStatus.Success : TacticReplaceStatus.NotResolved;
       if (LoadStatus != TacticReplaceStatus.Success) return;
-      if (position != -1) SetMember(position);
+      if (position == -1) return;
+      SetMember(position);
+      SetTacticCall(position);
     }
 
     public TacticReplaceStatus SetMember(int position)
     {
-      return Util.GetMemberFromPosition(_tld, position, out _member);
+      var status = Util.GetMemberFromPosition(_tld, position, out _member);
+      _tacticCalls = Util.GetTacticCallsInMember(_member as Method);
+      return status;
     }
 
+    public TacticReplaceStatus SetTacticCall(int position)
+    {
+      return Util.GetTacticCallAtPosition(_member as Method, position, out _tacticCall);
+    }
+    
     public bool NextMemberInTld()
     {
-      if (_tldMembers == null) _tldMembers = _tld.Members.GetEnumerator();
       var isMore = _tldMembers.MoveNext();
-      if (isMore) _member = _tldMembers.Current;
+      if (!isMore) return false;
+      _member = _tldMembers.Current;
+      _tacticCalls = Util.GetTacticCallsInMember(_member as Method);
+      return true;
+    }
+
+    public bool NextTacticCallInMember()
+    {
+      var isMore = _tacticCalls.MoveNext();
+      if (isMore) _tacticCall = _tacticCalls.Current;
       return isMore;
     }
 
-    public TacticReplaceStatus ReplaceMember(ITextEdit tedit)
+    public TacticReplaceStatus ReplaceSingleTacticCall(ITextEdit tedit)
     {
       Contract.Requires(tedit != null);
-      if (!MemberReady) return TacticReplaceStatus.NoTactic;
-
-      var startOfBlock = _member.tok.pos;
-      var lengthOfBlock = _member.BodyEndTok.pos - startOfBlock + 1;
-
-      string expandedTactic;
-      var expandedStatus = ExpandTactic(out expandedTactic);
+      if (!MemberReady || _tacticCall==null) return TacticReplaceStatus.NoTactic;
+      
+      string expanded;
+      var expandedStatus = ExpandSingleTacticCall(_tacticCall.Item1, out expanded);
       if (expandedStatus != TacticReplaceStatus.Success)
         return expandedStatus;
+      
+      tedit.Replace(_tacticCall.Item2, _tacticCall.Item3 - _tacticCall.Item2, expanded);
+      return TacticReplaceStatus.Success;
+    }
 
-      tedit.Replace(startOfBlock, lengthOfBlock, expandedTactic);
+    public TacticReplaceStatus ExpandSingleTacticCall(int tacticCallPos, out string expanded)
+    {
+      expanded = "";
+      Tuple<UpdateStmt, int, int> us;
+      var status = Util.GetTacticCallAtPosition(_member as Method, tacticCallPos, out us);
+      return status==TacticReplaceStatus.Success ? ExpandSingleTacticCall(us.Item1, out expanded) : status;
+    }
+
+    private TacticReplaceStatus ExpandSingleTacticCall(UpdateStmt us, out string expanded)
+    {
+      expanded = "";
+      var status = TacticReplaceStatus.Success;
+      var newStmts = Tacny.Interpreter.FindSingleTactic(_program, _member, us,
+        errorInfo => { status = TacticReplaceStatus.TranslatorFail; }, _unresolvedProgram);
+      if (status != TacticReplaceStatus.Success) return status;
+      if (newStmts == null) return TacticReplaceStatus.NoTactic;
+
+      var sr = new StringWriter();
+      var pr = new Printer(sr);
+      for(var i = 0; i < newStmts.Count-1; i++)
+      {
+        pr.PrintStatement(newStmts[i], 4);
+        sr.WriteLine();
+      }
+      pr.PrintStatement(newStmts[newStmts.Count-1], 4);
+      expanded += sr;
       return TacticReplaceStatus.Success;
     }
 

@@ -150,21 +150,21 @@
       <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandTactics" priority="0x0100" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <Strings>
-          <ButtonText>Expand and Pretty Print this Method</ButtonText>
+          <ButtonText>Expand tactic under caret</ButtonText>
         </Strings>
       </Button>
       
       <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandRot" priority="0x0102" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <Strings>
-          <ButtonText>Read-Only Peek Tactics in this Method</ButtonText>
+          <ButtonText>Read-only peek tactic under caret</ButtonText>
         </Strings>
       </Button>
       
       <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandAllTactics" priority="0x0103" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <Strings>
-          <ButtonText>Expand and Pretty Print All Methods</ButtonText>
+          <ButtonText>Expand all tactics in file</ButtonText>
         </Strings>
       </Button>
 
@@ -172,7 +172,7 @@
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <CommandFlag>TextChanges</CommandFlag>
         <Strings>
-          <ButtonText>Disable Automatic Tactic Verification</ButtonText>
+          <ButtonText>Disable automatic tactic verification</ButtonText>
         </Strings>
       </Button>
       
@@ -181,7 +181,7 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
-          <ButtonText>Expand and Pretty Print this Method</ButtonText>
+          <ButtonText>Expand this tactic</ButtonText>
         </Strings>
       </Button>
       
@@ -190,7 +190,7 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
-          <ButtonText>Read-Only Peek Tactics in this Method</ButtonText>
+          <ButtonText>Read-only peek this tactic</ButtonText>
         </Strings>
       </Button>
     </Buttons>

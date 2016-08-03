@@ -73,7 +73,7 @@ namespace DafnyLanguage.DafnyMenu
 
   public interface ITacnyMenuProxy
   {
-    bool ReplaceOne(IWpfTextView atv);
+    bool ReplaceOneCall(IWpfTextView atv);
 
     bool ShowRot(IWpfTextView atv);
 
@@ -490,7 +490,7 @@ namespace DafnyLanguage.DafnyMenu
       var atv = ActiveTextView;
       if (TacnyMenuProxy != null && atv != null)
       {
-        TacnyMenuProxy.ReplaceOne(atv);
+        TacnyMenuProxy.ReplaceOneCall(atv);
       }
     }
 

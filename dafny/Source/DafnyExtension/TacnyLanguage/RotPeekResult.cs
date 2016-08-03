@@ -43,24 +43,31 @@ namespace DafnyLanguage.TacnyLanguage
     public event EventHandler Disposed { add{} remove{} }
   }
 
-  internal class RotPeekResultPresentation : IPeekResultPresentation
+  internal class RotPeekResultPresentation : IPeekResultPresentation, IDesiredHeightProvider
   {
     private readonly string _expandedTactic;
     private TextBox _tb;
+    private const double ExpectedFontSize = 12.0;
+    private const double PeekBorders = 24.0;
 
     public RotPeekResultPresentation(IPeekResult result)
     {
       var rotResult = result as RotPeekResult;
       _expandedTactic = rotResult?.ExpandedTactic ?? "Failed to Expand Tactic";
     }
-    
+
+    private double TextHeight => (_expandedTactic.Split('\n').Length + 1) * ExpectedFontSize;
+    public double DesiredHeight => TextHeight + PeekBorders;
+
     public UIElement Create(IPeekSession session, IPeekResultScrollState scrollState) {
       _tb = new TextBox {
         Text = _expandedTactic,
         Background = Brushes.AliceBlue,
-        IsReadOnly = true
+        IsReadOnly = true,
+        FontFamily = new FontFamily("Consolas"),
+        FontSize = ExpectedFontSize,
+        MinHeight = TextHeight
       };
-      _tb.MinHeight = _tb.Text.Split('\n').Length + 1 * _tb.FontSize;
       return _tb;
     }
 
@@ -91,6 +98,7 @@ namespace DafnyLanguage.TacnyLanguage
     public event EventHandler<RecreateContentEventArgs> RecreateContent {add{} remove{}}
     public event EventHandler IsDirtyChanged {add{} remove{}}
     public event EventHandler IsReadOnlyChanged {add{} remove{}}
+    public event EventHandler<EventArgs> DesiredHeightChanged {add{} remove{}}
   }
 
   internal class RotPeekResultScrollState : IPeekResultScrollState

@@ -9,10 +9,11 @@ function method give1(): int{ 1 }
 
 tactic invartac() {
   assert true;
-  assert true;
 }
 
-lemma Another(){
+lemma Another(x : nat)
+  ensures x > 10
+  {
   invartac2();
 }
 

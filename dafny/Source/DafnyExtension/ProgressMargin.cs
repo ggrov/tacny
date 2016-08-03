@@ -413,7 +413,7 @@ namespace DafnyLanguage
       {
         ITextSnapshot s;
         RequestIdToSnapshot.TryGetValue(requestId, out s);
-        if (!foundNonTacticError) {
+        if (/*!foundNonTacticError*/true) {
           try {
             tacticsErrorList.ForEach(errorInfo => new TacticErrorReportingResolver(errorInfo)
               .AddTacticErrors(errorListHolder, s, requestId, _document.FilePath));
