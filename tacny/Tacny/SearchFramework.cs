@@ -24,6 +24,7 @@ namespace Tacny {
     Cached, // solution is cached for multi solution resolution
     Verified,
     Failed,
+    Partial, //TODO: partial when tactic and dafny succeed, but boogie fails
   }
 
   [ContractClassFor(typeof(ISearch))]
@@ -98,7 +99,6 @@ namespace Tacny {
           return VerifyResult.Failed;
         }
       }
-      return VerifyResult.Verified;
     }
   }
 

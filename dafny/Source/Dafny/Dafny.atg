@@ -22,7 +22,7 @@ readonly ModuleDecl theModule;
 readonly BuiltIns theBuiltIns;
 readonly bool theVerifyThisFile;
 int anonymousIds = 0;
-IToken oldTok;
+
 /// <summary>
 /// Holds the modifiers given for a declaration
 ///

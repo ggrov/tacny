@@ -72,7 +72,16 @@ namespace Tacny {
       // clear the scope  
       _scope = new Stack<Frame>();
       var tactic = GetTactic(tacAps) as Tactic;
+      var aps = ((ExprRhs) tacAps.Rhss[0]).Expr as ApplySuffix;
+      if (aps.Args.Count != tactic.Ins.Count)
+        Reporter.Error(MessageSource.Tacny, tacAps.Tok,
+          $"Wrong number of method arguments (got {aps.Args.Count}, expected {tactic.Ins.Count})");
       var frame = new Frame(tactic, Reporter);
+      for (int index = 0; index < aps.Args.Count; index++) {
+        var arg = aps.Args[index];
+        frame.AddLocalVariable(tactic.Ins[index].Name, arg);
+      }
+
       _scope.Push(frame);
       FillSourceState(variables);
       TacticApplication = tacAps.Copy();
@@ -485,7 +494,11 @@ namespace Tacny {
 
       private readonly ErrorReporter _reporter;
 
-
+      /// <summary>
+      /// Initialize the top level frame
+      /// </summary>
+      /// <param name="tactic"></param>
+      /// <param name="reporter"></param>
       public Frame(ITactic tactic, ErrorReporter reporter) {
         Contract.Requires<ArgumentNullException>(tactic != null, "tactic");
         Parent = null;
@@ -495,7 +508,7 @@ namespace Tacny {
           throw new NotSupportedException("tactic functions are not yet supported");
         }
         ActiveTactic = tactic;
-        ParseTacticAttributes();
+        ParseTacticAttributes(((MemberDecl)ActiveTactic).Attributes);
         _reporter = reporter;
         _declaredVariables = new Dictionary<string, object>();
         _generatedCode = new List<Statement>();
@@ -518,9 +531,7 @@ namespace Tacny {
         return _bodyCounter + 1 < Body.Count;
       }
 
-      private void ParseTacticAttributes() {
-        ParseTacticAttributesInternal(((MemberDecl)ActiveTactic).Attributes);
-      }
+  
 
       internal List<Statement> GetGeneratedCode() {
         Contract.Ensures(Contract.Result<List<Statement>>() != null);
@@ -530,7 +541,7 @@ namespace Tacny {
       }
 
 
-      private void ParseTacticAttributesInternal(Attributes attr) {
+      private void ParseTacticAttributes(Attributes attr) {
         // incase TacticInformation is not created
         TacticInfo = TacticInfo ?? new TacticInformation();
         if (attr == null)
@@ -553,7 +564,7 @@ namespace Tacny {
         }
 
         if (attr.Prev != null)
-          ParseTacticAttributesInternal(attr.Prev);
+          ParseTacticAttributes(attr.Prev);
       }
 
       [Pure]

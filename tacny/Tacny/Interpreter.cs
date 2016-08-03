@@ -159,6 +159,8 @@ namespace Tacny {
               //TODO what should go here?
             }
           }
+        } else if (stmt is BlockStmt) {
+            //TODO:
         }
       }
       _frame.Pop();
@@ -166,7 +168,6 @@ namespace Tacny {
 
     private void SearchIfStmt(IfStmt ifStmt) {
       Contract.Requires(tcce.NonNull(ifStmt));
-
       SearchBlockStmt(ifStmt.Thn);
       if (ifStmt.Els == null) return;
       var els = ifStmt.Els as BlockStmt;
@@ -229,7 +230,6 @@ namespace Tacny {
       IEnumerable<ProofState> enumerable = null;
       var stmt = state.GetStmt();
       if (stmt is TacticVarDeclStmt) {
-
         enumerable = RegisterVariable(stmt as TacticVarDeclStmt, state);
       } else if (stmt is UpdateStmt) {
         var us = stmt as UpdateStmt;
@@ -241,11 +241,12 @@ namespace Tacny {
           enumerable = ApplyNestedTactic(state.Copy(), state.DafnyVars(), us);
         }
       } else if (stmt is AssignSuchThatStmt) {
-        enumerable = EvaluateSuchThatStmt((AssignSuchThatStmt) stmt, state);
+        enumerable = EvaluateSuchThatStmt((AssignSuchThatStmt)stmt, state);
       } else if (stmt is PredicateStmt) {
-        enumerable = ResolvePredicateStmt((PredicateStmt) stmt, state);
-      }
-      else {
+        enumerable = ResolvePredicateStmt((PredicateStmt)stmt, state);
+      } else if (stmt is TStatement || stmt is IfStmt || stmt is WhileStmt) {
+                //TODO: 
+      } else {
         enumerable = DefaultAction(stmt, state);
       }
 
@@ -353,9 +354,9 @@ namespace Tacny {
                   : result as Expression;
                 yield return new UnaryOpExpr(op.tok, op.Op, resultExp);
               } else {
-                var @enum = result as IList;
-                if (@enum != null)
-                  yield return new Dafny.LiteralExpr(op.tok, @enum.Count);
+                var enumerator = result as IList;
+                if (enumerator != null)
+                  yield return new Dafny.LiteralExpr(op.tok, enumerator.Count);
               }
               yield break;
             case UnaryOpExpr.Opcode.Not:
