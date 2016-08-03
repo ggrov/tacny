@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using Microsoft.Boogie;
 using Microsoft.Dafny;
 //using LiteralExpr = Microsoft.Dafny.LiteralExpr;
 using Dafny = Microsoft.Dafny;
@@ -19,12 +20,14 @@ namespace Tacny {
     private readonly ProofState _state;
     private readonly ErrorReporter _errorReporter;
 
+    private static ErrorReporterDelegate _errorReporterDelegate;
+
     private readonly Dictionary<UpdateStmt, List<Statement>> _resultList;
-    private Interpreter(Program program) {
+    private Interpreter(Program program, Program unresolvedProgram = null) {
       Contract.Requires(tcce.NonNull(program));
       // initialize state
       _errorReporter = new ConsoleErrorReporter();
-      _state = new ProofState(program, _errorReporter);
+      _state = new ProofState(program, _errorReporter, unresolvedProgram);
       _frame = new Stack<Dictionary<IVariable, Type>>();
       _resultList = new Dictionary<UpdateStmt, List<Statement>>();
     }
@@ -37,13 +40,20 @@ namespace Tacny {
       Contract.Invariant(_errorReporter != null);
     }
 
-    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target) {
+    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
-      if (_i == null) {
-        _i = new Interpreter(program);
-      }
-      return _i.FindTacticApplication(target);
+      // TODO Re-Enable with more permanent solution
+      // Currently, if the interpreter is the same, static across calls, each time the interpreter is
+      //   needed, it will just re-use the previous proof states, frames etc. Which will likely cause
+      //   problems in the extension, where it is called many times consecutively.
+      //if (_i == null) {
+        _i = new Interpreter(program, unresolvedProgram);
+      //}
+      _errorReporterDelegate = erd;
+      var result = _i.FindTacticApplication(target);
+      _errorReporterDelegate = null;
+      return result;
     }
 
 
@@ -79,6 +89,11 @@ namespace Tacny {
     private void SearchBlockStmt(BlockStmt body) {
       Contract.Requires(tcce.NonNull(body));
 
+      // TODO Make sure this is an OK Thing to be doing
+      // Currently, if the proof list is not reset, then because it is static across
+      //   calls, it will start to build up old information, and the program will go
+      //   into a loop trying to figure out new fresh names for 'existing' methods.
+      BaseSearchStrategy.ResetProofList();
       _frame.Push(new Dictionary<IVariable, Type>());
       foreach (var stmt in body.Body) {
         if (stmt is VarDeclStmt) {
@@ -104,7 +119,15 @@ namespace Tacny {
           if (_state.IsTacticCall(us)) {
             var list = StackToDict(_frame);
             var result = ApplyTactic(_state, list, us);
-            _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
+
+            if (result != null)
+            {
+              _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
+            }
+            else
+            {
+              //TODO what should go here?
+            }
           }
         } else if (stmt is BlockStmt) {
             //TODO:
@@ -143,7 +166,7 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       state.InitState(tacticApplication, variables);
       var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
-      return search.Search(state).FirstOrDefault();
+      return search.Search(state, _errorReporterDelegate).FirstOrDefault();
     }
 
     public static IEnumerable<ProofState> ApplyNestedTactic(ProofState state, Dictionary<IVariable, Type> variables,
@@ -153,7 +176,7 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       state.InitState(tacticApplication, variables);
       var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, false);
-      foreach (var result in search.Search(state)) {
+      foreach (var result in search.Search(state, _errorReporterDelegate)) {
         var c = state.Copy();
         c.AddStatementRange(result.GetGeneratedCode());
         yield return c;
@@ -166,7 +189,7 @@ namespace Tacny {
       state.AddNewFrame(body);
       // call the search engine
       var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
-      search.Search(state);
+      search.Search(state, _errorReporterDelegate);
       state.RemoveFrame();
     }
 
@@ -307,11 +330,11 @@ namespace Tacny {
               }
               yield break;
             case UnaryOpExpr.Opcode.Not:
-              if (result is LiteralExpr) {
-                var lit = (LiteralExpr)result;
+              if (result is Dafny.LiteralExpr) {
+                var lit = (Dafny.LiteralExpr)result;
                 if (lit.Value is bool) {
                   // inverse the bool value
-                  yield return new LiteralExpr(op.tok, !(bool)lit.Value);
+                  yield return new Dafny.LiteralExpr(op.tok, !(bool)lit.Value);
                 } else {
                   Contract.Assert(false);
                   //TODO: error message
@@ -403,8 +426,8 @@ namespace Tacny {
             foreach (var result in EvaluateTacnyExpression(state, aps)) {
               state.AddLocal(declaration.Locals[index], result);
             }
-          } else if (exprRhs?.Expr is LiteralExpr) {
-            state.AddLocal(declaration.Locals[index], (LiteralExpr)exprRhs?.Expr);
+          } else if (exprRhs?.Expr is Dafny.LiteralExpr) {
+            state.AddLocal(declaration.Locals[index], (Dafny.LiteralExpr)exprRhs?.Expr);
           } else {
             state.AddLocal(declaration.Locals[index], exprRhs?.Expr);
           }
@@ -427,8 +450,8 @@ namespace Tacny {
           foreach (var result in EvaluateTacnyExpression(state, aps)) {
             state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, result);
           }
-        } else if (exprRhs?.Expr is LiteralExpr) {
-          state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, (LiteralExpr)exprRhs?.Expr);
+        } else if (exprRhs?.Expr is Dafny.LiteralExpr) {
+          state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, (Dafny.LiteralExpr)exprRhs?.Expr);
         } else {
           state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, exprRhs?.Expr);
         }

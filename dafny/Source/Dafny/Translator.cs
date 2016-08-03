@@ -96,11 +96,12 @@ namespace Microsoft.Dafny {
     ErrorReporter reporter;
     // TODO(wuestholz): Enable this once Dafny's recommended Z3 version includes changeset 0592e765744497a089c42021990740f303901e67.
     public bool UseOptimizationInZ3 { get; set; }
-
+    public static bool TacticEvaluationIsEnabled = true;
+    
     // used to pass the tactic evaluation result back to the visual studio extension
-    public Delegate TacnyDelegate;
+    private ErrorReporterDelegate _tacnyDelegate;
     [NotDelayed]
-    public Translator(ErrorReporter reporter, Delegate tacnyDelegate = null) {
+    public Translator(ErrorReporter reporter, ErrorReporterDelegate tacnyDelegate = null) {
       this.reporter = reporter;
       InsertChecksums = 0 < CommandLineOptions.Clo.VerifySnapshots;
       Bpl.Program boogieProgram = ReadPrelude();
@@ -108,7 +109,7 @@ namespace Microsoft.Dafny {
         sink = boogieProgram;
         predef = FindPredefinedDecls(boogieProgram);
       }
-      TacnyDelegate = tacnyDelegate;
+      _tacnyDelegate = tacnyDelegate;
     }
 
     // translation state
@@ -123,8 +124,8 @@ namespace Microsoft.Dafny {
     readonly ISet<string> abstractTypes = new HashSet<string>();
     readonly ISet<string> opaqueTypes = new HashSet<string>();
     FuelContext fuelContext = null;
-    Program program;
-
+    Program program, unresolvedProgram;
+    
     [ContractInvariantMethod]
     void ObjectInvariant()
     {
@@ -480,11 +481,12 @@ namespace Microsoft.Dafny {
       return new Bpl.IdentifierExpr(tok, var.AssignUniqueName(currentDeclaration.IdGenerator), TrType(var.Type));
     }
 
-    public Bpl.Program Translate(Program p) {
+    public Bpl.Program Translate(Program p, Program unresolved = null) {
       Contract.Requires(p != null);
       Contract.Ensures(Contract.Result<Bpl.Program>() != null);
 
       program = p;
+      unresolvedProgram = unresolved;
 
       if (sink == null || predef == null) {
         // something went wrong during construction, which reads the prelude; an error has
@@ -1465,8 +1467,8 @@ namespace Microsoft.Dafny {
           this.fuelContext = oldFuelContext;
         } else if (member is Method) {
           Method m = (Method)member;
-          if (m.CallsTactic) {
-            m = Tacny.Interpreter.FindAndApplyTactic(program, m) as Method;
+          if (TacticEvaluationIsEnabled && m.CallsTactic) {
+            m = Tacny.Interpreter.FindAndApplyTactic(program, m, _tacnyDelegate, unresolvedProgram) as Method;
           }
           FuelContext oldFuelContext = this.fuelContext;
           this.fuelContext = FuelSetting.NewFuelContext(m);
@@ -7503,7 +7505,8 @@ namespace Microsoft.Dafny {
           List<Bpl.IdentifierExpr> bLhss;
           // note: because we have more than one expression, we always must assign to Boogie locals in a two
           // phase operation. Thus rhssCanAffectPreviouslyKnownExpressions is just true.
-          Contract.Assert(1 < lhss.Count);
+          //Assuming is a tactic, we dont want to do anythign with a left hand side
+          //Contract.Assert(1 < lhss.Count);    //REENABLE THIS
 
           Bpl.Expr[] lhsObjs, lhsFields;
           string[] lhsNames;
@@ -7523,7 +7526,6 @@ namespace Microsoft.Dafny {
           }
           builder.Add(CaptureState(s));
         }
-
       } else if (stmt is AssignStmt) {
         AddComment(builder, stmt, "assignment statement");
         AssignStmt s = (AssignStmt)stmt;

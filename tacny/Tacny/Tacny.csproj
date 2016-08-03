@@ -78,7 +78,7 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>Signature.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>Tacny.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="BoogieBasetypes, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
@@ -86,18 +86,18 @@
       <HintPath>..\..\boogie\Binaries\BoogieBasetypes.dll</HintPath>
     </Reference>
     <Reference Include="BoogieConcurrency">
-      <HintPath>..\..\dafny\Binaries\BoogieConcurrency.dll</HintPath>
+      <HintPath>..\..\boogie\Binaries\BoogieConcurrency.dll</HintPath>
     </Reference>
     <Reference Include="BoogieCore, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\dafny\Binaries\BoogieCore.dll</HintPath>
+      <HintPath>..\..\boogie\Binaries\BoogieCore.dll</HintPath>
     </Reference>
     <Reference Include="BoogieExecutionEngine">
-      <HintPath>..\..\dafny\Binaries\BoogieExecutionEngine.dll</HintPath>
+      <HintPath>..\..\boogie\Binaries\BoogieExecutionEngine.dll</HintPath>
     </Reference>
     <Reference Include="BoogieParserHelper, Version=2.3.0.61016, Culture=neutral, PublicKeyToken=736440c9b414ea16, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\dafny\Binaries\BoogieParserHelper.dll</HintPath>
+      <HintPath>..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
     </Reference>
     <Reference Include="DafnyPipeline">
       <HintPath>..\..\dafny\Binaries\DafnyPipeline.dll</HintPath>
@@ -123,6 +123,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Signature.pfx" />
+    <None Include="Tacny.snk" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Language\" />

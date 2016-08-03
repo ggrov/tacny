@@ -6823,6 +6823,7 @@ namespace Microsoft.Dafny {
       bool isInitCall = receiverType != null;
 
       var callee = s.Method;
+      if (!isInitCall && callee is Constructor) {
       // ignore tactic application
       if (callee is ITactic) {
         if (codeContext is Method) {
@@ -6831,7 +6832,6 @@ namespace Microsoft.Dafny {
         return;
       }
       Contract.Assert(callee != null);  // follows from the invariant of CallStmt
-      if (!isInitCall && callee is Constructor) {
         reporter.Error(MessageSource.Resolver, s, "a constructor is allowed to be called only when an object is being allocated");
       }
 
