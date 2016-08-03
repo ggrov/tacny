@@ -28,11 +28,10 @@ namespace Tacny.Atomic {
         foreach (var item in suchThat.Lhss) {
           if (item is IdentifierExpr) {
             var id = (IdentifierExpr)item;
-            
             if (state.HasLocalValue(id.Name))
               locals.Add(id.Name);
             else {
-              
+              //TODO: error
             }
           }
         }

@@ -73,6 +73,7 @@ namespace Tacny {
         var arg = aps.Args[index];
         frame.AddLocalVariable(tactic.Ins[index].Name, arg);
       }
+
       _scope.Push(frame);
       FillSourceState(variables);
       TacticApplication = tacAps.Copy();

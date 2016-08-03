@@ -1,7 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using Microsoft.Dafny;
+using System.Numerics;
+using Microsoft.Boogie;
+using ExistsExpr = Microsoft.Dafny.ExistsExpr;
+using ForallExpr = Microsoft.Dafny.ForallExpr;
+using LiteralExpr = Microsoft.Dafny.LiteralExpr;
+using QuantifierExpr = Microsoft.Dafny.QuantifierExpr;
 
 namespace Tacny {
   /// <summary>
@@ -231,7 +238,7 @@ namespace Tacny {
       return nodes;
     }
 
-    public Expression TreeToExpression() {
+    public  Expression TreeToExpression() {
       Contract.Ensures(Contract.Result<Expression>() != null);
       if (IsLeaf())
         return Data;
@@ -341,6 +348,109 @@ namespace Tacny {
       if (node.RChild != null)
         node.RChild.Parent = node;
       return node;
+    }
+
+
+    protected Expression EvaluateExpression(ExpressionTree expt, ProofState state) {
+      Contract.Requires(expt != null);
+      if (expt.IsLeaf()) {
+        return EvaluateLeaf(expt, state) as LiteralExpr;
+      }
+      var bexp = (BinaryExpr) expt.Data;
+      if (BinaryExpr.IsEqualityOp(bexp.Op)) {
+        bool boolVal = EvaluateEqualityExpression(expt, state);
+        return new LiteralExpr(new Token(), boolVal);
+      }
+      var lhs = EvaluateExpression(expt.LChild,state) as LiteralExpr;
+      var rhs = EvaluateExpression(expt.RChild, state) as LiteralExpr;
+      // for now asume lhs and rhs are integers
+      var l = (BigInteger)lhs?.Value;
+      var r = (BigInteger)rhs?.Value;
+
+      BigInteger res = 0;
+
+
+      switch (bexp.Op) {
+        case BinaryExpr.Opcode.Sub:
+          res = BigInteger.Subtract(l, r);
+          break;
+        case BinaryExpr.Opcode.Add:
+          res = BigInteger.Add(l, r);
+          break;
+        case BinaryExpr.Opcode.Mul:
+          res = BigInteger.Multiply(l, r);
+          break;
+        case BinaryExpr.Opcode.Div:
+          res = BigInteger.Divide(l, r);
+          break;
+      }
+
+      return new LiteralExpr(lhs.tok, res);
+    }
+
+    public static bool EvaluateEqualityExpression(ExpressionTree expt, ProofState state) {
+      Contract.Requires(expt != null);
+      // if the node is leaf, cast it to bool and return
+      if (expt.IsLeaf()) {
+        var lit = EvaluateLeaf(expt, state) as LiteralExpr;
+        return lit?.Value is bool && (bool)lit.Value;
+      }
+      // left branch only
+      if (expt.LChild != null && expt.RChild == null)
+        return EvaluateEqualityExpression(expt.LChild, state);
+      // if there is no more nesting resolve the expression
+      if (expt.LChild.IsLeaf() && expt.RChild.IsLeaf()) {
+        LiteralExpr lhs = null;
+        LiteralExpr rhs = null;
+        lhs = (LiteralExpr) EvaluateLeaf(expt.LChild, state).FirstOrDefault();
+        rhs = EvaluateLeaf(expt.RChild, state).FirstOrDefault() as LiteralExpr;
+        if (lhs?.GetType() == rhs?.GetType())
+          return false;
+        var bexp = expt.Data as BinaryExpr;
+        int res = -1;
+        if (lhs?.Value is BigInteger) {
+          var l = (BigInteger)lhs.Value;
+          var r = (BigInteger)rhs?.Value;
+          res = l.CompareTo(r);
+        } else if (lhs?.Value is string) {
+          var l = (string)lhs.Value;
+          var r = rhs?.Value as string;
+          res = string.Compare(l, r, StringComparison.Ordinal);
+        } else if (lhs?.Value is bool) {
+          res = ((bool)lhs.Value).CompareTo(rhs?.Value != null && (bool)rhs?.Value);
+        }
+
+        switch (bexp.Op) {
+          case BinaryExpr.Opcode.Eq:
+            return res == 0;
+          case BinaryExpr.Opcode.Neq:
+            return res != 0;
+          case BinaryExpr.Opcode.Ge:
+            return res >= 0;
+          case BinaryExpr.Opcode.Gt:
+            return res > 0;
+          case BinaryExpr.Opcode.Le:
+            return res <= 0;
+          case BinaryExpr.Opcode.Lt:
+            return res < 0;
+        }
+      } else { // evaluate a nested expression
+
+        var bexp = expt.Data as BinaryExpr;
+        switch (bexp.Op) {
+          case BinaryExpr.Opcode.And:
+            return EvaluateEqualityExpression(expt.LChild, state) && EvaluateEqualityExpression(expt.RChild, state);
+          case BinaryExpr.Opcode.Or:
+            return EvaluateEqualityExpression(expt.LChild, state) || EvaluateEqualityExpression(expt.RChild, state);
+        }
+      }
+      return false;
+    }
+
+    public static IEnumerable<object> EvaluateLeaf(ExpressionTree expt, ProofState state) {
+      Contract.Requires(expt != null && expt.IsLeaf());
+      foreach (var item in Interpreter.EvaluateTacnyExpression(state, expt.Data))
+        yield return item;
     }
   }
 }
