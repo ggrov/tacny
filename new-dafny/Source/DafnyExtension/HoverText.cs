@@ -55,6 +55,9 @@ namespace DafnyLanguage
           quickInfoContent.Add(s);
         }
       }
+
+      if (applicableToSpan == null)
+        TacnyLanguage.TacticsHoverText.TestForAndAddHoverText(ref applicableToSpan, triggerPoint, _buffer, quickInfoContent);
     }
     public void Dispose()
     {

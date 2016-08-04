@@ -216,5 +216,9 @@ namespace DafnyLanguage
       // Output the message
       pane.OutputString(msg);
     }
+	
+	public bool ToggleTacticEvaluation() {
+      return TacnyLanguage.TacnyDriver.ToggleTacticEvaluation();
+    }
   }
 }

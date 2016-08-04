@@ -114,7 +114,7 @@ namespace Microsoft.Dafny
       { Contract.Assert(file != null);
         string extension = Path.GetExtension(file);
         if (extension != null) { extension = extension.ToLower(); }
-        if (extension == ".dfy") {
+        if (extension == ".dfy" || extension == ".tacny") {
           dafnyFiles.Add(file);
         }
         else if ((extension == ".cs") || (extension == ".dll")) {

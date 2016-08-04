@@ -8,7 +8,7 @@ if NOT "%errorlevel%"=="0" (
  echo Please reuse the script inside an MSBuild command prompt
  echo Default located under Start - Visual Studio - Tools
  echo ========================================================
- goto end
+ goto badend
 )
 
 echo "Testing NuGet..."
@@ -18,7 +18,7 @@ if NOT "%errorlevel%"=="0" (
  echo ====================================================
  echo Please install nuget command line and add it to path
  echo ====================================================
- goto end
+ goto badend
 )
 
 if "%1"=="all" ( goto boogie )
@@ -40,28 +40,24 @@ if NOT "%1"=="" (
 :boogie
  nuget restore boogie\Source\Boogie.sln
  msbuild boogie\Source\Boogie.sln /p:Configuration=Debug /p:Platform="Any CPU"
- if NOT "%errorlevel%"=="0" ( goto end )
+ if NOT "%errorlevel%"=="0" ( goto badend )
  if "%1"=="boogie" ( goto end )
  
-:dafnyprimary
- nuget restore dafny\Source\Dafny.sln
- msbuild dafny\Source\Dafny.sln /p:Configuration=Debug /p:Platform="Any CPU"
- if NOT "%errorlevel%"=="0" ( goto end )
- 
-:tacny
- nuget restore tacny\Tacny.sln
- msbuild tacny\Tacny.sln /p:Configuration=Debug /p:Platform="Any CPU"
- if NOT "%errorlevel%"=="0" ( goto end )
- 
 :dafnysecondary
- msbuild dafny\Source\Dafny.sln /p:Configuration=Debug /p:Platform="Any CPU"
- if NOT "%errorlevel%"=="0" ( goto end )
+ nuget restore new-dafny\Source\Dafny.sln
+ msbuild new-dafny\Source\Dafny.sln /p:Configuration=Debug /p:Platform="Any CPU"
+ if NOT "%errorlevel%"=="0" ( goto badend )
  if "%1"=="all" ( goto ext )
  if "%1"=="" ( goto ext )
  if NOT "%2"=="ext" ( goto end )
- 
+
 :ext
- nuget restore dafny\Source\DafnyExtension.sln
- msbuild dafny\Source\DafnyExtension.sln /p:Configuration=Debug /p:Platform="Any CPU"
+ nuget restore new-dafny\Source\DafnyExtension.sln
+ msbuild new-dafny\Source\DafnyExtension.sln /p:Configuration=Debug /p:Platform="Any CPU"
+ if NOT "%errorlevel%"=="0" ( goto badend )
 
 :end
+exit /b 0
+
+:badend
+exit /b 1

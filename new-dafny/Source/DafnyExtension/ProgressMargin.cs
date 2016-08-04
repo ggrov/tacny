@@ -12,6 +12,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using DafnyLanguage.TacnyLanguage;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
@@ -215,6 +216,7 @@ namespace DafnyLanguage
     }
 
     bool verificationInProgress;  // this field is protected by "this".  Invariant:  !verificationInProgress ==> bufferChangesPreVerificationStart.Count == 0
+    System.Threading.Tasks.Task verificationTask;
     public bool VerificationDisabled { get; private set; }
     bool isDiagnosingTimeouts;
     string lastRequestId;
@@ -349,7 +351,7 @@ namespace DafnyLanguage
       }
     }
 
-    void RunVerifier(Dafny.Program program, ITextSnapshot snapshot, string requestId, ResolverTagger errorListHolder, bool diagnoseTimeouts) {
+    private void RunVerifier(Dafny.Program program, ITextSnapshot snapshot, string requestId, ResolverTagger errorListHolder, bool diagnoseTimeouts) {
       Contract.Requires(program != null);
       Contract.Requires(snapshot != null);
       Contract.Requires(requestId != null);
@@ -368,46 +370,80 @@ namespace DafnyLanguage
       }
 
       DafnyDriver.SetDiagnoseTimeouts(diagnoseTimeouts);
+      errorListHolder.FatalVerificationError = null;
+      var tacticsErrorList = new List<Tacny.CompoundErrorInformation>();
+      var unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ParseAndTypeCheck(false);
+      var foundNonTacticError = false;
 
       try
       {
-        bool success = DafnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
+        bool success = TacnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
         {
-          if (!_disposed)
+          if (_disposed) return;
+
+          var tacticErrorInfo = errorInfo as Tacny.CompoundErrorInformation;
+          if (tacticErrorInfo!=null)
           {
-            errorInfo.BoogieErrorCode = null;
-            var isRecycled = false;
-            ITextSnapshot s = null;
-            if (errorInfo.OriginalRequestId != null)
-            {
-              isRecycled = errorInfo.OriginalRequestId != requestId;
-              RequestIdToSnapshot.TryGetValue(errorInfo.OriginalRequestId, out s);
-            }
-            if (s == null && errorInfo.RequestId != null)
-            {
-              RequestIdToSnapshot.TryGetValue(errorInfo.RequestId, out s);
-            }
-            if (s != null)
-            {
-              errorListHolder.AddError(new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1, ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(), System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename), errorInfo.ImplementationName, requestId);
-              foreach (var aux in errorInfo.Aux)
-              {
-                errorListHolder.AddError(new DafnyError(aux.Tok.filename, aux.Tok.line - 1, aux.Tok.col - 1, ErrorCategory.AuxInformation, aux.FullMsg, s, isRecycled, null, System.IO.Path.GetFullPath(_document.FilePath) == aux.Tok.filename), errorInfo.ImplementationName, requestId);
-              }
-            }
+            tacticsErrorList.Add(tacticErrorInfo);
+            return;
           }
-        });
+
+          errorInfo.BoogieErrorCode = null;
+          var isRecycled = false;
+          ITextSnapshot s = null;
+          if (errorInfo.OriginalRequestId != null)
+          {
+            isRecycled = errorInfo.OriginalRequestId != requestId;
+            RequestIdToSnapshot.TryGetValue(errorInfo.OriginalRequestId, out s);
+          }
+          if (s == null && errorInfo.RequestId != null)
+          {
+            RequestIdToSnapshot.TryGetValue(errorInfo.RequestId, out s);
+          }
+          if (s == null) return;
+
+          foundNonTacticError = true;
+          errorListHolder.AddError(
+            new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1,
+              ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(),
+              System.IO.Path.GetFullPath(_document.FilePath) == errorInfo.Tok.filename),
+            errorInfo.ImplementationName, requestId);
+          foreach (var aux in errorInfo.Aux)
+          {
+            errorListHolder.AddError(
+              new DafnyError(aux.Tok.filename, aux.Tok.line - 1, aux.Tok.col - 1, 
+                ErrorCategory.AuxInformation, aux.FullMsg, s, isRecycled, null, 
+                System.IO.Path.GetFullPath(_document.FilePath) == aux.Tok.filename),
+              errorInfo.ImplementationName, requestId);
+          }
+        }, unresolvedProgram);
         if (!success)
         {
-          errorListHolder.AddError(new DafnyError("$$program$$", 0, 0, ErrorCategory.InternalError, "Verification process error", snapshot, false), "$$program$$", requestId);
+          errorListHolder.AddError(
+            new DafnyError("$$program$$", 0, 0, ErrorCategory.InternalError, "Verification process error", snapshot, false),
+          "$$program$$", requestId);
         }
       }
       catch (Exception e)
       {
-        errorListHolder.AddError(new DafnyError("$$program$$", 0, 0, ErrorCategory.InternalError, "Verification process error: " + e.Message, snapshot, false), "$$program$$", requestId);
+        errorListHolder.FatalVerificationError = new DafnyError("$$program$$", 0, 0,
+          ErrorCategory.InternalError, "Fatal verification error: " + e.Message + "\n" + e.StackTrace, snapshot, false);
       }
       finally
       {
+        ITextSnapshot s;
+        RequestIdToSnapshot.TryGetValue(requestId, out s);
+        if (/*!foundNonTacticError*/true) {
+          try {
+            tacticsErrorList.ForEach(errorInfo => new TacticErrorReportingResolver(errorInfo)
+              .AddTacticErrors(errorListHolder, s, requestId, _document.FilePath));
+          } catch (TacticErrorResolutionException e) {
+            errorListHolder.AddError(
+              new DafnyError("$$program_tactics$$", 0, 0, ErrorCategory.InternalError,
+              "Error resolving tactics error " + e.Message + "\n" + e.StackTrace, snapshot, false),
+            "$$program_tactics$$", requestId);
+          }
+        }
         DafnyDriver.SetDiagnoseTimeouts(!diagnoseTimeouts);
       }
 

@@ -409,6 +409,11 @@ namespace DafnyLanguage
               ty = DafnyTokenKind.BuiltInType;
             } else {
               switch (s) {
+                #region tacny keywords
+                case "tactic":
+                case "tmatch":
+                case "tvar":
+                #endregion
                 #region keywords
                 case "abstract":
                 case "as":
