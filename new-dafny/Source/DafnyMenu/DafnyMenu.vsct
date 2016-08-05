@@ -168,14 +168,14 @@
       <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandTactics" priority="0x0100" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <Strings>
-          <ButtonText>Expand tactic under caret</ButtonText>
+          <ButtonText>Expand tactic under caret (F10)</ButtonText>
         </Strings>
       </Button>
       
       <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandRot" priority="0x0102" type="Button">
         <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
         <Strings>
-          <ButtonText>Read-only peek tactic under caret</ButtonText>
+          <ButtonText>Read-only peek tactic under caret (F9)</ButtonText>
         </Strings>
       </Button>
       
@@ -199,7 +199,7 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
-          <ButtonText>Expand this tactic</ButtonText>
+          <ButtonText>Expand this tactic (F10)</ButtonText>
         </Strings>
       </Button>
       
@@ -208,7 +208,7 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
-          <ButtonText>Read-only peek this tactic</ButtonText>
+          <ButtonText>Read-only peek this tactic (F9)</ButtonText>
         </Strings>
       </Button>
     </Buttons>
@@ -249,12 +249,13 @@
       <IDSymbol name="cmdidContextExpandRot" value="0x010d" />
     </GuidSymbol>
   </Symbols>
-
+  
+  <!-- Uncomment to allow User-Editable Shortcuts as opposed to hard-coded from command filter
   <KeyBindings>
     <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandTactics"    editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="T"/>
     <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandRot"        editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="Y"/>
     <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandAllTactics" editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="U"/>
     <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidToggleTacny"      editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="I"/>
-  </KeyBindings>                                                                                             
-                                                                                                             
+  </KeyBindings>
+  -->
 </CommandTable>                                                                                              

@@ -23,7 +23,7 @@ if NOT "%errorlevel%"=="0" (
 
 if "%1"=="all" ( goto boogie )
 if "%1"=="boogie" ( goto boogie )
-if "%1"=="dafny" ( goto dafnyprimary )
+if "%1"=="dafny" ( goto dafny )
 if "%1"=="ext" ( goto ext )
 
 if NOT "%1"=="" (
@@ -43,7 +43,7 @@ if NOT "%1"=="" (
  if NOT "%errorlevel%"=="0" ( goto badend )
  if "%1"=="boogie" ( goto end )
  
-:dafnysecondary
+:dafny
  nuget restore new-dafny\Source\Dafny.sln
  msbuild new-dafny\Source\Dafny.sln /p:Configuration=Debug /p:Platform="Any CPU"
  if NOT "%errorlevel%"=="0" ( goto badend )

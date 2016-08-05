@@ -37,8 +37,8 @@ namespace DafnyLanguage.TacnyLanguage
       Contract.Ensures(_tmpFailingMember != null);
       Contract.Ensures(!string.IsNullOrEmpty(_implTargetName));
       var proofState = errorInfo.S;
-      var tmpProgram = ((Tacny.CompoundErrorInformation)errorInfo.E).P;
-      var innerError = ((Tacny.CompoundErrorInformation)errorInfo.E).E;
+      var tmpProgram = ((CompoundErrorInformation)errorInfo.E).P;
+      var innerError = ((CompoundErrorInformation)errorInfo.E).E;
       var tmpModule = (DefaultClassDecl)tmpProgram.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
 
       _errTok = (Bpl.Token)innerError.Tok;
