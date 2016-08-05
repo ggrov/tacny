@@ -143,5 +143,10 @@ namespace DafnyLanguage
         }
       }
     }
+
+    public bool ToggleTacticEvaluation()
+    {
+      return TacnyLanguage.TacnyDriver.ToggleTacticEvaluation();
+    }
   }
 }

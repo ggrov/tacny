@@ -82,6 +82,7 @@ namespace DafnyLanguage
           return "compiler warning";  // COLOR: blue
         case ErrorCategory.InternalError:
         case ErrorCategory.VerificationError:
+        case ErrorCategory.TacticError:
           return "error";  // COLOR: red
         case ErrorCategory.AuxInformation:
           return "other error";  // COLOR: purple red
@@ -115,7 +116,6 @@ namespace DafnyLanguage
       Program = program;
     }
   }
-
   #endregion
 
 
@@ -128,13 +128,15 @@ namespace DafnyLanguage
     readonly ITextDocument _document;
     ErrorListProvider _errorProvider;
     private bool m_disposed;
+    private string _filename;
 
     // The 'Snapshot' and 'Program' fields should be updated and read together, so they are protected by "this"
     public ITextSnapshot Snapshot;  // may be null
     public Dafny.Program Program;  // non-null only if the snapshot contains a Dafny program that type checks
 
     List<DafnyError> _resolutionErrors = new List<DafnyError>();  // if nonempty, then _snapshot is the snapshot from which the errors were produced
-
+    public DafnyError FatalVerificationError { get; set; }
+    
     internal void AddError(DafnyError error, string unitId, string requestId)
     {
       ErrorContainer entry;
@@ -151,6 +153,14 @@ namespace DafnyLanguage
         entry.Errors.Push(error);
         UpdateErrorList(Snapshot);
       }
+      else if(unitId=="$$program_tactics$$") //These kinds of errors happen outside normal flow
+      {
+          entry = new ErrorContainer() {
+            RequestId = requestId
+          };
+          entry.Errors.Push(error);
+          _verificationErrors.TryAdd(unitId, entry);
+      }
     }
 
     string MostRecentRequestId;
@@ -165,11 +175,18 @@ namespace DafnyLanguage
         foreach (var key in outOfDatekeys)
         {
           ErrorContainer oldError;
+          if (key == "$$program_tactics$$")
+          {
+            if (!_verificationErrors.TryGetValue(key, out oldError)) continue;
+            if (oldError.RequestId != null &&
+                new DateTime(long.Parse(oldError.RequestId)) >= new DateTime(long.Parse(mostRecentRequestId))) continue;
+          }
           _verificationErrors.TryRemove(key, out oldError);
         }
 
         var newKeys = implNames.Except(_verificationErrors.Keys).ToList();
         newKeys.Add("$$program$$");
+        newKeys.Add("$$program_tactics$$");
         foreach (var key in newKeys)
         {
           _verificationErrors.TryAdd(key, new ErrorContainer());
@@ -213,6 +230,7 @@ namespace DafnyLanguage
               yield return err;
             }
           }
+          if(FatalVerificationError!=null) yield return FatalVerificationError;
         }
       }
     }
@@ -227,6 +245,7 @@ namespace DafnyLanguage
       Snapshot = null;  // this makes sure the next snapshot will look different
       _errorProvider = new ErrorListProvider(serviceProvider);
 
+      _filename = _document != null ? _document.FilePath : "<program>";
       BufferIdleEventUtil.AddBufferIdleEventListener(_buffer, ResolveBuffer);
     }
 
@@ -322,8 +341,8 @@ namespace DafnyLanguage
       if (snapshot == Snapshot)
         return;  // we've already done this snapshot
 
-      string filename = _document != null ? _document.FilePath : "<program>";
-      var driver = new DafnyDriver(_buffer, filename);
+      var driver = new DafnyDriver(_buffer, _filename);
+      
       List<DafnyError> newErrors;
       Dafny.Program program;
       try
@@ -333,7 +352,7 @@ namespace DafnyLanguage
       }
       catch (Exception e)
       {
-        newErrors = new List<DafnyError> { new DafnyError(filename, 0, 0, ErrorCategory.InternalError, "internal Dafny error: " + e.Message, snapshot, false) };
+        newErrors = new List<DafnyError> { new DafnyError(_filename, 0, 0, ErrorCategory.InternalError, "internal Dafny error: " + e.Message + "\n" + e.StackTrace, snapshot, false) };
         program = null;
       }
 
@@ -353,6 +372,7 @@ namespace DafnyLanguage
       }
 
       _resolutionErrors = newErrors;
+      FatalVerificationError = null;
 
       UpdateErrorList(snapshot);
     }
@@ -413,6 +433,7 @@ namespace DafnyLanguage
         case ErrorCategory.ResolveError:
         case ErrorCategory.VerificationError:
         case ErrorCategory.InternalError:
+        case ErrorCategory.TacticError:
           return TaskErrorCategory.Error;
         case ErrorCategory.ParseWarning:
         case ErrorCategory.ResolveWarning:
@@ -481,7 +502,7 @@ namespace DafnyLanguage
 
   public enum ErrorCategory
   {
-    ProcessError, ParseWarning, ParseError, ResolveWarning, ResolveError, VerificationError, AuxInformation, InternalError
+    ProcessError, ParseWarning, ParseError, ResolveWarning, ResolveError, VerificationError, AuxInformation, InternalError, TacticError
   }
 
   public class DafnyError

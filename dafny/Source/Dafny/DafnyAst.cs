@@ -1997,7 +1997,7 @@ namespace Microsoft.Dafny {
         if (cl != null) {
           foreach (var member in cl.Members) {
             var fn = member as Function;
-X            if (fn != null) {
+            if (fn != null) {
               yield return fn;
             }
           }

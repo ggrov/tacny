@@ -8,7 +8,9 @@
 
 datatype List<T> = Nil | Cons(head: T, tail: List<T>)
 
-function append(xs: List, ys: List): List
+function
+ append
+ (xs: List, ys: List): List
 {
   match xs
   case Nil => ys

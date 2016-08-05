@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
 
@@ -33,7 +34,7 @@ namespace DafnyLanguage.DafnyMenu
 
     bool AutomaticInductionCommandEnabled(IWpfTextView activeTextView);
 
-    
+
     bool StopVerifierCommandEnabled(IWpfTextView activeTextView);
 
 
@@ -65,8 +66,19 @@ namespace DafnyLanguage.DafnyMenu
 
 
     void DiagnoseTimeouts(IWpfTextView activeTextView);
+
+
+    bool ToggleTacticEvaluation();
   }
 
+  public interface ITacnyMenuProxy
+  {
+    bool ReplaceOneCall(IWpfTextView atv);
+
+    bool ShowRot(IWpfTextView atv);
+
+    bool ReplaceAll(ITextBuffer tb);
+  }
 
   /// <summary>
   /// This is the class that implements the package exposed by this assembly.
@@ -92,7 +104,6 @@ namespace DafnyLanguage.DafnyMenu
   [Guid(GuidList.guidDafnyMenuPkgString)]
   public sealed class DafnyMenuPackage : Package
   {
-
     private OleMenuCommand compileCommand;
     private OleMenuCommand menuCommand;
     private OleMenuCommand runVerifierCommand;
@@ -102,10 +113,17 @@ namespace DafnyLanguage.DafnyMenu
     private OleMenuCommand toggleAutomaticInductionCommand;
     private OleMenuCommand toggleBVDCommand;
     private OleMenuCommand diagnoseTimeoutsCommand;
+    private OleMenuCommand expandTacticsCommand;
+    private OleMenuCommand expandRotCommand;
+    private OleMenuCommand expandAllCommand;
+    private OleMenuCommand toggleCommand;
+    private OleMenuCommand contextExpandTacticsCommand;
+    private OleMenuCommand contextExpandRotCommand;
 
     bool BVDDisabled;
 
     public IMenuProxy MenuProxy { get; set; }
+    public ITacnyMenuProxy TacnyMenuProxy { get; set; }
 
 
     /// <summary>
@@ -183,11 +201,37 @@ namespace DafnyLanguage.DafnyMenu
         diagnoseTimeoutsCommand.BeforeQueryStatus += diagnoseTimeoutsCommand_BeforeQueryStatus;
         mcs.AddCommand(diagnoseTimeoutsCommand);
 
-        var menuCommandID = new CommandID(GuidList.guidDafnyMenuPkgSet, (int)PkgCmdIDList.cmdidMenu);
+        var menuCommandID = new CommandID(GuidList.guidDafnyMenuPkgSet, (int)PkgCmdIDList.DafnyMenu);
         menuCommand = new OleMenuCommand(new EventHandler((sender, e) => { }), menuCommandID);
         menuCommand.BeforeQueryStatus += menuCommand_BeforeQueryStatus;
         menuCommand.Enabled = true;
         mcs.AddCommand(menuCommand);
+        
+        var expandTacticsCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidExpandTactics);
+        expandTacticsCommand = new OleMenuCommand(TacticReplaceCallback, expandTacticsCommandId);
+        mcs.AddCommand(expandTacticsCommand);
+
+        var expandRotCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidExpandRot);
+        expandRotCommand = new OleMenuCommand(ShowRotCallback, expandRotCommandId);
+        mcs.AddCommand(expandRotCommand);
+
+        var expandAllCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidExpandAllTactics);
+        expandAllCommand = new OleMenuCommand(TacticReplaceAllCallback, expandAllCommandId);
+        mcs.AddCommand(expandAllCommand);
+
+        var toggleCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidToggleTacny);
+        toggleCommand = new OleMenuCommand(ToggleItemCallback, toggleCommandId);
+        mcs.AddCommand(toggleCommand);
+        
+        var contextExpandTacticsCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidContextExpandTactics);
+        contextExpandTacticsCommand = new OleMenuCommand(TacticReplaceCallback, contextExpandTacticsCommandId);
+        contextExpandTacticsCommand.BeforeQueryStatus += ContextCommandBeforeQuery;
+        mcs.AddCommand(contextExpandTacticsCommand);
+
+        var contextExpandRotCommandId = new CommandID(GuidList.guidTacnyMenuCmdSet, (int)PkgCmdIDList.cmdidContextExpandRot);
+        contextExpandRotCommand = new OleMenuCommand(ShowRotCallback, contextExpandRotCommandId);
+        contextExpandRotCommand.BeforeQueryStatus += ContextCommandBeforeQuery;
+        mcs.AddCommand(contextExpandRotCommand);
       }
     }
 
@@ -225,6 +269,7 @@ namespace DafnyLanguage.DafnyMenu
       }
     }
 
+    
     void ToggleSnapshotVerificationCallback(object sender, EventArgs e)
     {
       var atv = ActiveTextView;
@@ -324,7 +369,7 @@ namespace DafnyLanguage.DafnyMenu
         MenuProxy.Compile(atv);
       }
     }
-
+    
     void showErrorModelCommand_BeforeQueryStatus(object sender, EventArgs e)
     {
       var atv = ActiveTextView;
@@ -440,6 +485,49 @@ namespace DafnyLanguage.DafnyMenu
       return result;
     }
 
+    private void TacticReplaceCallback(object sender, EventArgs e)
+    {
+      var atv = ActiveTextView;
+      if (TacnyMenuProxy != null && atv != null)
+      {
+        TacnyMenuProxy.ReplaceOneCall(atv);
+      }
+    }
+
+    private void ShowRotCallback(object sender, EventArgs e)
+    {
+      var atv = ActiveTextView;
+      if (TacnyMenuProxy != null && atv != null)
+      {
+        TacnyMenuProxy.ShowRot(atv);
+      }
+    }
+
+    private void TacticReplaceAllCallback(object s, EventArgs e)
+    {
+      var atv = ActiveTextView;
+      if (TacnyMenuProxy != null && atv?.TextBuffer != null)
+      {
+        TacnyMenuProxy.ReplaceAll(atv.TextBuffer);
+      }
+    }
+
+    private void ToggleItemCallback(object sender, EventArgs e)
+    {
+      if (MenuProxy == null) return;
+      var result = MenuProxy.ToggleTacticEvaluation() ? "Disable" : "Enable";
+      toggleCommand.Text = result + " Automatic Tactic Verification";
+    }
+
+    private void ContextCommandBeforeQuery(object s, EventArgs e)
+    {
+      var atv = ActiveTextView;
+      var enabled = TacnyMenuProxy != null && atv?.TextBuffer != null && atv.TextBuffer.ContentType.IsOfType("dafny");
+      var contextCommand = s as OleMenuCommand;
+      if (contextCommand == null) return;
+      contextCommand.Visible = enabled;
+      contextCommand.Enabled = enabled;
+    }
     #endregion
   }
 }

@@ -1,0 +1,33 @@
+tactic mytac(x : nat){
+  //var x := 0;
+  //x := 5;
+  assert true;
+  assert true;
+  assert true;
+  tvar y := 6;
+  assert 5==5;
+  tvar m := false;
+  assume m; // true;
+ // var x := true;
+}
+
+tactic t(a:tac)
+{
+  assert true;
+  a();
+  assert true;
+}
+
+lemma mylemma()
+ ensures false
+ {
+  tactic{
+
+  }
+  mytac(6){:partial};
+  assert true;
+}
+
+tactic myothertac(){
+  assert true;
+}

@@ -56,6 +56,37 @@ namespace Tacny {
       return result;
     }
 
+    public static List<Statement> FindSingleTactic(Program program, MemberDecl target,
+      UpdateStmt chosenTacticCall, ErrorReporterDelegate erd, Program unresolvedProgram)
+    {
+      Contract.Requires(program != null);
+      Contract.Requires(target != null);
+      var i = new Interpreter(program, unresolvedProgram);
+      _errorReporterDelegate = erd;
+      var list = i.FindSingleTacticApplication(target, chosenTacticCall);
+      _errorReporterDelegate = null;
+      return list;
+    }
+
+    private List<Statement> FindSingleTacticApplication(MemberDecl target, UpdateStmt chosenTacticCall)
+    {
+      Contract.Requires(tcce.NonNull(target));
+      _frame = new Stack<Dictionary<IVariable, Type>>();
+      var method = target as Method;
+      if (method == null) return null;
+      _state.SetTopLevelClass(method.EnclosingClass?.Name);
+      _state.TargetMethod = target;
+      var dict = method.Ins.Concat(method.Outs)
+        .ToDictionary<IVariable, IVariable, Type>(item => item, item => item.Type);
+      _frame.Push(dict);
+      SearchBlockStmt(method.Body);
+      _frame.Pop();
+      Contract.Assert(_frame.Count == 0);
+      return (from r in _resultList
+              where r.Key.Tok.pos == chosenTacticCall.Tok.pos
+              select r.Value).FirstOrDefault();
+    }
+
 
     private MemberDecl FindTacticApplication(MemberDecl target) {
       Contract.Requires(tcce.NonNull(target));
@@ -110,7 +141,7 @@ namespace Tacny {
         } else if (stmt is IfStmt) {
           var ifStmt = stmt as IfStmt;
           SearchIfStmt(ifStmt);
-
+          
         } else if (stmt is WhileStmt) {
           var whileStmt = stmt as WhileStmt;
           SearchBlockStmt(whileStmt.Body);
@@ -119,7 +150,6 @@ namespace Tacny {
           if (_state.IsTacticCall(us)) {
             var list = StackToDict(_frame);
             var result = ApplyTactic(_state, list, us);
-
             if (result != null)
             {
               _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
@@ -249,7 +279,7 @@ namespace Tacny {
         if (state.HasLocalValue(ns.Name)) {
           yield return state.GetLocalValue(ns.Name);
         } else {
-          yield return ns;  
+          yield return ns;
         }
       } else if (expr is ApplySuffix) {
         var aps = (ApplySuffix)expr;
@@ -326,7 +356,7 @@ namespace Tacny {
               } else {
                 var enumerator = result as IList;
                 if (enumerator != null)
-                  yield return new LiteralExpr(op.tok, enumerator.Count);
+                  yield return new Dafny.LiteralExpr(op.tok, enumerator.Count);
               }
               yield break;
             case UnaryOpExpr.Opcode.Not:
@@ -435,7 +465,7 @@ namespace Tacny {
       }
       yield return state.Copy();
     }
-        
+
     private static IEnumerable<ProofState> UpdateLocalValue(UpdateStmt us, ProofState state) {
       Contract.Requires<ArgumentNullException>(us != null, "stmt");
       Contract.Requires<ArgumentNullException>(state != null, "state");

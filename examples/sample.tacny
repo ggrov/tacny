@@ -1,0 +1,22 @@
+method Section5RemarkThree(){
+  var x := false;
+  var y := true;
+  var z := give1();
+  invartac();
+}
+
+function method give1(): int{ 1 }
+
+tactic invartac() {
+  assert true;
+}
+
+lemma Another(x : nat)
+  ensures x > 10
+  {
+  invartac2();
+}
+
+tactic invartac2() {
+  assert true;
+}

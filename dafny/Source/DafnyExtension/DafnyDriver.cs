@@ -17,13 +17,13 @@ namespace DafnyLanguage
 
   public class DafnyDriver
   {
-    readonly string _filename;
-    readonly ITextSnapshot _snapshot;
-    readonly ITextBuffer _buffer;
-    Dafny.Program _program;
-    static object bufferDafnyKey = new object();
+    protected readonly string _filename;
+    protected readonly ITextSnapshot _snapshot;
+    protected readonly ITextBuffer _buffer;
+    protected Dafny.Program _program;
+    protected static object bufferDafnyKey = new object();
 
-    List<DafnyError> _errors = new List<DafnyError>();
+    protected List<DafnyError> _errors = new List<DafnyError>();
     public List<DafnyError> Errors { get { return _errors; } }
 
     public DafnyDriver(ITextBuffer buffer, string filename) {
@@ -163,7 +163,7 @@ namespace DafnyLanguage
       _errors.Add(new DafnyError(filename, line - 1, col - 1, cat, msg, _snapshot, isRecycled, null, System.IO.Path.GetFullPath(this._filename) == filename));
     }
 
-    class VSErrorReporter : Dafny.ErrorReporter
+    protected class VSErrorReporter : Dafny.ErrorReporter
     {
       DafnyDriver dd;
 
@@ -284,7 +284,7 @@ namespace DafnyLanguage
     }
 
     public static bool Verify(Dafny.Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er) {
-      Dafny.Translator translator = new Dafny.Translator(dafnyProgram.reporter);
+      Dafny.Translator translator = new Dafny.Translator(dafnyProgram.reporter, er);
       translator.InsertChecksums = true;
       translator.UniqueIdPrefix = uniqueIdPrefix;
       Bpl.Program boogieProgram = translator.Translate(dafnyProgram);
@@ -310,7 +310,7 @@ namespace DafnyLanguage
     /// else.  Hence, any resolution errors and type checking errors are due to errors in
     /// the translation.
     /// </summary>
-    static PipelineOutcome BoogiePipeline(Bpl.Program/*!*/ program, string programId, string requestId, ErrorReporterDelegate er)
+    protected static PipelineOutcome BoogiePipeline(Bpl.Program/*!*/ program, string programId, string requestId, ErrorReporterDelegate er)
     {
       Contract.Requires(program != null);
 

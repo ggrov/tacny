@@ -1,0 +1,15 @@
+tactic mytac(){
+  assert true;
+  assert true;
+  assert true;
+ // var x := true;
+}
+
+lemma mylemma(){
+  mytac();
+  assert true;
+}
+
+tactic myothertac(){
+  assert true;
+}

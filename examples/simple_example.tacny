@@ -1,0 +1,12 @@
+method m(){
+  var x := 0;
+  var r := 1;
+  var t := 2;
+  var f := 5;
+  t();
+}
+
+tactic t(){
+  var z :| z in variables();
+  assert z >= 0;
+}

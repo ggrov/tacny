@@ -96,9 +96,11 @@ namespace Microsoft.Dafny {
     ErrorReporter reporter;
     // TODO(wuestholz): Enable this once Dafny's recommended Z3 version includes changeset 0592e765744497a089c42021990740f303901e67.
     public bool UseOptimizationInZ3 { get; set; }
+    public static bool TacticEvaluationIsEnabled = true;
 
+    private ErrorReporterDelegate _tacnyDelegate;
     [NotDelayed]
-    public Translator(ErrorReporter reporter) {
+    public Translator(ErrorReporter reporter, ErrorReporterDelegate tacnyDelegate = null) {
       this.reporter = reporter;
       InsertChecksums = 0 < CommandLineOptions.Clo.VerifySnapshots;
       Bpl.Program boogieProgram = ReadPrelude();
@@ -106,6 +108,7 @@ namespace Microsoft.Dafny {
         sink = boogieProgram;
         predef = FindPredefinedDecls(boogieProgram);
       }
+      _tacnyDelegate = tacnyDelegate;
     }
 
     // translation state
@@ -120,7 +123,7 @@ namespace Microsoft.Dafny {
     readonly ISet<string> abstractTypes = new HashSet<string>();
     readonly ISet<string> opaqueTypes = new HashSet<string>();
     FuelContext fuelContext = null;
-    Program program;
+    Program program, unresolvedProgram;
 
     [ContractInvariantMethod]
     void ObjectInvariant()
@@ -477,11 +480,12 @@ namespace Microsoft.Dafny {
       return new Bpl.IdentifierExpr(tok, var.AssignUniqueName(currentDeclaration.IdGenerator), TrType(var.Type));
     }
 
-    public Bpl.Program Translate(Program p) {
+    public Bpl.Program Translate(Program p, Program unresolved = null) {
       Contract.Requires(p != null);
       Contract.Ensures(Contract.Result<Bpl.Program>() != null);
 
       program = p;
+      unresolvedProgram = unresolved;
 
       if (sink == null || predef == null) {
         // something went wrong during construction, which reads the prelude; an error has
@@ -1462,8 +1466,8 @@ namespace Microsoft.Dafny {
           this.fuelContext = oldFuelContext;
         } else if (member is Method) {
           Method m = (Method)member;
-            if (m.CallsTactic) {
-               m = Tacny.Interpreter.FindAndApplyTactic(program, m) as Method;
+            if (TacticEvaluationIsEnabled && m.CallsTactic) {
+            m = Tacny.Interpreter.FindAndApplyTactic(program, m, _tacnyDelegate, unresolvedProgram) as Method;
           }
           FuelContext oldFuelContext = this.fuelContext;
           this.fuelContext = FuelSetting.NewFuelContext(m);
