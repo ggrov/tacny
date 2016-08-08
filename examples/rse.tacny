@@ -1,15 +1,16 @@
 tactic mytac(){
   assert true;
   assert true;
-  assert true;
- // var x := true;
+  assume false;
+  //var x := true;
 }
 
 lemma mylemma(){
-  mytac();
+  myothertac();
   assert true;
 }
 
 tactic myothertac(){
   assert true;
+  assume false;
 }

@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
@@ -70,10 +71,12 @@ namespace DafnyLanguage.DafnyMenu
   public interface ITacnyMenuProxy
   {
     bool ReplaceOneCall(IWpfTextView atv);
-
     bool ShowRot(IWpfTextView atv);
-
     bool ReplaceAll(ITextBuffer tb);
+    void AddUpdaterForRot(IPeekSession session, Action<string> recalculate);
+    bool UpdateRot(string file, ITextSnapshot snapshot);
+    bool ClearPeekSession(IPeekSession session);
+    Tuple<string, string> GetExpandedForPeekSession(IPeekSession session);
   }
 
   /// <summary>

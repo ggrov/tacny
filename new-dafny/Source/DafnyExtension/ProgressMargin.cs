@@ -373,11 +373,11 @@ namespace DafnyLanguage
       errorListHolder.FatalVerificationError = null;
       var tacticsErrorList = new List<Tacny.CompoundErrorInformation>();
       var unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ParseAndTypeCheck(false);
-      var foundNonTacticError = false;
+      var success = true;
 
       try
       {
-        bool success = TacnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
+        success = TacnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
         {
           if (_disposed) return;
 
@@ -402,7 +402,6 @@ namespace DafnyLanguage
           }
           if (s == null) return;
 
-          foundNonTacticError = true;
           errorListHolder.AddError(
             new DafnyError(errorInfo.Tok.filename, errorInfo.Tok.line - 1, errorInfo.Tok.col - 1,
               ErrorCategory.VerificationError, errorInfo.FullMsg, s, isRecycled, errorInfo.Model.ToString(),
@@ -433,7 +432,8 @@ namespace DafnyLanguage
       {
         ITextSnapshot s;
         RequestIdToSnapshot.TryGetValue(requestId, out s);
-        if (/*!foundNonTacticError*/true) {
+        if (tacticsErrorList.Count>0){
+          success = false;
           try {
             tacticsErrorList.ForEach(errorInfo => new TacticErrorReportingResolver(errorInfo)
               .AddTacticErrors(errorListHolder, s, requestId, _document.FilePath));
@@ -452,6 +452,8 @@ namespace DafnyLanguage
         verificationInProgress = false;
       }
 
+      if (success) DafnyClassifier.DafnyMenuPackage.TacnyMenuProxy.UpdateRot(_document.FilePath, snapshot);
+      
       errorListHolder.UpdateErrorList(snapshot);
 
       // Notify to-whom-it-may-concern about the cleared pre-verification changes

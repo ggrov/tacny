@@ -57,14 +57,24 @@ namespace DafnyLanguage.TacnyLanguage
     TranslatorFail
   }
 
-  public class TacticReplacerProxy : ITacnyMenuProxy
+  internal class ActivePeekSessionData
+  {
+    public Action<string> Updater { get; set; }
+    public ITrackingPoint TriggerPoint { get; set; }
+    public string ExpandedTactic { get; set; }
+    public string ActiveTactic { get; set; }
+  }
+
+  internal class TacticReplacerProxy : ITacnyMenuProxy
   {
     private readonly IPeekBroker _pb;
+    private readonly Dictionary<string, ActivePeekSessionData> _activePeekSession;
 
     public TacticReplacerProxy(ITextDocumentFactoryService tdf, IServiceProvider isp, IPeekBroker pb) {
       Util.Status = (IVsStatusbar) isp.GetService(typeof(SVsStatusbar));
       Util.Tdf = tdf;
       _pb = pb;
+      _activePeekSession = new Dictionary<string, ActivePeekSessionData>();
     }
     
     public bool ReplaceOneCall(IWpfTextView atv)
@@ -86,20 +96,31 @@ namespace DafnyLanguage.TacnyLanguage
     {
       Contract.Assume(atv != null);
 
-      string testString;
+      string expanded;
       var caret = atv.Caret.Position.BufferPosition.Position;
+      var triggerPoint = atv.TextBuffer.CurrentSnapshot.CreateTrackingPoint(caret, PointTrackingMode.Positive);
       var tra = new TacticReplacerActor(atv.TextBuffer, caret);
       if (tra.LoadStatus != TacticReplaceStatus.Success) return Util.NotifyOfReplacement(tra.LoadStatus);
-      var status = tra.ExpandSingleTacticCall(caret, out testString);
+      var status = tra.ExpandSingleTacticCall(caret, out expanded);
       if (status != TacticReplaceStatus.Success)
         return Util.NotifyOfReplacement(status);
       
-      _pb.TriggerPeekSession(new PeekSessionCreationOptions(atv, RotPeekRelationship.SName, null, 0, false, null, false));
+      string file;
+      var fileLoaded = Util.LoadAndCheckDocument(atv.TextBuffer, out file);
+      if (!fileLoaded) return Util.NotifyOfReplacement(TacticReplaceStatus.NoDocumentPersistence);
+      
+      var session = _pb.CreatePeekSession(new PeekSessionCreationOptions(atv, RotPeekRelationship.SName, triggerPoint, 0, false, null, false));
+      _activePeekSession.Remove(file);
+      _activePeekSession.Add(file, new ActivePeekSessionData {
+        TriggerPoint = triggerPoint,
+        ExpandedTactic = expanded,
+        ActiveTactic = tra.ActiveTacticName
+      });
+      session.Start();
       return Util.NotifyOfReplacement(TacticReplaceStatus.Success);
     }
-
-    public bool ReplaceAll(ITextBuffer tb)
-    {
+    
+    public bool ReplaceAll(ITextBuffer tb) {
       Contract.Assume(tb != null);
 
       var tra = new TacticReplacerActor(tb);
@@ -125,16 +146,46 @@ namespace DafnyLanguage.TacnyLanguage
       return Util.NotifyOfReplacement(replaceStatus);
     }
 
-    public static string GetExpandedForRot(int position, ITextBuffer tb)
+    public void AddUpdaterForRot(IPeekSession session, Action<string> recalculate)
     {
-      Contract.Assume(tb != null);
-      string fullMethod;
-      var tra = new TacticReplacerActor(tb, position);
-      return tra.ExpandSingleTacticCall(position, out fullMethod)==TacticReplaceStatus.Success ? fullMethod : null;
-      //var splitMethod = fullMethod.Split('\n');
-      //return splitMethod.Where((t, i) => i >= 2 && i <= splitMethod.Length - 3).Aggregate("", (current, t) => current + t + "\n");
+      string file;
+      var fileLoaded = Util.LoadAndCheckDocument(session.TextView.TextBuffer, out file);
+      if (fileLoaded && _activePeekSession!=null && _activePeekSession.ContainsKey(file))
+        _activePeekSession[file].Updater = recalculate;
     }
 
+    public bool ClearPeekSession(IPeekSession session)
+    {
+      string file;
+      return Util.LoadAndCheckDocument(session.TextView.TextBuffer, out file) && _activePeekSession.Remove(file);
+    }
+
+    public bool UpdateRot(string file, ITextSnapshot snapshot)
+    {
+      if (string.IsNullOrEmpty(file) || _activePeekSession==null || !_activePeekSession.ContainsKey(file)) return false;
+      var session = _activePeekSession[file];
+      string expanded;
+      var position = session.TriggerPoint.GetPosition(snapshot);
+      var tra = new TacticReplacerActor(snapshot.TextBuffer, position);
+      if(tra.ActiveTacticName!=session.ActiveTactic) session.Updater?.Invoke(null);
+      if (tra.LoadStatus != TacticReplaceStatus.Success) return Util.NotifyOfReplacement(tra.LoadStatus);
+      var status = tra.ExpandSingleTacticCall(position, out expanded);
+      if (status != TacticReplaceStatus.Success)
+        return Util.NotifyOfReplacement(status);
+      session.ExpandedTactic = expanded;
+      session.Updater?.Invoke(expanded);
+      return true;
+    }
+
+    public Tuple<string, string> GetExpandedForPeekSession(IPeekSession session)
+    {
+      string file;
+      var status = Util.LoadAndCheckDocument(session.TextView.TextBuffer, out file);
+      if(!status) return null;
+      var storedSessionData = _activePeekSession[file];
+      return new Tuple<string, string>(storedSessionData.ExpandedTactic, storedSessionData.ActiveTactic);
+    }
+    
     public static string GetExpandedForPreview(int position, ITextBuffer buffer, ref SnapshotSpan methodName)
     {
       Contract.Assume(buffer != null);
@@ -148,18 +199,18 @@ namespace DafnyLanguage.TacnyLanguage
     }
   }
 
-  public static class Util
+  internal static class Util
   {
     public static ITextDocumentFactoryService Tdf;
     public static IVsStatusbar Status;
-
+    
     public static bool LoadAndCheckDocument(ITextBuffer tb, out string filePath)
     {
       Contract.Requires(tb != null);
       ITextDocument doc = null;
       Tdf?.TryGetTextDocument(tb, out doc);
       filePath = doc?.FilePath;
-      return !String.IsNullOrEmpty(filePath);
+      return !string.IsNullOrEmpty(filePath);
     }
 
     public static Program GetProgram(ITextBuffer tb, string file, bool resolved) => new TacnyDriver(tb, file).ParseAndTypeCheck(resolved);
@@ -198,18 +249,21 @@ namespace DafnyLanguage.TacnyLanguage
       return sa == sb;
     }
 
-    public static TacticReplaceStatus GetTacticCallAtPosition(Method m, int p, out Tuple<UpdateStmt, int, int> us) {
-      us = (from stmt in m?.Body.Body
-              let u = stmt as UpdateStmt
-              let rhs = u?.Rhss[0] as ExprRhs
-              let expr = rhs?.Expr as ApplySuffix
-              let name = expr?.Lhs as NameSegment
-              where name != null
-              let start = expr.tok.pos - name.Name.Length
-              let end = rhs.Tok.pos + 3
-              where start < p && p < end
-              select new Tuple<UpdateStmt, int, int>(stmt as UpdateStmt, start, end))
-              .FirstOrDefault();
+    public static TacticReplaceStatus GetTacticCallAtPosition(Method m, int p, out Tuple<UpdateStmt, int, int> us)
+    {
+      try {
+        us = (from stmt in m?.Body?.Body
+          let u = stmt as UpdateStmt
+          let rhs = u?.Rhss[0] as ExprRhs
+          let expr = rhs?.Expr as ApplySuffix
+          let name = expr?.Lhs as NameSegment
+          where name != null
+          let start = expr.tok.pos - name.Name.Length
+          let end = rhs.Tok.pos + 3
+          where start < p && p < end
+          select new Tuple<UpdateStmt, int, int>(stmt as UpdateStmt, start, end))
+          .FirstOrDefault();
+      } catch (ArgumentNullException){ us = null; }
       return us != null ? TacticReplaceStatus.Success : TacticReplaceStatus.NoTactic;
     }
 
@@ -252,7 +306,7 @@ namespace DafnyLanguage.TacnyLanguage
     }
   }
 
-  public class TacticReplacerActor
+  internal class TacticReplacerActor
   {
     private readonly Program _program, _unresolvedProgram;
     private readonly DefaultClassDecl _tld;
@@ -265,6 +319,8 @@ namespace DafnyLanguage.TacnyLanguage
     public int MemberNameStart => _member.tok.pos;
     public string MemberName => _member.CompileName;
     public bool MemberReady => _member!=null && _member.CallsTactic;
+    public string ActiveTacticName
+      => ((NameSegment) ((ApplySuffix) ((ExprRhs) _tacticCall.Item1.Rhss[0]).Expr).Lhs).Name;
     public TacticReplaceStatus LoadStatus;
 
     public TacticReplacerActor(ITextBuffer tb, int position = -1)

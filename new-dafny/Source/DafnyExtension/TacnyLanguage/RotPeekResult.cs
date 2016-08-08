@@ -17,6 +17,7 @@ namespace DafnyLanguage.TacnyLanguage
   internal class RotPeekResultPresenter : IPeekResultPresenter
   {
     public IPeekResultPresentation TryCreatePeekResultPresentation(IPeekResult result) {
+      
       return new RotPeekResultPresentation(result);
     }
   }
@@ -25,16 +26,18 @@ namespace DafnyLanguage.TacnyLanguage
 
   internal class RotPeekResult : IPeekResult
   {
-    public RotPeekResult(string expandedTactic)
+    public RotPeekResult(string expandedTactic, string activeTactic)
     {
       ExpandedTactic = expandedTactic;
+      _activeTactic = activeTactic;
     }
 
     public string ExpandedTactic;
-    private const string Title = "Expanded Tactics";
-    private const string Tip = "Text previewing expanded tactics";
+    private readonly string _activeTactic;
+    private const string Title = "Expanded Tactic";
+    private const string Tip = "Text previewing ";
 
-    public IPeekResultDisplayInfo DisplayInfo => new PeekResultDisplayInfo(Title, Tip, Title, Tip);
+    public IPeekResultDisplayInfo DisplayInfo => new PeekResultDisplayInfo(Title, Tip+Title, _activeTactic, Tip+_activeTactic);
     
     public void Dispose() {}
     public void NavigateTo(object data) {}
@@ -45,7 +48,8 @@ namespace DafnyLanguage.TacnyLanguage
 
   internal class RotPeekResultPresentation : IPeekResultPresentation, IDesiredHeightProvider
   {
-    private readonly string _expandedTactic;
+    private string _expandedTactic;
+    private IPeekSession _session;
     private TextBox _tb;
     private const double ExpectedFontSize = 12.0;
     private const double PeekBorders = 24.0;
@@ -60,6 +64,8 @@ namespace DafnyLanguage.TacnyLanguage
     public double DesiredHeight => TextHeight + PeekBorders;
 
     public UIElement Create(IPeekSession session, IPeekResultScrollState scrollState) {
+      _session = session;
+      DafnyClassifier.DafnyMenuPackage.TacnyMenuProxy.AddUpdaterForRot(_session, Recalculate);
       _tb = new TextBox {
         Text = _expandedTactic,
         Background = Brushes.AliceBlue,
@@ -69,6 +75,20 @@ namespace DafnyLanguage.TacnyLanguage
         MinHeight = TextHeight
       };
       return _tb;
+    }
+
+    private void Recalculate(string newExpanded)
+    {
+      _tb.Dispatcher.Invoke(() =>
+      {
+        if (newExpanded == null) {
+          _session.Dismiss();
+          return;
+        }
+        _tb.Text = _expandedTactic = newExpanded;
+        _tb.MinHeight = TextHeight;
+        DesiredHeightChanged?.Invoke(this, EventArgs.Empty);
+      });
     }
 
     public bool TryOpen(IPeekResult otherResult)
@@ -81,11 +101,13 @@ namespace DafnyLanguage.TacnyLanguage
       defaultPath = null;
       return false;
     }
+    
+    public void Close() {
+      DafnyClassifier.DafnyMenuPackage.TacnyMenuProxy.ClearPeekSession(_session);
+    }
 
     public IPeekResultScrollState CaptureScrollState() => new RotPeekResultScrollState();
     public void SetKeyboardFocus() => _tb.Focus();
-    
-    public void Close() {}
     public void Dispose() {}
     public void ScrollIntoView(IPeekResultScrollState scrollState) {}
 
@@ -95,10 +117,10 @@ namespace DafnyLanguage.TacnyLanguage
     public bool IsReadOnly => true;
 
     public double ZoomLevel { get; set; }
-    public event EventHandler<RecreateContentEventArgs> RecreateContent {add{} remove{}}
+    public event EventHandler<RecreateContentEventArgs> RecreateContent { add { } remove { } }
     public event EventHandler IsDirtyChanged {add{} remove{}}
     public event EventHandler IsReadOnlyChanged {add{} remove{}}
-    public event EventHandler<EventArgs> DesiredHeightChanged {add{} remove{}}
+    public event EventHandler<EventArgs> DesiredHeightChanged;
   }
 
   internal class RotPeekResultScrollState : IPeekResultScrollState
@@ -109,18 +131,19 @@ namespace DafnyLanguage.TacnyLanguage
 
   internal class RotPeekResultSource : IPeekResultSource
   {
-    private readonly string _relName, _expandedTactic;
+    private readonly string _relName, _expandedTactic, _activeTactic;
 
-    public RotPeekResultSource(string relationshipName, string expandedTactic)
+    public RotPeekResultSource(string relationshipName, string expandedTactic, string activeTactic)
     {
       _relName = relationshipName;
       _expandedTactic = expandedTactic;
+      _activeTactic = activeTactic;
     }
 
     public void FindResults(string relationshipName, IPeekResultCollection resultCollection, 
       CancellationToken cancellationToken, IFindPeekResultsCallback callback)
     {
-      if(relationshipName==_relName) resultCollection.Add(new RotPeekResult(_expandedTactic));
+      if(relationshipName==_relName) resultCollection.Add(new RotPeekResult(_expandedTactic, _activeTactic));
     }
   }
 }
