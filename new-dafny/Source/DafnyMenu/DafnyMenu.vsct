@@ -19,7 +19,7 @@
 
   <!--This header contains the command ids for the menus provided by the shell. -->
   <Extern href="vsshlids.h"/>
-
+  
   <!--The Commands section is where we the commands, menus and menu groups are defined.
       This section uses a Guid to identify the package that provides the command defined inside it. -->
   <Commands package="guidDafnyMenuPkg">
@@ -46,38 +46,43 @@
           <CommandName>Dafny</CommandName>
         </Strings>
       </Menu>
+    
+      <Menu guid="guidDafnyMenuPkg" id="RefactoringMenu" priority="0x700" type="Menu">
+        <Parent guid="guidDafnyMenuCmdSet" id="DafnyMenuGroup"/>
+        <Strings>
+          <CommandName>Refactoring</CommandName>
+        </Strings>
+      </Menu>
+          
+      <Menu guid="guidDafnyMenuPkg" id="RefactoringContextMenu" priority="0x700" type="Menu">
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CODEWIN_TEXTEDIT" />
+        <Strings>
+          <CommandName>Refactoring</CommandName>
+        </Strings>
+      </Menu>
     </Menus>
 
     <Groups>
       <Group guid="guidDafnyMenuCmdSet" id="DafnyMenuGroup" priority="0x0600">
         <Parent guid="guidDafnyMenuPkg" id="DafnyMenu"/>
       </Group>
-      <Group guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" priority="0x0610">
-        <Parent guid="guidDafnyMenuPkg" id="DafnyMenu"/>
+      <Group guid="guidRefactoringMenuCmdSet" id="RefactoringMenuGroup" priority="0x0610">
+        <Parent guid="guidDafnyMenuPkg" id="RefactoringMenu"/>
       </Group>
-      <Group guid="guidTacnyMenuPackageCmdSet" id="TacnyContextGroup" priority="0x0610">
-        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN" />
+      <Group guid="guidRefactoringMenuCmdSet" id="RefactoringContextGroup" priority="0x0610">
+        <Parent guid="guidDafnyMenuPkg" id="RefactoringContextMenu" />
       </Group>
     </Groups>
     
-    <!--Buttons section. -->
-    <!--This section defines the elements the user can interact with, like a menu command or a button 
-        or combo box in a toolbar. -->
     <Buttons>
-
-      <!--To define a menu group you have to specify its ID, the parent menu and its display priority. 
-          The command is visible and enabled by default. If you need to change the visibility, status, etc, you can use
-          the CommandFlag node.
-          You can add more than one CommandFlag node e.g.:
-              <CommandFlag>DefaultInvisible</CommandFlag>
-              <CommandFlag>DynamicVisibility</CommandFlag>
-          If you do not want an image next to your command, remove the Icon node /> -->
+      <!-- ################
+      Dafny Main Menu Items
+      ################# -->
 
       <Button guid="guidDafnyMenuCmdSet" id="cmdidCompile" priority="0x0100" type="Button">
         <Parent guid="guidDafnyMenuCmdSet" id="DafnyMenuGroup" />
-        <!--
-        <Icon guid="guidImages" id="bmpPic1" />
-        -->
         <Strings>
           <ButtonText>Compile</ButtonText>
         </Strings>
@@ -164,51 +169,69 @@
           <ButtonText>Re-verify to diagnose timeouts</ButtonText>
         </Strings>
       </Button>
-
-      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandTactics" priority="0x0100" type="Button">
-        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
-        <Strings>
-          <ButtonText>Expand tactic under caret (F10)</ButtonText>
-        </Strings>
-      </Button>
       
-      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandRot" priority="0x0102" type="Button">
-        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
-        <Strings>
-          <ButtonText>Read-only peek tactic under caret (F9)</ButtonText>
-        </Strings>
-      </Button>
+      <!-- #################
+      Refactoring Menu Items
+      ################## -->
       
-      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandAllTactics" priority="0x0103" type="Button">
-        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
+      <Button guid="guidRefactoringMenuCmdSet" id="cmdidExpandAllTactics" priority="0x0100" type="Button">
+        <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringMenuGroup" />
         <Strings>
           <ButtonText>Expand all tactics in file</ButtonText>
         </Strings>
       </Button>
 
-      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidToggleTacny" priority="0x0104" type="Button">
-        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyMenuGroup" />
+      <Button guid="guidRefactoringMenuCmdSet" id="cmdidToggleTacny" priority="0x0101" type="Button">
+        <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringMenuGroup" />
         <CommandFlag>TextChanges</CommandFlag>
         <Strings>
           <ButtonText>Disable automatic tactic verification</ButtonText>
         </Strings>
       </Button>
+
+      <Button guid="guidRefactoringMenuCmdSet" id="cmdidRemoveAllDeadCode" priority="0x0102" type="Button">
+        <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringMenuGroup" />
+        <Strings>
+          <ButtonText>Remove all dead code in file</ButtonText>
+        </Strings>
+      </Button>
       
-      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidContextExpandTactics" priority="0x0100" type="Button">
-        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyContextGroup" />
-        <CommandFlag>DefaultInvisible</CommandFlag>
+      <Button guid="guidRefactoringMenuCmdSet" id="cmdidToggleDeadCode" priority="0x0103" type="Button">
+        <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringMenuGroup" />
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Disable dead code analysis</ButtonText>
+        </Strings>
+      </Button>
+      
+      <!-- #########################
+      Refactoring Context Menu Items
+      ########################## -->
+      
+      <Button guid="guidRefactoringMenuCmdSet" id="cmdidContextExpandTactics" priority="0x0100" type="Button">
+        <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringContextGroup" />
         <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
           <ButtonText>Expand this tactic (F10)</ButtonText>
         </Strings>
       </Button>
       
-      <Button guid="guidTacnyMenuPackageCmdSet" id="cmdidContextExpandRot" priority="0x0101" type="Button">
-        <Parent guid="guidTacnyMenuPackageCmdSet" id="TacnyContextGroup" />
-        <CommandFlag>DefaultInvisible</CommandFlag>
+      <Button guid="guidRefactoringMenuCmdSet" id="cmdidContextExpandRot" priority="0x0101" type="Button">
+        <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringContextGroup" />
         <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
           <ButtonText>Read-only peek this tactic (F9)</ButtonText>
+        </Strings>
+      </Button>
+    
+      <Button guid="guidRefactoringMenuCmdSet" id="cmdidContextRemoveDeadCode" priority="0x0102" type="Button">
+        <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringContextGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>Remove this dead code</ButtonText>
         </Strings>
       </Button>
     </Buttons>
@@ -218,6 +241,8 @@
     <!-- This is the package guid. -->
     <GuidSymbol name="guidDafnyMenuPkg" value="{e1baf989-88a6-4acf-8d97-e0dc243476aa}">
       <IDSymbol name="DafnyMenu" value="0x1020" />
+      <IDSymbol name="RefactoringMenu" value="0x1021" />
+      <IDSymbol name="RefactoringContextMenu" value="0x1022" />
     </GuidSymbol>
 
     <!-- This is the guid used to group the menu commands together -->
@@ -236,26 +261,18 @@
       <IDSymbol name="cmdidDiagnoseTimeouts" value="0x107" />
     </GuidSymbol>
 
-    <GuidSymbol name="guidTacnyMenuPackageCmdSet" value="{6800196a-f13c-4bd6-a795-456a2eb74164}">
-      <IDSymbol name="TacnyMenuGroup" value="0x1022" />
-      <IDSymbol name="TacnyContextGroup" value="0x1023" />
+    <GuidSymbol name="guidRefactoringMenuCmdSet" value="{6800196a-f13c-4bd6-a795-456a2eb74164}">
+      <IDSymbol name="RefactoringMenuGroup" value="0x1020" />
+      <IDSymbol name="RefactoringContextGroup" value="0x1021" />
       
-      <IDSymbol name="cmdidExpandTactics" value="0x0108" />
-      <IDSymbol name="cmdidExpandRot" value="0x0109" />
-      <IDSymbol name="cmdidExpandAllTactics" value="0x010a" />
-      <IDSymbol name="cmdidToggleTacny" value="0x010b" />
+      <IDSymbol name="cmdidExpandAllTactics" value="0x100" />
+      <IDSymbol name="cmdidToggleTacny" value="0x101" />
+      <IDSymbol name="cmdidRemoveAllDeadCode" value="0x102" />
+      <IDSymbol name="cmdidToggleDeadCode" value="0x103" />
       
-      <IDSymbol name="cmdidContextExpandTactics" value="0x010c" />
-      <IDSymbol name="cmdidContextExpandRot" value="0x010d" />
+      <IDSymbol name="cmdidContextExpandTactics" value="0x110" />
+      <IDSymbol name="cmdidContextExpandRot" value="0x111" />
+      <IDSymbol name="cmdidContextRemoveDeadCode" value="0x112" />
     </GuidSymbol>
   </Symbols>
-  
-  <!-- Uncomment to allow User-Editable Shortcuts as opposed to hard-coded from command filter
-  <KeyBindings>
-    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandTactics"    editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="T"/>
-    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandRot"        editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="Y"/>
-    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidExpandAllTactics" editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="U"/>
-    <KeyBinding guid="guidTacnyMenuPackageCmdSet" id="cmdidToggleTacny"      editor="GUID_TextEditorFactory" mod1="Control" key1="0" mod2="Control" key2="I"/>
-  </KeyBindings>
-  -->
 </CommandTable>                                                                                              

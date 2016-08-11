@@ -12,7 +12,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using DafnyLanguage.TacnyLanguage;
+using DafnyLanguage.Refactoring;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
@@ -231,7 +231,7 @@ namespace DafnyLanguage
     /// </summary>
     public void UponIdle(object sender, EventArgs args) {
       lock (this) {
-        if (verificationInProgress) {
+        if (verificationInProgress || DeadAnnotationTagger.IsCurrentlyActive) {
           // This UponIdle message came at an inopportune time--we've already kicked off a verification.
           // Just back off.
           resolver.UpdateErrorList(resolver.Snapshot);

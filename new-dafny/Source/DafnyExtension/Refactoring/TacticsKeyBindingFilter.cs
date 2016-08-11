@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
 
-namespace DafnyLanguage.TacnyLanguage
+namespace DafnyLanguage.Refactoring
 {
   internal class TacticsKeyBindingFilter : IOleCommandTarget
   {

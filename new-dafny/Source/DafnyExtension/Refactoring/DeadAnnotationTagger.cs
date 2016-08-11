@@ -4,6 +4,7 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Windows.Threading;
+using DafnyLanguage.DafnyMenu;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Shell;
@@ -11,11 +12,13 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Adornments;
 using Microsoft.VisualStudio.Text.Classification;
+using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using Program = Microsoft.Dafny.Program;
+using shorty;
 
-namespace DafnyLanguage.TacnyLanguage
+namespace DafnyLanguage.Refactoring
 {
   #region mefprovider
   [Export(typeof(ITaggerProvider))]
@@ -92,23 +95,39 @@ namespace DafnyLanguage.TacnyLanguage
   #endregion tags
 
   #region dummyinterface
-  internal class DummyDeadAnnotationRemover
+  /*internal class DummyDeadAnnotationRemover
   {
+    /*
+     * List<> results = await ProcessMember
+     * 
+     * progress margin - later
+     *
+
+    private static void BeBusy(Action<uint, uint> notify = null) {
+      uint t = 1;
+      for (uint i = 0; i < t; i++) {
+        notify?.Invoke(i, t);
+        Thread.Sleep(100);
+      }
+    }
+
     // Returns an object representing a member that has been processed
     // null if failure
-    public DarResult ProcessMember(MemberDecl member, Program program) {
+    public DarResult ProcessMember(MemberDecl member, Program program) { //TODO multiple members
+      BeBusy();
       return new DarResult();
     }
 
     // Returns tuple
     // Item 1 = completed members
     // Item 2 = uncompleted members
-    public Tuple<List<DarResult>, List<MemberDecl>> ProcessProgram(Program program) {
+    public Tuple<List<DarResult>, List<MemberDecl>> ProcessProgram(Program program, Action<uint, uint> notify) {
+      BeBusy(notify);
       return new Tuple<List<DarResult>, List<MemberDecl>>(new List<DarResult> {new DarResult()}, new List<MemberDecl>());
     }
 
     // Returns if stop was successful
-    public bool Stop() {
+    public bool Stop() { //todo assume nothing ran, nothing worked
       return false;
     }
   }
@@ -131,54 +150,77 @@ namespace DafnyLanguage.TacnyLanguage
     public DarResult() {
       Removable = new List<Token> {new DummyToken(0, 0, 0, 4), new DummyToken(35, 0, 3, 5)};
     }
-  }
+  }*/
   #endregion dummyinterface
+
+  //on method edit, get rid of any 'dead' annotations
+
+
+  internal class DeadCodeMenuProxy : IDeadCodeMenuProxy
+  {
+    public void RemoveDeadCode(IWpfTextView tv) {
+      throw new NotImplementedException();
+      //get position
+      //look for spans under that position
+      //remove them
+      //update everything
+    }
+
+    public void RemoveAllDeadCode(IWpfTextView tv) {
+      throw new NotImplementedException();
+      //get all spans in snapshot for tv
+      //remove them
+      //update everything
+    }
+
+    public bool Toggle() {
+      DeadAnnotationTagger.Enabled = !DeadAnnotationTagger.Enabled;
+      return DeadAnnotationTagger.Enabled;
+    }
+  }
 
   internal class DeadAnnotationTagger : ITagger<DeadAnnotationTag>, IDisposable
   {
+    internal static bool Enabled = true;
+
     private readonly ITextBuffer _tb;
     private readonly IVsStatusbar _status;
     private readonly DispatcherTimer _timer;
     //private readonly ErrorListProvider _elp;
     private readonly IClassificationType _type;
-    private readonly DummyDeadAnnotationRemover _ddar;
     private readonly ITextDocumentFactoryService _tdf;
 
     private readonly List<DeadAnnotationTag> _deadAnnotations;
-    private readonly List<MemberDecl> _notProcessedMembers;
+    private readonly List<Tuple<MemberDecl, Program>> _notProcessedMembers;
     //private ITextSnapshot _lastRunSnapshot;
     private bool _hasNeverRun;
-    private bool _active;
+    private StopChecker _currentStopper;
+
+    public static bool IsCurrentlyActive { get; private set; }
 
     public DeadAnnotationTagger(ITextBuffer tb, IServiceProvider isp, ITextDocumentFactoryService tdf, IClassificationTypeRegistryService ctr) {
-      _ddar = new DummyDeadAnnotationRemover();
       //_elp = new ErrorListProvider(isp);
       _tb = tb;
       _tdf = tdf;
       _type = ctr.GetClassificationType("Dead Annotation");
       _status = (IVsStatusbar) isp.GetService(typeof(IVsStatusbar));
 
-      _notProcessedMembers = new List<MemberDecl>();
+      _notProcessedMembers = new List<Tuple<MemberDecl, Program>>();
       _deadAnnotations = new List<DeadAnnotationTag>();
       _hasNeverRun = true;
-      _active = false;
+      IsCurrentlyActive = false;
 
-      _timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle) { Interval = TimeSpan.FromSeconds(10) };
+      _timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle) { Interval = TimeSpan.FromSeconds(5) };
       _timer.Tick += Activate;
       _timer.Start();
     }
     
-    private class ThreadParams
+    private struct ThreadParams
     {
-      public ThreadParams(Program p, ITextSnapshot s, MemberDecl m = null) {
-        P = p;
-        M = m;
-        S = s;
-      }
-
-      public readonly Program P;
-      public readonly MemberDecl M;
-      public readonly ITextSnapshot S;
+      public Program P;
+      public ITextSnapshot S;
+      public Tuple<MemberDecl, Program> T;
+      public StopChecker Stop;
     }
 
     private string GetFilename(ITextBuffer tb = null) {
@@ -189,82 +231,104 @@ namespace DafnyLanguage.TacnyLanguage
     }
     
     public void Activate(object s, EventArgs e) {
-      _timer.Stop(); //TODO
-      var file = GetFilename();
-      if (string.IsNullOrEmpty(file)) return;
-      var driver = new DafnyDriver(_tb, file);
-      var program = driver.ProcessResolution(true);
-      if (program == null) return;
+      if (!Enabled || IsCurrentlyActive) return;
       
-      if (_active) return;
-      if (_hasNeverRun) InitialRun(program);
+      _currentStopper = new StopChecker(); //assuming if we got this far that any previosuly running dary has been stopped
+      if (_hasNeverRun) {
+        var file = GetFilename();
+        if (string.IsNullOrEmpty(file)) return;
+        var driver = new DafnyDriver(_tb, file);
+        var program = driver.ProcessResolution(true);
+        //if (program == null) return; //todo re-enable when we care about having a program
+        InitialRun(program);
+      }
       if (_notProcessedMembers.Count > 0) { 
         //TODO is there an efficiency consideration regarding just re-running for whole program if 85% havent yet been run
         var front = _notProcessedMembers[0];
         _notProcessedMembers.Remove(front);
-        ProcessOneMember(program, front);
+        ProcessOneMember(front);
       }
       FindChangedMembers();
     }
     
     private void FindChangedMembers() {
-     // var current = _tb.CurrentSnapshot; //TODO 
+      //TODO for now, do all or nothing.
+      // var current = _tb.CurrentSnapshot; //TODO 
       //do whatever progress margin does to tag changed lines
       //get the members for these changed lines
       //foreach member changed, add it to notProcessed
-      if(_notProcessedMembers.Count > 0) Activate(this, new EventArgs());
+      if (_notProcessedMembers.Count > 0) Activate(this, new EventArgs());
     }
 
-    private void NotifyStatus(bool active) {
-      _active = active;
-      var msg = active ? "Now checking for removable annotations" : "Annotation checking finished";
-      _status.SetText(msg);
+    private void NotifyStatus(uint completed, uint total) {
+      var tid = Thread.CurrentThread.ManagedThreadId;
+      _status.SetText(completed == total
+        ? $"Dead code analysis complete - #{tid}"
+        : $"Analysing code for dead annotations ({completed}/{total}) - #{tid}");
     }
-    
-    private void InitialRun(Program program) {
-      NotifyStatus(true);
+
+    private void InitialRun(Program program)
+    {
+      IsCurrentlyActive = true;
+      NotifyStatus(0, 1);
       //_lastRunSnapshot = _tb.CurrentSnapshot;
       var t = new Thread(InitialRunThreaded);
-      t.Start(new ThreadParams(program, _tb.CurrentSnapshot));
+      t.Start(new ThreadParams{P= program, S = _tb.CurrentSnapshot, Stop = _currentStopper});
     }
 
     private void InitialRunThreaded(object o) {
       var prog = ((ThreadParams) o).P;
       var snap = ((ThreadParams) o).S;
-      var results = _ddar.ProcessProgram(prog);
+      var stop = ((ThreadParams) o).Stop;
+      var dary = new Dary(stop);
+      var results = dary.ProcessProgram(prog);
       _hasNeverRun = false;
-      _notProcessedMembers.Clear();
-      _notProcessedMembers.AddRange(results.Item2);
-      NotifyStatus(false);
-      results.Item1.ForEach(ProcessValidResult);
-      TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(new SnapshotSpan(snap, 0, snap.Length)));
+      //_notProcessedMembers.Clear();
+      IsCurrentlyActive = false;
+      NotifyStatus(1, 1);
+      results.ForEach(ProcessValidResult);
+      TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(new SnapshotSpan(snap, 0, snap.Length))); //thread stop
     }
 
-    private void ProcessOneMember(Program p, MemberDecl m) {
-      NotifyStatus(true);
+    private void ProcessOneMember(Tuple<MemberDecl, Program> memberdata) {
+      IsCurrentlyActive = true;
+      NotifyStatus(0, 1);
       //_lastRunSnapshot = _tb.CurrentSnapshot;
       var t = new Thread(ProcessOneMemberThreaded);
-      t.Start(new ThreadParams(p, _tb.CurrentSnapshot, m));
+      t.Start(new ThreadParams {T = memberdata, S = _tb.CurrentSnapshot, Stop = _currentStopper}); //TODO make sure using right snapshot
     }
 
     private void ProcessOneMemberThreaded(object o) {
-      var prog = ((ThreadParams)o).P;
+      var tupledata = ((ThreadParams) o).T;
+      var original = tupledata.Item1;
+      var prog = tupledata.Item2;
       var snap = ((ThreadParams)o).S;
-      var original = ((ThreadParams)o).M;
-      var result = _ddar.ProcessMember(original, prog);
-      _notProcessedMembers.Remove(original);
-      NotifyStatus(false);
-      ProcessValidResult(result);
-      TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(new SnapshotSpan(snap, 0, snap.Length)));
+      var stop = ((ThreadParams)o).Stop;
+      var dary = new Dary(stop);
+      var result = dary.ProcessMembers(prog, new List<MemberDecl> {original});
+      _notProcessedMembers.Remove(tupledata);
+      IsCurrentlyActive = false;
+      NotifyStatus(1, 1);
+      ProcessValidResult(result[0]);
+      TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(new SnapshotSpan(snap, 0, snap.Length)));//todo only notify of updated lines
     }
 
-    private void ProcessValidResult(DarResult m) {
-      m.Removable.ForEach(t => _deadAnnotations.Add(
-        new DeadAnnotationTag(_tb.CurrentSnapshot, t.pos, ((DummyToken)t).Len, t.line, t.col, GetFilename(_tb), _type)
-      ));
+    private void ProcessValidResult(DaryResult r) {
+      //if()
+      //_deadAnnotations.Add(
+      //  new DeadAnnotationTag(_tb.CurrentSnapshot, r.StartPos, r.Length, r., t.col, GetFilename(_tb), _type)
+      //);
+    }
+
+    private void Interrupt() {//TODO
+      if (!IsCurrentlyActive) return;
+      //_ddar.Stop();
+      IsCurrentlyActive = false;
+      NotifyStatus(1, 1);
     }
 
     public void Dispose() {
+      //_ddar.Stop();
       _timer.Tick -= Activate; //TODO remove all error tasks here
       //var toRemove = (from object task in _elp.Tasks
       //                let dat = task as DeadAnnotationTask
@@ -285,7 +349,10 @@ namespace DafnyLanguage.TacnyLanguage
 
     public IEnumerable<ITagSpan<DeadAnnotationTag>> GetTags(NormalizedSnapshotSpanCollection spans) {
       //_deadAnnotations.ForEach(item => AddElpTask(item.Error));
-      return _deadAnnotations.Select(tag => new TagSpan<DeadAnnotationTag>(tag.Span, tag));
+      return from span in spans
+        from tag in _deadAnnotations
+        where span.OverlapsWith(tag.Span)
+        select new TagSpan<DeadAnnotationTag>(tag.Span, tag);
     }
 
     public event EventHandler<SnapshotSpanEventArgs> TagsChanged;

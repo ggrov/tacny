@@ -9,12 +9,12 @@ namespace DafnyLanguage.DafnyMenu
     public const string guidDafnyMenuPkgString = "e1baf989-88a6-4acf-8d97-e0dc243476aa";
     public const string guidDafnyMenuCmdSetString = "393ad46d-e125-41ce-84ee-b4d552d5ba16";
     public const string guidDanfyContextMenuCmdSetString = "5FC4BE4C-AB07-4FD2-A255-6E69E049C113";
-    public const string guidTacnyMenuCmdSetString = "6800196a-f13c-4bd6-a795-456a2eb74164";
+    public const string guidRefactoringMenuCmdSetString = "6800196a-f13c-4bd6-a795-456a2eb74164";
 
     public static readonly Guid guidDafnyMenuCmdSet = new Guid(guidDafnyMenuCmdSetString);
     public static readonly Guid guidDafnyMenuPkgSet = new Guid(guidDafnyMenuPkgString);
     public static readonly Guid guidDanfyContextMenuCmdSet = new Guid(guidDanfyContextMenuCmdSetString);
-    public static readonly Guid guidTacnyMenuCmdSet = new Guid(guidTacnyMenuCmdSetString);
+    public static readonly Guid guidRefactoringMenuCmdSet = new Guid(guidRefactoringMenuCmdSetString);
 
     public const string guidBvdToolboxPkgString = "8b93ddf6-009c-46b9-a0d2-628405a4e466";
     public const string guidBvdToolboxCmdSetString = "11635790-762b-495f-8c85-9de3a8fe91bd";

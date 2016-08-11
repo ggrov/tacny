@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 
-namespace DafnyLanguage.TacnyLanguage
+namespace DafnyLanguage.Refactoring
 {
 
   #region provider

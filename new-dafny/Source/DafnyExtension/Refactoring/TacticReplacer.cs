@@ -18,7 +18,7 @@ using Microsoft.VisualStudio.Utilities;
 using Printer = Microsoft.Dafny.Printer;
 using Program = Microsoft.Dafny.Program;
 
-namespace DafnyLanguage.TacnyLanguage
+namespace DafnyLanguage.Refactoring
 {
   [Export(typeof(IVsTextViewCreationListener))]
   [ContentType("dafny")]

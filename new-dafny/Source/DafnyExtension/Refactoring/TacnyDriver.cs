@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
+using Microsoft.Boogie;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Text;
-using Microsoft.Boogie;
 using Errors = Microsoft.Dafny.Errors;
 using Parser = Microsoft.Dafny.Parser;
 using Program = Microsoft.Dafny.Program;
 
-namespace DafnyLanguage.TacnyLanguage
+namespace DafnyLanguage.Refactoring
 {
   internal class TacnyDriver : DafnyDriver
   {

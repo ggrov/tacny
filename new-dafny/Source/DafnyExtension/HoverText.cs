@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
+using DafnyLanguage.Refactoring;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
@@ -57,7 +58,7 @@ namespace DafnyLanguage
       }
 
       if (applicableToSpan == null)
-        TacnyLanguage.TacticsHoverText.TestForAndAddHoverText(ref applicableToSpan, triggerPoint, _buffer, quickInfoContent);
+        TacticsHoverText.TestForAndAddHoverText(ref applicableToSpan, triggerPoint, _buffer, quickInfoContent);
     }
     public void Dispose()
     {

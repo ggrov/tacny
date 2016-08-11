@@ -11,7 +11,7 @@ using System.Threading;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Text.Tagging;
 
-namespace DafnyLanguage.TacnyLanguage
+namespace DafnyLanguage.Refactoring
 {
   [Export(typeof(ISuggestedActionsSourceProvider))]
   [Name("DeadAnnotationSuggestedActions")]
@@ -33,8 +33,6 @@ namespace DafnyLanguage.TacnyLanguage
     
     public DeadAnnotationSuggestedActionsSource(ITagAggregator<DeadAnnotationTag> aggregator) {
       _agg = aggregator;
-      if (SuggestedActionsChanged != null)
-        _agg.TagsChanged += new EventHandler<TagsChangedEventArgs>(SuggestedActionsChanged);
     }
 
     public Task<bool> HasSuggestedActionsAsync(ISuggestedActionCategorySet requestedActionCategories, SnapshotSpan range, CancellationToken cancellationToken) {
