@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -106,7 +105,7 @@ namespace DafnyLanguage
       ITagAggregator<IDafnyResolverTag> tagAggregator = AggregatorFactory.CreateTagAggregator<IDafnyResolverTag>(buffer);
       // create a single tagger for each buffer.
       Func<ITagger<T>> sc = delegate() { return new ProgressTagger(buffer, _serviceProvider, tagAggregator, _textDocumentFactory) as ITagger<T>; };
-      return buffer.Properties.GetOrCreateSingletonProperty<ITagger<T>>(sc);
+      return buffer.Properties.GetOrCreateSingletonProperty<ITagger<T>>(typeof(ProgressTagger), sc);
     }
   }
 
@@ -215,7 +214,7 @@ namespace DafnyLanguage
       }
     }
 
-    bool verificationInProgress;  // this field is protected by "this".  Invariant:  !verificationInProgress ==> bufferChangesPreVerificationStart.Count == 0
+    internal bool verificationInProgress;  // this field is protected by "this".  Invariant:  !verificationInProgress ==> bufferChangesPreVerificationStart.Count == 0
     System.Threading.Tasks.Task verificationTask;
     public bool VerificationDisabled { get; private set; }
     bool isDiagnosingTimeouts;
@@ -372,7 +371,7 @@ namespace DafnyLanguage
       DafnyDriver.SetDiagnoseTimeouts(diagnoseTimeouts);
       errorListHolder.FatalVerificationError = null;
       var tacticsErrorList = new List<Tacny.CompoundErrorInformation>();
-      var unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ParseAndTypeCheck(false);
+      var unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ReParse(false);
       var success = true;
 
       try

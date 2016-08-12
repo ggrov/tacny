@@ -168,7 +168,7 @@ namespace DafnyLanguage.DafnyMenu
       var mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
       if (null != mcs)
       {
-        // Create and add main Dafny menu items
+        #region main dafny menu items
         var compileCommandID = new CommandID(GuidList.guidDafnyMenuCmdSet, (int)PkgCmdIDList.cmdidCompile);
         compileCommand = new OleMenuCommand(CompileCallback, compileCommandID);
         compileCommand.Enabled = false;
@@ -232,8 +232,9 @@ namespace DafnyLanguage.DafnyMenu
         menuCommand.BeforeQueryStatus += menuCommand_BeforeQueryStatus;
         menuCommand.Enabled = true;
         mcs.AddCommand(menuCommand);
-        
-        // Refactoring main menu items
+        #endregion
+
+        #region refactoring menu
         var expandAllCommandId = new CommandID(GuidList.guidRefactoringMenuCmdSet, (int)PkgCmdIDList.cmdidExpandAllTactics);
         expandAllCommand = new OleMenuCommand(TacticReplaceAllCallback, expandAllCommandId);
         expandAllCommand.Visible = expandAllCommand.Enabled = true;
@@ -250,27 +251,26 @@ namespace DafnyLanguage.DafnyMenu
         var toggleDeadCodeCommandId = new CommandID(GuidList.guidRefactoringMenuCmdSet, (int)PkgCmdIDList.cmdidToggleDeadCode);
         toggleDeadCodeCommand = new OleMenuCommand(ToggleDeadCode, toggleDeadCodeCommandId);
         mcs.AddCommand(toggleDeadCodeCommand);
+        #endregion
 
-        // Refactoring context menu items
+        #region refactoring context menu
         var contextExpandTacticsCommandId = new CommandID(GuidList.guidRefactoringMenuCmdSet, (int)PkgCmdIDList.cmdidContextExpandTactics);
         contextExpandTacticsCommand = new OleMenuCommand(TacticReplaceCallback, contextExpandTacticsCommandId);
-        //contextExpandTacticsCommand.BeforeQueryStatus += ContextCommandBeforeQuery;
         mcs.AddCommand(contextExpandTacticsCommand);
 
         var contextExpandRotCommandId = new CommandID(GuidList.guidRefactoringMenuCmdSet, (int)PkgCmdIDList.cmdidContextExpandRot);
         contextExpandRotCommand = new OleMenuCommand(ShowRotCallback, contextExpandRotCommandId);
-        //contextExpandRotCommand.BeforeQueryStatus += ContextCommandBeforeQuery;
         mcs.AddCommand(contextExpandRotCommand);
 
         var contextRemoveDeadCodeCommandId = new CommandID(GuidList.guidRefactoringMenuCmdSet, (int)PkgCmdIDList.cmdidContextRemoveDeadCode);
         contextRemoveDeadCodeCommand = new OleMenuCommand(RemoveDeadCode, contextRemoveDeadCodeCommandId);
-        //contextRemoveDeadCodeCommand.BeforeQueryStatus += ContextCommandBeforeQuery;
         mcs.AddCommand(contextRemoveDeadCodeCommand);
 
         var ctxtCommandId = new CommandID(GuidList.guidDafnyMenuPkgSet, (int)PkgCmdIDList.RefactoringContextMenu);
         contextMenuCommand = new OleMenuCommand(new EventHandler((sender, e) => { }), ctxtCommandId);
         contextMenuCommand.BeforeQueryStatus += ContextCommandBeforeQuery;
         mcs.AddCommand(contextMenuCommand);
+        #endregion
       }
     }
 
@@ -308,7 +308,7 @@ namespace DafnyLanguage.DafnyMenu
       }
     }
 
-    
+    #region dafny menu methods
     void ToggleSnapshotVerificationCallback(object sender, EventArgs e)
     {
       var atv = ActiveTextView;
@@ -609,7 +609,9 @@ namespace DafnyLanguage.DafnyMenu
         }
       }
     }
+    #endregion
 
+    #region refactoring
     private void TacticReplaceCallback(object sender, EventArgs e)
     {
       var atv = ActiveTextView;
@@ -652,9 +654,7 @@ namespace DafnyLanguage.DafnyMenu
       if (cmd == null) return;
       cmd.Visible = cmd.Enabled = enabled;
     }
-
-    private void nothing(object s, EventArgs e) {}
-	
+    
     private void RemoveAllDeadCode(object s, EventArgs e) {
       var atv = ActiveTextView;
       if (atv != null) {
@@ -664,7 +664,7 @@ namespace DafnyLanguage.DafnyMenu
 	
     private void ToggleDeadCode(object s, EventArgs e)
     {
-      if (MenuProxy == null) return;
+      if (DeadCodeMenuProxy == null) return;
       var result = DeadCodeMenuProxy.Toggle() ? "Disable" : "Enable";
       toggleCommand.Text = result + " dead code analysis";
     }
@@ -673,9 +673,11 @@ namespace DafnyLanguage.DafnyMenu
     {
       var atv = ActiveTextView;
       if (atv != null) {
-        DeadCodeMenuProxy?.RemoveAllDeadCode(atv);
+        DeadCodeMenuProxy?.RemoveDeadCode(atv);
       }
     }
+    #endregion
+
     #endregion
   }
 }
