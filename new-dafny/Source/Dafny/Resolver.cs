@@ -2760,6 +2760,9 @@ namespace Microsoft.Dafny
       if (stmt.IsGhost) {
         return TailRecursionStatus.NotTailRecursive;
       }
+        if (stmt is TStatement) {
+                return TailRecursionStatus.NotTailRecursive;
+            }
       if (stmt is PrintStmt) {
       } else if (stmt is BreakStmt) {
       } else if (stmt is ReturnStmt) {
@@ -3500,6 +3503,9 @@ namespace Microsoft.Dafny
       public void Visit(Statement stmt, bool mustBeErasable) {
         Contract.Requires(stmt != null);
         Contract.Assume(!codeContext.IsGhost || mustBeErasable);  // (this is really a precondition) codeContext.IsGhost ==> mustBeErasable
+          if (stmt is TStatement) {
+              return;
+          }
 
         if (stmt is PredicateStmt) {
           stmt.IsGhost = true;
@@ -4629,9 +4635,10 @@ namespace Microsoft.Dafny
       try
       {
         currentMethod = m;
-
-        // Add in-parameters to the scope, but don't care about any duplication errors, since they have already been reported
-        scope.PushMarker();
+        if (m is Tactic)
+            return;
+                // Add in-parameters to the scope, but don't care about any duplication errors, since they have already been reported
+                scope.PushMarker();
         if (m.IsStatic) {
           scope.AllowInstance = false;
         }
