@@ -40,7 +40,8 @@ namespace Tacny {
       Contract.Invariant(_errorReporter != null);
     }
 
-    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null) {
+    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null)
+        {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
       // TODO Re-Enable with more permanent solution
@@ -181,14 +182,27 @@ namespace Tacny {
       return result;
     }
 
-
     public static ProofState ApplyTactic(ProofState state, Dictionary<IVariable, Type> variables,
       UpdateStmt tacticApplication) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
       Contract.Requires<ArgumentNullException>(tcce.NonNull(tacticApplication));
       Contract.Requires<ArgumentNullException>(state != null, "state");
       state.InitState(tacticApplication, variables);
-      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
+      /* check the partial attribute in the application call, should we check the def as well ? */
+      var if_total = true;
+
+        if (tacticApplication.Rhss[0].Attributes != null)
+        {
+            switch (tacticApplication.Rhss[0].Attributes.Name)
+            {
+                    case "partial":
+                    if_total = false;
+                    break;
+                    default: break;
+            }
+        }
+
+        var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, if_total);
       return search.Search(state, _errorReporterDelegate).FirstOrDefault();
     }
 

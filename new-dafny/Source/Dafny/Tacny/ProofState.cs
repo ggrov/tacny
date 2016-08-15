@@ -68,6 +68,7 @@ namespace Tacny {
       // clear the scope  
       _scope = new Stack<Frame>();
       var tactic = GetTactic(tacAps) as Tactic;
+
       var aps = ((ExprRhs) tacAps.Rhss[0]).Expr as ApplySuffix;
       if (aps.Args.Count != tactic.Ins.Count)
         Reporter.Error(MessageSource.Tacny, tacAps.Tok,
@@ -553,6 +554,8 @@ namespace Tacny {
               _reporter.Warning(MessageSource.Tacny, ((MemberDecl)ActiveTactic).tok, $"Unsupported search strategy {stratName}; Defaulting to DFS");
               TacticInfo.SearchStrategy = Strategy.Bfs;
             }
+            break;
+           case "partial":
             break;
           default:
             _reporter.Warning(MessageSource.Tacny, ((MemberDecl)ActiveTactic).tok, $"Unrecognized attribute {attr.Name}");
