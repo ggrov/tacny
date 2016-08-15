@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DafnyLanguage.Refactoring;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -218,7 +219,7 @@ namespace DafnyLanguage
     }
 	
 	public bool ToggleTacticEvaluation() {
-      return TacnyLanguage.TacnyDriver.ToggleTacticEvaluation();
+      return TacnyDriver.ToggleTacticEvaluation();
     }
   }
 }

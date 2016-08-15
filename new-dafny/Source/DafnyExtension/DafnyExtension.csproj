@@ -239,6 +239,9 @@
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="shorty">
+      <HintPath>..\..\..\..\shorty\shorty\bin\Debug\shorty.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
@@ -271,16 +274,17 @@
     <Compile Include="MenuProxy.cs" />
     <Compile Include="OutliningTagger.cs" />
     <Compile Include="ProgressMargin.cs" />
+    <Compile Include="Refactoring\RefactoringUtil.cs" />
     <Compile Include="ResolverTagger.cs" />
-    <Compile Include="TacnyLanguage\DeadAnnotationSuggestedAction.cs" />
-    <Compile Include="TacnyLanguage\DeadAnnotationTagger.cs" />
-    <Compile Include="TacnyLanguage\RotPeekableItem.cs" />
-    <Compile Include="TacnyLanguage\RotPeekResult.cs" />
-    <Compile Include="TacnyLanguage\TacnyDriver.cs" />
-    <Compile Include="TacnyLanguage\TacticErrorReportingResolver.cs" />
-    <Compile Include="TacnyLanguage\TacticReplacer.cs" />
-    <Compile Include="TacnyLanguage\TacticsHoverText.cs" />
-    <Compile Include="TacnyLanguage\TacticsKeyBindingFilter.cs" />
+    <Compile Include="Refactoring\DeadAnnotationSuggestedAction.cs" />
+    <Compile Include="Refactoring\DeadAnnotationTagger.cs" />
+    <Compile Include="Refactoring\RotPeekableItem.cs" />
+    <Compile Include="Refactoring\RotPeekResult.cs" />
+    <Compile Include="Refactoring\TacnyDriver.cs" />
+    <Compile Include="Refactoring\TacticErrorReportingResolver.cs" />
+    <Compile Include="Refactoring\TacticReplacer.cs" />
+    <Compile Include="Refactoring\TacticsHoverText.cs" />
+    <Compile Include="Refactoring\TacticsKeyBindingFilter.cs" />
     <Compile Include="TokenTagger.cs" />
     <Compile Include="WordHighlighter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

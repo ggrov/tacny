@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.Boogie;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Text;
-using Microsoft.Boogie;
 using Errors = Microsoft.Dafny.Errors;
 using Parser = Microsoft.Dafny.Parser;
 using Program = Microsoft.Dafny.Program;
 
-namespace DafnyLanguage.TacnyLanguage
+namespace DafnyLanguage.Refactoring
 {
   internal class TacnyDriver : DafnyDriver
   {
@@ -21,7 +22,7 @@ namespace DafnyLanguage.TacnyLanguage
       return _tacticEvaluationIsEnabled;
     }
     
-    public Program ParseAndTypeCheck(bool runResolver)
+    public Program ReParse(bool runResolver)
     {
       var errorReporter = new ConsoleErrorReporter();
       var module = new LiteralModuleDecl(new DefaultModuleDecl(), null);
@@ -37,6 +38,15 @@ namespace DafnyLanguage.TacnyLanguage
       var r = new Resolver(program);
       r.ResolveProgram(program);
       return errorReporter.Count(ErrorLevel.Error) == 0 ? program : null;
+    }
+
+    public bool GetExistingProgramFromBuffer(out Program program) {
+      program = null;
+      Tuple<ITextSnapshot, Program, List<DafnyError>> parseResult;
+      if (!_buffer.Properties.TryGetProperty(bufferDafnyKey, out parseResult) || (parseResult.Item1 != _snapshot))
+        return false;
+      program = parseResult.Item2;
+      return program!=null;
     }
 
     public static bool Verify(Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er, Program unresolvedProgram)

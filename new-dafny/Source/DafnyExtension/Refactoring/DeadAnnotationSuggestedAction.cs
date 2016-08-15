@@ -11,21 +11,24 @@ using System.Threading;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Text.Tagging;
 
-namespace DafnyLanguage.TacnyLanguage
+namespace DafnyLanguage.Refactoring
 {
+  #region mefprovider
   [Export(typeof(ISuggestedActionsSourceProvider))]
   [Name("DeadAnnotationSuggestedActions")]
   [ContentType("dafny")]
   internal class DeadAnnotationSuggestedActionsSourceProvider : ISuggestedActionsSourceProvider
   {
     [Import]
-    private IBufferTagAggregatorFactoryService _aggFactory;
+    internal IBufferTagAggregatorFactoryService AggFactory { get; set; }
 
     public ISuggestedActionsSource CreateSuggestedActionsSource(ITextView textView, ITextBuffer textBuffer) {
-      var aggregator = _aggFactory.CreateTagAggregator<DeadAnnotationTag>(textBuffer);
-      return new DeadAnnotationSuggestedActionsSource(aggregator);
+      var aggregator = AggFactory.CreateTagAggregator<DeadAnnotationTag>(textBuffer);
+      Func<DeadAnnotationSuggestedActionsSource> propertyObject = () => new DeadAnnotationSuggestedActionsSource(aggregator);
+      return textBuffer.Properties.GetOrCreateSingletonProperty(typeof(DeadAnnotationSuggestedActionsSource), propertyObject);
     }
   }
+  #endregion
 
   internal class DeadAnnotationSuggestedActionsSource : ISuggestedActionsSource
   {
@@ -33,8 +36,6 @@ namespace DafnyLanguage.TacnyLanguage
     
     public DeadAnnotationSuggestedActionsSource(ITagAggregator<DeadAnnotationTag> aggregator) {
       _agg = aggregator;
-      if (SuggestedActionsChanged != null)
-        _agg.TagsChanged += new EventHandler<TagsChangedEventArgs>(SuggestedActionsChanged);
     }
 
     public Task<bool> HasSuggestedActionsAsync(ISuggestedActionCategorySet requestedActionCategories, SnapshotSpan range, CancellationToken cancellationToken) {
@@ -66,9 +67,11 @@ namespace DafnyLanguage.TacnyLanguage
         : Enumerable.Empty<SuggestedActionSet>();
     }
 
-    public event EventHandler<EventArgs> SuggestedActionsChanged;
+    #region unused implementation
+    public event EventHandler<EventArgs> SuggestedActionsChanged { add{} remove{} }
     public void Dispose() {}
     public bool TryGetTelemetryId(out Guid telemetryId){telemetryId = Guid.Empty;return false;}
+    #endregion
   }
 
   internal class RemoveDeadAnnotationSuggestedAction : ISuggestedAction
@@ -85,7 +88,8 @@ namespace DafnyLanguage.TacnyLanguage
     public void Invoke(CancellationToken cancellationToken) {
       _tb.Replace(_snapSpan, "");
     }
-    
+
+    #region constant properties
     public Task<object> GetPreviewAsync(CancellationToken cancellationToken) => Task.FromResult<object>("");
     public Task<IEnumerable<SuggestedActionSet>> GetActionSetsAsync(CancellationToken cancellationToken) => Task.FromResult<IEnumerable<SuggestedActionSet>>(null);
     public bool HasActionSets => false;
@@ -95,6 +99,7 @@ namespace DafnyLanguage.TacnyLanguage
     public bool HasPreview => false;
     public void Dispose(){}
     public bool TryGetTelemetryId(out Guid telemetryId){telemetryId = Guid.Empty;return false;}
+    #endregion
   }
 
 
@@ -102,11 +107,9 @@ namespace DafnyLanguage.TacnyLanguage
   {
     private readonly ITextBuffer _tb;
     private readonly List<SnapshotSpan> _dead;
-
     public string DisplayText => $"Remove ALL dead annotations ({_dead.Count} found)";
 
-    public RemoveAllDeadAnnotationsSuggestedAction(ITextBuffer tb, List<SnapshotSpan> deadAnnotations)
-    {
+    public RemoveAllDeadAnnotationsSuggestedAction(ITextBuffer tb, List<SnapshotSpan> deadAnnotations) {
       _tb = tb;
       _dead = deadAnnotations;
     }
@@ -118,6 +121,7 @@ namespace DafnyLanguage.TacnyLanguage
       tedit.Apply();
     }
 
+    #region constant properties
     public Task<object> GetPreviewAsync(CancellationToken cancellationToken) => Task.FromResult<object>("");
     public Task<IEnumerable<SuggestedActionSet>> GetActionSetsAsync(CancellationToken cancellationToken) => Task.FromResult<IEnumerable<SuggestedActionSet>>(null);
     public bool HasActionSets => false;
@@ -127,5 +131,6 @@ namespace DafnyLanguage.TacnyLanguage
     public bool HasPreview => false;
     public void Dispose() { }
     public bool TryGetTelemetryId(out Guid telemetryId) { telemetryId = Guid.Empty; return false; }
+    #endregion
   }
 }

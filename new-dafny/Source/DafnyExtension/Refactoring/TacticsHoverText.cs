@@ -2,7 +2,7 @@
 using System.Diagnostics.Contracts;
 using Microsoft.VisualStudio.Text;
 
-namespace DafnyLanguage.TacnyLanguage
+namespace DafnyLanguage.Refactoring
 {
   internal static class TacticsHoverText
   {

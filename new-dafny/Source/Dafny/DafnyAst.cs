@@ -4016,7 +4016,7 @@ namespace Microsoft.Dafny {
   }
  
  
-  public class TacticVarDeclStmt : Statement {
+  public class TacticVarDeclStmt : TStatement {
     public readonly List<LocalVariable> Locals;
     public readonly ConcreteUpdateStatement Update;
     [ContractInvariantMethod]

@@ -181,6 +181,7 @@ namespace Tacny {
       }
       return result;
     }
+ 
 
     public static ProofState ApplyTactic(ProofState state, Dictionary<IVariable, Type> variables,
       UpdateStmt tacticApplication) {

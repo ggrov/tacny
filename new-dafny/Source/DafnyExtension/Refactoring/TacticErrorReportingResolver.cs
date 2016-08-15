@@ -2,12 +2,12 @@
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Bpl = Microsoft.Boogie;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Text;
 using Tacny;
+using Bpl = Microsoft.Boogie;
 
-namespace DafnyLanguage.TacnyLanguage
+namespace DafnyLanguage.Refactoring
 {
   internal class TacticErrorResolutionException : Exception
   {
