@@ -215,7 +215,7 @@ namespace DafnyLanguage
     }
 
     internal bool verificationInProgress;  // this field is protected by "this".  Invariant:  !verificationInProgress ==> bufferChangesPreVerificationStart.Count == 0
-    System.Threading.Tasks.Task verificationTask;
+    //System.Threading.Tasks.Task verificationTask;
     public bool VerificationDisabled { get; private set; }
     bool isDiagnosingTimeouts;
     string lastRequestId;

@@ -24,8 +24,7 @@ namespace DafnyLanguage.Refactoring
       string file;
       if(!LoadAndCheckDocument(tb, out file)) return false;
       var driver = new TacnyDriver(tb, file);
-      Program program;
-      return driver.GetExistingProgramFromBuffer(out program);
+      return driver.GetExistingProgramFromBuffer(out p);
     }
 
     public static Program GetReparsedProgram(ITextBuffer tb, string file, bool resolved) => new TacnyDriver(tb, file).ReParse(resolved);

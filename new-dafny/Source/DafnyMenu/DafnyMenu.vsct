@@ -192,7 +192,7 @@
       <Button guid="guidRefactoringMenuCmdSet" id="cmdidRemoveAllDeadCode" priority="0x0102" type="Button">
         <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringMenuGroup" />
         <Strings>
-          <ButtonText>Remove all dead code in file</ButtonText>
+          <ButtonText>Remove ALL dead code in file</ButtonText>
         </Strings>
       </Button>
       

@@ -12,7 +12,7 @@ tactic invartac() {
 }
 
 lemma Another(x : nat)
- // ensures x > 10
+  //ensures x > 10
   {
   invartac2();
 }

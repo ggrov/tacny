@@ -662,11 +662,10 @@ namespace DafnyLanguage.DafnyMenu
       }
     }
 	
-    private void ToggleDeadCode(object s, EventArgs e)
-    {
+    private void ToggleDeadCode(object s, EventArgs e) {
       if (DeadCodeMenuProxy == null) return;
       var result = DeadCodeMenuProxy.Toggle() ? "Disable" : "Enable";
-      toggleCommand.Text = result + " dead code analysis";
+      toggleDeadCodeCommand.Text = result + " dead code analysis";
     }
 	
     private void RemoveDeadCode(object s, EventArgs e)

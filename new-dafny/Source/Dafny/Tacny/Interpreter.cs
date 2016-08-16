@@ -44,13 +44,9 @@ namespace Tacny {
         {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
-      // TODO Re-Enable with more permanent solution
-      // Currently, if the interpreter is the same, static across calls, each time the interpreter is
-      //   needed, it will just re-use the previous proof states, frames etc. Which will likely cause
-      //   problems in the extension, where it is called many times consecutively.
-      //if (_i == null) {
+      if (_i == null) {
         _i = new Interpreter(program, unresolvedProgram);
-      //}
+      }
       _errorReporterDelegate = erd;
       var result = _i.FindTacticApplication(target);
       _errorReporterDelegate = null;

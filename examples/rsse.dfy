@@ -1,7 +1,7 @@
 lemma tryThis()
 {
 assert true;
-assert true;
+  assert true;
 //tt();
 }
 
@@ -9,6 +9,7 @@ method meth(){
 tryThis();
 }
 
-tactic tt(){
+tactic tt()
+{
 assert true;
 }
