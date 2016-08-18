@@ -11,6 +11,12 @@ namespace DafnyLanguage.Refactoring
   {
     public static ITextDocumentFactoryService Tdf;
 
+    public static DefaultClassDecl GetTld(Program p) => 
+      (from tld in p?.DefaultModuleDef.TopLevelDecls
+        let test = tld as DefaultClassDecl
+        where test != null
+        select test).FirstOrDefault();
+
     public static bool LoadAndCheckDocument(ITextBuffer tb, out string filePath) {
       Contract.Requires(tb != null);
       ITextDocument doc = null;

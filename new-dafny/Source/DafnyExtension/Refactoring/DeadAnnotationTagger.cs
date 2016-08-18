@@ -135,22 +135,25 @@ namespace DafnyLanguage.Refactoring
     private readonly ITextBuffer _tb;
     private readonly IVsStatusbar _status;
     private readonly DispatcherTimer _timer;
-    private readonly List<int> _changesSinceLastRun;
+    private readonly List<int> _changesSinceLastSuccessfulRun;
     private readonly List<DeadAnnotationTag> _deadAnnotations;
 
     private ProgressTagger _pt;
+    private bool _lastRunFailed;
+    private int _lastRunChangeCount;
     private bool _hasNeverRun = true;
     private StopChecker _currentStopper;
 
     public static bool IsCurrentlyActive { get; private set; }
     private static object _activityLock;
+    private bool LastRunFailedAndNoChangesMade => _lastRunFailed && _changesSinceLastSuccessfulRun.Count <= _lastRunChangeCount;
 
     public DeadAnnotationTagger(ITextBuffer tb, IVsStatusbar status) {
       _activityLock = _activityLock ?? new object();
 
       _tb = tb;
       _status = status;
-      _changesSinceLastRun = new List<int>();
+      _changesSinceLastSuccessfulRun = new List<int>();
       _deadAnnotations = new List<DeadAnnotationTag>();
       _tb.Properties.TryGetProperty(typeof(ProgressTagger), out _pt);
       
@@ -162,37 +165,40 @@ namespace DafnyLanguage.Refactoring
     
     #region events
     private void IdleTick(object s, EventArgs e) {
-      lock (_activityLock)
-      {
-        if (!Enabled || IsCurrentlyActive || !IsProgressTaggerSafe()) return;
-      }
+      if (!Monitor.TryEnter(_activityLock)) return;
+      var safe = Enabled && !IsCurrentlyActive && IsProgressTaggerSafe();
+      Monitor.Exit(_activityLock);
+      if (!safe) return;
+
       _currentStopper = new StopChecker();
-      if (_hasNeverRun) {
+      if (_hasNeverRun && !LastRunFailedAndNoChangesMade) {
         ProcessProgram();
-      } else if (_changesSinceLastRun.Count > 0) {
+      } else if (_changesSinceLastSuccessfulRun.Count > 0 && !LastRunFailedAndNoChangesMade) {
         ProcessSomeMembers();
+      } else {
+        NotifyStatusbar(DeadAnnotationStatus.NoChanges);
       }
     }
 
     private void BufferChangedInterrupt(object s, TextContentChangedEventArgs e) {
-      lock (_activityLock)
-      {
-        if (IsCurrentlyActive) {
+      if (IsCurrentlyActive) {
+        lock (_activityLock) {
           IsCurrentlyActive = false;
           _currentStopper.Stop = true;
-        } else {
-          _timer.Stop();
-          _timer.Start();
         }
+      } else {
+        _timer.Stop();
+        _timer.Start();
       }
-      if (_hasNeverRun) return;
       foreach (var change in e.Changes.ToList()) {
-        _changesSinceLastRun.Add(change.NewPosition);
+        _changesSinceLastSuccessfulRun.Add(change.NewPosition);
         _deadAnnotations.RemoveAll(x => {
           var originalSpan = new SnapshotSpan(x.ReplacementSpan.Start, x.ReplacementSpan.End);
           return originalSpan.OverlapsWith(change.OldSpan) || originalSpan.OverlapsWith(change.NewSpan);
         });
+        //_deadAnnotations.Clear(); //todo clear all or just those changed, just those in method...?
       }
+      if (_hasNeverRun) return;
       TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(new SnapshotSpan(_tb.CurrentSnapshot, 0, _tb.CurrentSnapshot.Length)));
     }
 
@@ -205,13 +211,13 @@ namespace DafnyLanguage.Refactoring
 
     #region status
     private enum DeadAnnotationStatus {
-      Started, Finished, UserInterrupt, DaryFail
+      Started, Finished, UserInterrupt, DaryFail, DaryFailInvalid, NoChanges, NoProgram
     }
 
     private void NotifyStatusbar(DeadAnnotationStatus status) {
       var tid = Thread.CurrentThread.ManagedThreadId;
       string s;
-      switch (status)
+      switch (status) //todo be more silent when tool is finalised
       {
         case DeadAnnotationStatus.Started:
           s = $"Dead code analysis started - #{tid}";
@@ -224,6 +230,15 @@ namespace DafnyLanguage.Refactoring
           break;
         case DeadAnnotationStatus.DaryFail:
           s = $"Dead code analysis interrupted - #{tid}";
+          break;
+        case DeadAnnotationStatus.DaryFailInvalid:
+          s = $"Dead code analysis interrupted due to invalid program - #{tid}";
+          break;
+        case DeadAnnotationStatus.NoChanges:
+          s = $"Dead code analysis not run as no changes - #{tid}";
+          break;
+        case DeadAnnotationStatus.NoProgram:
+          s = $"Dead code analysis could not run as no program - #{tid}";
           break;
         default:
           throw new cce.UnreachableException();
@@ -274,6 +289,7 @@ namespace DafnyLanguage.Refactoring
       Begin();
       Program program;
       if (!RefactoringUtil.GetExistingProgram(_tb, out program)) {
+        NotifyStatusbar(DeadAnnotationStatus.NoProgram);
         Finish();
         return;
       }
@@ -288,19 +304,23 @@ namespace DafnyLanguage.Refactoring
       var stop = ((ThreadParams) o).Stop;
       var dary = new Dary(stop);
       List<DaryResult> results;
+      _lastRunChangeCount = _changesSinceLastSuccessfulRun.Count;
       try {
         results = dary.ProcessProgram(prog);
-      } catch (Exception) {
-        NotifyStatusbar(DeadAnnotationStatus.DaryFail);
+      } catch (NotValidException) {
+        _lastRunFailed = true;
+        NotifyStatusbar(DeadAnnotationStatus.DaryFailInvalid);
         Finish();
         return;
       }
+      _lastRunFailed = false;
       if (_currentStopper.Stop) {
         NotifyStatusbar(DeadAnnotationStatus.UserInterrupt);
         Finish();
         return;
       }
       _hasNeverRun = false;
+      _changesSinceLastSuccessfulRun.Clear();
       lock (_deadAnnotations) {
         results.ForEach(ProcessValidResult);
       }
@@ -313,17 +333,19 @@ namespace DafnyLanguage.Refactoring
       Begin();
       Program p;
       if (!RefactoringUtil.GetExistingProgram(_tb, out p)) {
+        NotifyStatusbar(DeadAnnotationStatus.NoProgram);
         Finish();
         return;
       }
       var notProcessedMembers = new List<MemberDecl>();
-      var tld = p?.DefaultModuleDef.TopLevelDecls.FirstOrDefault() as DefaultClassDecl;
-      _changesSinceLastRun.ForEach(i => {
+      var tld = RefactoringUtil.GetTld(p);
+      _changesSinceLastSuccessfulRun.ForEach(i => {
         MemberDecl md;
         RefactoringUtil.GetMemberFromPosition(tld, i, out md);
         if (md != null && !notProcessedMembers.Contains(md)) notProcessedMembers.Add(md);
       });
       if (tld == null || notProcessedMembers.Count == 0) {
+        NotifyStatusbar(DeadAnnotationStatus.NoChanges);
         Finish();
         return;
       }
@@ -339,21 +361,24 @@ namespace DafnyLanguage.Refactoring
       var mds = ((ThreadParams) o).M;
       var dary = new Dary(stop);
       List<DaryResult> results;
+      _lastRunChangeCount = _changesSinceLastSuccessfulRun.Count;
       try {
         results = dary.ProcessMembers(prog, mds);
-      } catch (Exception) {
-        NotifyStatusbar(DeadAnnotationStatus.DaryFail);
+      } catch (NotValidException) {
+        _lastRunFailed = true;
+        NotifyStatusbar(DeadAnnotationStatus.DaryFailInvalid);
         Finish();
         return;
       }
+      _lastRunFailed = false;
       if (_currentStopper.Stop) {
         NotifyStatusbar(DeadAnnotationStatus.UserInterrupt);
         Finish();
         return;
       }
-      _changesSinceLastRun.Clear();
-      lock (_deadAnnotations)
-      {
+      _changesSinceLastSuccessfulRun.Clear();
+      lock (_deadAnnotations) {
+        _deadAnnotations.Clear(); //todo should we clear all or just those that are changed/updated
         results.ForEach(ProcessValidResult);
       }
       TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(new SnapshotSpan(snap, 0, snap.Length)));
@@ -363,19 +388,27 @@ namespace DafnyLanguage.Refactoring
 
     private void ProcessValidResult(DaryResult r) {
       var replacement = FindReplacement(r.Replace);
+      var warnPos = new Tuple<int, int>(r.StartTok.pos, r.Length);
       var repPos = ReplacementPositions(r);
-      var tag = new DeadAnnotationTag(_tb.CurrentSnapshot, r.StartTok.pos, r.Length, repPos.Item1, repPos.Item2, replacement);
+      var tag = new DeadAnnotationTag(_tb.CurrentSnapshot, warnPos.Item1, warnPos.Item2, repPos.Item1, repPos.Item2, replacement);
       _deadAnnotations.Add(tag);
     }
 
-    private Tuple<int, int> ReplacementPositions(DaryResult r) {
+    private static Tuple<int, int> ReplacementPositions(DaryResult r) {
+      //possible cases:
+      // we remove the entire line: indents, expressions, statements, semis, newlines
+      //    \- we are replacing:  indents, expressions, statements, semis, newlines; with ""
+      // we are replacing: code, semi; with a new code, semi
+      // we remove part of a line that is within something else: code
+      //     \- we are replacing: code; with ""
+
       var replaceStart = r.StartTok.pos;
       var replaceLength = r.Length;
-      if (r.Replace != null) return new Tuple<int, int>(replaceStart, replaceLength);
+      //if (r.Replace != null) replaceLength; //return new Tuple<int, int>(replaceStart, replaceLength + 1);
 
-      var line = _tb.CurrentSnapshot.GetLineFromPosition(replaceStart);
-      replaceStart = line.Start;
-      replaceLength = line.LengthIncludingLineBreak;
+      //var line = _tb.CurrentSnapshot.GetLineFromPosition(replaceStart);
+      //replaceStart = line.Start;
+      //replaceLength = line.LengthIncludingLineBreak;
       return new Tuple<int, int>(replaceStart, replaceLength);
     }
 
@@ -385,12 +418,12 @@ namespace DafnyLanguage.Refactoring
       var pr = new Printer(sr);
       if (replacement is Statement) {
         var stmt = (Statement)replacement;
-        pr.PrintStatement(stmt, 4);
+        pr.PrintStatement(stmt, 0);
       } else if (replacement is MaybeFreeExpression) {
         var mfe = (MaybeFreeExpression)replacement;
-        pr.PrintExpression(mfe.E, mfe.IsFree); //todo test this one
+        pr.PrintExpression(mfe.E, mfe.IsFree); //todo test this one, does it have a ';' to trim?
       }
-      return sr.ToString();
+      return sr.ToString().TrimEnd(';');
     }
     #endregion
 
