@@ -288,6 +288,11 @@ namespace Tacny {
       return _scope.Peek().GetLocalValue(key);
     }
 
+    public bool HasLocalValue(NameSegment key) {
+      Contract.Requires<ArgumentNullException>(key != null, "key");
+      return HasLocalValue(key.Name);
+    }
+
     /// <summary>
     /// Check if Tacny variable has been declared
     /// </summary>
@@ -583,10 +588,6 @@ namespace Tacny {
           throw new ArgumentException($"{variable} is already declared in the scope");
         }
       }
-
-
-
-
 
       internal void UpdateVariable(IVariable key, object value) {
         Contract.Requires<ArgumentNullException>(key != null, "key");

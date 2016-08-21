@@ -179,6 +179,8 @@
     <Compile Include="Tacny\EAtomic\VariablesEAtomic.cs" />
     <Compile Include="Tacny\ExpressionTree.cs" />
     <Compile Include="Tacny\Interpreter.cs" />
+    <Compile Include="Tacny\Language\FlowControlStmt.cs" />
+    <Compile Include="Tacny\Language\IfStmt.cs" />
     <Compile Include="Tacny\ProofState.cs" />
     <Compile Include="Tacny\SearchFramework.cs" />
     <Compile Include="Tacny\Solution.cs" />
@@ -232,7 +234,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Tacny\Language\" />
     <Folder Include="Tacny\Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

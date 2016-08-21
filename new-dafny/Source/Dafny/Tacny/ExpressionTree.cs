@@ -238,7 +238,7 @@ namespace Tacny {
       return nodes;
     }
 
-    public  Expression TreeToExpression() {
+    public Expression TreeToExpression() {
       Contract.Ensures(Contract.Result<Expression>() != null);
       if (IsLeaf())
         return Data;
@@ -356,12 +356,12 @@ namespace Tacny {
       if (expt.IsLeaf()) {
         return EvaluateLeaf(expt, state) as LiteralExpr;
       }
-      var bexp = (BinaryExpr) expt.Data;
+      var bexp = (BinaryExpr)expt.Data;
       if (BinaryExpr.IsEqualityOp(bexp.Op)) {
         bool boolVal = EvaluateEqualityExpression(expt, state);
         return new LiteralExpr(new Token(), boolVal);
       }
-      var lhs = EvaluateExpression(expt.LChild,state) as LiteralExpr;
+      var lhs = EvaluateExpression(expt.LChild, state) as LiteralExpr;
       var rhs = EvaluateExpression(expt.RChild, state) as LiteralExpr;
       // for now asume lhs and rhs are integers
       var l = (BigInteger)lhs?.Value;
@@ -402,7 +402,7 @@ namespace Tacny {
       if (expt.LChild.IsLeaf() && expt.RChild.IsLeaf()) {
         LiteralExpr lhs = null;
         LiteralExpr rhs = null;
-        lhs = (LiteralExpr) EvaluateLeaf(expt.LChild, state).FirstOrDefault();
+        lhs = (LiteralExpr)EvaluateLeaf(expt.LChild, state).FirstOrDefault();
         rhs = EvaluateLeaf(expt.RChild, state).FirstOrDefault() as LiteralExpr;
         if (lhs?.GetType() == rhs?.GetType())
           return false;
@@ -451,6 +451,30 @@ namespace Tacny {
       Contract.Requires(expt != null && expt.IsLeaf());
       foreach (var item in Interpreter.EvaluateTacnyExpression(state, expt.Data))
         yield return item;
+    }
+
+    public static bool IsResolvable(ExpressionTree expt, ProofState state) {
+      Contract.Requires(expt.IsRoot());
+      var leafs = expt.GetLeafData();
+      if (leafs == null) throw new ArgumentNullException(nameof(leafs));
+
+      foreach (var leaf in leafs) {
+        if (leaf is NameSegment) {
+          var ns = leaf as NameSegment;
+          if (state.HasLocalValue(ns)) {
+            var local = state.GetLocalValue(ns);
+            if (local is ApplySuffix || local is IVariable || local is NameSegment || local is Statement)
+              return false;
+          } else {
+            return false;
+          }
+        } else if (!(leaf is LiteralExpr)) {
+          if (leaf is ApplySuffix) {
+            return false;
+          }
+        }
+      }
+      return true;
     }
   }
 }

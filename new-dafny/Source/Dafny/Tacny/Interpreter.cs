@@ -50,6 +50,8 @@ namespace Tacny {
       _errorReporterDelegate = erd;
       var result = _i.FindTacticApplication(target);
       _errorReporterDelegate = null;
+        //var p = new Printer(Console.Out);
+        //p.PrintMembers(new List<MemberDecl>() {result}, 0, "");
       return result;
     }
 
@@ -229,8 +231,7 @@ namespace Tacny {
 
     public static IEnumerable<ProofState> EvalStep(ProofState state) {
       Contract.Requires<ArgumentNullException>(state != null, "state");
-      // one step
-      // call the 
+
       IEnumerable<ProofState> enumerable = null;
       var stmt = state.GetStmt();
       if (stmt is TacticVarDeclStmt) {
@@ -248,8 +249,10 @@ namespace Tacny {
         enumerable = EvaluateSuchThatStmt((AssignSuchThatStmt)stmt, state);
       } else if (stmt is PredicateStmt) {
         enumerable = ResolvePredicateStmt((PredicateStmt)stmt, state);
-      } else if (stmt is TStatement || stmt is IfStmt || stmt is WhileStmt) {
+      } else if (stmt is TStatement) {
                 //TODO: 
+      }  else if (stmt is IfStmt || stmt is WhileStmt) {
+          
       } else {
         enumerable = DefaultAction(stmt, state);
       }
