@@ -2327,7 +2327,9 @@ namespace Microsoft.Dafny
     // ------------------------------------------------------------------------------------------------------
     #region CheckTypeInference
     private void CheckTypeInference_Member(MemberDecl member) {
-      if (member is Method) {
+        if (member is ITactic) {
+                return;
+        }else if (member is Method) {
         var m = (Method)member;
         m.Req.Iter(mfe => CheckTypeInference_MaybeFreeExpression(mfe, m));
         m.Ens.Iter(mfe => CheckTypeInference_MaybeFreeExpression(mfe, m));
