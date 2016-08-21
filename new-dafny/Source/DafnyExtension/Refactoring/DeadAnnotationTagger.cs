@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Threading;
@@ -17,6 +18,7 @@ using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using Program = Microsoft.Dafny.Program;
 using shorty;
+using Type = System.Type;
 
 namespace DafnyLanguage.Refactoring
 {
@@ -45,9 +47,12 @@ namespace DafnyLanguage.Refactoring
         throw new NullReferenceException("Dafny Menu failed to Load");
       var dafnyMenuPack = (DafnyMenuPackage)shellPack;
       dafnyMenuPack.DeadCodeMenuProxy = new DeadCodeMenuProxy();
+      
+      DeadAnnotationTag.Type = Ctr.GetClassificationType("Dead Annotation");
+      RefactoringUtil.Tdf = RefactoringUtil.Tdf ?? Tdf;
+      var status = (IVsStatusbar)Isp.GetService(typeof(IVsStatusbar));
 
-      var datype = Ctr.GetClassificationType("Dead Annotation");
-      Func<ITagger<T>> taggerProperty = () => new DeadAnnotationTagger(buffer, Isp, Tdf, datype) as ITagger<T>;
+      Func<ITagger<T>> taggerProperty = () => new DeadAnnotationTagger(buffer, status) as ITagger<T>;
       return buffer.Properties.GetOrCreateSingletonProperty(typeof(DeadAnnotationTagger), taggerProperty);
     }
   }
@@ -74,55 +79,49 @@ namespace DafnyLanguage.Refactoring
   #endregion
 
   #region tags
-  internal sealed class DeadAnnotationTask : ErrorTask
-  {
-    public DeadAnnotationTask(int line, int col, string file) {
-      Category = TaskCategory.BuildCompile;
-      ErrorCategory = TaskErrorCategory.Warning;
-      Text = "This annotation can safely be removed";
-      Line = line;
-      Column = col;
-      Document = file;
-    }
-  }
-
   internal sealed class DeadAnnotationTag : ClassificationTag, IErrorTag
   {
+    public static IClassificationType Type;
     public string ErrorType => PredefinedErrorTypeNames.OtherError;
-    public object ToolTipContent => "This annotation can safely be removed";
+    public object ToolTipContent => "This code can safely be removed";
 
-    public int Line => Error.Line;
-    public int Col => Error.Column;
-    public readonly DeadAnnotationTask Error;
-    public readonly SnapshotSpan Span;
-    public readonly ITextSnapshot Snap;
-
-    public DeadAnnotationTag(ITextSnapshot snap, int start, int length, int line, int col, string file, IClassificationType type) : base(type) {
-      Snap = snap;
-      Span = new SnapshotSpan(snap, start, length);
-      Error = new DeadAnnotationTask(line, col, file);
+    public readonly string Replacement;
+    public readonly SnapshotSpan WarnSpan;
+    public readonly SnapshotSpan ReplacementSpan;
+    public readonly ITextSnapshot Snapshot;
+    
+    public DeadAnnotationTag(ITextSnapshot snapshot, int warnStart, int warnLength, int replaceStart, int replaceLength, string replacement) : base(Type) {
+      Snapshot = snapshot;
+      Replacement = replacement;
+      WarnSpan = new SnapshotSpan(snapshot, warnStart, warnLength);
+      ReplacementSpan = new SnapshotSpan(snapshot, replaceStart, replaceLength);
     }
   }
   #endregion
 
-  internal class DeadCodeMenuProxy : IDeadCodeMenuProxy
-  {
+  internal class DeadCodeMenuProxy : IDeadCodeMenuProxy {
     public void RemoveDeadCode(IWpfTextView tv) {
-      throw new NotImplementedException();
-      //get position
-      //look for spans under that position
-      //remove them
-      //update everything
+      InvokeSuggestedAction(tv, typeof(RemoveDeadAnnotationSuggestedAction));
     }
 
     public void RemoveAllDeadCode(IWpfTextView tv) {
-      throw new NotImplementedException();
-      //get all spans in snapshot for tv
-      //remove them
-      //update everything
+      InvokeSuggestedAction(tv, typeof(RemoveAllDeadAnnotationsSuggestedAction));
+    }
+
+    private static void InvokeSuggestedAction(ITextView tv, Type type) {
+      DeadAnnotationSuggestedActionsSource dasap;
+      if (!tv.TextBuffer.Properties.TryGetProperty(typeof(DeadAnnotationSuggestedActionsSource), out dasap)) return;
+      var position = new SnapshotSpan(tv.Caret.Position.BufferPosition, 1);
+      var acts = dasap.GetSuggestedActions(null, position, CancellationToken.None);
+      var action = (from suggestedActs in acts
+                    from suggestedAct in suggestedActs.Actions
+                    where suggestedAct.GetType() == type
+                    select suggestedAct).FirstOrDefault();
+      action?.Invoke(CancellationToken.None);
     }
 
     public bool Toggle() {
+      DeadAnnotationTagger.Checkers.ForEach(x => x.Stop=true);
       DeadAnnotationTagger.Enabled = !DeadAnnotationTagger.Enabled;
       return DeadAnnotationTagger.Enabled;
     }
@@ -131,29 +130,31 @@ namespace DafnyLanguage.Refactoring
   internal class DeadAnnotationTagger : ITagger<DeadAnnotationTag>, IDisposable
   {
     internal static bool Enabled = true;
+    internal static List<StopChecker> Checkers = new List<StopChecker>();
 
     private readonly ITextBuffer _tb;
     private readonly IVsStatusbar _status;
     private readonly DispatcherTimer _timer;
-    private readonly IClassificationType _type;
+    private readonly List<int> _changesSinceLastSuccessfulRun;
     private readonly List<DeadAnnotationTag> _deadAnnotations;
 
     private ProgressTagger _pt;
+    private bool _lastRunFailed;
+    private int _lastRunChangeCount;
     private bool _hasNeverRun = true;
     private StopChecker _currentStopper;
-    private List<int> _changesSinceLastRun = new List<int>();
 
     public static bool IsCurrentlyActive { get; private set; }
     private static object _activityLock;
+    private bool LastRunFailedAndNoChangesMade => _lastRunFailed && _changesSinceLastSuccessfulRun.Count <= _lastRunChangeCount;
 
-    public DeadAnnotationTagger(ITextBuffer tb, IServiceProvider isp, ITextDocumentFactoryService tdf, IClassificationType type) {
-      RefactoringUtil.Tdf = RefactoringUtil.Tdf ?? tdf;
+    public DeadAnnotationTagger(ITextBuffer tb, IVsStatusbar status) {
       _activityLock = _activityLock ?? new object();
 
       _tb = tb;
-      _type = type;
+      _status = status;
+      _changesSinceLastSuccessfulRun = new List<int>();
       _deadAnnotations = new List<DeadAnnotationTag>();
-      _status = (IVsStatusbar) isp.GetService(typeof(IVsStatusbar));
       _tb.Properties.TryGetProperty(typeof(ProgressTagger), out _pt);
       
       _timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle) { Interval = TimeSpan.FromSeconds(10) };
@@ -164,30 +165,43 @@ namespace DafnyLanguage.Refactoring
     
     #region events
     private void IdleTick(object s, EventArgs e) {
-      if (!Enabled || IsCurrentlyActive || !IsProgressTaggerSafe()) return;
-      
+      if (!Monitor.TryEnter(_activityLock)) return;
+      var safe = Enabled && !IsCurrentlyActive && IsProgressTaggerSafe();
+      Monitor.Exit(_activityLock);
+      if (!safe) return;
+
       _currentStopper = new StopChecker();
-      if (_hasNeverRun) {
+      if (_hasNeverRun && !LastRunFailedAndNoChangesMade) {
         ProcessProgram();
-      }
-      //TODO is there an efficiency consideration regarding just re-running for whole program if 85% havent yet been run
-      if (_changesSinceLastRun.Count > 0) {
+      } else if (_changesSinceLastSuccessfulRun.Count > 0 && !LastRunFailedAndNoChangesMade) {
         ProcessSomeMembers();
+      } else {
+        NotifyStatusbar(DeadAnnotationStatus.NoChanges);
       }
     }
+
     private void BufferChangedInterrupt(object s, TextContentChangedEventArgs e) {
-      lock (_activityLock)
-      {
-        if (IsCurrentlyActive) {
+      if (IsCurrentlyActive) {
+        lock (_activityLock) {
           IsCurrentlyActive = false;
           _currentStopper.Stop = true;
-        } else {
-          _timer.Start();
         }
+      } else {
+        _timer.Stop();
+        _timer.Start();
       }
-      _changesSinceLastRun = e.Changes.Select(c => c.NewPosition).ToList();
-      //todo on method edit, get rid of any 'dead' annotations
+      foreach (var change in e.Changes.ToList()) {
+        _changesSinceLastSuccessfulRun.Add(change.NewPosition);
+        _deadAnnotations.RemoveAll(x => {
+          var originalSpan = new SnapshotSpan(x.ReplacementSpan.Start, x.ReplacementSpan.End);
+          return originalSpan.OverlapsWith(change.OldSpan) || originalSpan.OverlapsWith(change.NewSpan);
+        });
+        //_deadAnnotations.Clear(); //todo clear all or just those changed, just those in method...?
+      }
+      if (_hasNeverRun) return;
+      TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(new SnapshotSpan(_tb.CurrentSnapshot, 0, _tb.CurrentSnapshot.Length)));
     }
+
     public void Dispose() {
       _timer.Stop();
       _timer.Tick -= IdleTick;
@@ -197,13 +211,13 @@ namespace DafnyLanguage.Refactoring
 
     #region status
     private enum DeadAnnotationStatus {
-      Started, Finished, Interrupted
+      Started, Finished, UserInterrupt, DaryFail, DaryFailInvalid, NoChanges, NoProgram
     }
 
     private void NotifyStatusbar(DeadAnnotationStatus status) {
       var tid = Thread.CurrentThread.ManagedThreadId;
       string s;
-      switch (status)
+      switch (status) //todo be more silent when tool is finalised
       {
         case DeadAnnotationStatus.Started:
           s = $"Dead code analysis started - #{tid}";
@@ -211,8 +225,20 @@ namespace DafnyLanguage.Refactoring
         case DeadAnnotationStatus.Finished:
           s = $"Dead code analysis finished - #{tid}";
           break;
-        case DeadAnnotationStatus.Interrupted:
+        case DeadAnnotationStatus.UserInterrupt:
+          s = $"Dead code analysis interrupted by user - #{tid}";
+          break;
+        case DeadAnnotationStatus.DaryFail:
           s = $"Dead code analysis interrupted - #{tid}";
+          break;
+        case DeadAnnotationStatus.DaryFailInvalid:
+          s = $"Dead code analysis interrupted due to invalid program - #{tid}";
+          break;
+        case DeadAnnotationStatus.NoChanges:
+          s = $"Dead code analysis not run as no changes - #{tid}";
+          break;
+        case DeadAnnotationStatus.NoProgram:
+          s = $"Dead code analysis could not run as no program - #{tid}";
           break;
         default:
           throw new cce.UnreachableException();
@@ -232,6 +258,7 @@ namespace DafnyLanguage.Refactoring
 
     private void Begin() {
       lock (_activityLock) {
+        Checkers.Add(_currentStopper);
         IsCurrentlyActive = true;
         _timer.Stop();
       }
@@ -239,6 +266,7 @@ namespace DafnyLanguage.Refactoring
 
     private void Finish() {
       lock (_activityLock) {
+        Checkers.Remove(_currentStopper);
         IsCurrentlyActive = false;
         _timer.Start();
       }
@@ -251,7 +279,7 @@ namespace DafnyLanguage.Refactoring
       }
       if (!Monitor.TryEnter(_pt)) return false;
       var result = !_pt.verificationInProgress;
-      Monitor.Exit(_pt); //todo this may not work
+      Monitor.Exit(_pt);
       return result;
     }
     #endregion
@@ -261,6 +289,7 @@ namespace DafnyLanguage.Refactoring
       Begin();
       Program program;
       if (!RefactoringUtil.GetExistingProgram(_tb, out program)) {
+        NotifyStatusbar(DeadAnnotationStatus.NoProgram);
         Finish();
         return;
       }
@@ -274,13 +303,24 @@ namespace DafnyLanguage.Refactoring
       var snap = ((ThreadParams) o).S;
       var stop = ((ThreadParams) o).Stop;
       var dary = new Dary(stop);
-      var results = dary.ProcessProgram(prog);
+      List<DaryResult> results;
+      _lastRunChangeCount = _changesSinceLastSuccessfulRun.Count;
+      try {
+        results = dary.ProcessProgram(prog);
+      } catch (NotValidException) {
+        _lastRunFailed = true;
+        NotifyStatusbar(DeadAnnotationStatus.DaryFailInvalid);
+        Finish();
+        return;
+      }
+      _lastRunFailed = false;
       if (_currentStopper.Stop) {
-        NotifyStatusbar(DeadAnnotationStatus.Interrupted);
+        NotifyStatusbar(DeadAnnotationStatus.UserInterrupt);
         Finish();
         return;
       }
       _hasNeverRun = false;
+      _changesSinceLastSuccessfulRun.Clear();
       lock (_deadAnnotations) {
         results.ForEach(ProcessValidResult);
       }
@@ -289,21 +329,23 @@ namespace DafnyLanguage.Refactoring
       Finish();
     }
 
-    private void ProcessSomeMembers() {
+    private void ProcessSomeMembers(){
       Begin();
       Program p;
       if (!RefactoringUtil.GetExistingProgram(_tb, out p)) {
+        NotifyStatusbar(DeadAnnotationStatus.NoProgram);
         Finish();
         return;
       }
       var notProcessedMembers = new List<MemberDecl>();
-      var tld = p?.DefaultModuleDef.TopLevelDecls.FirstOrDefault() as DefaultClassDecl;
-      _changesSinceLastRun.ForEach(i => {
+      var tld = RefactoringUtil.GetTld(p);
+      _changesSinceLastSuccessfulRun.ForEach(i => {
         MemberDecl md;
         RefactoringUtil.GetMemberFromPosition(tld, i, out md);
-        if (md != null) notProcessedMembers.Add(md);
+        if (md != null && !notProcessedMembers.Contains(md)) notProcessedMembers.Add(md);
       });
-      if (notProcessedMembers.Count == 0) {
+      if (tld == null || notProcessedMembers.Count == 0) {
+        NotifyStatusbar(DeadAnnotationStatus.NoChanges);
         Finish();
         return;
       }
@@ -318,15 +360,25 @@ namespace DafnyLanguage.Refactoring
       var stop = ((ThreadParams)o).Stop;
       var mds = ((ThreadParams) o).M;
       var dary = new Dary(stop);
-      var results = dary.ProcessMembers(prog, mds);
-      if (_currentStopper.Stop) {
-        NotifyStatusbar(DeadAnnotationStatus.Interrupted);
+      List<DaryResult> results;
+      _lastRunChangeCount = _changesSinceLastSuccessfulRun.Count;
+      try {
+        results = dary.ProcessMembers(prog, mds);
+      } catch (NotValidException) {
+        _lastRunFailed = true;
+        NotifyStatusbar(DeadAnnotationStatus.DaryFailInvalid);
         Finish();
         return;
       }
-      _changesSinceLastRun.Clear();
-      lock (_deadAnnotations)
-      {
+      _lastRunFailed = false;
+      if (_currentStopper.Stop) {
+        NotifyStatusbar(DeadAnnotationStatus.UserInterrupt);
+        Finish();
+        return;
+      }
+      _changesSinceLastSuccessfulRun.Clear();
+      lock (_deadAnnotations) {
+        _deadAnnotations.Clear(); //todo should we clear all or just those that are changed/updated
         results.ForEach(ProcessValidResult);
       }
       TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(new SnapshotSpan(snap, 0, snap.Length)));
@@ -335,23 +387,53 @@ namespace DafnyLanguage.Refactoring
     }
 
     private void ProcessValidResult(DaryResult r) {
-      //var type = r.TypeOfRemovable; //assume get rid of everything for now
-      /*TODO if removing entire line, we also want to + 1 for the semi
-       * also, we may need to remove indentation and newlines.
-       line_as_text.Regex([.\t\n\r]*([\S]+)[.\t\n\r]*).group 1
-       */
-      var tag = new DeadAnnotationTag(_tb.CurrentSnapshot, r.StartPos, r.Length, r.Token.line, r.Token.col, r.Token.filename, _type);
+      var replacement = FindReplacement(r.Replace);
+      var warnPos = new Tuple<int, int>(r.StartTok.pos, r.Length);
+      var repPos = ReplacementPositions(r);
+      var tag = new DeadAnnotationTag(_tb.CurrentSnapshot, warnPos.Item1, warnPos.Item2, repPos.Item1, repPos.Item2, replacement);
       _deadAnnotations.Add(tag);
+    }
+
+    private static Tuple<int, int> ReplacementPositions(DaryResult r) {
+      //possible cases:
+      // we remove the entire line: indents, expressions, statements, semis, newlines
+      //    \- we are replacing:  indents, expressions, statements, semis, newlines; with ""
+      // we are replacing: code, semi; with a new code, semi
+      // we remove part of a line that is within something else: code
+      //     \- we are replacing: code; with ""
+
+      var replaceStart = r.StartTok.pos;
+      var replaceLength = r.Length;
+      //if (r.Replace != null) replaceLength; //return new Tuple<int, int>(replaceStart, replaceLength + 1);
+
+      //var line = _tb.CurrentSnapshot.GetLineFromPosition(replaceStart);
+      //replaceStart = line.Start;
+      //replaceLength = line.LengthIncludingLineBreak;
+      return new Tuple<int, int>(replaceStart, replaceLength);
+    }
+
+    private static string FindReplacement(object replacement) {
+      if (replacement == null) return "";
+      var sr = new StringWriter();
+      var pr = new Printer(sr);
+      if (replacement is Statement) {
+        var stmt = (Statement)replacement;
+        pr.PrintStatement(stmt, 0);
+      } else if (replacement is MaybeFreeExpression) {
+        var mfe = (MaybeFreeExpression)replacement;
+        pr.PrintExpression(mfe.E, mfe.IsFree); //todo test this one, does it have a ';' to trim?
+      }
+      return sr.ToString().TrimEnd(';');
     }
     #endregion
 
     #region tagging
     public IEnumerable<ITagSpan<DeadAnnotationTag>> GetTags(NormalizedSnapshotSpanCollection spans) {
-      if (spans.Count > 0 && _deadAnnotations.Count > 0 && spans[0].Snapshot == _deadAnnotations[0].Snap) {
+      if (spans.Count > 0 && _deadAnnotations.Count > 0 && spans[0].Snapshot == _deadAnnotations[0].Snapshot) {
         return from span in spans
           from tag in _deadAnnotations
-          where span.OverlapsWith(tag.Span) //? not the right span.
-          select new TagSpan<DeadAnnotationTag>(tag.Span, tag);
+          where span.OverlapsWith(tag.ReplacementSpan)
+          select new TagSpan<DeadAnnotationTag>(tag.WarnSpan, tag);
       }
       return new List<ITagSpan<DeadAnnotationTag>>();
     }

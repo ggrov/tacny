@@ -40,16 +40,13 @@ namespace Tacny {
       Contract.Invariant(_errorReporter != null);
     }
 
-    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null) {
+    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null)
+        {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
-      // TODO Re-Enable with more permanent solution
-      // Currently, if the interpreter is the same, static across calls, each time the interpreter is
-      //   needed, it will just re-use the previous proof states, frames etc. Which will likely cause
-      //   problems in the extension, where it is called many times consecutively.
-      //if (_i == null) {
+      if (_i == null) {
         _i = new Interpreter(program, unresolvedProgram);
-      //}
+      }
       _errorReporterDelegate = erd;
       var result = _i.FindTacticApplication(target);
       _errorReporterDelegate = null;
@@ -188,7 +185,21 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(tacticApplication));
       Contract.Requires<ArgumentNullException>(state != null, "state");
       state.InitState(tacticApplication, variables);
-      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
+      /* check the partial attribute in the application call, should we check the def as well ? */
+      var if_total = true;
+
+        if (tacticApplication.Rhss[0].Attributes != null)
+        {
+            switch (tacticApplication.Rhss[0].Attributes.Name)
+            {
+                    case "partial":
+                    if_total = false;
+                    break;
+                    default: break;
+            }
+        }
+
+        var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, if_total);
       return search.Search(state, _errorReporterDelegate).FirstOrDefault();
     }
 

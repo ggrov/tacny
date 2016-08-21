@@ -251,7 +251,7 @@ namespace DafnyLanguage.Refactoring
       if(LoadStatus!=TacticReplaceStatus.Success) return;
       _program = RefactoringUtil.GetReparsedProgram(tb, currentFileName, true);
       _unresolvedProgram = RefactoringUtil.GetReparsedProgram(tb, currentFileName, false);
-      _tld = (DefaultClassDecl)_program?.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
+      _tld = RefactoringUtil.GetTld(_program);
       _tldMembers = _tld?.Members.GetEnumerator();
       LoadStatus = _tld != null ? TacticReplaceStatus.Success : TacticReplaceStatus.NotResolved;
       if (LoadStatus != TacticReplaceStatus.Success) return;

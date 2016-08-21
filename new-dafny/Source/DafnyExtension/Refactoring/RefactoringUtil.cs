@@ -11,6 +11,12 @@ namespace DafnyLanguage.Refactoring
   {
     public static ITextDocumentFactoryService Tdf;
 
+    public static DefaultClassDecl GetTld(Program p) => 
+      (from tld in p?.DefaultModuleDef.TopLevelDecls
+        let test = tld as DefaultClassDecl
+        where test != null
+        select test).FirstOrDefault();
+
     public static bool LoadAndCheckDocument(ITextBuffer tb, out string filePath) {
       Contract.Requires(tb != null);
       ITextDocument doc = null;
@@ -24,8 +30,7 @@ namespace DafnyLanguage.Refactoring
       string file;
       if(!LoadAndCheckDocument(tb, out file)) return false;
       var driver = new TacnyDriver(tb, file);
-      Program program;
-      return driver.GetExistingProgramFromBuffer(out program);
+      return driver.GetExistingProgramFromBuffer(out p);
     }
 
     public static Program GetReparsedProgram(ITextBuffer tb, string file, bool resolved) => new TacnyDriver(tb, file).ReParse(resolved);
