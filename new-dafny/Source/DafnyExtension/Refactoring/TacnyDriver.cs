@@ -49,10 +49,8 @@ namespace DafnyLanguage.Refactoring
       return program!=null;
     }
 
-    public static bool Verify(Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er, Program unresolvedProgram)
-    {
-      var translator = new Translator(dafnyProgram.reporter, er)
-      {
+    public static bool Verify(Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er, Program unresolvedProgram) {
+      var translator = new Translator(dafnyProgram.reporter, er) {
         InsertChecksums = true,
         UniqueIdPrefix = uniqueIdPrefix
       };

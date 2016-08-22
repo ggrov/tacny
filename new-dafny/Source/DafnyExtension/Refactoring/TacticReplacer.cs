@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
 using DafnyLanguage.DafnyMenu;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio;

@@ -17,6 +17,16 @@ namespace DafnyLanguage.Refactoring
         where test != null
         select test).FirstOrDefault();
 
+    public static SnapshotSpan GetRangeOfMember(ITextSnapshot snap, MemberDecl m) =>
+      new SnapshotSpan(snap, m.tok.pos, m.BodyEndTok.pos - m.tok.pos);
+
+    public static Program GetNewProgram(ITextBuffer tb) {
+      string file;
+      LoadAndCheckDocument(tb, out file);
+      var driver = new TacnyDriver(tb, file);
+      return driver.ReParse(false);
+    }
+
     public static bool LoadAndCheckDocument(ITextBuffer tb, out string filePath) {
       Contract.Requires(tb != null);
       ITextDocument doc = null;
@@ -42,7 +52,7 @@ namespace DafnyLanguage.Refactoring
                 select m).FirstOrDefault();
       return member == null ? TacticReplaceStatus.NoTactic : TacticReplaceStatus.Success;
     }
-
+    
     public static string StripExtraContentFromExpanded(string expandedTactic) {
       var words = new[] { "ghost ", "lemma ", "method ", "function ", "tactic " };
       return words.Aggregate(expandedTactic, RazeFringe);

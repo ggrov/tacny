@@ -170,6 +170,14 @@
         </Strings>
       </Button>
       
+      <Button guid="guidDafnyMenuCmdSet" id="cmdidToggleDeadCode" priority="0x0108" type="Button">
+        <Parent guid="guidDafnyMenuCmdSet" id="DafnyMenuGroup" />
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Disable dead code analysis</ButtonText>
+        </Strings>
+      </Button>
+      
       <!-- #################
       Refactoring Menu Items
       ################## -->
@@ -192,15 +200,7 @@
       <Button guid="guidRefactoringMenuCmdSet" id="cmdidRemoveAllDeadCode" priority="0x0102" type="Button">
         <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringMenuGroup" />
         <Strings>
-          <ButtonText>Remove ALL dead code in file</ButtonText>
-        </Strings>
-      </Button>
-      
-      <Button guid="guidRefactoringMenuCmdSet" id="cmdidToggleDeadCode" priority="0x0103" type="Button">
-        <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringMenuGroup" />
-        <CommandFlag>TextChanges</CommandFlag>
-        <Strings>
-          <ButtonText>Disable dead code analysis</ButtonText>
+          <ButtonText>Remove/Simplify ALL dead code in file</ButtonText>
         </Strings>
       </Button>
       
@@ -230,8 +230,19 @@
         <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringContextGroup" />
         <CommandFlag>DynamicVisibility</CommandFlag>
         <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
         <Strings>
-          <ButtonText>Remove this dead code</ButtonText>
+          <ButtonText>Remove/Simplify this dead code</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidRefactoringMenuCmdSet" id="cmdidContextRemoveDeadMemberCode" priority="0x0103" type="Button">
+        <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringContextGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Remove/Simplify dead code in this member</ButtonText>
         </Strings>
       </Button>
     </Buttons>
@@ -259,6 +270,7 @@
       <IDSymbol name="cmdidToggleMoreAdvancedSnapshotVerification" value="0x105" />
       <IDSymbol name="cmdidToggleAutomaticInduction" value="0x106" />
       <IDSymbol name="cmdidDiagnoseTimeouts" value="0x107" />
+      <IDSymbol name="cmdidToggleDeadCode" value="0x108" />
     </GuidSymbol>
 
     <GuidSymbol name="guidRefactoringMenuCmdSet" value="{6800196a-f13c-4bd6-a795-456a2eb74164}">
@@ -268,11 +280,11 @@
       <IDSymbol name="cmdidExpandAllTactics" value="0x100" />
       <IDSymbol name="cmdidToggleTacny" value="0x101" />
       <IDSymbol name="cmdidRemoveAllDeadCode" value="0x102" />
-      <IDSymbol name="cmdidToggleDeadCode" value="0x103" />
       
       <IDSymbol name="cmdidContextExpandTactics" value="0x110" />
       <IDSymbol name="cmdidContextExpandRot" value="0x111" />
       <IDSymbol name="cmdidContextRemoveDeadCode" value="0x112" />
+      <IDSymbol name="cmdidContextRemoveDeadMemberCode" value="0x113" />
     </GuidSymbol>
   </Symbols>
 </CommandTable>                                                                                              
