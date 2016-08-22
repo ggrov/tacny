@@ -2,6 +2,12 @@
 *.snk
 
 
+##tex
+*.aux
+*.pdf
+*.gz
+
+
 ##Windows stuff
 *thumbs.db
 *.lnk
