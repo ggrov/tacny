@@ -20,6 +20,7 @@ using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using Program = Microsoft.Dafny.Program;
 using Dary;
+using Tacny;
 
 namespace DafnyLanguage.Refactoring
 {
@@ -161,6 +162,7 @@ namespace DafnyLanguage.Refactoring
     public static bool IsCurrentlyActive { get; private set; }
     private static object _activityLock;
     private bool LastRunFailedAndNoChangesMade => _lastRunFailed && _changesSinceLastSuccessfulRun.Count <= _lastRunChangeCount;
+
     #endregion
 
     public DeadAnnotationTagger(ITextBuffer tb, IVsStatusbar status, ITextStructureNavigator tsn) {
@@ -182,7 +184,7 @@ namespace DafnyLanguage.Refactoring
     #region events
     private void IdleTick(object s, EventArgs e) {
       if (!Monitor.TryEnter(_activityLock)) return;
-      var safe = Enabled && !IsCurrentlyActive && IsProgressTaggerSafe();
+      var safe = Enabled && !IsCurrentlyActive && IsProgressTaggerSafe() && RefactoringUtil.ProgramIsVerified(_tb);
       Monitor.Exit(_activityLock);
       if (!safe) return;
 
@@ -250,7 +252,7 @@ namespace DafnyLanguage.Refactoring
           s = $"Dead code analysis could not run as no program - #{tid}";
           break;
         default:
-          throw new cce.UnreachableException();
+          throw new tcce.UnreachableException();
       }
       _status.SetText(s);
     }
@@ -453,13 +455,16 @@ namespace DafnyLanguage.Refactoring
         case "Invariant":
           break;
         default:
-          throw new cce.UnreachableException();
+          throw new tcce.UnreachableException();
       }
       var start = _tsn.GetExtentOfWord(new SnapshotPoint(_tb.CurrentSnapshot, r.StartTok.pos));
       var prev = _tsn.GetSpanOfPreviousSibling(start.Span);
+      var last = prev;
       while (prev.GetText() != "decreases" && prev.GetText() != "invariant") {
         prev = _tsn.GetSpanOfPreviousSibling(prev);
         //todo prevent escaping the available textbuffer
+        if (prev == last) return r.StartTok.pos;
+        last = prev;
       }
       return prev.Start.Position;
     }

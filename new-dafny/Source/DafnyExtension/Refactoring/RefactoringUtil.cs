@@ -43,6 +43,11 @@ namespace DafnyLanguage.Refactoring
       return driver.GetExistingProgramFromBuffer(out p);
     }
 
+    public static bool ProgramIsVerified(ITextBuffer tb) {
+      Program p;
+      return GetExistingProgram(tb, out p);
+    }
+
     public static Program GetReparsedProgram(ITextBuffer tb, string file, bool resolved) => new TacnyDriver(tb, file).ReParse(resolved);
 
     public static TacticReplaceStatus GetMemberFromPosition(DefaultClassDecl tld, int position, out MemberDecl member) {
