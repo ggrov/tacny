@@ -1,13 +1,13 @@
-*.config
+Binaries/*.config
 *.manifest
 *.vsix
 *~
 *.pkgdef
-*.vsixmanifest
 Source/*/obj/*
 Source/DafnyExtension/DafnyPrelude.bpl
 Source/DafnyExtension/DafnyRuntime.cs
 Source/DafnyExtension/Z3-LICENSE.txt
+Source/DafnyExtension/*.exe
 Source/packages/*
 Test/*/Output/*
 Test/*/*/Output/*

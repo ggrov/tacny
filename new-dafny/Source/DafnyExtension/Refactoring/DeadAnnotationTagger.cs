@@ -19,7 +19,7 @@ using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using Program = Microsoft.Dafny.Program;
-using shorty;
+using Dary;
 
 namespace DafnyLanguage.Refactoring
 {
@@ -311,7 +311,7 @@ namespace DafnyLanguage.Refactoring
       var prog = ((ThreadParams) o).P;
       var snap = ((ThreadParams) o).S;
       var stop = ((ThreadParams) o).Stop;
-      var dary = new Dary(stop);
+      var dary = new Dary.Dary(stop);
       List<DaryResult> results;
       _lastRunChangeCount = _changesSinceLastSuccessfulRun.Count;
       try {
@@ -368,7 +368,7 @@ namespace DafnyLanguage.Refactoring
       var snap = ((ThreadParams)o).S;
       var stop = ((ThreadParams)o).Stop;
       var mds = ((ThreadParams) o).M;
-      var dary = new Dary(stop);
+      var dary = new Dary.Dary(stop);
       List<DaryResult> results;
       _lastRunChangeCount = _changesSinceLastSuccessfulRun.Count;
       try {
