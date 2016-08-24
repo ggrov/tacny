@@ -409,7 +409,6 @@ namespace DafnyLanguage.Refactoring
           _deadAnnotations.RemoveAll(tag => tag.TrackingReplacementSpan.GetSpan(snap).OverlapsWith(mSpan));
           TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(mSpan));
         }
-        _deadAnnotations.Clear();
         results.ForEach(x => ProcessValidResult(x, prog));
       }
       NotifyStatusbar(DeadAnnotationStatus.Finished);
@@ -435,8 +434,8 @@ namespace DafnyLanguage.Refactoring
     }
 
     private void ProcessValidResult(DaryResult r, Program p) {
-      var replacement = FindReplacement(r.Replace);
       var actualTokPos = FindOffsetSpecialPositions(r);
+      var replacement = FindReplacement(r.Replace, actualTokPos);
       var pos = ReplacementPositions(actualTokPos, r.Length, r.Replace!=null);
       var tag = new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
       _deadAnnotations.Add(tag);
@@ -464,43 +463,55 @@ namespace DafnyLanguage.Refactoring
       var wholeLength = actualLength + offsetToStartOfTextInLine + line.LineBreakLength;
       return new Positions(tokPos, actualLength, startOfLine, wholeLength);
     }
-
+    
     private int FindOffsetSpecialPositions(DaryResult r) {
       switch (r.TypeOfRemovable) {
         case "Assert Statement":
         case "Calc Statement":
         case "Lemma Call":
-        return r.StartTok.pos;
+          return r.StartTok.pos;
         case "Decreases Expression":
         case "Invariant":
-          break;
+          return InvarDecStartPosition(r);
+        case "something inside a calc statement":
+          //do something else entirely
+          return r.StartTok.pos;
         default:
           throw new tcce.UnreachableException();
       }
-      var start = _tsn.GetExtentOfWord(new SnapshotPoint(Snapshot, r.StartTok.pos));
-      var prev = _tsn.GetSpanOfPreviousSibling(start.Span);
-      var last = prev;
-      while (prev.GetText() != "decreases" && prev.GetText() != "invariant") {
-        prev = _tsn.GetSpanOfPreviousSibling(prev);
-        if (prev == last) return r.StartTok.pos;
-        last = prev;
-      }
-      return prev.Start.Position;
     }
 
-    private static string FindReplacement(object replacement) {
+    private int InvarDecStartPosition(DaryResult r) {
+      var current = r.StartTok.pos;
+      var currentSpan = new SnapshotSpan();
+      var looking = true;
+      while (looking)
+      {
+        currentSpan = _tsn.GetExtentOfWord(new SnapshotPoint(Snapshot, current)).Span;
+        var currentWord = currentSpan.GetText();
+        looking = currentWord != "invariant" && currentWord != "decreases";
+        current--;
+        if (currentWord == ";" || currentWord == "}" || current <= 0) throw new IndexOutOfRangeException($"Managed to escape {r.TypeOfRemovable}");
+      }
+      return currentSpan.Start.Position;
+    }
+
+    private string FindReplacement(object replacement, int startpos) {
       if (replacement == null) return "";
+      var line = _tb.CurrentSnapshot.GetLineFromPosition(startpos).GetText();
+      var indent = line.Length - line.TrimStart().Length;
       var sr = new StringWriter();
       var pr = new Printer(sr);
       if (replacement is Statement) {
         var stmt = (Statement)replacement;
-        pr.PrintStatement(stmt, 0);
+        pr.PrintStatement(stmt, indent);
       } else if (replacement is MaybeFreeExpression) {
         var mfe = (MaybeFreeExpression)replacement;
         pr.PrintExpression(mfe.E, mfe.IsFree);
       }
       return sr.ToString();
     }
+
     #endregion
 
     #region tagging
