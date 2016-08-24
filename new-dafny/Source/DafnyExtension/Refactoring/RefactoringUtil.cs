@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Text;
+using Tacny;
 
 namespace DafnyLanguage.Refactoring
 {
@@ -44,8 +45,26 @@ namespace DafnyLanguage.Refactoring
     }
 
     public static bool ProgramIsVerified(ITextBuffer tb) {
-      Program p;
-      return GetExistingProgram(tb, out p);
+      if (!tb.Properties.ContainsProperty(typeof(ResolverTagger))) return false;
+      var rt = tb.Properties.GetProperty(typeof(ResolverTagger)) as ResolverTagger;
+      if (rt == null) return false;
+      return !rt.AllErrors.Any(error => {
+          switch (error.Category) {
+            case ErrorCategory.ParseError:
+            case ErrorCategory.ResolveError:
+            case ErrorCategory.VerificationError:
+            case ErrorCategory.InternalError:
+            case ErrorCategory.TacticError:
+            case ErrorCategory.ProcessError:
+              return true;
+            case ErrorCategory.ParseWarning:
+            case ErrorCategory.ResolveWarning:
+            case ErrorCategory.AuxInformation:
+              return false;
+            default:
+              throw new tcce.UnreachableException();
+          }
+      });
     }
 
     public static Program GetReparsedProgram(ITextBuffer tb, string file, bool resolved) => new TacnyDriver(tb, file).ReParse(resolved);
