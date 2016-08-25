@@ -229,6 +229,7 @@ namespace DafnyLanguage.Refactoring
     }
 
     public void Dispose() {
+      _currentStopper.Stop = true;
       _timer.Stop();
       _timer.Tick -= IdleTick;
       _tb.Changed -= BufferChangedInterrupt;
@@ -434,15 +435,57 @@ namespace DafnyLanguage.Refactoring
     }
 
     private void ProcessValidResult(DaryResult r, Program p) {
-      var actualTokPos = FindOffsetSpecialPositions(r);
-      var replacement = FindReplacement(r.Replace, actualTokPos);
-      var pos = ReplacementPositions(actualTokPos, r.Length, r.Replace!=null);
-      var tag = new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
+      var incalc = RefactoringUtil.InsideCalc(RefactoringUtil.GetTld(p), r.StartTok.pos);
+      DeadAnnotationTag tag;
+      switch (r.TypeOfRemovable) {
+        case "Assert Statement":
+        case "Calc Statement":
+        case "Lemma Call":
+          tag = incalc ? FindStmtTagInCalc(r, p) : FindStmtTag(r, p);
+          break;
+        case "Decreases Expression":
+        case "Invariant":
+          tag = FindExprTag(r, p);
+          break;
+        default:
+          throw new tcce.UnreachableException();
+      }
       _deadAnnotations.Add(tag);
-      TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(new SnapshotSpan(Snapshot, actualTokPos, r.Length)));
+      TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(tag.TrackingReplacementSpan.GetSpan(Snapshot)));
     }
 
-    private Positions ReplacementPositions(int tokPos, int tokLen, bool hasReplace) {
+    private DeadAnnotationTag FindStmtTag(DaryResult r, Program p) {
+      var replacement = FindReplacement(r.Replace, r.StartTok.pos);
+      var pos = StmtReplacementPositions(r.StartTok.pos, r.Length, r.Replace != null);
+      return new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
+    }
+
+    private DeadAnnotationTag FindStmtTagInCalc(DaryResult r, Program p) {
+      var replacement = FindReplacement(r.Replace, r.StartTok.pos);
+      var pos = StmtReplacementPositions(r.StartTok.pos, r.Length, r.Replace != null);
+      return new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
+    }
+
+    private DeadAnnotationTag FindExprTag(DaryResult r, Program p) {
+      var actualTokPos = InvarDecStartPosition(r);
+      var actualLength = InvarDecEndPosition(r) - actualTokPos;
+      var replacement = FindReplacement(r.Replace, actualTokPos);
+      var pos = ExprReplacementPositions(r, actualTokPos, actualLength);
+      return new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
+    }
+
+    private Positions ExprReplacementPositions(DaryResult r, int tokPos, int tokLen) {
+      var current = tokPos + tokLen;
+      var looking = true;
+      while (looking) {
+        var currentWord = new SnapshotSpan(Snapshot, current - 1, 1).GetText();
+        looking = currentWord.Trim()=="";
+        if (--current <= 0) throw new IndexOutOfRangeException($"Managed to escape {r.TypeOfRemovable}");
+      }
+      return new Positions(tokPos, current+1-tokPos, tokPos, tokLen);
+    }
+
+    private Positions StmtReplacementPositions(int tokPos, int tokLen, bool hasReplace) {
       var line = Snapshot.GetLineFromPosition(tokPos);
       var wordAtEndOfTag = _tsn.GetExtentOfWord(new SnapshotPoint(Snapshot, tokPos + tokLen)).Span;
       var finalTaggedSegment = _tsn.GetSpanOfNextSibling(wordAtEndOfTag).GetText();
@@ -464,34 +507,32 @@ namespace DafnyLanguage.Refactoring
       return new Positions(tokPos, actualLength, startOfLine, wholeLength);
     }
     
-    private int FindOffsetSpecialPositions(DaryResult r) {
-      switch (r.TypeOfRemovable) {
-        case "Assert Statement":
-        case "Calc Statement":
-        case "Lemma Call":
-          return r.StartTok.pos;
-        case "Decreases Expression":
-        case "Invariant":
-          return InvarDecStartPosition(r);
-        case "something inside a calc statement":
-          //do something else entirely
-          return r.StartTok.pos;
-        default:
-          throw new tcce.UnreachableException();
-      }
-    }
-
     private int InvarDecStartPosition(DaryResult r) {
       var current = r.StartTok.pos;
       var currentSpan = new SnapshotSpan();
       var looking = true;
-      while (looking)
-      {
+      var matchers = new [] {"invariant", "decreases"};
+      while (looking) {
         currentSpan = _tsn.GetExtentOfWord(new SnapshotPoint(Snapshot, current)).Span;
         var currentWord = currentSpan.GetText();
-        looking = currentWord != "invariant" && currentWord != "decreases";
+        looking = matchers.All(x => x != currentWord);
         current--;
         if (currentWord == ";" || currentWord == "}" || current <= 0) throw new IndexOutOfRangeException($"Managed to escape {r.TypeOfRemovable}");
+      }
+      return currentSpan.Start.Position;
+    }
+
+    private int InvarDecEndPosition(DaryResult r) {
+      var current = r.StartTok.pos;
+      var currentSpan = new SnapshotSpan();
+      var looking = true;
+      var matchers = new [] {"invariant", "decreases", ";", "{"};
+      while (looking) {
+        currentSpan = _tsn.GetExtentOfWord(new SnapshotPoint(Snapshot, current)).Span;
+        var currentWord = currentSpan.GetText();
+        looking = matchers.All(x => x != currentWord);
+        current++;
+        if (currentWord == "}" || current >= Snapshot.Length) throw new IndexOutOfRangeException($"Managed to escape {r.TypeOfRemovable}");
       }
       return currentSpan.Start.Position;
     }

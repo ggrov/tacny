@@ -71,11 +71,12 @@ namespace DafnyLanguage.Refactoring
 
     public static TacticReplaceStatus GetMemberFromPosition(DefaultClassDecl tld, int position, out MemberDecl member) {
       Contract.Requires(tld != null);
-      member = (from m in tld.Members
-                where m.tok.pos <= position && position <= m.BodyEndTok.pos + 1
-                select m).FirstOrDefault();
+      member = GetMemberFromPosition(tld, position);
       return member == null ? TacticReplaceStatus.NoTactic : TacticReplaceStatus.Success;
     }
+
+    public static MemberDecl GetMemberFromPosition(DefaultClassDecl tld, int position) => 
+      (from m in tld.Members where m.tok.pos <= position && position <= m.BodyEndTok.pos + 1 select m).FirstOrDefault();
     
     public static string StripExtraContentFromExpanded(string expandedTactic) {
       var words = new[] { "ghost ", "lemma ", "method ", "function ", "tactic " };
@@ -113,6 +114,15 @@ namespace DafnyLanguage.Refactoring
         if (GetTacticCallAtPosition(m, us.Tok.pos, out current) != TacticReplaceStatus.Success) continue;
         yield return current;
       }
+    }
+
+    public static bool InsideCalc(DefaultClassDecl tld, int pos) { //need to recurse down
+      var member = GetMemberFromPosition(tld, pos) as Method;
+      return (from stmt in member?.Body.Body
+        where stmt.Tok.pos < pos
+        && pos < stmt.EndTok.pos
+        select stmt.GetType()==typeof(CalcStmt))
+        .FirstOrDefault();
     }
   }
 }
