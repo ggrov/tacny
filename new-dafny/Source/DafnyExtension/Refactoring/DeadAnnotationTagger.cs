@@ -455,26 +455,30 @@ namespace DafnyLanguage.Refactoring
     }
 
     private DeadAnnotationTag FindStmtTag(DaryResult r, Program p) {
-      var replacement = FindReplacement(r.Replace, r.StartTok.pos);
+      var replacement = FindReplacement(r.Replace, r.StartTok.pos, r.TypeOfRemovable);
       var pos = StmtReplacementPositions(r.StartTok.pos, r.Length, r.Replace != null);
       return new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
     }
 
     private DeadAnnotationTag FindStmtTagInCalc(DaryResult r, Program p) {
-      var replacement = FindReplacement(r.Replace, r.StartTok.pos);
+      var replacement = FindReplacement(r.Replace, r.StartTok.pos, r.TypeOfRemovable);
       var pos = StmtReplacementPositions(r.StartTok.pos, r.Length, r.Replace != null);
       return new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
     }
 
     private DeadAnnotationTag FindExprTag(DaryResult r, Program p) {
       var actualTokPos = InvarDecStartPosition(r);
-      var actualLength = InvarDecEndPosition(r) - actualTokPos;
-      var replacement = FindReplacement(r.Replace, actualTokPos);
-      var pos = ExprReplacementPositions(r, actualTokPos, actualLength);
+      var replacement = FindReplacement(r.Replace, actualTokPos, r.TypeOfRemovable);
+      var pos = ExprReplacementPositions(r, actualTokPos, r.Replace!=null);
       return new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
     }
 
-    private Positions ExprReplacementPositions(DaryResult r, int tokPos, int tokLen) {
+    private Positions ExprReplacementPositions(DaryResult r, int tokPos, bool hasReplacement) {
+      var ending = InvarDecEndPosition(r);
+      var tokLen = ending.Item1 - tokPos;
+      var usesTrailingSemi = ending.Item2;
+      if (!hasReplacement && usesTrailingSemi) tokLen++;
+
       var current = tokPos + tokLen;
       var looking = true;
       while (looking) {
@@ -482,7 +486,10 @@ namespace DafnyLanguage.Refactoring
         looking = currentWord.Trim()=="";
         if (--current <= 0) throw new IndexOutOfRangeException($"Managed to escape {r.TypeOfRemovable}");
       }
-      return new Positions(tokPos, current+1-tokPos, tokPos, tokLen);
+      var warnLen = current + 1 - tokPos;
+      if (usesTrailingSemi) warnLen++;
+
+      return new Positions(tokPos, warnLen, tokPos, tokLen);
     }
 
     private Positions StmtReplacementPositions(int tokPos, int tokLen, bool hasReplace) {
@@ -522,22 +529,23 @@ namespace DafnyLanguage.Refactoring
       return currentSpan.Start.Position;
     }
 
-    private int InvarDecEndPosition(DaryResult r) {
+    private Tuple<int,bool> InvarDecEndPosition(DaryResult r) {
       var current = r.StartTok.pos;
       var currentSpan = new SnapshotSpan();
+      var currentWord = "";
       var looking = true;
       var matchers = new [] {"invariant", "decreases", ";", "{"};
       while (looking) {
         currentSpan = _tsn.GetExtentOfWord(new SnapshotPoint(Snapshot, current)).Span;
-        var currentWord = currentSpan.GetText();
+        currentWord = currentSpan.GetText();
         looking = matchers.All(x => x != currentWord);
         current++;
         if (currentWord == "}" || current >= Snapshot.Length) throw new IndexOutOfRangeException($"Managed to escape {r.TypeOfRemovable}");
       }
-      return currentSpan.Start.Position;
+      return new Tuple<int, bool>(currentSpan.Start.Position, currentWord==";");
     }
 
-    private string FindReplacement(object replacement, int startpos) {
+    private string FindReplacement(object replacement, int startpos, string expr) {
       if (replacement == null) return "";
       var line = _tb.CurrentSnapshot.GetLineFromPosition(startpos).GetText();
       var indent = line.Length - line.TrimStart().Length;
@@ -548,6 +556,16 @@ namespace DafnyLanguage.Refactoring
         pr.PrintStatement(stmt, indent);
       } else if (replacement is MaybeFreeExpression) {
         var mfe = (MaybeFreeExpression)replacement;
+        switch (expr) {
+          case "Invariant":
+            sr.Write("invariant ");
+            break;
+          case "Decreases Expression":
+            sr.Write("decreases ");
+            break;
+          default:
+            throw new tcce.UnreachableException();
+        }
         pr.PrintExpression(mfe.E, mfe.IsFree);
       }
       return sr.ToString();
