@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Text;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
 //using LiteralExpr = Microsoft.Dafny.LiteralExpr;
@@ -179,29 +180,47 @@ namespace Tacny {
       }
       return result;
     }
- 
+
+    private static string partial = "partial";
+    public static bool ParsePartial(Attributes attr) {
+      Contract.Requires(attr != null);
+
+      if (attr.Name == partial)
+        return true;
+      else{
+        if (attr.Prev != null){
+          return ParsePartial(attr.Prev);
+        }
+        else
+          return false;
+      }
+    }
+
+
+    public static bool IfPartial(ProofState state, UpdateStmt tacApp) {
+      //still need to check the localtion of the application, is it the last call ? is it a neswted call ?
+      var ret = false;
+      // get the def and check attr
+      var tacDef = state.GetTactic(tacApp) as Tactic;
+ //     Contract.Requires(tacDef != null);
+      if(tacDef.Attributes != null)
+        ret = ParsePartial(tacDef.Attributes);
+      //check the attr at the application call
+      if (tacApp.Rhss[0].Attributes != null){
+        if (ParsePartial(tacApp.Rhss[0].Attributes))
+          ret = true;
+      }
+      return ret;
+    }
 
     public static ProofState ApplyTactic(ProofState state, Dictionary<IVariable, Type> variables,
-      UpdateStmt tacticApplication) {
+      UpdateStmt tacticApplication){
       Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
       Contract.Requires<ArgumentNullException>(tcce.NonNull(tacticApplication));
       Contract.Requires<ArgumentNullException>(state != null, "state");
       state.InitState(tacticApplication, variables);
-      /* check the partial attribute in the application call, should we check the def as well ? */
-      var if_total = true;
 
-        if (tacticApplication.Rhss[0].Attributes != null)
-        {
-            switch (tacticApplication.Rhss[0].Attributes.Name)
-            {
-                    case "partial":
-                    if_total = false;
-                    break;
-                    default: break;
-            }
-        }
-
-        var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, if_total);
+      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, !IfPartial(state, tacticApplication));
       return search.Search(state, _errorReporterDelegate).FirstOrDefault();
     }
 
