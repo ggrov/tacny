@@ -148,7 +148,7 @@ namespace DafnyLanguage.Refactoring
   internal class DeadAnnotationTagger : ITagger<DeadAnnotationTag>, IDisposable
   {
     #region fields and properties
-    internal static bool Enabled = true;
+    internal static bool Enabled = false;
     internal static List<StopChecker> Checkers = new List<StopChecker>();
 
     private readonly ITextBuffer _tb;
@@ -184,7 +184,7 @@ namespace DafnyLanguage.Refactoring
       _deadAnnotations = new List<DeadAnnotationTag>();
       _tb.Properties.TryGetProperty(typeof(ProgressTagger), out _pt);
       
-      _timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle) { Interval = TimeSpan.FromSeconds(5) };
+      _timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle) { Interval = TimeSpan.FromSeconds(10) };
       _timer.Tick += IdleTick;
       _tb.Changed += BufferChangedInterrupt;
       _timer.Start();
@@ -192,8 +192,9 @@ namespace DafnyLanguage.Refactoring
     
     #region events
     private void IdleTick(object s, EventArgs e) {
+      if (!Enabled) return;
       if (!Monitor.TryEnter(_activityLock)) return;
-      var safe = Enabled && !IsCurrentlyActive && IsProgressTaggerSafe() && IsProgramValid;
+      var safe = !IsCurrentlyActive && IsProgressTaggerSafe() && IsProgramValid;
       Monitor.Exit(_activityLock);
       if (!safe) return;
 
@@ -208,6 +209,7 @@ namespace DafnyLanguage.Refactoring
     }
 
     private void BufferChangedInterrupt(object s, TextContentChangedEventArgs e) {
+      if (!Enabled) return;
       if (IsCurrentlyActive) {
         lock (_activityLock) {
           IsCurrentlyActive = false;
@@ -267,9 +269,11 @@ namespace DafnyLanguage.Refactoring
           s = $"Dead code analysis could not run as no program - #{tid}";
           break;
         default:
-          throw new tcce.UnreachableException();
+          return;
       }
-      _status.SetText(s);
+#pragma warning disable CS0162
+      if (false) { _status.SetText(s); } //toggle to enable/disable use of status bar
+#pragma warning restore CS0162
     }
     #endregion
 
@@ -404,14 +408,16 @@ namespace DafnyLanguage.Refactoring
         return;
       }
       _changesSinceLastSuccessfulRun.Clear();
+      var changed = new List<SnapshotSpan>();
       lock (_deadAnnotations) {
         foreach (var m in mds) {
           var mSpan = new SnapshotSpan(snap, m.BodyStartTok.pos, m.BodyEndTok.pos - m.BodyStartTok.pos);
           _deadAnnotations.RemoveAll(tag => tag.TrackingReplacementSpan.GetSpan(snap).OverlapsWith(mSpan));
-          TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(mSpan));
         }
-        results.ForEach(x => ProcessValidResult(x, prog));
+        results.ForEach(x => changed.Add(ProcessValidResult(x, prog).TrackingReplacementSpan.GetSpan(Snapshot)));
       }
+      var normalizedChanges = new NormalizedSnapshotSpanCollection(changed);
+      normalizedChanges.ToList().ForEach(x => TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(x)));
       NotifyStatusbar(DeadAnnotationStatus.Finished);
       Finish();
     }
@@ -434,14 +440,13 @@ namespace DafnyLanguage.Refactoring
       }
     }
 
-    private void ProcessValidResult(DaryResult r, Program p) {
-      var incalc = RefactoringUtil.InsideCalc(RefactoringUtil.GetTld(p), r.StartTok.pos);
+    private DeadAnnotationTag ProcessValidResult(DaryResult r, Program p) {
       DeadAnnotationTag tag;
       switch (r.TypeOfRemovable) {
         case "Assert Statement":
         case "Calc Statement":
         case "Lemma Call":
-          tag = incalc ? FindStmtTagInCalc(r, p) : FindStmtTag(r, p);
+          tag = FindStmtTag(r, p);
           break;
         case "Decreases Expression":
         case "Invariant":
@@ -450,8 +455,23 @@ namespace DafnyLanguage.Refactoring
         default:
           throw new tcce.UnreachableException();
       }
-      _deadAnnotations.Add(tag);
-      TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(tag.TrackingReplacementSpan.GetSpan(Snapshot)));
+      AddTag(tag);
+      return tag;
+    }
+
+    private void AddTag(DeadAnnotationTag newtag) {
+      var hasParentTags = (from tag in _deadAnnotations
+        let existingspan = tag.TrackingReplacementSpan.GetSpan(Snapshot)
+        let newspan = newtag.TrackingReplacementSpan.GetSpan(Snapshot)
+        where existingspan.Contains(newspan)
+        select tag).Any();
+      if (hasParentTags) return;
+      _deadAnnotations.RemoveAll(tag => {
+        var existingspan = tag.TrackingReplacementSpan.GetSpan(Snapshot);
+        var newspan = newtag.TrackingReplacementSpan.GetSpan(Snapshot);
+        return newspan.Contains(existingspan);
+      });
+      _deadAnnotations.Add(newtag);
     }
 
     private DeadAnnotationTag FindStmtTag(DaryResult r, Program p) {
@@ -459,13 +479,7 @@ namespace DafnyLanguage.Refactoring
       var pos = StmtReplacementPositions(r.StartTok.pos, r.Length, r.Replace != null);
       return new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
     }
-
-    private DeadAnnotationTag FindStmtTagInCalc(DaryResult r, Program p) {
-      var replacement = FindReplacement(r.Replace, r.StartTok.pos, r.TypeOfRemovable);
-      var pos = StmtReplacementPositions(r.StartTok.pos, r.Length, r.Replace != null);
-      return new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
-    }
-
+    
     private DeadAnnotationTag FindExprTag(DaryResult r, Program p) {
       var actualTokPos = InvarDecStartPosition(r);
       var replacement = FindReplacement(r.Replace, actualTokPos, r.TypeOfRemovable);

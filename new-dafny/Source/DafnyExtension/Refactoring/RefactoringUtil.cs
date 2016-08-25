@@ -115,14 +115,5 @@ namespace DafnyLanguage.Refactoring
         yield return current;
       }
     }
-
-    public static bool InsideCalc(DefaultClassDecl tld, int pos) { //need to recurse down
-      var member = GetMemberFromPosition(tld, pos) as Method;
-      return (from stmt in member?.Body.Body
-        where stmt.Tok.pos < pos
-        && pos < stmt.EndTok.pos
-        select stmt.GetType()==typeof(CalcStmt))
-        .FirstOrDefault();
-    }
   }
 }
