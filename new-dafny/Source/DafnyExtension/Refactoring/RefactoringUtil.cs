@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Text;
+using Tacny;
 
 namespace DafnyLanguage.Refactoring
 {
@@ -44,19 +45,38 @@ namespace DafnyLanguage.Refactoring
     }
 
     public static bool ProgramIsVerified(ITextBuffer tb) {
-      Program p;
-      return GetExistingProgram(tb, out p);
+      if (!tb.Properties.ContainsProperty(typeof(ResolverTagger))) return false;
+      var rt = tb.Properties.GetProperty(typeof(ResolverTagger)) as ResolverTagger;
+      if (rt == null) return false;
+      return !rt.AllErrors.Any(error => {
+          switch (error.Category) {
+            case ErrorCategory.ParseError:
+            case ErrorCategory.ResolveError:
+            case ErrorCategory.VerificationError:
+            case ErrorCategory.InternalError:
+            case ErrorCategory.TacticError:
+            case ErrorCategory.ProcessError:
+              return true;
+            case ErrorCategory.ParseWarning:
+            case ErrorCategory.ResolveWarning:
+            case ErrorCategory.AuxInformation:
+              return false;
+            default:
+              throw new tcce.UnreachableException();
+          }
+      });
     }
 
     public static Program GetReparsedProgram(ITextBuffer tb, string file, bool resolved) => new TacnyDriver(tb, file).ReParse(resolved);
 
     public static TacticReplaceStatus GetMemberFromPosition(DefaultClassDecl tld, int position, out MemberDecl member) {
       Contract.Requires(tld != null);
-      member = (from m in tld.Members
-                where m.tok.pos <= position && position <= m.BodyEndTok.pos + 1
-                select m).FirstOrDefault();
+      member = GetMemberFromPosition(tld, position);
       return member == null ? TacticReplaceStatus.NoTactic : TacticReplaceStatus.Success;
     }
+
+    public static MemberDecl GetMemberFromPosition(DefaultClassDecl tld, int position) => 
+      (from m in tld.Members where m.tok.pos <= position && position <= m.BodyEndTok.pos + 1 select m).FirstOrDefault();
     
     public static string StripExtraContentFromExpanded(string expandedTactic) {
       var words = new[] { "ghost ", "lemma ", "method ", "function ", "tactic " };
@@ -94,6 +114,15 @@ namespace DafnyLanguage.Refactoring
         if (GetTacticCallAtPosition(m, us.Tok.pos, out current) != TacticReplaceStatus.Success) continue;
         yield return current;
       }
+    }
+
+    public static bool InsideCalc(DefaultClassDecl tld, int pos) { //need to recurse down
+      var member = GetMemberFromPosition(tld, pos) as Method;
+      return (from stmt in member?.Body.Body
+        where stmt.Tok.pos < pos
+        && pos < stmt.EndTok.pos
+        select stmt.GetType()==typeof(CalcStmt))
+        .FirstOrDefault();
     }
   }
 }

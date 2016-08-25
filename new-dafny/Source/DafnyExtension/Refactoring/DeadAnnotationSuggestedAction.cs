@@ -48,30 +48,32 @@ namespace DafnyLanguage.Refactoring
 
     public IEnumerable<SuggestedActionSet> GetSuggestedActions(ISuggestedActionCategorySet requestedActionCategories, SnapshotSpan range, CancellationToken cancellationToken) {
       var actionList = new List<ISuggestedAction>();
+      var currentSnapshot = range.Snapshot;
 
       var first = _agg.GetTags(range).FirstOrDefault();
       if (first != null) {
-        actionList.Add(new RemoveDeadAnnotationSuggestedAction(first.Tag.TrackingReplacementSpan, first.Tag.Snapshot, first.Tag.Replacement, first.Tag.TypeName));
+        actionList.Add(new RemoveDeadAnnotationSuggestedAction(first.Tag.TrackingReplacementSpan, currentSnapshot, first.Tag.Replacement, first.Tag.TypeName));
       }
 
       Program p;
-      RefactoringUtil.GetExistingProgram(range.Snapshot.TextBuffer, out p);
+      RefactoringUtil.GetExistingProgram(currentSnapshot.TextBuffer, out p);
       if (p == null) return Enumerable.Empty<SuggestedActionSet>();
       var tld = RefactoringUtil.GetTld(p);
       MemberDecl md;
       RefactoringUtil.GetMemberFromPosition(tld, range.Start, out md);
       if (md != null) {
-        var methodSpan = RefactoringUtil.GetRangeOfMember(range.Snapshot, md);
+        var methodSpan = RefactoringUtil.GetRangeOfMember(currentSnapshot, md);
         var tagSpans = _agg.GetTags(methodSpan);
-        var tags = (from ts in tagSpans select ts.Tag).ToList();
-        actionList.Add(new RemoveMultipleDeadAnnotationsSuggestedAction(range.Snapshot.TextBuffer, tags, DeadAnnotationLocation.Block));
+        var tags = (from ts in tagSpans
+                    select new RemoveDeadAnnotationSuggestedAction(ts.Tag.TrackingReplacementSpan, currentSnapshot, ts.Tag.Replacement, ts.Tag.TypeName)).ToList();
+        actionList.Add(new RemoveMultipleDeadAnnotationsSuggestedAction(currentSnapshot.TextBuffer, tags, DeadAnnotationLocation.Block));
       }
       
-      var snapshotWideSpan = new SnapshotSpan(range.Snapshot, 0, range.Snapshot.Length);
+      var snapshotWideSpan = new SnapshotSpan(currentSnapshot, 0, currentSnapshot.Length);
       var allTags = _agg.GetTags(snapshotWideSpan);
-      var list = allTags.Select(ts => ts.Tag).ToList();
+      var list = allTags.Select(ts => new RemoveDeadAnnotationSuggestedAction(ts.Tag.TrackingReplacementSpan, currentSnapshot, ts.Tag.Replacement, ts.Tag.TypeName)).ToList();
       if (list.Count > 0)
-        actionList.Add(new RemoveMultipleDeadAnnotationsSuggestedAction(range.Snapshot.TextBuffer, list, DeadAnnotationLocation.File));
+        actionList.Add(new RemoveMultipleDeadAnnotationsSuggestedAction(currentSnapshot.TextBuffer, list, DeadAnnotationLocation.File));
       
       return actionList.Count>0 ?
         new [] { new SuggestedActionSet(actionList.ToArray()) }
@@ -127,21 +129,25 @@ namespace DafnyLanguage.Refactoring
       if (cancellationToken.CanBeCanceled && cancellationToken.IsCancellationRequested) { tedit.Dispose(); }
       tedit.Apply();
     }
+
+    internal void Invoke(ITextEdit tedit) {
+      tedit.Replace(_snapSpan, _replacement);
+    }
   }
   
   internal sealed class RemoveMultipleDeadAnnotationsSuggestedAction : DeadAnnotationSuggestedAction, ISuggestedAction
   {
-    private readonly List<DeadAnnotationTag> _dead;
+    private readonly List<RemoveDeadAnnotationSuggestedAction> _dead;
     public string DisplayText => $"Remove/Simplify ALL dead annotations in {Loc} ({_dead.Count} found)";
     private string Loc => Where == DeadAnnotationLocation.File ? "file" : "block";
 
-    public RemoveMultipleDeadAnnotationsSuggestedAction(ITextBuffer tb, List<DeadAnnotationTag> deadAnnotations, DeadAnnotationLocation where): base(tb, where) {
+    public RemoveMultipleDeadAnnotationsSuggestedAction(ITextBuffer tb, List<RemoveDeadAnnotationSuggestedAction> deadAnnotations, DeadAnnotationLocation where): base(tb, where) {
       _dead = deadAnnotations;
     }
 
     public void Invoke(CancellationToken cancellationToken) {
       var tedit = Tb.CreateEdit();
-      _dead.ForEach(x => tedit.Replace(x.ReplacementSpan.Span, x.Replacement));
+      _dead.ForEach(x => x.Invoke(tedit));
       if(cancellationToken.CanBeCanceled && cancellationToken.IsCancellationRequested) { tedit.Dispose(); }
       tedit.Apply();
     }

@@ -44,7 +44,7 @@ namespace DafnyLanguage
     {
       // create a single tagger for each buffer.
       Func<ITagger<T>> sc = delegate() { return new ResolverTagger(buffer, _serviceProvider, _textDocumentFactory) as ITagger<T>; };
-      return buffer.Properties.GetOrCreateSingletonProperty<ITagger<T>>(sc);
+      return buffer.Properties.GetOrCreateSingletonProperty(typeof(ResolverTagger), sc);
     }
   }
 
