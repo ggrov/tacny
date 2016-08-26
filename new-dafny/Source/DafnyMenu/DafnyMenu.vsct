@@ -199,8 +199,9 @@
 
       <Button guid="guidRefactoringMenuCmdSet" id="cmdidRemoveAllDeadCode" priority="0x0102" type="Button">
         <Parent guid="guidRefactoringMenuCmdSet" id="RefactoringMenuGroup" />
+        <CommandFlag>TextChanges</CommandFlag>
         <Strings>
-          <ButtonText>Remove/Simplify ALL dead code in file</ButtonText>
+          <ButtonText>Remove/Simplify ALL dead annotations in file</ButtonText>
         </Strings>
       </Button>
       
@@ -232,7 +233,7 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>TextChanges</CommandFlag>
         <Strings>
-          <ButtonText>Remove/Simplify this dead code</ButtonText>
+          <ButtonText>Remove/Simplify this dead annotation</ButtonText>
         </Strings>
       </Button>
 
@@ -242,7 +243,7 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>TextChanges</CommandFlag>
         <Strings>
-          <ButtonText>Remove/Simplify dead code in this member</ButtonText>
+          <ButtonText>Remove/Simplify dead annotation in this member</ButtonText>
         </Strings>
       </Button>
     </Buttons>

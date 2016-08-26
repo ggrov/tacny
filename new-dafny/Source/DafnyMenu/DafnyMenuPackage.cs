@@ -666,40 +666,28 @@ namespace DafnyLanguage.DafnyMenu
     }
     
     private void RemoveDeadCodeBeforeQuery(object s, EventArgs e) {
-      var atv = ActiveTextView;
-      var enabled = DeadCodeMenuProxy != null && atv?.TextBuffer != null && atv.TextBuffer.ContentType.IsOfType("dafny");
-      var act = DeadCodeMenuProxy?.GetSuggestedAction(atv, 0);
-      if (act == null) enabled = false;
       var cmd = s as OleMenuCommand;
       if (cmd == null) return;
-      cmd.Properties.Remove("DeadCodeRemoval");
-      cmd.Visible = cmd.Enabled = enabled;
-      if (!enabled) return;
-      cmd.Text = act.DisplayText;
-      cmd.Properties.Add("DeadCodeRemoval", act);
+      UpdateDeadCodeButton(cmd, 0);
     }
 
     private void RemoveDeadMemberCodeBeforeQuery(object s, EventArgs e) {
-      var atv = ActiveTextView;
-      var enabled = DeadCodeMenuProxy != null && atv?.TextBuffer != null && atv.TextBuffer.ContentType.IsOfType("dafny");
-      var act = DeadCodeMenuProxy?.GetSuggestedAction(atv, 1);
-      if (act == null) enabled = false;
       var cmd = s as OleMenuCommand;
       if (cmd == null) return;
-      cmd.Properties.Remove("DeadCodeRemoval");
-      cmd.Visible = cmd.Enabled = enabled;
-      if (!enabled) return;
-      cmd.Text = act.DisplayText;
-      cmd.Properties.Add("DeadCodeRemoval", act);
+      UpdateDeadCodeButton(cmd, 1);
     }
 
     private void RemoveAllDeadCodeBeforeQuery(object s, EventArgs e) {
-      var atv = ActiveTextView;
-      var enabled = DeadCodeMenuProxy != null && atv?.TextBuffer != null && atv.TextBuffer.ContentType.IsOfType("dafny");
-      var act = DeadCodeMenuProxy?.GetSuggestedAction(atv, 2);
-      if (act == null) enabled = false;
       var cmd = s as OleMenuCommand;
       if (cmd == null) return;
+      UpdateDeadCodeButton(cmd, 2);
+    }
+
+    private void UpdateDeadCodeButton(OleMenuCommand cmd, int action) {
+      var atv = ActiveTextView;
+      var enabled = DeadCodeMenuProxy != null && atv?.TextBuffer != null && atv.TextBuffer.ContentType.IsOfType("dafny");
+      var act = DeadCodeMenuProxy?.GetSuggestedAction(atv, action);
+      if (act == null) enabled = false;
       cmd.Properties.Remove("DeadCodeRemoval");
       cmd.Visible = cmd.Enabled = enabled;
       if (!enabled) return;
