@@ -119,6 +119,7 @@ namespace DafnyLanguage.Refactoring
 
   internal class DeadCodeMenuProxy : IDeadCodeMenuProxy {
     public ISuggestedAction GetSuggestedAction(ITextView tv, int dali) {
+      if (tv == null) return null;
       var dal = (DeadAnnotationLocation) dali;
       DeadAnnotationSuggestedActionsSource dasap;
       if (!tv.TextBuffer.Properties.TryGetProperty(typeof(DeadAnnotationSuggestedActionsSource), out dasap)) return null;
