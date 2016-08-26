@@ -164,6 +164,7 @@ namespace DafnyLanguage.Refactoring
     private int _lastRunChangeCount;
     private bool _hasNeverRun = true;
     private StopChecker _currentStopper;
+    private Thread _thread;
 
     public static bool IsCurrentlyActive { get; private set; }
     private static object _activityLock;
@@ -231,10 +232,10 @@ namespace DafnyLanguage.Refactoring
     }
 
     public void Dispose() {
-      _currentStopper.Stop = true;
-      _timer.Stop();
-      _timer.Tick -= IdleTick;
-      _tb.Changed -= BufferChangedInterrupt;
+      _thread?.Abort();
+      _timer?.Stop();
+      if(_timer!=null) _timer.Tick -= IdleTick;
+      if(_tb!=null) _tb.Changed -= BufferChangedInterrupt;
     }
     #endregion
 
@@ -272,7 +273,7 @@ namespace DafnyLanguage.Refactoring
           return;
       }
 #pragma warning disable CS0162
-      if (false) { _status.SetText(s); } //toggle to enable/disable use of status bar
+      if (false) { _status?.SetText(s); } //toggle to enable/disable use of status bar
 #pragma warning restore CS0162
     }
     #endregion
@@ -323,8 +324,8 @@ namespace DafnyLanguage.Refactoring
         Finish();
         return;
       }
-      var t = new Thread(ProcessProgramThreaded);
-      t.Start(new ThreadParams{P= prog, S = Snapshot, Stop = _currentStopper});
+      _thread = new Thread(ProcessProgramThreaded);
+      _thread.Start(new ThreadParams{P= prog, S = Snapshot, Stop = _currentStopper});
     }
 
     private void ProcessProgramThreaded(object o) {
@@ -380,8 +381,8 @@ namespace DafnyLanguage.Refactoring
         Finish();
         return;
       }
-      var t = new Thread(ProcessSomeMembersThreaded);
-      t.Start(new ThreadParams { P = p, M = notProcessedMembers, S = Snapshot, Stop = _currentStopper });
+      _thread = new Thread(ProcessSomeMembersThreaded);
+      _thread.Start(new ThreadParams { P = p, M = notProcessedMembers, S = Snapshot, Stop = _currentStopper });
     }
 
     private void ProcessSomeMembersThreaded(object o) {
