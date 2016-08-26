@@ -66,7 +66,8 @@ namespace DafnyLanguage.Refactoring
         var tagSpans = _agg.GetTags(methodSpan);
         var tags = (from ts in tagSpans
                     select new RemoveDeadAnnotationSuggestedAction(ts.Tag.TrackingReplacementSpan, currentSnapshot, ts.Tag.Replacement, ts.Tag.TypeName)).ToList();
-        actionList.Add(new RemoveMultipleDeadAnnotationsSuggestedAction(currentSnapshot.TextBuffer, tags, DeadAnnotationLocation.Block));
+        if(tags.Count > 0)
+          actionList.Add(new RemoveMultipleDeadAnnotationsSuggestedAction(currentSnapshot.TextBuffer, tags, DeadAnnotationLocation.Block));
       }
       
       var snapshotWideSpan = new SnapshotSpan(currentSnapshot, 0, currentSnapshot.Length);
