@@ -662,7 +662,7 @@ namespace DafnyLanguage.DafnyMenu
     {
       if (DeadCodeMenuProxy == null) return;
       var result = DeadCodeMenuProxy.Toggle() ? "Disable" : "Enable";
-      toggleDeadCodeCommand.Text = result + " dead code analysis";
+      toggleDeadCodeCommand.Text = result + " dead anotation analysis";
     }
     
     private void RemoveDeadCodeBeforeQuery(object s, EventArgs e) {

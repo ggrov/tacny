@@ -174,7 +174,7 @@
         <Parent guid="guidDafnyMenuCmdSet" id="DafnyMenuGroup" />
         <CommandFlag>TextChanges</CommandFlag>
         <Strings>
-          <ButtonText>Enable dead code analysis</ButtonText>
+          <ButtonText>Enable dead annotation analysis</ButtonText>
         </Strings>
       </Button>
       
