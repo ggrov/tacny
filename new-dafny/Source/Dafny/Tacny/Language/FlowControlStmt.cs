@@ -17,15 +17,15 @@ namespace Tacny.Language {
     public override int ArgsCount { get; }
 
     public abstract IEnumerable<ProofState> Generate(Statement statement, ProofState state);
-    protected ProofState State { get; set; }
+  
 
-    protected bool IsResolvable(ExpressionTree guard) {
+    protected static bool IsResolvable(ExpressionTree guard, ProofState state) {
       Contract.Requires<ArgumentNullException>(guard != null, "guard");
 
-      return ExpressionTree.IsResolvable(guard, State);
+      return ExpressionTree.IsResolvable(guard, state);
     }
 
-    protected ExpressionTree ExtractGuard(Statement stmt) {
+    protected static ExpressionTree ExtractGuard(Statement stmt) {
       Contract.Requires<ArgumentNullException>(stmt != null);
       // extract the guard statement
       var ifStmt = stmt as dfy.IfStmt;

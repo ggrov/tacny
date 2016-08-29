@@ -41,8 +41,7 @@ namespace Tacny {
       Contract.Invariant(_errorReporter != null);
     }
 
-    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null)
-        {
+    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
       if (_i == null) {
@@ -50,15 +49,15 @@ namespace Tacny {
       }
       _errorReporterDelegate = erd;
       var result = _i.FindTacticApplication(target);
+
+      var p = new Printer(Console.Out);
+      p.PrintMembers(new List<MemberDecl>() { result }, 0, "");
       _errorReporterDelegate = null;
-        //var p = new Printer(Console.Out);
-        //p.PrintMembers(new List<MemberDecl>() {result}, 0, "");
       return result;
     }
 
     public static List<Statement> FindSingleTactic(Program program, MemberDecl target,
-      UpdateStmt chosenTacticCall, ErrorReporterDelegate erd, Program unresolvedProgram)
-    {
+      UpdateStmt chosenTacticCall, ErrorReporterDelegate erd, Program unresolvedProgram) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
       var i = new Interpreter(program, unresolvedProgram);
@@ -68,8 +67,7 @@ namespace Tacny {
       return list;
     }
 
-    private List<Statement> FindSingleTacticApplication(MemberDecl target, UpdateStmt chosenTacticCall)
-    {
+    private List<Statement> FindSingleTacticApplication(MemberDecl target, UpdateStmt chosenTacticCall) {
       Contract.Requires(tcce.NonNull(target));
       _frame = new Stack<Dictionary<IVariable, Type>>();
       var method = target as Method;
@@ -141,7 +139,7 @@ namespace Tacny {
         } else if (stmt is IfStmt) {
           var ifStmt = stmt as IfStmt;
           SearchIfStmt(ifStmt);
-          
+
         } else if (stmt is WhileStmt) {
           var whileStmt = stmt as WhileStmt;
           SearchBlockStmt(whileStmt.Body);
@@ -153,7 +151,7 @@ namespace Tacny {
             _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
           }
         } else if (stmt is BlockStmt) {
-            //TODO:
+          //TODO:
         }
       }
       _frame.Pop();
@@ -181,46 +179,31 @@ namespace Tacny {
       return result;
     }
 
-    private static string partial = "partial";
-    public static bool ParsePartial(Attributes attr) {
+    public static bool ParsePartialAttribute(Attributes attr) {
       Contract.Requires(attr != null);
-
-      if (attr.Name == partial)
+      if (attr.Name == "partial")
         return true;
-      else{
-        if (attr.Prev != null){
-          return ParsePartial(attr.Prev);
-        }
-        else
-          return false;
-      }
+
+      return attr.Prev != null && ParsePartialAttribute(attr.Prev);
     }
 
-
-    public static bool IfPartial(ProofState state, UpdateStmt tacApp) {
+    public static bool IsPartial(ProofState state, UpdateStmt tacticApplication) {
       //still need to check the localtion of the application, is it the last call ? is it a neswted call ?
-      var ret = false;
-      // get the def and check attr
-      var tacDef = state.GetTactic(tacApp) as Tactic;
- //     Contract.Requires(tacDef != null);
-      if(tacDef.Attributes != null)
-        ret = ParsePartial(tacDef.Attributes);
-      //check the attr at the application call
-      if (tacApp.Rhss[0].Attributes != null){
-        if (ParsePartial(tacApp.Rhss[0].Attributes))
-          ret = true;
+      if (state.TacticInfo.IsPartial) {
+        return true;
       }
-      return ret;
+
+      return tacticApplication.Rhss[0].Attributes != null && ParsePartialAttribute(tacticApplication.Rhss[0].Attributes);
     }
 
     public static ProofState ApplyTactic(ProofState state, Dictionary<IVariable, Type> variables,
-      UpdateStmt tacticApplication){
+      UpdateStmt tacticApplication) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
       Contract.Requires<ArgumentNullException>(tcce.NonNull(tacticApplication));
       Contract.Requires<ArgumentNullException>(state != null, "state");
       state.InitState(tacticApplication, variables);
 
-      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, !IfPartial(state, tacticApplication));
+      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, !IsPartial(state, tacticApplication));
       return search.Search(state, _errorReporterDelegate).FirstOrDefault();
     }
 
@@ -235,6 +218,21 @@ namespace Tacny {
         var c = state.Copy();
         c.AddStatementRange(result.GetGeneratedCode());
         yield return c;
+      }
+    }
+
+    public static IEnumerable<ProofState> EvaluateBlockStmt(ProofState state, BlockStmt blockStmt) {
+      Contract.Requires<ArgumentNullException>(state != null, "state");
+      Contract.Requires<ArgumentNullException>(blockStmt != null, "stmt");
+      state.AddNewFrame(blockStmt);
+      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, false);
+      foreach (var result in search.Search(state, _errorReporterDelegate)) {
+        var c = state.Copy();
+        c.AddStatementRange(result.GetGeneratedCode());
+        yield return c;
+      }
+      if (!state.RemoveFrame()) {
+        throw new InvalidOperationException("tried to pop more frames than were pushed");
       }
     }
 
@@ -269,15 +267,28 @@ namespace Tacny {
       } else if (stmt is PredicateStmt) {
         enumerable = ResolvePredicateStmt((PredicateStmt)stmt, state);
       } else if (stmt is TStatement) {
-                //TODO: 
-      }  else if (stmt is IfStmt || stmt is WhileStmt) {
-          
+        //TODO: Evaluate tactic statement
+      } else if (stmt is IfStmt || stmt is WhileStmt) {
+        enumerable = ResolveFlowControlStmt(stmt, state);
       } else {
         enumerable = DefaultAction(stmt, state);
       }
 
       foreach (var item in enumerable)
         yield return item.Copy();
+    }
+
+    private static IEnumerable<ProofState> ResolveFlowControlStmt(Statement stmt, ProofState state) {
+      Language.FlowControlStmt fcs = null;
+      if (stmt is IfStmt) {
+        fcs = new Language.IfStmt();
+      } else if (stmt is WhileStmt) {
+        //TODO: while statemenet
+      } else {
+        Contract.Assert(false);
+        return null;
+      }
+      return fcs.Generate(stmt, state);
     }
 
 

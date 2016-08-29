@@ -157,7 +157,6 @@ namespace Tacny {
 
     public void AddNewFrame(BlockStmt body) {
       Contract.Requires<ArgumentNullException>(body != null, "body");
-      //Contract.Requires<ArgumentNullException>(_scope.Count > 0, "scope");
       _scope.Push(new Frame(_scope.Peek(), body.Body));
     }
 
@@ -561,6 +560,7 @@ namespace Tacny {
             }
             break;
            case "partial":
+            TacticInfo.IsPartial = true;
             break;
           default:
             _reporter.Warning(MessageSource.Tacny, ((MemberDecl)ActiveTactic).tok, $"Unrecognized attribute {attr.Name}");
@@ -680,6 +680,7 @@ namespace Tacny {
     // tactic attribute information goes here
     public class TacticInformation {
       public Strategy SearchStrategy { get; set; } = Strategy.Bfs;
+      public bool IsPartial { get; set; } = false;
     }
 
     public class TacticCache {
