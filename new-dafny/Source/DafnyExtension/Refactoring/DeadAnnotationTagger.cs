@@ -19,7 +19,7 @@ using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using Program = Microsoft.Dafny.Program;
-using Dary;
+using Dare;
 using Tacny;
 
 namespace DafnyLanguage.Refactoring
@@ -335,11 +335,11 @@ namespace DafnyLanguage.Refactoring
       var prog = ((ThreadParams) o).P;
       var snap = ((ThreadParams) o).S;
       var stop = ((ThreadParams) o).Stop;
-      var dary = new Dary.Dary(stop);
-      List<DaryResult> results;
+      var dare = new Dare.Dare(stop);
+      List<DareResult> results;
       _lastRunChangeCount = _changesSinceLastSuccessfulRun.Count;
       try {
-        results = dary.ProcessProgram(prog);
+        results = dare.ProcessProgram(prog);
       } catch (NotValidException) {
         _lastRunFailed = true;
         NotifyStatusbar(DeadAnnotationStatus.DaryFailInvalid);
@@ -393,11 +393,11 @@ namespace DafnyLanguage.Refactoring
       var snap = ((ThreadParams)o).S;
       var stop = ((ThreadParams)o).Stop;
       var mds = ((ThreadParams) o).M;
-      var dary = new Dary.Dary(stop);
-      List<DaryResult> results;
+      var dare = new Dare.Dare(stop);
+      List<DareResult> results;
       _lastRunChangeCount = _changesSinceLastSuccessfulRun.Count;
       try {
-        results = dary.ProcessMembers(prog, mds);
+        results = dare.ProcessMembers(prog, mds);
       } catch (NotValidException) {
         _lastRunFailed = true;
         NotifyStatusbar(DeadAnnotationStatus.DaryFailInvalid);
@@ -443,7 +443,7 @@ namespace DafnyLanguage.Refactoring
       }
     }
 
-    private DeadAnnotationTag ProcessValidResult(DaryResult r, Program p) {
+    private DeadAnnotationTag ProcessValidResult(DareResult r, Program p) {
       DeadAnnotationTag tag;
       switch (r.TypeOfRemovable) {
         case "Assert Statement":
@@ -477,20 +477,20 @@ namespace DafnyLanguage.Refactoring
       _deadAnnotations.Add(newtag);
     }
 
-    private DeadAnnotationTag FindStmtTag(DaryResult r, Program p) {
+    private DeadAnnotationTag FindStmtTag(DareResult r, Program p) {
       var replacement = FindReplacement(r.Replace, r.StartTok.pos, r.TypeOfRemovable);
       var pos = StmtReplacementPositions(r.StartTok.pos, r.Length, r.Replace != null);
       return new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
     }
     
-    private DeadAnnotationTag FindExprTag(DaryResult r, Program p) {
+    private DeadAnnotationTag FindExprTag(DareResult r, Program p) {
       var actualTokPos = InvarDecStartPosition(r);
       var replacement = FindReplacement(r.Replace, actualTokPos, r.TypeOfRemovable);
       var pos = ExprReplacementPositions(r, actualTokPos, r.Replace!=null);
       return new DeadAnnotationTag(Snapshot, pos.WarnStart, pos.WarnLength, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, p);
     }
 
-    private Positions ExprReplacementPositions(DaryResult r, int tokPos, bool hasReplacement) {
+    private Positions ExprReplacementPositions(DareResult r, int tokPos, bool hasReplacement) {
       var ending = InvarDecEndPosition(r);
       var tokLen = ending.Item1 - tokPos;
       var usesTrailingSemi = ending.Item2;
@@ -531,7 +531,7 @@ namespace DafnyLanguage.Refactoring
       return new Positions(tokPos, actualLength, startOfLine, wholeLength);
     }
     
-    private int InvarDecStartPosition(DaryResult r) {
+    private int InvarDecStartPosition(DareResult r) {
       var current = r.StartTok.pos;
       var currentSpan = new SnapshotSpan();
       var looking = true;
@@ -546,7 +546,7 @@ namespace DafnyLanguage.Refactoring
       return currentSpan.Start.Position;
     }
 
-    private Tuple<int,bool> InvarDecEndPosition(DaryResult r) {
+    private Tuple<int,bool> InvarDecEndPosition(DareResult r) {
       var current = r.StartTok.pos;
       var currentSpan = new SnapshotSpan();
       var currentWord = "";

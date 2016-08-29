@@ -24,12 +24,13 @@ if NOT "%errorlevel%"=="0" (
 if "%1"=="all" ( goto boogie )
 if "%1"=="boogie" ( goto boogie )
 if "%1"=="dafny" ( goto dafny )
+if "%1"=="dare" ( goto dare )
 if "%1"=="ext" ( goto ext )
 
 if NOT "%1"=="" (
  echo =================================================================
- echo Usage: make {all/boogie/dafny/ext} [ext]                       
- echo Make either all, boogie, dafny, or just the extension            
+ echo Usage: make {all/boogie/dafny/dare/ext}                          
+ echo Make either all, boogie, dafny, dare, or just the extension      
  echo When building dafny, tacny is automatically included in the build
  echo If building both dafny and the extension, use second ext option  
  echo Shorthand for make all is just make                              
@@ -47,10 +48,14 @@ if NOT "%1"=="" (
  nuget restore new-dafny\Source\Dafny.sln
  msbuild new-dafny\Source\Dafny.sln /p:Configuration=Debug /p:Platform="Any CPU"
  if NOT "%errorlevel%"=="0" ( goto badend )
- if "%1"=="all" ( goto ext )
- if "%1"=="" ( goto ext )
- if NOT "%2"=="ext" ( goto end )
+ if "%1"=="dafny" ( goto end )
 
+:dare
+ nuget restore dare\Dare.sln
+ msbuild dare\Dare.sln /p:Configuration=Debug /p:Platform="Any CPU"
+ if NOT "%errorlevel%"=="0" ( goto badend )
+ if "%1"=="dare" ( goto end )
+ 
 :ext
  nuget restore new-dafny\Source\DafnyExtension.sln
  msbuild new-dafny\Source\DafnyExtension.sln /p:Configuration=Debug /p:Platform="Any CPU"
