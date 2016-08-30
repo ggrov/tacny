@@ -307,99 +307,132 @@ namespace Tacny {
         yield return copy;
       }
     }
-
+/*
+    public static IEnumerable<object> GenerateFromApplySuffix(string sig, System.Type typ, ProofState state, ApplySuffix aps) {
+      var types =
+        Assembly.GetAssembly(typ).GetTypes().Where(t => t.IsSubclassOf(typ));
+      foreach (var type in types){
+        var resolverInstance = Activator.CreateInstance(type) as EAtomic.EAtomic;
+        if (sig == resolverInstance?.Signature){
+          //TODO: validate input countx, as well types of hte the args
+          foreach (var item in resolverInstance?.Generate(aps, state))
+            yield return item;
+        }
+      }
+    }
+*/
     public static IEnumerable<object> EvaluateTacnyExpression(ProofState state, Expression expr) {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       Contract.Requires<ArgumentNullException>(expr != null, "expr");
-      if (expr is NameSegment) {
+      if(expr is NameSegment) {
         var ns = (NameSegment)expr;
-        if (state.HasLocalValue(ns.Name)) {
+        if(state.HasLocalValue(ns.Name)) {
           yield return state.GetLocalValue(ns.Name);
         } else {
           yield return ns;
         }
-      } else if (expr is ApplySuffix) {
+      } else if(expr is ApplySuffix) {
         var aps = (ApplySuffix)expr;
-        if (state.IsTacticCall(aps)) {
+        if(state.IsTacticCall(aps)) {
           var us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>() { aps.Lhs },
             new List<AssignmentRhs>() { new ExprRhs(aps) });
-          foreach (var item in ApplyNestedTactic(state, state.DafnyVars(), us).Select(x => x.GetGeneratedCode())) {
+          foreach(var item in ApplyNestedTactic(state, state.DafnyVars(), us).Select(x => x.GetGeneratedCode())) {
             yield return item;
           }
-        }
-        // rewrite the expression
-        if (aps.Lhs is ExprDotName) {
-          foreach (var item in EvaluateTacnyExpression(state, aps.Lhs)) {
-            if (item is Expression) {
-              yield return new ApplySuffix(aps.tok, (Expression)item, aps.Args);
-            } else {
+        } else if (aps.Lhs is ExprDotName){
+          foreach (var item in EvaluateTacnyExpression(state, aps.Lhs)){
+            if (item is Expression){
+              yield return new ApplySuffix(aps.tok, (Expression) item, aps.Args);
+            }
+            else{
               Contract.Assert(false, "Unexpected ExprNotName case");
             }
           }
-        } else {
-          // try to evaluate as tacny expression
+        }
+        else{
+          // get the keywprd of this application
           string sig = Util.GetSignature(aps);
-          // using reflection find all classes that extend EAtomic
+          //Firstly, check if this is a projection function
           var types =
-            Assembly.GetAssembly(typeof(EAtomic.EAtomic)).GetTypes().Where(t => t.IsSubclassOf(typeof(EAtomic.EAtomic)));
-          foreach (var type in types) {
-            var resolverInstance = Activator.CreateInstance(type) as EAtomic.EAtomic;
-            if (sig == resolverInstance?.Signature) {
+            Assembly.GetAssembly(typeof(Function.Projection))
+              .GetTypes()
+              .Where(t => t.IsSubclassOf(typeof(Function.Projection)));
+          foreach (var fType in types){
+            var porjInst = Activator.CreateInstance(fType) as Function.Projection;
+            if (sig == porjInst?.Signature){
               //TODO: validate input countx
-              foreach (var item in resolverInstance?.Generate(aps, state))
-                yield return item;
+              var enumerable = porjInst?.Generate(aps, state);
+              if (enumerable != null)
+                foreach (var item in enumerable)
+                  yield return item;
             }
-            // if we reached this point, rewrite  the apply suffix
-            foreach (var item in EvaluateTacnyExpression(state, aps.Lhs)) {
-              if (!(item is NameSegment)) {
-                //TODO: warning
-              } else {
-                var argList = new List<Expression>();
-                foreach (var arg in aps.Args) {
-                  foreach (var result in EvaluateTacnyExpression(state, arg)) {
-                    if (result is Expression)
-                      argList.Add(result as Expression);
-                    else
-                      argList.Add(Util.VariableToExpression(result as IVariable));
-                    break;
-                  }
+            //If not projection, then try to evaluate as tacny expression
+            // using reflection find all classes that extend EAtomic
+            types =
+              Assembly.GetAssembly(typeof(EAtomic.EAtomic))
+                .GetTypes()
+                .Where(t => t.IsSubclassOf(typeof(EAtomic.EAtomic)));
+            foreach (var eType in types){
+              var eatomInst = Activator.CreateInstance(eType) as EAtomic.EAtomic;
+              if (sig == eatomInst?.Signature){
+                //TODO: validate input countx
+                var enumerable = eatomInst?.Generate(aps, state);
+                if (enumerable != null)
+                  foreach (var item in enumerable)
+                    yield return item;
+              }
+              // if we reached this point, rewrite  the apply suffix
+              foreach (var item in EvaluateTacnyExpression(state, aps.Lhs)){
+                if (!(item is NameSegment)){
+                  //TODO: warning
                 }
-                yield return new ApplySuffix(aps.tok, aps.Lhs, argList);
+                else{
+                  var argList = new List<Expression>();
+                  foreach (var arg in aps.Args){
+                    foreach (var result in EvaluateTacnyExpression(state, arg)){
+                      if (result is Expression)
+                        argList.Add(result as Expression);
+                      else
+                        argList.Add(Util.VariableToExpression(result as IVariable));
+                      break;
+                    }
+                  }
+                  yield return new ApplySuffix(aps.tok, aps.Lhs, argList);
+                }
               }
             }
-
           }
         }
-      } else if (expr is ExprDotName) {
+      } else if(expr is ExprDotName) {
         var edn = (ExprDotName)expr;
         var ns = edn.Lhs as NameSegment;
-        if (ns != null && state.ContainsVariable(ns)) {
+        if(ns != null && state.ContainsVariable(ns)) {
           var newLhs = state.GetLocalValue(ns);
           var lhs = newLhs as Expression;
-          if (lhs != null)
+          if(lhs != null)
             yield return new ExprDotName(edn.tok, lhs, edn.SuffixName, edn.OptTypeArguments);
         }
         yield return edn;
-      } else if (expr is UnaryOpExpr) {
+      } else if(expr is UnaryOpExpr) {
         var op = (UnaryOpExpr)expr;
-        foreach (var result in EvaluateTacnyExpression(state, op.E)) {
-          switch (op.Op) {
+        foreach(var result in EvaluateTacnyExpression(state, op.E)) {
+          switch(op.Op) {
             case UnaryOpExpr.Opcode.Cardinality:
-              if (!(result is IEnumerable)) {
+              if(!(result is IEnumerable)) {
                 var resultExp = result is IVariable
                   ? Util.VariableToExpression(result as IVariable)
                   : result as Expression;
                 yield return new UnaryOpExpr(op.tok, op.Op, resultExp);
               } else {
                 var enumerator = result as IList;
-                if (enumerator != null)
+                if(enumerator != null)
                   yield return new Dafny.LiteralExpr(op.tok, enumerator.Count);
               }
               yield break;
             case UnaryOpExpr.Opcode.Not:
-              if (result is Dafny.LiteralExpr) {
+              if(result is Dafny.LiteralExpr) {
                 var lit = (Dafny.LiteralExpr)result;
-                if (lit.Value is bool) {
+                if(lit.Value is bool) {
                   // inverse the bool value
                   yield return new Dafny.LiteralExpr(op.tok, !(bool)lit.Value);
                 } else {
@@ -416,12 +449,12 @@ namespace Tacny {
               yield break;
           }
         }
-      } else if (expr is DisplayExpression) {
+      } else if(expr is DisplayExpression) {
         var dexpr = (DisplayExpression)expr;
-        if (dexpr.Elements.Count == 0) {
+        if(dexpr.Elements.Count == 0) {
           yield return dexpr.Copy();
         } else {
-          foreach (var item in ResolveDisplayExpression(state, dexpr)) {
+          foreach(var item in ResolveDisplayExpression(state, dexpr)) {
             yield return item;
           }
 

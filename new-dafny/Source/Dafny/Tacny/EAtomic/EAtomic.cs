@@ -10,6 +10,9 @@ namespace Tacny.EAtomic {
   public abstract class EAtomic : BaseTactic {
     public abstract override string Signature { get; }
 
+    // TypeOf (Expression expression, ProofState proofState); 
+    // next step will be to implement proer typing, perhaps in F#
+
     /// <summary>
     ///   Common entry point for each atomic
     /// </summary>
