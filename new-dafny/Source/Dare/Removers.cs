@@ -859,6 +859,7 @@ namespace Dare
 
         public void CombineRequiredSubexpressions()
         {
+            if (RequiredItems.Count == 0) return;
             var originalWrap = OriginalItem.GetItem();
             if (originalWrap is Wrap<Statement>) {
                 var brokenItems =
