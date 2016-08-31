@@ -5,7 +5,6 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
-using Function = Microsoft.Dafny.Function;
 using Program = Microsoft.Dafny.Program;
 
 namespace Dare
@@ -50,7 +49,8 @@ namespace Dare
             ExecutionEngine.Inline(boogieProgram);
 
             oc = ExecutionEngine.InferAndVerify(boogieProgram, stats, programId, errorDelegate);
-            var allOk = stats.ErrorCount == 0 && stats.InconclusiveCount == 0 && stats.TimeoutCount == 0 && stats.OutOfMemoryCount == 0;
+            var allOk = stats.ErrorCount == 0 && stats.InconclusiveCount == 0 && stats.TimeoutCount == 0 &&
+                        stats.OutOfMemoryCount == 0;
             return oc == PipelineOutcome.VerificationCompleted && allOk;
         }
     }
@@ -80,20 +80,21 @@ namespace Dare
 
         public Wrap(T removable, List<T> parentList)
         {
-            if(!parentList.Contains(removable)) throw new Exception("Removeable item is not in its parent");
+            if (!parentList.Contains(removable)) throw new Exception("Removeable item is not in its parent");
             Removable = removable;
             ParentList = parentList;
             Removed = false;
             Index = -1;
         }
+
         public Wrap(T removable, List<T> parentList, int index)
         {
             Removable = removable;
             ParentList = parentList;
             Removed = !ParentList.Contains(Removable);
-            if(!Removed)
+            if (!Removed)
                 Index = -1;
-            else if (index < 0) 
+            else if (index < 0)
                 throw new Exception("Index is less than 0 on creating a removed wrap");
         }
 
@@ -134,7 +135,8 @@ namespace Dare
             get { return 1 + SubDecreases.Sum(wildCardDecreases => wildCardDecreases.Count); }
         }
 
-        public WildCardDecreases(Expression decreasesExpression, Specification<Expression> parentSpecification, WildCardDecreases parentWildCardDecreases)
+        public WildCardDecreases(Expression decreasesExpression, Specification<Expression> parentSpecification,
+            WildCardDecreases parentWildCardDecreases)
         {
             Expression = decreasesExpression;
             ParentSpecification = parentSpecification;
@@ -158,11 +160,14 @@ namespace Dare
             _program = program;
         }
 
-        public Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>, List<CalcStmt>> Remove(Dictionary<MemberDecl, List<Wrap<Statement>>> memberWrapDictionary)
+        public Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>, List<CalcStmt>> Remove(
+            Dictionary<MemberDecl, List<Wrap<Statement>>> memberWrapDictionary)
         {
             foreach (var calcList in memberWrapDictionary.Values)
                 RemoveCalcsInMethod(calcList);
-            var removableCalcs = new Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>, List<CalcStmt>>(_removableLines, _removableHints, _removableOps, _removableCalcStmts);
+            var removableCalcs =
+                new Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>, List<CalcStmt>>(_removableLines,
+                    _removableHints, _removableOps, _removableCalcStmts);
             Reset();
             return removableCalcs;
         }
@@ -187,7 +192,8 @@ namespace Dare
         {
             RemoveLinesAndHints(calc);
             RemoveOtherHints(calc);
-            return new Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>>(_removableLines, _removableHints, _removableOps);
+            return new Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>>(_removableLines, _removableHints,
+                _removableOps);
         }
 
         private void RemoveOtherHints(CalcStmt calc)
@@ -220,7 +226,9 @@ namespace Dare
                 for (var j = 0; j < calc.Hints.Count; j++) {
                     var hint = calc.Hints[j];
                     var stepOp = calc.StepOps[j];
-                    if (!TryRemove(new Wrap<Expression>(line, calc.Lines), new Wrap<BlockStmt>(hint, calc.Hints), new Wrap<CalcStmt.CalcOp>(stepOp, calc.StepOps))) continue;
+                    if (
+                        !TryRemove(new Wrap<Expression>(line, calc.Lines), new Wrap<BlockStmt>(hint, calc.Hints),
+                            new Wrap<CalcStmt.CalcOp>(stepOp, calc.StepOps))) continue;
                     //Have to go back one as a line has been removed
                     i--;
                     _removableLines.Add(line);
@@ -327,6 +335,7 @@ namespace Dare
     internal abstract class VerificationErrorInformationRetriever
     {
         public abstract void ErrorInformation(ErrorInformation errorInfo);
+        protected bool _cannotFindMemberException = false;
 
         public List<MemberDecl> AlreadyReAddedMembers = new List<MemberDecl>();
 
@@ -339,23 +348,22 @@ namespace Dare
             CheckIfMemberWasAlreadyAdded(pos);
             foundMember = FindMemberInFunction(pos, memberDecls);
             if (foundMember != null) return foundMember;
+            _cannotFindMemberException = true;
             throw new CannotFindMemberException();
         }
 
         private static MemberDecl FindMemberInFunction(int pos, IList<MemberDecl> memberDecls)
         {
-            //Possible we're dealing with a function
+            //Possible we're dealing with a function (or case where the token is before the start of the body)
             //Functions have no end tokens - (assuming the BodyEndTok thing isn't working)
             //we will look through all the functions and find the one with the highest pos that is less than the errors pos.
             MemberDecl foundMember = null;
             foreach (var memberDecl in memberDecls) {
-                var function = memberDecl as Function;
-                if (function == null) continue;
-                if (function.tok.pos >= pos) continue; //function occurs after the token - no chance this is the one
+                if (memberDecl.tok.pos > pos) continue; //function occurs after the token - no chance this is the one
                 if (foundMember == null)
-                    foundMember = function;
-                else if (function.tok.pos > foundMember.tok.pos)
-                    foundMember = function;
+                    foundMember = memberDecl;
+                else if (memberDecl.tok.pos > foundMember.tok.pos)
+                    foundMember = memberDecl;
             }
             return foundMember;
         }
@@ -378,14 +386,14 @@ namespace Dare
         {
             foreach (var member in memberDecls) {
                 if (member.BodyStartTok.pos <= pos && member.BodyEndTok.pos >= pos) {
-                    if(AlreadyReAddedMembers.Contains(member)) throw new AlreadyRemovedException();
+                    if (AlreadyReAddedMembers.Contains(member)) throw new AlreadyRemovedException();
                     return member;
                 }
-                if (member.BodyStartTok.pos != 0 || member.BodyEndTok.pos != 0) continue; //Sometimes this bugs out... needs resolved first?
+                if (member.BodyStartTok.pos != 0 || member.BodyEndTok.pos != 0)
+                    continue; //Sometimes this bugs out... needs resolved first?
                 var method = member as Method;
                 if (method == null) continue;
-                if (method.Body.Tok.pos <= pos && method.Body.EndTok.pos >= pos)
-                {
+                if (method.Body.Tok.pos <= pos && method.Body.EndTok.pos >= pos) {
                     if (AlreadyReAddedMembers.Contains(member)) throw new AlreadyRemovedException();
                     return member;
                 }
@@ -452,7 +460,8 @@ namespace Dare
             _simpleVerifier.IsProgramValid(_program, similRemover.ErrorInformation);
         }
 
-        private bool RemoveAndTrackItemsForThisRun<T>(Dictionary<MemberDecl, List<Wrap<T>>> memberWrapDictionary, int index, SimilRemoverStorage<T> similRemover)
+        private bool RemoveAndTrackItemsForThisRun<T>(Dictionary<MemberDecl, List<Wrap<T>>> memberWrapDictionary,
+            int index, SimilRemoverStorage<T> similRemover)
         {
             var finished = true;
             foreach (var method in memberWrapDictionary.Keys) {
@@ -474,8 +483,14 @@ namespace Dare
         public List<Wrap<Statement>> RemovableLemmaCalls = new List<Wrap<Statement>>();
         public List<Wrap<Statement>> RemovableCalcs = new List<Wrap<Statement>>();
         public List<Tuple<Statement, Statement>> SimplifiedAsserts = new List<Tuple<Statement, Statement>>();
-        public List<Tuple<MaybeFreeExpression, MaybeFreeExpression>> SimplifiedInvariants = new List<Tuple<MaybeFreeExpression, MaybeFreeExpression>>();
-        public Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>, List<CalcStmt>> SimplifiedCalcs = new Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>, List<CalcStmt>>(new List<Expression>(), new List<BlockStmt>(), new List<CalcStmt.CalcOp>(), new List<CalcStmt>());
+
+        public List<Tuple<MaybeFreeExpression, MaybeFreeExpression>> SimplifiedInvariants =
+            new List<Tuple<MaybeFreeExpression, MaybeFreeExpression>>();
+
+        public Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>, List<CalcStmt>> SimplifiedCalcs =
+            new Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>, List<CalcStmt>>(new List<Expression>(),
+                new List<BlockStmt>(), new List<CalcStmt.CalcOp>(), new List<CalcStmt>());
+
         public List<WildCardDecreases> RemovableWildCardDecreaseses = new List<WildCardDecreases>();
 
         public SimplificationData ToSimplificationData()
@@ -494,9 +509,12 @@ namespace Dare
             foreach (var wildCard in RemovableWildCardDecreaseses)
                 simpData.RemovableDecreases.Add(wildCard.Expression);
             foreach (var simplifiedAssert in SimplifiedAsserts)
-                simpData.SimplifiedAsserts.Add(new Tuple<Statement, Statement>(simplifiedAssert.Item1, simplifiedAssert.Item2));
+                simpData.SimplifiedAsserts.Add(new Tuple<Statement, Statement>(simplifiedAssert.Item1,
+                    simplifiedAssert.Item2));
             foreach (var simplifiedInvariant in SimplifiedInvariants)
-                simpData.SimplifiedInvariants.Add(new Tuple<MaybeFreeExpression, MaybeFreeExpression>(simplifiedInvariant.Item1, simplifiedInvariant.Item2));
+                simpData.SimplifiedInvariants.Add(
+                    new Tuple<MaybeFreeExpression, MaybeFreeExpression>(simplifiedInvariant.Item1,
+                        simplifiedInvariant.Item2));
             simpData.SimplifiedCalcs = SimplifiedCalcs;
             return simpData;
         }
@@ -510,7 +528,10 @@ namespace Dare
         public List<UpdateStmt> RemovableLemmaCalls = new List<UpdateStmt>();
         public List<CalcStmt> RemovableCalcs = new List<CalcStmt>();
         public List<Tuple<Statement, Statement>> SimplifiedAsserts = new List<Tuple<Statement, Statement>>();
-        public List<Tuple<MaybeFreeExpression, MaybeFreeExpression>> SimplifiedInvariants = new List<Tuple<MaybeFreeExpression, MaybeFreeExpression>>();
+
+        public List<Tuple<MaybeFreeExpression, MaybeFreeExpression>> SimplifiedInvariants =
+            new List<Tuple<MaybeFreeExpression, MaybeFreeExpression>>();
+
         public Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>, List<CalcStmt>> SimplifiedCalcs;
     }
 
@@ -543,20 +564,24 @@ namespace Dare
             return new Tuple<List<WildCardDecreases>, bool>(removableWildCards, safeToRemove);
         }
 
-        private void RemoveWildCardDecreases(WildCardDecreases currentWildCardDecreases, List<WildCardDecreases> removableWildCards, ref bool safeToRemove)
+        private void RemoveWildCardDecreases(WildCardDecreases currentWildCardDecreases,
+            List<WildCardDecreases> removableWildCards, ref bool safeToRemove)
         {
-            var index = currentWildCardDecreases.ParentSpecification.Expressions.IndexOf(currentWildCardDecreases.Expression);
+            var index =
+                currentWildCardDecreases.ParentSpecification.Expressions.IndexOf(currentWildCardDecreases.Expression);
             currentWildCardDecreases.ParentSpecification.Expressions.Remove(currentWildCardDecreases.Expression);
             var ver = new SimpleVerifier();
             if (ver.IsProgramValid(_program))
                 removableWildCards.Add(currentWildCardDecreases);
             else {
-                currentWildCardDecreases.ParentSpecification.Expressions.Insert(index, currentWildCardDecreases.Expression);
+                currentWildCardDecreases.ParentSpecification.Expressions.Insert(index,
+                    currentWildCardDecreases.Expression);
                 safeToRemove = false;
             }
         }
 
-        private void RemoveWildCardSubDecreases(WildCardDecreases wcd, List<WildCardDecreases> removableWildCards, ref bool safeToRemove)
+        private void RemoveWildCardSubDecreases(WildCardDecreases wcd, List<WildCardDecreases> removableWildCards,
+            ref bool safeToRemove)
         {
             foreach (var subDec in wcd.SubDecreases) {
                 var removableWCs = FindRemovableWildCards(subDec);
@@ -613,7 +638,9 @@ namespace Dare
                 calcOps.AddRange(simplifiedItem.Item3);
                 allSimplifiedCalcs.Add((CalcStmt) wrap.Removable);
             }
-            simpData.SimplifiedCalcs = new Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>, List<CalcStmt>>(calcLines, calcBlocks, calcOps, allSimplifiedCalcs);
+            simpData.SimplifiedCalcs =
+                new Tuple<List<Expression>, List<BlockStmt>, List<CalcStmt.CalcOp>, List<CalcStmt>>(calcLines,
+                    calcBlocks, calcOps, allSimplifiedCalcs);
             return simpData;
             //TODO remove things from the _allRemovableTypes. Would that even be worth it in this use case?
         }
@@ -745,10 +772,12 @@ namespace Dare
         public List<SimplificationItemInMethod> Brokenitems { get; private set; }
         public List<SimplificationItemInMethod> RequiredItems { get; private set; }
         public SimplificationItemInMethod OriginalItem { get; private set; }
+        public SimplificationItemInMethod NewItem { get; private set; }
         private readonly MemberDecl _member;
         public bool Ignore { get; private set; }
         public bool Finished { get; private set; }
 
+        //TODO: resinsert the new item into the program and remove the broken items
         public ConjunctionData(MemberDecl member, SimplificationItemInMethod item)
         {
             OriginalItem = item;
@@ -757,9 +786,9 @@ namespace Dare
             RequiredItems = new List<SimplificationItemInMethod>();
 
             var wrap = item.GetItem();
-            if (wrap is Wrap<Statement>) 
+            if (wrap is Wrap<Statement>)
                 Brokenitems = BreakDownWrap(wrap as Wrap<Statement>, member);
-            else if (wrap is Wrap<MaybeFreeExpression>) 
+            else if (wrap is Wrap<MaybeFreeExpression>)
                 Brokenitems = BreakDownWrap(wrap as Wrap<MaybeFreeExpression>, member);
             else throw new UnableToDetermineTypeException();
         }
@@ -801,7 +830,7 @@ namespace Dare
             var item = Brokenitems[_index].GetItem();
             if (item is Wrap<Statement>)
                 (item as Wrap<Statement>).Remove();
-            else if (item is Wrap<MaybeFreeExpression>) 
+            else if (item is Wrap<MaybeFreeExpression>)
                 (item as Wrap<MaybeFreeExpression>).Remove();
             else
                 throw new UnableToDetermineTypeException();
@@ -822,8 +851,30 @@ namespace Dare
                 invariantWrap.Reinsert();
                 RequiredItems.Add(new SimplificationItemInMethod(_member, invariantWrap));
             }
-            else 
+            else
                 throw new UnableToDetermineTypeException();
+        }
+
+        public void CombineRequiredSubexpressions()
+        {
+            if (RequiredItems.Count == 0) return;
+            var originalWrap = OriginalItem.GetItem();
+            if (originalWrap is Wrap<Statement>) {
+                var brokenItems =
+                    RequiredItems.Select(requiredItem => requiredItem.GetItem() as Wrap<Statement>).ToList();
+                var newWrap = Simplifier.CombineToNewWrap(originalWrap as Wrap<Statement>, brokenItems);
+                NewItem = new SimplificationItemInMethod(_member, newWrap);
+            }
+            else if (originalWrap is Wrap<MaybeFreeExpression>) {
+                var brokenItems =
+                    RequiredItems.Select(requiredItem => requiredItem.GetItem() as Wrap<MaybeFreeExpression>).ToList();
+                var newWrap = Simplifier.CombineToNewWrap(originalWrap as Wrap<MaybeFreeExpression>, brokenItems);
+                NewItem = new SimplificationItemInMethod(_member, newWrap);
+            }
+            else throw new UnableToDetermineTypeException();
+            //            originalWrap.Remove();
+            //            newWrap.Reinsert();
+            //            return new Tuple<T, T>(originalWrap.Removable, newWrap.Removable);
         }
     }
 
@@ -843,7 +894,7 @@ namespace Dare
     internal class CalcData
     {
         private readonly CalcStmt _calcStmt;
-        
+
         public RemovableCalcParts RemovableCalcParts { get; private set; }
         public bool Finished { get; private set; }
         private int _lineIndex = 1, _hintIndex = 0; //lines start at 1 as first shouldn't be removed
@@ -858,6 +909,11 @@ namespace Dare
         private List<Statement> _lastHintBody;
 
         private bool _linesComplete = false;
+        private bool _dealtWithError = false;
+
+        private int TokLine {
+            get { return _calcStmt.Tok.line; }
+        }
 
         public CalcData(CalcStmt calcStmt)
         {
@@ -868,16 +924,17 @@ namespace Dare
 
         public void RemoveNext()
         {
+            _dealtWithError = false;
             GatherRemovableParts();
             if (!_linesComplete)
                 RemoveNextLineAndHint();
-            else 
+            else
                 EmptyNextHint();
         }
 
         private void RemoveNextLineAndHint()
         {
-            if (_calcStmt.Lines.Count == _lineIndex+1) {
+            if (_calcStmt.Lines.Count == _lineIndex + 1) {
                 _linesComplete = true;
                 _hintIndex = 0;
                 EmptyNextHint();
@@ -887,7 +944,7 @@ namespace Dare
             if (_lastRemovedLine != null && _lastRemovedHint != null && _lastRemovedCalcOp != null) {
                 _hintIndex = 0;
             }
-
+            //bug: there are cases where an item could be removed but it would require combining two hints (e.g. ACL2-extractor.dfy line 63) - a way to undo this would also be needed
             _lastRemovedLine = _calcStmt.Lines[_lineIndex];
             _lastRemovedHint = _calcStmt.Hints[_hintIndex];
             _lastRemovedCalcOp = _calcStmt.StepOps[_hintIndex];
@@ -921,8 +978,9 @@ namespace Dare
 
         private void EmptyNextHint()
         {
-            if (_hintIndex >= _calcStmt.Hints.Count - 2)
+            if (_hintIndex >= _calcStmt.Hints.Count - 2) {
                 Finished = true;
+            }
             else if (_calcStmt.Hints[_hintIndex].Body.Count == 0) {
                 _hintIndex++;
                 EmptyNextHint();
@@ -934,7 +992,7 @@ namespace Dare
                 _hintIndex++;
             }
         }
-        
+
         private void EmptyHintBody(BlockStmt hint)
         {
             _lastHintBody = new List<Statement>();
@@ -947,10 +1005,16 @@ namespace Dare
 
         public void FailureOccured()
         {
-            if (!_linesComplete) 
+            if (_dealtWithError) {
+                return;
+            }
+            _dealtWithError = true;
+            if (!_linesComplete) {
                 ReinsertLastLineAndHint();
-            else 
+            }
+            else {
                 RefillLastHintBody();
+            }
         }
 
         private void ReinsertLastLineAndHint()
@@ -980,30 +1044,39 @@ namespace Dare
         private void RefillLastHintBody()
         {
             foreach (var statement in _lastHintBody)
-                _calcStmt.Hints[_hintIndex].Body.Add(statement);
+                _calcStmt.Hints[_hintIndex - 1].Body.Add(statement);
 
             _lastHintBody = null;
         }
     }
 
-    internal class UnableToDetermineTypeException : Exception { }
-    public class CannotFindMemberException : Exception { }
+    internal class UnableToDetermineTypeException : Exception {}
+
+    public class CannotFindMemberException : Exception {}
 
     internal class SimultaneousAllTypeRemover : VerificationErrorInformationRetriever
     {
         private readonly Program _program;
         private AllRemovableTypes _allRemovableTypes;
         private int _index;
-        private Dictionary<MemberDecl, SimplificationItemInMethod> _removedItemsOnRun = new Dictionary<MemberDecl, SimplificationItemInMethod>();
-        private Dictionary<MemberDecl, WildCardDecreases> _wildCardDecreasesRemovedOnRun = new Dictionary<MemberDecl, WildCardDecreases>();
 
-        private readonly Dictionary<MemberDecl, List<ConjunctionData>> _allConjunctions = new Dictionary<MemberDecl, List<ConjunctionData>>();
+        private Dictionary<MemberDecl, SimplificationItemInMethod> _removedItemsOnRun =
+            new Dictionary<MemberDecl, SimplificationItemInMethod>();
+
+        private Dictionary<MemberDecl, WildCardDecreases> _wildCardDecreasesRemovedOnRun =
+            new Dictionary<MemberDecl, WildCardDecreases>();
+
+        private readonly Dictionary<MemberDecl, List<ConjunctionData>> _allConjunctions =
+            new Dictionary<MemberDecl, List<ConjunctionData>>();
+
         private readonly Dictionary<MemberDecl, List<CalcData>> _allCalcs = new Dictionary<MemberDecl, List<CalcData>>();
 
         private readonly Dictionary<MemberDecl, int> _conjunctionIndex = new Dictionary<MemberDecl, int>();
         private readonly Dictionary<MemberDecl, int> _calcIndex = new Dictionary<MemberDecl, int>();
 
-        private Dictionary<MemberDecl, ConjunctionData> _removedBrokenItems = new Dictionary<MemberDecl, ConjunctionData>();
+        private Dictionary<MemberDecl, ConjunctionData> _removedBrokenItems =
+            new Dictionary<MemberDecl, ConjunctionData>();
+
         private Dictionary<MemberDecl, CalcData> _simplifiedCalcs = new Dictionary<MemberDecl, CalcData>();
         private StopChecker _stopChecker;
 
@@ -1016,35 +1089,33 @@ namespace Dare
         {
             var member = TryFindMember(errorInfo);
             if (member == null) return;
-            
+            AlreadyReAddedMembers.Add(member);
+
             if (_removedItemsOnRun.ContainsKey(member)) {
                 ReinsertItemFromMember(member);
                 _removedItemsOnRun.Remove(member);
-                AlreadyReAddedMembers.Add(member);
             }
             else if (_wildCardDecreasesRemovedOnRun.ContainsKey(member)) {
                 var wildCard = _wildCardDecreasesRemovedOnRun[member];
                 wildCard.ExpressionWrap.Reinsert();
                 _wildCardDecreasesRemovedOnRun.Remove(member);
-                AlreadyReAddedMembers.Add(member);
                 wildCard.CantBeRemoved = true;
             }
-            else if (_removedBrokenItems.ContainsKey(member)) { //Reinsert the subexpression
+            else if (_removedBrokenItems.ContainsKey(member)) {
+                //Reinsert the subexpression
                 var conjunction = _removedBrokenItems[member];
                 conjunction.ReinsertLast();
-                if(!_allConjunctions.ContainsKey(member))
+                if (!_allConjunctions.ContainsKey(member))
                     _allConjunctions.Add(member, new List<ConjunctionData>());
                 if (!_allConjunctions[member].Contains(conjunction))
                     _allConjunctions[member].Add(conjunction);
                 _removedBrokenItems.Remove(member);
+                
             }
-            else if (_simplifiedCalcs.ContainsKey(member)) {
+            else if (_simplifiedCalcs.ContainsKey(member))
                 _simplifiedCalcs[member].FailureOccured();
-            }
             else
-            {
                 throw new Exception("cant find member in removedOnRun");
-            }
         }
 
         private MemberDecl TryFindMember(ErrorInformation errorInfo)
@@ -1070,14 +1141,13 @@ namespace Dare
 
         private static void ReinsertItem(object item)
         {
-            if (item is Wrap<Statement>) 
+            if (item is Wrap<Statement>)
                 ((Wrap<Statement>) item).Reinsert();
-            else if (item is Wrap<MaybeFreeExpression>) 
+            else if (item is Wrap<MaybeFreeExpression>)
                 ((Wrap<MaybeFreeExpression>) item).Reinsert();
-            else if (item is Wrap<Expression>) 
+            else if (item is Wrap<Expression>)
                 ((Wrap<Expression>) item).Reinsert();
             else throw new UnableToDetermineTypeException();
-            
         }
 
         public SimplificationData Remove(AllRemovableTypes allRemovableTypes, StopChecker stopChecker)
@@ -1112,19 +1182,27 @@ namespace Dare
             //TODO replace conjunctions
         }
 
-        private static Dictionary<MemberDecl, List<SimplificationItemInMethod>> GetAllRemovableTypeItems(AllRemovableTypes allRemovableTypes)
+        private static Dictionary<MemberDecl, List<SimplificationItemInMethod>> GetAllRemovableTypeItems(
+            AllRemovableTypes allRemovableTypes)
         {
-            return allRemovableTypes.RemovableTypesInMethods.Keys.ToDictionary(member => member, member => GetRemovableItemsInMethod(allRemovableTypes, member));
+            return allRemovableTypes.RemovableTypesInMethods.Keys.ToDictionary(member => member,
+                member => GetRemovableItemsInMethod(allRemovableTypes, member));
         }
 
-        private static List<SimplificationItemInMethod> GetRemovableItemsInMethod(AllRemovableTypes allRemovableTypes, MemberDecl member)
+        private static List<SimplificationItemInMethod> GetRemovableItemsInMethod(AllRemovableTypes allRemovableTypes,
+            MemberDecl member)
         {
             var removableTypeInMethod = allRemovableTypes.RemovableTypesInMethods[member];
-            var itemsInMethod = removableTypeInMethod.Asserts.Select(item => new SimplificationItemInMethod(member, item)).ToList();
-            itemsInMethod.AddRange(removableTypeInMethod.Invariants.Select(item => new SimplificationItemInMethod(member, item)));
-            itemsInMethod.AddRange(removableTypeInMethod.Decreases.Select(item => new SimplificationItemInMethod(member, item)));
-            itemsInMethod.AddRange(removableTypeInMethod.LemmaCalls.Select(item => new SimplificationItemInMethod(member, item)));
-            itemsInMethod.AddRange(removableTypeInMethod.Calcs.Select(item => new SimplificationItemInMethod(member, item)));
+            var itemsInMethod =
+                removableTypeInMethod.Asserts.Select(item => new SimplificationItemInMethod(member, item)).ToList();
+            itemsInMethod.AddRange(
+                removableTypeInMethod.Invariants.Select(item => new SimplificationItemInMethod(member, item)));
+            itemsInMethod.AddRange(
+                removableTypeInMethod.Decreases.Select(item => new SimplificationItemInMethod(member, item)));
+            itemsInMethod.AddRange(
+                removableTypeInMethod.LemmaCalls.Select(item => new SimplificationItemInMethod(member, item)));
+            itemsInMethod.AddRange(
+                removableTypeInMethod.Calcs.Select(item => new SimplificationItemInMethod(member, item)));
             return itemsInMethod;
         }
 
@@ -1133,6 +1211,14 @@ namespace Dare
             var finished = false;
             var simpData = new SimplificationWrapData();
             while (!finished) {
+                if (_cannotFindMemberException) {
+                    var verifier = new SimpleVerifier();
+                    //Sometimes there can be a token somewhere other than in the method
+                    //but it gets fixed by another token that is in the method
+                    if (verifier.IsProgramValid(_program))
+                        throw new CannotFindMemberException();
+                    _cannotFindMemberException = false;
+                }
                 finished = RemoveAnItemFromEachMethod(simpItems);
                 _index++;
                 if (_stopChecker != null && _stopChecker.Stop) {
@@ -1168,28 +1254,26 @@ namespace Dare
             }
         }
 
-        private static void GatherSimpDataFromConjunction(SimplificationWrapData simpData, ConjunctionData conjunctionData)
+        private static void GatherSimpDataFromConjunction(SimplificationWrapData simpData,
+            ConjunctionData conjunctionData)
         {
             var originalItem = conjunctionData.OriginalItem;
             var requiredItems = conjunctionData.RequiredItems;
+            conjunctionData.CombineRequiredSubexpressions();
             if (requiredItems.Count == 0 || requiredItems.Count == conjunctionData.Brokenitems.Count) return;
             var originalWrap = originalItem.GetItem();
             if (originalWrap is Wrap<Statement>)
-                simpData.SimplifiedAsserts.Add(CombineRequiredSubexpressions(originalWrap as Wrap<Statement>, requiredItems));
+                simpData.SimplifiedAsserts.Add(
+                    new Tuple<Statement, Statement>(
+                        (conjunctionData.OriginalItem.GetItem() as Wrap<Statement>).Removable,
+                        (conjunctionData.NewItem.GetItem() as Wrap<Statement>).Removable));
             else if (originalWrap is Wrap<MaybeFreeExpression>)
-                simpData.SimplifiedInvariants.Add(CombineRequiredSubexpressions(originalWrap as Wrap<MaybeFreeExpression>, requiredItems));
+                simpData.SimplifiedInvariants.Add(
+                    new Tuple<MaybeFreeExpression, MaybeFreeExpression>(
+                        (conjunctionData.OriginalItem.GetItem() as Wrap<MaybeFreeExpression>).Removable,
+                        (conjunctionData.NewItem.GetItem() as Wrap<MaybeFreeExpression>).Removable));
         }
 
-        private static Tuple<T,T> CombineRequiredSubexpressions<T>(Wrap<T> originalWrap,List<SimplificationItemInMethod> requiredItems)
-        {
-            var brokenItemWraps = requiredItems.Select(requiredItem => requiredItem.GetItem() as Wrap<T>).ToList();
-            foreach (var brokenItemWrap in brokenItemWraps)
-                brokenItemWrap.Remove();
-            var newWrap = Simplifier.CombineToNewWrap(originalWrap, brokenItemWraps);
-            originalWrap.Remove();
-            newWrap.Reinsert();
-            return new Tuple<T, T>(originalWrap.Removable, newWrap.Removable);
-        }
 
         private bool RemoveAnItemFromEachMethod(Dictionary<MemberDecl, List<SimplificationItemInMethod>> simpItems)
         {
@@ -1219,9 +1303,10 @@ namespace Dare
         {
             var wildCards = _allRemovableTypes.RemovableTypesInMethods[member].WildCardDecreaseses;
             if (wildCards.Count < 1)
-                return SimplifyItems(member); //Because all the wildcards are done we now move to conjunction simplification
+                return SimplifyItems(member);
+            //Because all the wildcards are done we now move to conjunction simplification
             RemoveExtraWildCardDecreases(wildCards);
-            if (wildCards[0].Simplified) 
+            if (wildCards[0].Simplified)
                 _allRemovableTypes.RemoveWildCardDecreases(wildCards[0]);
             if (wildCards.Count == 0)
                 return SimplifyItems(member);
@@ -1257,56 +1342,44 @@ namespace Dare
                 _wildCardDecreasesRemovedOnRun.Add(member, wildCard);
             }
             wildCard.Simplified = true;
-            
         }
 
 
         private bool SimplifyItems(MemberDecl member)
         {
-            var asserts = _allRemovableTypes.RemovableTypesInMethods[member].Asserts;
-            var invariants = _allRemovableTypes.RemovableTypesInMethods[member].Invariants;
             if (!_conjunctionIndex.ContainsKey(member))
                 _conjunctionIndex.Add(member, 0);
             var index = _conjunctionIndex[member];
-            if (asserts.Count + invariants.Count == 0 || index > asserts.Count + invariants.Count)
-                return SimplifyCalcs(member);
-            //see if there is a conj already made and not finished
-            if (_allConjunctions.ContainsKey(member)) {
-                foreach (var conj in _allConjunctions[member]) {
-                    if (conj.Finished) continue;
-                    conj.RemoveNext(_removedBrokenItems);
-                    if (conj.Finished) {
-                        _conjunctionIndex[member]++;
-                        continue;
-                    }
-                    return false;
-                }
+            //Initialise the items if needed
+            if (!_allConjunctions.ContainsKey(member)) {
+                InitialiseConjunctions(member);
             }
-            // otherwise we create a new one
-            else {
-
-                if (index < asserts.Count) {
-                    InitialiseItem(asserts[index], member);
-                    return false;
-                }
-                else if (index - asserts.Count < invariants.Count) {
-                    InitialiseItem(invariants[index - asserts.Count], member);
-                    return false;
-                }
+            if (_allConjunctions.Count == 0 || index > _allConjunctions.Count)
+                return SimplifyCalcs(member);
+            foreach (var conj in _allConjunctions[member]) {
+                if (conj.Finished) continue;
+                conj.RemoveNext(_removedBrokenItems);
+                if (!conj.Finished) return false;
+                _conjunctionIndex[member]++;
             }
             return SimplifyCalcs(member);
-            
+        }
+
+        private void InitialiseConjunctions(MemberDecl member)
+        {
+            var asserts = _allRemovableTypes.RemovableTypesInMethods[member].Asserts;
+            var invariants = _allRemovableTypes.RemovableTypesInMethods[member].Invariants;
+            _allConjunctions.Add(member, new List<ConjunctionData>());
+            foreach (var assert in asserts)
+                InitialiseItem(assert, member);
+            foreach (var invariant in invariants)
+                InitialiseItem(invariant, member);
         }
 
         private void InitialiseItem<T>(Wrap<T> wrap, MemberDecl member)
         {
             var conj = InitialiseBrokenItems(wrap, member);
-            if (!_allConjunctions.ContainsKey(member))
-                _allConjunctions.Add(member, new List<ConjunctionData>());
             _allConjunctions[member].Add(conj);
-            conj.RemoveNext(_removedBrokenItems);
-            if (conj.Finished)
-                _conjunctionIndex[member]++;
         }
 
         private ConjunctionData InitialiseBrokenItems<T>(Wrap<T> wrap, MemberDecl member)
@@ -1318,20 +1391,22 @@ namespace Dare
                 simpItem = new SimplificationItemInMethod(member, wrap as Wrap<MaybeFreeExpression>);
             else throw new UnableToDetermineTypeException();
 
-            return new ConjunctionData(member, simpItem);           
+            return new ConjunctionData(member, simpItem);
         }
 
-        public Wrap<T> CombineAndInsertBrokenWraps<T>(Wrap<T> originalItem, List<SimplificationItemInMethod> brokenSimpItems)
+        public Wrap<T> CombineAndInsertBrokenWraps<T>(Wrap<T> originalItem,
+            List<SimplificationItemInMethod> brokenSimpItems)
         {
             var brokenItemWraps = new List<Wrap<T>>();
             foreach (var brokenSimpItem in brokenSimpItems) {
                 var item = brokenSimpItem.GetItem();
-                if(!(item is Wrap<T>)) throw new UnableToDetermineTypeException();
+                if (!(item is Wrap<T>)) throw new UnableToDetermineTypeException();
                 var wrap = (Wrap<T>) item;
                 wrap.Remove();
                 brokenItemWraps.Add(wrap);
             }
-            return Simplifier.CombineToNewWrap(originalItem, brokenItemWraps); // <--The item gets inserted to the parent inside here
+            return Simplifier.CombineToNewWrap(originalItem, brokenItemWraps);
+            // <--The item gets inserted to the parent inside here
         }
 
         private bool SimplifyCalcs(MemberDecl member)
@@ -1344,7 +1419,7 @@ namespace Dare
             }
             var index = _calcIndex[member];
             if (index >= calcs.Count) return true;
-            
+
             var calcData = GetCalcData(member);
 
             if (calcData.Finished) {
@@ -1423,7 +1498,6 @@ namespace Dare
             _wildCardDecreasesRemovedOnRun = new Dictionary<MemberDecl, WildCardDecreases>();
             _removedBrokenItems = new Dictionary<MemberDecl, ConjunctionData>();
             _simplifiedCalcs = new Dictionary<MemberDecl, CalcData>();
-            
         }
 
         private void VerifyProgram()
@@ -1433,7 +1507,7 @@ namespace Dare
         }
     }
 
-    internal class AlreadyRemovedException : Exception { }
+    internal class AlreadyRemovedException : Exception {}
 
     internal class Simplifier
     {
@@ -1462,7 +1536,8 @@ namespace Dare
         {
             var binExpr = GetExpr(wrap.Removable) as BinaryExpr;
             if (binExpr != null)
-                if (binExpr.Op != BinaryExpr.Opcode.And) return null; //Possible improvement: simplify when there is an implies by going deeper
+                if (binExpr.Op != BinaryExpr.Opcode.And)
+                    return null; //Possible improvement: simplify when there is an implies by going deeper
 
             wrap.Remove();
             return !_verifier.IsProgramValid(_program) ? SimplifyItem(wrap) : null;
@@ -1511,7 +1586,7 @@ namespace Dare
         {
             //Create a new item
             var newItem = GetNewNodeFromItem(wrap.Removable, newExpr);
-            if(!wrap.Removed)
+            if (!wrap.Removed)
                 wrap.Remove();
             //Insert the item
             wrap.ParentList.Insert(wrap.Index, newItem);
@@ -1559,10 +1634,13 @@ namespace Dare
 
         private static Wrap<T> GetNewNodeFromExpr<T>(Wrap<T> originalWrap, BinaryExpr binExpr, Expression subExpr)
         {
-            var index = originalWrap.Removed ? originalWrap.Index : originalWrap.ParentList.IndexOf(originalWrap.Removable);
+            var index = originalWrap.Removed
+                ? originalWrap.Index
+                : originalWrap.ParentList.IndexOf(originalWrap.Removable);
             var assert = originalWrap.Removable as AssertStmt;
             if (assert != null) {
-                return new Wrap<T>((T) (object) new AssertStmt(binExpr.tok, assert.EndTok, subExpr, assert.Attributes), originalWrap.ParentList, index);
+                return new Wrap<T>((T) (object) new AssertStmt(binExpr.tok, assert.EndTok, subExpr, assert.Attributes),
+                    originalWrap.ParentList, index);
             }
             var invariant = originalWrap.Removable as MaybeFreeExpression;
             if (invariant != null) {
