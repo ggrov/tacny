@@ -177,6 +177,7 @@
     <Compile Include="Tacny\BaseTactic.cs" />
     <Compile Include="Tacny\EAtomic\EAtomic.cs" />
     <Compile Include="Tacny\ExpressionTree.cs" />
+    <Compile Include="Tacny\Function\Lemmas.cs" />
     <Compile Include="Tacny\Function\Params.cs" />
     <Compile Include="Tacny\Function\Variables.cs" />
     <Compile Include="Tacny\Interpreter.cs" />
