@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.Contracts;
+using System.IO;
 using System.Linq;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
@@ -96,6 +97,8 @@ namespace Dare
                 Index = -1;
             else if (index < 0)
                 throw new Exception("Index is less than 0 on creating a removed wrap");
+            else
+                Index = index;
         }
 
         public void Remove()
@@ -1211,26 +1214,88 @@ namespace Dare
             var finished = false;
             var simpData = new SimplificationWrapData();
             while (!finished) {
-                if (_cannotFindMemberException) {
-                    var verifier = new SimpleVerifier();
-                    //Sometimes there can be a token somewhere other than in the method
-                    //but it gets fixed by another token that is in the method
-                    if (verifier.IsProgramValid(_program))
-                        throw new CannotFindMemberException();
-                    _cannotFindMemberException = false;
-                }
                 finished = RemoveAnItemFromEachMethod(simpItems);
                 _index++;
                 if (_stopChecker != null && _stopChecker.Stop) {
                     break;
                 }
                 VerifyProgram();
+                if (_cannotFindMemberException) {
+                    var verifier = new SimpleVerifier();
+                    //Sometimes there can be a token somewhere other than in the method
+                    //but it gets fixed by another token that is in the method
+                    if (!verifier.IsProgramValid(_program))
+                        SlowRemoveInLeftOverMethods();
+                    _cannotFindMemberException = false;
+                }
                 GatherSimpData(simpData);
                 Reset();
             }
             GatherConjunctionSimpData(simpData);
             GatherCalcSimpData(simpData);
             return simpData;
+        }
+
+        private void SlowRemoveInLeftOverMethods()
+        {
+            SimpleVerifier verifier = new SimpleVerifier();
+
+
+            using (TextWriter tw = File.CreateText("C:\\Users\\Duncan\\Documents\\testP1.dfy")) {
+                Printer printer = new Printer(tw);
+                printer.PrintProgram(_program, false);
+            }
+
+            foreach (var item in _removedItemsOnRun.Values)
+                {
+                    var wrap = item.GetItem();
+                    if (wrap is Wrap<Statement>)
+                        (wrap as Wrap<Statement>).Reinsert();
+                    else if (wrap is Wrap<MaybeFreeExpression>)
+                        (wrap as Wrap<MaybeFreeExpression>).Reinsert();
+                    else if (wrap is Wrap<Expression>)
+                        (wrap as Wrap<Expression>).Reinsert();
+                    else throw new UnableToDetermineTypeException();
+                }
+
+            if(!verifier.IsProgramValid(_program))
+                throw new CannotFindMemberException();
+
+            foreach (var item in _removedItemsOnRun) {
+                var wrap = item.Value.GetItem();
+                if (wrap is Wrap<Statement>)
+                    (wrap as Wrap<Statement>).Remove();
+                else if (wrap is Wrap<MaybeFreeExpression>)
+                    (wrap as Wrap<MaybeFreeExpression>).Remove();
+                else if (wrap is Wrap<Expression>)
+                    (wrap as Wrap<Expression>).Remove();
+                else throw new UnableToDetermineTypeException();
+
+                if (!verifier.IsProgramValid(_program)) {
+                    if (wrap is Wrap<Statement>)
+                        (wrap as Wrap<Statement>).Reinsert();
+                    else if (wrap is Wrap<MaybeFreeExpression>)
+                        (wrap as Wrap<MaybeFreeExpression>).Reinsert();
+                    else
+                        (wrap as Wrap<Expression>).Reinsert();
+                    _removedItemsOnRun.Remove(item.Key);
+                }
+
+            }
+//                else if(wrap is Wrap<MaybeFreeExpression>)
+//                    (wrap as Wrap<MaybeFreeExpression>).Reinsert();
+//                else if (wrap is Wrap<Expression>)
+//                    (wrap as Wrap<Expression>).Reinsert();
+            
+            foreach (var removedBrokenItem in _removedBrokenItems.Values) {
+                //todo
+            }
+            foreach (var wildCardDecreasese in _wildCardDecreasesRemovedOnRun.Values) {
+                //this shouldn't happen for wildcard decreases todo fiure out
+            }
+            foreach (var simplifiedCalc in _simplifiedCalcs.Values) {
+                //todo
+            }
         }
 
         private void GatherCalcSimpData(SimplificationWrapData simpData)
