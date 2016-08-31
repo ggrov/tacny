@@ -5044,6 +5044,26 @@ namespace Microsoft.Dafny
         LastComponent = lastComponent;
       }
     }
+
+    /// <summary>
+    /// Ignore types from Tacny, just for now, a proper fix should be adding thoes types in DanyAst
+    /// 
+    /// </summary>
+    /// <param name="typeN"></param>
+    /// <returns></returns>
+    private bool isTacnyTypes(string typeN){
+      var ret = false;
+      switch(typeN) {
+        case "Element":
+        case "Term":
+          ret = true;
+          break;
+        default:
+          break;
+      }
+      return ret;
+    }
+
     /// <summary>
     /// See ResolveTypeOption for a description of the option/defaultTypeArguments parameters.
     /// One more thing:  if "allowDanglingDotName" is true, then if the resolution would have produced
@@ -5058,6 +5078,8 @@ namespace Microsoft.Dafny
       Contract.Requires((option.Opt == ResolveTypeOptionEnum.DontInfer || option.Opt == ResolveTypeOptionEnum.InferTypeProxies) == (defaultTypeArguments == null));
       if (type is BasicType) {
         // nothing to resolve
+      } else if(isTacnyTypes(type.ToString())) {
+
       } else if (type is MapType) {
         var mt = (MapType)type;
         var errorCount = reporter.Count(ErrorLevel.Error);

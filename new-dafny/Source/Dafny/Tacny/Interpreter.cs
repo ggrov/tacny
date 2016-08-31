@@ -44,9 +44,7 @@ namespace Tacny {
     public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
-      if (_i == null) {
-        _i = new Interpreter(program, unresolvedProgram);
-      }
+      _i = new Interpreter(program, unresolvedProgram);
       _errorReporterDelegate = erd;
       var result = _i.FindTacticApplication(target);
 
@@ -117,11 +115,7 @@ namespace Tacny {
     // Find tactic application and resolve it
     private void SearchBlockStmt(BlockStmt body) {
       Contract.Requires(tcce.NonNull(body));
-
-      // TODO Make sure this is an OK Thing to be doing
-      // Currently, if the proof list is not reset, then because it is static across
-      //   calls, it will start to build up old information, and the program will go
-      //   into a loop trying to figure out new fresh names for 'existing' methods.
+            
       BaseSearchStrategy.ResetProofList();
       _frame.Push(new Dictionary<IVariable, Type>());
       foreach (var stmt in body.Body) {
@@ -517,17 +511,22 @@ namespace Tacny {
             state.AddLocal(item, null);
         }
       } else {
-        foreach (var item in rhs.Rhss) {
+        foreach(var item in rhs.Rhss) {
           int index = rhs.Rhss.IndexOf(item);
           Contract.Assert(declaration.Locals.ElementAtOrDefault(index) != null, "register var err");
           var exprRhs = item as ExprRhs;
-          if (exprRhs?.Expr is ApplySuffix) {
+          if(exprRhs?.Expr is ApplySuffix) {
             var aps = (ApplySuffix)exprRhs.Expr;
-            foreach (var result in EvaluateTacnyExpression(state, aps)) {
+            foreach(var result in EvaluateTacnyExpression(state, aps)) {
               state.AddLocal(declaration.Locals[index], result);
             }
-          } else if (exprRhs?.Expr is Dafny.LiteralExpr) {
+          } else if(exprRhs?.Expr is Dafny.LiteralExpr) {
             state.AddLocal(declaration.Locals[index], (Dafny.LiteralExpr)exprRhs?.Expr);
+          } else if(exprRhs?.Expr is Dafny.NameSegment){
+            var name = ((Dafny.NameSegment) exprRhs.Expr).Name;
+            if(state.HasLocalValue(name))
+            // in the case that referring to an exisiting tacny, dereference it
+            state.AddLocal(declaration.Locals[index], state.GetLocalValue(name));
           } else {
             state.AddLocal(declaration.Locals[index], exprRhs?.Expr);
           }
