@@ -12,19 +12,35 @@ namespace Tacny.Language {
     public override IEnumerable<ProofState> Generate(Statement statement, ProofState state) {
 
       var guard = ExtractGuard(statement);
-     
+
       Contract.Assert(guard != null, "guard");
-      if (IsResolvable(guard, state)) {
-        return null;
-      } else {
-        return InsertIf(statement as dfy.IfStmt, guard, state);
+      return IsResolvable(guard, state) ? EvaluateIf(statement as dfy.IfStmt, guard, state) :
+        InsertIf(statement as dfy.IfStmt, guard, state);
+    }
+
+    /// <summary>
+    /// Evaluate tacny level if statement
+    /// </summary>
+    /// <param name="ifStmt"></param>
+    /// <param name="guard"></param>
+    /// <param name="state"></param>
+    /// <returns></returns>
+    private IEnumerable<ProofState> EvaluateIf(dfy.IfStmt ifStmt, ExpressionTree guard, ProofState state) {
+      if (ExpressionTree.EvaluateEqualityExpression(guard, state)) {
+        return Interpreter.EvaluateBlockStmt(state, ifStmt.Thn);
       }
+      if (ifStmt.Els == null) return null;
+      var els = ifStmt.Els as BlockStmt;
+      return els != null ? Interpreter.EvaluateBlockStmt(state, els) :
+        EvaluateIf(ifStmt.Els as dfy.IfStmt, ExtractGuard(ifStmt.Els), state);
     }
 
     /// <summary>
     /// Insert the if statement into dafny code
     /// </summary>
     /// <param name="ifStmt"></param>
+    /// <param name="guard"></param>
+    /// <param name="state"></param>
     /// <returns></returns>
     private IEnumerable<ProofState> InsertIf(dfy.IfStmt ifStmt, ExpressionTree guard, ProofState state) {
       // resolve the if statement guard
@@ -40,13 +56,8 @@ namespace Tacny.Language {
         if (ifStmt.Els != null) {
           // resovle else block
           var stmt = ifStmt.Els as BlockStmt;
-          if (stmt != null) {
-            elseStmtEnum = Interpreter.EvaluateBlockStmt(state, ifStmt.Thn);
-          }
-          else {
-            elseStmtEnum = InsertIf(ifStmt.Els as dfy.IfStmt, ExtractGuard(ifStmt.Els), state);
-          }
-
+          elseStmtEnum = stmt != null ? Interpreter.EvaluateBlockStmt(state, ifStmt.Thn) :
+            InsertIf(ifStmt.Els as dfy.IfStmt, ExtractGuard(ifStmt.Els), state);
         }
         foreach (var statement in GenerateIfStmt(ifStmt, resultExpression, ifStmtEnum, elseStmtEnum, state)) {
           yield return statement;
@@ -77,8 +88,7 @@ namespace Tacny.Language {
               cl.CloneExpr(guard), ifBody, elseBody));
             yield return c;
           }
-        }
-        else {
+        } else {
           var c = state.Copy();
           c.AddStatement(new dfy.IfStmt(original.Tok, original.EndTok, original.IsExistentialGuard, cl.CloneExpr(guard),
             ifBody, null));
