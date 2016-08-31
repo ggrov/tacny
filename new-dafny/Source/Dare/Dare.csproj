@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <CodeContractsAssemblyMode>0</CodeContractsAssemblyMode>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\InterimKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -118,40 +120,21 @@
     <CodeContractsReferenceAssembly>%28none%29</CodeContractsReferenceAssembly>
     <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>DareKey.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Boogie">
-      <HintPath>..\..\boogie\Binaries\Boogie.exe</HintPath>
+      <HintPath>..\..\..\boogie\Binaries\Boogie.exe</HintPath>
     </Reference>
     <Reference Include="BoogieConcurrency">
-      <HintPath>..\..\boogie\Binaries\BoogieConcurrency.dll</HintPath>
+      <HintPath>..\..\..\boogie\Binaries\BoogieConcurrency.dll</HintPath>
     </Reference>
     <Reference Include="BoogieCore">
-      <HintPath>..\..\boogie\Binaries\BoogieCore.dll</HintPath>
+      <HintPath>..\..\..\boogie\Binaries\BoogieCore.dll</HintPath>
     </Reference>
     <Reference Include="BoogieExecutionEngine">
-      <HintPath>..\..\boogie\Binaries\BoogieExecutionEngine.dll</HintPath>
+      <HintPath>..\..\..\boogie\Binaries\BoogieExecutionEngine.dll</HintPath>
     </Reference>
     <Reference Include="BoogieParserHelper">
-      <HintPath>..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
-    </Reference>
-    <Reference Include="Dafny">
-      <HintPath>..\..\new-dafny\Binaries\Dafny.exe</HintPath>
-    </Reference>
-    <Reference Include="DafnyPipeline">
-      <HintPath>..\..\new-dafny\Binaries\DafnyPipeline.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework, Version=3.4.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.4.1\lib\net45\nunit.framework.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>..\..\..\boogie\Binaries\BoogieParserHelper.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -169,8 +152,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="DareKey.snk" />
-    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Dafny\DafnyPipeline.csproj">
+      <Project>{fe44674a-1633-4917-99f4-57635e6fa740}</Project>
+      <Name>DafnyPipeline</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

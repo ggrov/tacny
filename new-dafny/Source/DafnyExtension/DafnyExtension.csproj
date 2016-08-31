@@ -167,7 +167,7 @@
       <HintPath>..\..\..\boogie\Binaries\BoogieExecutionEngine.dll</HintPath>
     </Reference>
     <Reference Include="Dare">
-      <HintPath>..\..\..\dare\Dare\bin\Debug\Dare.dll</HintPath>
+      <HintPath>..\Dare\bin\Debug\Dare.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
