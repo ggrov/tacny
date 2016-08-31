@@ -12,7 +12,7 @@ namespace Tacny.Function{
       return (m is Lemma || m is FixpointLemma);
     }
     /// <summary>
-    /// Return the objects of all the lemms
+    /// Return the objects of all the lemmas
     /// </summary>
     /// <param name="expression"></param>
     /// <param name="proofState"></param>
