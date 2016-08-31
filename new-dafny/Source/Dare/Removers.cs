@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Linq;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
-using Function = Microsoft.Dafny.Function;
 using Program = Microsoft.Dafny.Program;
 
 namespace Dare
@@ -1091,17 +1089,16 @@ namespace Dare
         {
             var member = TryFindMember(errorInfo);
             if (member == null) return;
+            AlreadyReAddedMembers.Add(member);
 
             if (_removedItemsOnRun.ContainsKey(member)) {
                 ReinsertItemFromMember(member);
                 _removedItemsOnRun.Remove(member);
-                AlreadyReAddedMembers.Add(member);
             }
             else if (_wildCardDecreasesRemovedOnRun.ContainsKey(member)) {
                 var wildCard = _wildCardDecreasesRemovedOnRun[member];
                 wildCard.ExpressionWrap.Reinsert();
                 _wildCardDecreasesRemovedOnRun.Remove(member);
-                AlreadyReAddedMembers.Add(member);
                 wildCard.CantBeRemoved = true;
             }
             else if (_removedBrokenItems.ContainsKey(member)) {
@@ -1113,13 +1110,12 @@ namespace Dare
                 if (!_allConjunctions[member].Contains(conjunction))
                     _allConjunctions[member].Add(conjunction);
                 _removedBrokenItems.Remove(member);
+                
             }
-            else if (_simplifiedCalcs.ContainsKey(member)) {
+            else if (_simplifiedCalcs.ContainsKey(member))
                 _simplifiedCalcs[member].FailureOccured();
-            }
-            else {
+            else
                 throw new Exception("cant find member in removedOnRun");
-            }
         }
 
         private MemberDecl TryFindMember(ErrorInformation errorInfo)
