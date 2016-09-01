@@ -8,7 +8,7 @@ namespace Tacny.Function{
     public override string Signature => "lemmas";
     public override int ArgsCount => 0;
 
-    private bool isLemma(MemberDecl m){
+    private static bool IsLemma(MemberDecl m){
       return (m is Lemma || m is FixpointLemma);
     }
     /// <summary>
@@ -18,7 +18,7 @@ namespace Tacny.Function{
     /// <param name="proofState"></param>
     /// <returns></returns>
     public override IEnumerable<object> Generate(Expression expression, ProofState proofState){
-      var ls = proofState.Members.Values.ToList().Where(isLemma);
+      var ls = proofState.Members.Values.ToList().Where(IsLemma);
       yield return ls;
     }
   }

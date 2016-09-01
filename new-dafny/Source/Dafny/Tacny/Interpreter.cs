@@ -264,7 +264,9 @@ namespace Tacny {
         //TODO: Evaluate tactic statement
       } else if (stmt is IfStmt || stmt is WhileStmt) {
         enumerable = ResolveFlowControlStmt(stmt, state);
-      } else {
+      } else if (stmt is TacnyCasesBlockStmt){
+        //TODO: tmatch
+      }else {
         enumerable = DefaultAction(stmt, state);
       }
 
