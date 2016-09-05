@@ -21,6 +21,8 @@ namespace Tacny {
     public MemberDecl TargetMethod;
     public ErrorReporter Reporter;
 
+    public bool IfVerify { set; get; } = false;
+
     public UpdateStmt TacticApplication;
     public ITactic ActiveTactic {
       get {

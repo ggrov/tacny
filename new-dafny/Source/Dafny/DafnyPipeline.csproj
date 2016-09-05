@@ -173,6 +173,7 @@
     <Compile Include="Cloner.cs" />
     <Compile Include="Reporting.cs" />
     <Compile Include="Tacny\Atomic\Atomic.cs" />
+    <Compile Include="Tacny\Atomic\Match.cs" />
     <Compile Include="Tacny\Atomic\SuchThatAtomic.cs" />
     <Compile Include="Tacny\BaseTactic.cs" />
     <Compile Include="Tacny\EAtomic\EAtomic.cs" />

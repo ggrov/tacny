@@ -260,12 +260,14 @@ namespace Tacny {
         enumerable = EvaluateSuchThatStmt((AssignSuchThatStmt)stmt, state);
       } else if (stmt is PredicateStmt) {
         enumerable = ResolvePredicateStmt((PredicateStmt)stmt, state);
+      } else if(stmt is TacnyCasesBlockStmt) {
+        //TODO: tmatch
+        //not sure, why not static consider to make all atomic and eatomic as static
+        enumerable = new Tacny.Atomic.Match(stmt).Generate(stmt, state);
       } else if (stmt is TStatement) {
         //TODO: Evaluate tactic statement
       } else if (stmt is IfStmt || stmt is WhileStmt) {
         enumerable = ResolveFlowControlStmt(stmt, state);
-      } else if (stmt is TacnyCasesBlockStmt){
-        //TODO: tmatch
       }else {
         enumerable = DefaultAction(stmt, state);
       }
@@ -300,6 +302,7 @@ namespace Tacny {
         }
         var copy = state.Copy();
         copy.AddStatement(newPredicate);
+        copy.IfVerify = true;
         yield return copy;
       }
     }

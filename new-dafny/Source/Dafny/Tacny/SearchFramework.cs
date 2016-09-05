@@ -109,56 +109,52 @@ namespace Tacny {
 
   internal class BreadthFirstSeach : BaseSearchStrategy {
 
-    internal new static IEnumerable<ProofState> Search(ProofState rootState, ErrorReporterDelegate er) {
+    internal new static IEnumerable<ProofState> Search(ProofState rootState, ErrorReporterDelegate er){
 
       var queue = new Queue<IEnumerator<ProofState>>();
       queue.Enqueue(Interpreter.EvalStep(rootState).GetEnumerator());
-      while (queue.Count > 0) {
-        // remove first enumerator on the queue
-        var enumerator = queue.Dequeue();
-        // if all the statements have been resolve skip
-        if (!enumerator.MoveNext())
-          continue;
 
+
+      IEnumerator<ProofState> enumerator = Enumerable.Empty<ProofState>().GetEnumerator();
+
+      while (queue.Count > 0){
+        // check if there is any more item in the enumerartor, if so, MoveNext will move to the next item
+        if (!enumerator.MoveNext()){
+          // if no item in the current enumerator, pop a new enumerator from the queie, 
+          enumerator = queue.Dequeue();
+          // set the start point for enumulator, if there is no valid start point, i.e. empty, skip this one
+          if (!enumerator.MoveNext())
+            continue;
+        }
         var proofState = enumerator.Current;
-        queue.Enqueue(enumerator);
-
-        if (Verify) {
-          if (proofState.IsEvaluated() || proofState.IsPartiallyEvaluated()) {
-            switch (VerifyState(proofState, er)) {
-              case VerifyResult.Cached:
-                if (proofState.IsPartiallyEvaluated()) {
-                  yield return proofState;
-                  queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
-                }
-                continue;
-              case VerifyResult.Verified:
+        //check if any new dded coded reuqires call the dafny to verity, or reach the last line of code
+        if (proofState.IfVerify || proofState.IsEvaluated()) {
+          proofState.IfVerify = false;
+          switch (VerifyState(proofState, er)){
+            case VerifyResult.Cached:
+              //TODO: is this code active ?
+              Console.WriteLine("Verify Cached is indeed in use ?!");
+              if (proofState.IsPartiallyEvaluated()){
                 yield return proofState;
-                yield break;
-              case VerifyResult.Failed:
-                /*
-                * verification failed, but the evaluation is partial return
-                * but continue evaluating the proofState
-                */
-                if (proofState.IsPartiallyEvaluated()) {
-                  yield return proofState;
-                  queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
-                }
-                continue;
-              default:
-                throw new ArgumentOutOfRangeException();
-            }
+                queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
+              }
+              continue;
+            case VerifyResult.Verified:
+              yield return proofState;
+              yield break;
+            case VerifyResult.Failed:
+              break;
+            default:
+              throw new ArgumentOutOfRangeException();
           }
+        }
+        /*
+       * when failed, check if this mmethod is evaluated , i.e. all tstmt are evalauted,
+       * if so, dischard this branch and continue with the next one
+       * otherwise, continue to evaluate the next stmt
+       */
+        if(!proofState.IsEvaluated()) {
           queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
-        } else {
-          if (!(proofState.IsEvaluated() || proofState.IsPartiallyEvaluated()))
-            queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
-          else {
-            yield return proofState;
-            if (proofState.IsPartiallyEvaluated()) {
-              queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
-            }
-          }
         }
       }
     }
