@@ -619,7 +619,8 @@ namespace Microsoft.Dafny
         var s = (TacnyCasesBlockStmt)stmt;
         var guard = CloneExpr(s.Guard);
         var body = s.Body == null ? null : CloneBlockStmt(s.Body);
-        r = new TacnyCasesBlockStmt(Tok(s.Tok), Tok(s.EndTok), guard, body);
+        var attrs = s.Attributes == null ? null : CloneAttributes(s.Attributes);
+        r = new TacnyCasesBlockStmt(Tok(s.Tok), Tok(s.EndTok), guard, attrs, body);
       
       } else if (stmt is TacnyChangedBlockStmt) {
         var s = (TacnyChangedBlockStmt)stmt;

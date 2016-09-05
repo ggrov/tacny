@@ -3191,36 +3191,42 @@ List<Expression/*!*/>/*!*/ decreases, ref Attributes decAttrs, ref Attributes mo
 		
 	}
 
-	void TacnyCasesBlockStmt(out Statement/*!*/ tacnyCasesStmt, IToken x) {
-		Contract.Ensures(Contract.ValueAtReturn(out tacnyCasesStmt) != null);
-		Expression guard = null;  IToken guardEllipsis = null;
-		BlockStmt/*!*/ thn;
-		IToken bodyStart, bodyEnd, endTok;
-		List<GuardedAlternative> alternatives;
-		tacnyCasesStmt = dummyStmt;  // to please the compiler
-		
-		if (IsAlternative()) {
-			AlternativeBlock(true, out alternatives, out endTok);
-			tacnyCasesStmt = new AlternativeStmt(x, endTok, alternatives); 
-		} else if (StartOf(22)) {
-			if (StartOf(23)) {
-				Guard(out guard);
-			} else {
-				Get();
-				guardEllipsis = t; 
-			}
-			BlockStmt(out thn, out bodyStart, out bodyEnd);
-			endTok = thn.EndTok; 
-			if (guardEllipsis != null) {
-			 tacnyCasesStmt = new SkeletonStatement(new TacnyCasesBlockStmt(x, endTok, guard, thn), guardEllipsis, null);
-			} else {
-			 tacnyCasesStmt = new TacnyCasesBlockStmt(x, endTok, guard, thn);
-			}
-			
-		} else SynErr(217);
-	}
+    void TacnyCasesBlockStmt(out Statement/*!*/ tacnyCasesStmt, IToken x) {
+      Contract.Ensures(Contract.ValueAtReturn(out tacnyCasesStmt) != null);
+      Expression guard = null;
+      IToken guardEllipsis = null;
+      BlockStmt/*!*/ thn;
+      Attributes attrs = null;
+      IToken bodyStart, bodyEnd, endTok;
+      List<GuardedAlternative> alternatives;
+      tacnyCasesStmt = dummyStmt;  // to please the compiler
 
-	void TacticInvariantStmt(out Statement/*!*/ s, IToken x, bool isObject = false) {
+      if(IsAlternative()) {
+        AlternativeBlock(true, out alternatives, out endTok);
+        tacnyCasesStmt = new AlternativeStmt(x, endTok, alternatives);
+      } else if(StartOf(22)) {
+        if(StartOf(23)) {
+          Guard(out guard);
+        } else {
+          Get();
+          guardEllipsis = t;
+        }
+        while(IsAttribute()) {
+          Attribute(ref attrs);
+        }
+        BlockStmt(out thn, out bodyStart, out bodyEnd);
+        endTok = thn.EndTok;
+        if(guardEllipsis != null) {
+          tacnyCasesStmt = new SkeletonStatement(new TacnyCasesBlockStmt(x, endTok, guard, attrs, thn), guardEllipsis, null);
+        } else {
+          tacnyCasesStmt = new TacnyCasesBlockStmt(x, endTok, guard, attrs, thn);
+        }
+
+      } else
+        SynErr(217);
+    }
+
+    void TacticInvariantStmt(out Statement/*!*/ s, IToken x, bool isObject = false) {
 		Contract.Ensures(Contract.ValueAtReturn(out s) != null);
 		Expression e = dummyExpr; Attributes attrs = null;
 		

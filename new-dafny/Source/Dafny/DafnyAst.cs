@@ -4827,7 +4827,18 @@ namespace Microsoft.Dafny {
       this.Guard = guard;
       this.Body = body;
     }
+
+    public TacnyBlockStmt(IToken tok, IToken endTok, Expression guard, Attributes attrs, BlockStmt body)
+        : base(tok, endTok) {
+      Contract.Requires(tok != null);
+      Contract.Requires(endTok != null);
+      Contract.Requires(body != null);
  
+      this.Guard = guard;
+      this.Body = body;
+      this.Attributes = attrs;
+    }
+
     public override IEnumerable<Statement> SubStatements {
       get {
         yield return Body;
@@ -4868,8 +4879,8 @@ namespace Microsoft.Dafny {
  
     public class TacnyCasesBlockStmt : TacnyBlockStmt {
         public virtual string WhatKind { get { return "cases"; } }
-        public TacnyCasesBlockStmt(IToken tok, IToken endTok, Expression guard, BlockStmt body)
-            : base(tok, endTok, guard, body) {
+        public TacnyCasesBlockStmt(IToken tok, IToken endTok, Expression guard, Attributes attrs, BlockStmt body)
+            : base(tok, endTok, guard, attrs, body) {
             Contract.Requires(tok != null);
             Contract.Requires(endTok != null);
             Contract.Requires(guard != null);

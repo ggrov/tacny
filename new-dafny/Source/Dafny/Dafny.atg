@@ -1806,7 +1806,7 @@ TacticVarDeclStmt<.out Statement/*!*/ s, IToken x.>
 TacnyCasesBlockStmt<out Statement/*!*/ tacnyCasesStmt, IToken x>
 = (. Contract.Ensures(Contract.ValueAtReturn(out tacnyCasesStmt) != null);
      Expression guard = null;  IToken guardEllipsis = null;
-     BlockStmt/*!*/ thn;
+     BlockStmt/*!*/ thn;      Attributes attrs = null;
      IToken bodyStart, bodyEnd, endTok;
      List<GuardedAlternative> alternatives;
      tacnyCasesStmt = dummyStmt;  // to please the compiler
@@ -1820,11 +1820,12 @@ TacnyCasesBlockStmt<out Statement/*!*/ tacnyCasesStmt, IToken x>
     ( Guard<out guard>
     | "..."                  (. guardEllipsis = t; .)
     )
-    BlockStmt<out thn, out bodyStart, out bodyEnd>    (. endTok = thn.EndTok; .)
+   { IF(IsAttribute()) Attribute<ref attrs> } 
+    BlockStmt<out thn, out bodyStart, out bodyEnd>    (. endTok = thn.EndTok; .) 
     (. if (guardEllipsis != null) {
-         tacnyCasesStmt = new SkeletonStatement(new TacnyCasesBlockStmt(x, endTok, guard, thn), guardEllipsis, null);
+         tacnyCasesStmt = new SkeletonStatement(new TacnyCasesBlockStmt(x, endTok, guard, attrs, thn), guardEllipsis, null);
        } else {
-         tacnyCasesStmt = new TacnyCasesBlockStmt(x, endTok, guard, thn);
+         tacnyCasesStmt = new TacnyCasesBlockStmt(x, endTok, guard, attrs, thn);
        }
     .)
   )
