@@ -157,14 +157,38 @@ namespace Tacny {
     }
 
 
-    public void AddNewFrame(BlockStmt body) {
+    public void AddNewFrames(List<BlockStmt> bodyList, string kind = "default", bool canTermin = false) {
+      //reverse the list to fit the order of the stack, i.e. list[0] should be pused last
+      bodyList.Reverse();
+      var parent = _scope.Peek();
+      foreach (var body in bodyList){
+        _scope.Push(new Frame(parent, body.Body, kind, canTermin));
+      }
+    }
+
+
+    public void AddNewFrame(BlockStmt body, string kind = "default", bool canTerminate = true) {
       Contract.Requires<ArgumentNullException>(body != null, "body");
-      _scope.Push(new Frame(_scope.Peek(), body.Body));
+      var bodyList = new List<BlockStmt>();
+      bodyList.Add(body);
+      AddNewFrames(bodyList, kind, true);
     }
 
     public bool RemoveFrame() {
+      List<Statement> generatedStmt;
       try {
+        switch (_scope.Peek().BlockKind){
+          case "TacnyCasesBlockStmt":
+            //TODO: call the generated function to gen the blcokstmt code
+            generatedStmt = _scope.Peek().GetGeneratedCode();
+            break;
+          default:
+            generatedStmt = _scope.Peek().GetGeneratedCode();
+            break;
+        }
         _scope.Pop();
+        if (generatedStmt.Count != 0)
+          _scope.Peek().AddGeneratedCode(generatedStmt);
         return true;
       } catch (InvalidOperationException) {
         return false;
@@ -371,6 +395,10 @@ namespace Tacny {
     }
     #endregion HELPERS
 
+    public bool IsCurrentCntlTermianted(){
+      return _scope.Peek().CanTerminate;
+    }
+
     /// <summary>
     /// Check in an updateStmt is local assignment
     /// </summary>
@@ -485,7 +513,12 @@ namespace Tacny {
 
     internal class Frame {
       public readonly List<Statement> Body;
+      // a control flag to determin how to assemly the generated code when popped.
+      // by default, the stmt list will be returned and added into the parent frame
+      // for some special blck, sucha as caseblock, it need to construct a new block stmt and then return
+      // based on the BlcokKind, the sysytem will call the related TBlockStmtCOdeGenerator to handle this varation
       private int _bodyCounter;
+      public readonly string BlockKind; 
       public Statement CurStmt => _bodyCounter >= Body.Count ? null : Body[_bodyCounter];
       public readonly Frame Parent;
       private readonly Dictionary<string, object> _declaredVariables;
@@ -496,6 +529,7 @@ namespace Tacny {
       private readonly List<Statement> _generatedCode;
 
       private readonly ErrorReporter _reporter;
+      public readonly bool CanTerminate;
 
       /// <summary>
       /// Initialize the top level frame
@@ -515,9 +549,11 @@ namespace Tacny {
         _reporter = reporter;
         _declaredVariables = new Dictionary<string, object>();
         _generatedCode = new List<Statement>();
+        CanTerminate = true;
+        BlockKind = "default";
       }
 
-      public Frame(Frame parent, List<Statement> body) {
+      public Frame(Frame parent, List<Statement> body, string kind, bool canTermin) {
         Contract.Requires<ArgumentNullException>(parent != null);
         Contract.Requires<ArgumentNullException>(tcce.NonNullElements(body), "body");
         // carry over the tactic info
@@ -527,6 +563,8 @@ namespace Tacny {
         Parent = parent;
         ActiveTactic = parent.ActiveTactic;
         _reporter = parent._reporter;
+        CanTerminate = canTermin;
+        BlockKind = kind;
       }
 
       public bool IncCounter() {
@@ -534,13 +572,15 @@ namespace Tacny {
         return _bodyCounter + 1 < Body.Count;
       }
 
-  
-
       internal List<Statement> GetGeneratedCode() {
         Contract.Ensures(Contract.Result<List<Statement>>() != null);
         if (Parent == null)
-          return _generatedCode;
-        return Parent.GetGeneratedCode();
+          return _generatedCode.Copy();
+        else{
+          var code = Parent.GetGeneratedCode();
+          code.AddRange(_generatedCode);
+          return code;
+        }
       }
 
 
@@ -558,7 +598,7 @@ namespace Tacny {
               TacticInfo.SearchStrategy = (Strategy)Enum.Parse(typeof(Strategy), stratName, true); // TODO: change to ENUM
             } catch {
               _reporter.Warning(MessageSource.Tacny, ((MemberDecl)ActiveTactic).tok, $"Unsupported search strategy {stratName}; Defaulting to DFS");
-              TacticInfo.SearchStrategy = Strategy.Bfs;
+              TacticInfo.SearchStrategy = Strategy.Dfs;
             }
             break;
            case "partial":
@@ -637,10 +677,10 @@ namespace Tacny {
       /// </summary>
       /// <param name="newStmt"></param>
       internal void AddGeneratedCode(Statement newStmt) {
-        if (Parent == null)
+       // if (Parent == null)
           _generatedCode.Add(newStmt);
-        else
-          Parent.AddGeneratedCode(newStmt);
+       // else
+       //   Parent.AddGeneratedCode(newStmt);
       }
 
       /// <summary>
@@ -648,10 +688,11 @@ namespace Tacny {
       /// </summary>
       /// <param name="newStmt"></param>
       internal void AddGeneratedCode(List<Statement> newStmt) {
-        if (Parent == null)
+      // if (Parent == null)
           _generatedCode.AddRange(newStmt);
-        else
-          Parent.AddGeneratedCode(newStmt);
+      //  else
+      //    Parent.AddGeneratedCode(newStmt);
+  
       }
 
     }
@@ -681,7 +722,7 @@ namespace Tacny {
 
     // tactic attribute information goes here
     public class TacticInformation {
-      public Strategy SearchStrategy { get; set; } = Strategy.Bfs;
+      public Strategy SearchStrategy { get; set; } = Strategy.Dfs;
       public bool IsPartial { get; set; } = false;
     }
 

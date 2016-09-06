@@ -262,7 +262,6 @@ namespace Tacny {
         enumerable = ResolvePredicateStmt((PredicateStmt)stmt, state);
       } else if(stmt is TacnyCasesBlockStmt) {
         //TODO: tmatch
-        //not sure, why not static consider to make all atomic and eatomic as static
         enumerable = new Tacny.Atomic.Match(stmt).Generate((TacnyCasesBlockStmt)stmt, state);
       } else if (stmt is TStatement) {
         //TODO: Evaluate tactic statement

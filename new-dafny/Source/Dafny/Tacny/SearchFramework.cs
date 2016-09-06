@@ -59,12 +59,12 @@ namespace Tacny {
           enumerable = BreadthFirstSeach.Search(state, er);
           break;
         case Strategy.Dfs:
-          enumerable = DepthFirstSeach.Search(state);
+          enumerable = DepthFirstSeach.Search(state, er);
           break;
         case Strategy.Undefined:
           throw new tcce.UnreachableException();
         default:
-          enumerable = BreadthFirstSeach.Search(state, er);
+          enumerable = DepthFirstSeach.Search(state, er);
           break;
       }
       return enumerable;
@@ -127,7 +127,7 @@ namespace Tacny {
             continue;
         }
         var proofState = enumerator.Current;
-        //check if any new dded coded reuqires call the dafny to verity, or reach the last line of code
+        //check if any new added code is reuqires to call the dafny to verity, or reach the last line of code
         if (proofState.IfVerify || proofState.IsEvaluated()) {
           proofState.IfVerify = false;
           switch (VerifyState(proofState, er)){
@@ -140,8 +140,15 @@ namespace Tacny {
               }
               continue;
             case VerifyResult.Verified:
-              yield return proofState;
-              yield break;
+              // in a controal block which can be returned
+              if (proofState.IsCurrentCntlTermianted()){
+                 yield return proofState;
+                 yield break;
+              }
+             // more stmt block need to be evaluaed in the queue, pop the current frame and continue to evalaute
+              proofState.RemoveFrame();
+              queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
+              break;
             case VerifyResult.Failed:
               break;
             default:
@@ -161,60 +168,52 @@ namespace Tacny {
   }
 
   internal class DepthFirstSeach : BaseSearchStrategy {
-    public new static IEnumerable<ProofState> Search(ProofState state) {
-      return null;
-      /*
-    Stack<IEnumerator<Solution>> solutionStack = new Stack<IEnumerator<Solution>>();
+  
+    internal new static IEnumerable<ProofState> Search(ProofState rootState, ErrorReporterDelegate er){
+      var stack = new Stack<IEnumerator<ProofState>>();
+      stack.Push(Interpreter.EvalStep(rootState).GetEnumerator());
 
-    if (atomic != null)
-      solutionStack.Push(Atomic.ResolveStatement(new Solution(atomic)).GetEnumerator());
 
-    while (true) {
-      if (solutionStack.Count == 0) {
+      IEnumerator<ProofState> enumerator = Enumerable.Empty<ProofState>().GetEnumerator();
 
-        yield break;
-      }
-
-      var solutionEnum = solutionStack.Pop();
-
-      // if the solution is fully resolved skip resolution
-      if (!solutionEnum.MoveNext())
-        continue;
-
-      var solution = solutionEnum.Current;
-      solutionStack.Push(solutionEnum);
-      if (solution.IsEvaluated()) {
-        if (verify) {
-          if (VerifyState(solution)) {
-            yield return solution;
-            yield break;
+      while(stack.Count > 0) {
+        if(!enumerator.MoveNext()) {
+          enumerator = stack.Pop();
+          if(!enumerator.MoveNext())
+            continue;
+        }
+        var proofState = enumerator.Current;
+        //check if any new added coded reuqires to call the dafny to verity, or reach the last line of code
+        if(proofState.IfVerify || proofState.IsEvaluated()) {
+          proofState.IfVerify = false;
+          switch(VerifyState(proofState, er)) {
+            case VerifyResult.Verified:
+              // in a controal block which can be returned
+              if(proofState.IsCurrentCntlTermianted()) {
+                yield return proofState;
+                yield break;
+              }
+              // more stmt block need to be evalauted in the stack, pop the current frame and continue to evalaute
+              proofState.RemoveFrame();
+              stack.Push(enumerator);
+              enumerator = (Interpreter.EvalStep(proofState).GetEnumerator());
+              break;
+            case VerifyResult.Failed:
+              break;
+            default:
+              throw new ArgumentOutOfRangeException();
           }
         }
-        else {
-          yield return solution;
+        /*
+       * when failed, check if this mmethod is evaluated , i.e. all tstmt are evalauted,
+       * if so, dischard this branch and continue with the next one
+       * otherwise, continue to evaluate the next stmt
+       */
+        if(!proofState.IsEvaluated()) {
+          stack.Push(enumerator);
+          enumerator = (Interpreter.EvalStep(proofState).GetEnumerator());
         }
       }
-      else if (solution.State.DynamicContext.isPartialyResolved) {
-        if (verify) {
-          if (VerifyState(solution)) {
-            yield return solution;
-            yield break;
-          }
-          solutionStack.Push(Atomic.ResolveStatement(solution).GetEnumerator());
-        }
-        else {
-          solutionStack.Push(Atomic.ResolveStatement(solution).GetEnumerator());
-          yield return solution;
-        }
-      }
-      else {
-        solutionStack.Push(Atomic.ResolveStatement(solution).GetEnumerator());
-      }
-
-
-
-    }
-    */
     }
   }
 }

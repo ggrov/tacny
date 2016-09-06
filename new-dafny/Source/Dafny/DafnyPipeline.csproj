@@ -188,6 +188,7 @@
     <Compile Include="Tacny\ProofState.cs" />
     <Compile Include="Tacny\SearchFramework.cs" />
     <Compile Include="Tacny\Solution.cs" />
+    <Compile Include="Tacny\TBlkStmtCodeGen\TBlockStmtCodeGenerator.cs" />
     <Compile Include="Tacny\tcce.cs" />
     <Compile Include="Tacny\Util.cs" />
     <Compile Include="Triggers\QuantifiersCollection.cs" />

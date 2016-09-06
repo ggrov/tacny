@@ -16,8 +16,19 @@ namespace Tacny.Atomic {
     public override int ArgsCount => -1;
 
     private List<string> _names;
+  
     private Dictionary<string, Type> _ctorTypes;
 
+    private string PopCaseName(){
+
+      if (_names.Count > 0){
+        var ret = _names[0];
+        _names.Remove(ret);
+        return ret;
+      }
+      else
+        return null;
+    }
     public static List<string> ParseDefaultCasesNames(Statement stmt) {
 
       List<string> n = new List<string>();
@@ -115,8 +126,6 @@ namespace Tacny.Atomic {
 
     private MatchCaseStmt GenerateMatchCaseStmt(int line, DatatypeCtor dtc) {
       Contract.Requires(dtc != null);
-      var i = new Microsoft.Dafny.LiteralExpr(new Token(line, 0){val = "false"}, false);
-
       List<CasePattern> casePatterns = new List<CasePattern>();
       MatchCaseStmt mcs;
       dtc = new DatatypeCtor(dtc.tok, dtc.Name, dtc.Formals, dtc.Attributes);
@@ -144,6 +153,9 @@ namespace Tacny.Atomic {
 
     private CasePattern GenerateCasePattern(int line, Formal formal) {
       Contract.Requires(formal != null);
+/*      var name = PopCaseName();
+      if (name == null) name = formal.Name; 
+ */
       formal = new Formal(formal.tok, formal.Name, formal.Type, formal.InParam, formal.IsGhost);
       CasePattern cp = new CasePattern(new Token(line, 0) { val = formal.Name },
         new BoundVar(new Token(line, 0) { val = formal.Name }, formal.Name, new InferredTypeProxy()));
