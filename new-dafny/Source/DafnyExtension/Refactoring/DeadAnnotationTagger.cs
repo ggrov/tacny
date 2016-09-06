@@ -62,8 +62,9 @@ namespace DafnyLanguage.Refactoring
         var status = (IVsStatusbar)Isp.GetService(typeof(IVsStatusbar));
         var tsn = Tsn.GetTextStructureNavigator(buffer);
         var agg = AggregatorFactory.CreateTagAggregator<ProgressGlyphTag>(buffer);
+        //var elp = new ErrorListProvider(Isp);
 
-        return new DeadAnnotationTagger(buffer, status, tsn, agg) as ITagger<T>;
+        return new DeadAnnotationTagger(buffer, status, tsn, agg/*, elp*/) as ITagger<T>;
       };
       return buffer.Properties.GetOrCreateSingletonProperty(typeof(DeadAnnotationTagger), taggerProperty);
     }
@@ -95,9 +96,10 @@ namespace DafnyLanguage.Refactoring
   {
     public static IClassificationType Type;
     public string ErrorType => PredefinedErrorTypeNames.OtherError;
-    public object ToolTipContent => $"{_adjective} {TypeName} can safely be {_action}";
-    private readonly string _action;
-    private readonly string _adjective;
+    public object ToolTipContent => $"Dead {TypeName} can safely be removed";
+    //public object ToolTipContent => $"{_adjective} {TypeName} can safely be {_action}";
+    //private readonly string _action;
+    //private readonly string _adjective;
     public readonly string Replacement;
     public readonly SnapshotSpan WarnSpan;
     public readonly ITrackingSpan TrackingReplacementSpan;
@@ -107,8 +109,8 @@ namespace DafnyLanguage.Refactoring
 
     public DeadAnnotationTag(ITextSnapshot originalSnapshot, int warnStart, int warnLength,
       int replaceStart, int replaceLength, string replacement, string typeName, Program program) : base(Type) {
-      _action = string.IsNullOrEmpty(replacement) ? "removed" : "simplified";
-      _adjective = string.IsNullOrEmpty(replacement) ? "Dead" : "Overspecific";
+      //_action = string.IsNullOrEmpty(replacement) ? "removed" : "simplified";
+      //_adjective = string.IsNullOrEmpty(replacement) ? "Dead" : "Overspecific";
       OriginalSnapshot = originalSnapshot;
       Replacement = replacement;
       WarnSpan = new SnapshotSpan(originalSnapshot, warnStart, warnLength);
@@ -154,11 +156,13 @@ namespace DafnyLanguage.Refactoring
   {
     #region fields and properties
     internal static bool Enabled = false;
+    //internal const string Help = "DeadAnnotations";
     internal static List<StopChecker> Checkers = new List<StopChecker>();
 
     private readonly ITextBuffer _tb;
     private readonly IVsStatusbar _status;
     private readonly DispatcherTimer _timer;
+    //private readonly ErrorListProvider _errList;
     private readonly ITextStructureNavigator _tsn;
     private readonly ITagAggregator<ProgressGlyphTag> _agg;
     private readonly List<int> _changesSinceLastSuccessfulRun;
@@ -179,12 +183,13 @@ namespace DafnyLanguage.Refactoring
 
     #endregion
 
-    public DeadAnnotationTagger(ITextBuffer tb, IVsStatusbar status, ITextStructureNavigator tsn, ITagAggregator<ProgressGlyphTag> agg) {
+    public DeadAnnotationTagger(ITextBuffer tb, IVsStatusbar status, ITextStructureNavigator tsn, ITagAggregator<ProgressGlyphTag> agg/*, ErrorListProvider elp*/) {
       _activityLock = _activityLock ?? new object();
 
       _tb = tb;
       _agg = agg;
       _tsn = tsn;
+      //_errList = elp;
       _status = status;
       _changesSinceLastSuccessfulRun = new List<int>();
       _deadAnnotations = new List<DeadAnnotationTag>();
@@ -229,6 +234,9 @@ namespace DafnyLanguage.Refactoring
         _changesSinceLastSuccessfulRun.Add(change.NewPosition);
         _deadAnnotations.RemoveAll(tag => {
           var span = tag.TrackingReplacementSpan.GetSpan(e.After);
+         //var line = span.Snapshot.GetLineNumberFromPosition(span.Start.Position);
+          //var toremove = _errList.Tasks.Cast<Task>().Where(task => task.HelpKeyword == Help && task.Line==line).ToList();
+          //toremove.ForEach(_errList.Tasks.Remove);
           return span.OverlapsWith(change.NewSpan);
         });
         var changeSpan = new SnapshotSpan(Snapshot, change.NewSpan);
@@ -241,6 +249,9 @@ namespace DafnyLanguage.Refactoring
       _timer?.Stop();
       if(_timer!=null) _timer.Tick -= IdleTick;
       if(_tb!=null) _tb.Changed -= BufferChangedInterrupt;
+      //if(_errList==null) return;
+      //var toremove = _errList.Tasks.Cast<Task>().Where(task => task.HelpKeyword == Help).ToList();
+      //toremove.ForEach(_errList.Tasks.Remove);
     }
     #endregion
 
@@ -359,6 +370,9 @@ namespace DafnyLanguage.Refactoring
       _changesSinceLastSuccessfulRun.Clear();
       lock (_deadAnnotations) {
         _deadAnnotations.Clear();
+        //var currentfile = results.First().StartTok.filename;
+        //var toremove = _errList.Tasks.Cast<Task>().Where(task => task.HelpKeyword == Help && task.Document == currentfile).ToList();
+        //toremove.ForEach(_errList.Tasks.Remove);
         results.ForEach(x => ProcessValidResult(x, prog));
       }
       TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(new SnapshotSpan(snap, 0, snap.Length)));
@@ -419,6 +433,9 @@ namespace DafnyLanguage.Refactoring
         foreach (var m in mds) {
           var mSpan = new SnapshotSpan(snap, m.BodyStartTok.pos, m.BodyEndTok.pos - m.BodyStartTok.pos);
           _deadAnnotations.RemoveAll(tag => tag.TrackingReplacementSpan.GetSpan(snap).OverlapsWith(mSpan));
+          //var currentfile = results.First().StartTok.filename;
+          //var toremove = _errList.Tasks.Cast<Task>().Where(task => task.HelpKeyword == Help && task.Document == currentfile).ToList();
+          //toremove.ForEach(_errList.Tasks.Remove);
         }
         results.ForEach(x => changed.Add(ProcessValidResult(x, prog).TrackingReplacementSpan.GetSpan(Snapshot)));
       }
@@ -461,11 +478,11 @@ namespace DafnyLanguage.Refactoring
         default:
           throw new tcce.UnreachableException();
       }
-      AddTag(tag);
+      AddTag(tag/*, r.StartTok.filename*/);
       return tag;
     }
 
-    private void AddTag(DeadAnnotationTag newtag) {
+    private void AddTag(DeadAnnotationTag newtag/*, string file*/) {
       var hasParentTags = (from tag in _deadAnnotations
         let existingspan = tag.TrackingReplacementSpan.GetSpan(Snapshot)
         let newspan = newtag.TrackingReplacementSpan.GetSpan(Snapshot)
@@ -478,6 +495,15 @@ namespace DafnyLanguage.Refactoring
         return newspan.Contains(existingspan);
       });
       _deadAnnotations.Add(newtag);
+     //_errList.Tasks.Add(new ErrorTask {
+     //  Line = newtag.OriginalSnapshot.GetLineNumberFromPosition(newtag.WarnSpan.Start),
+     //  Column = 0,
+     //  ErrorCategory = TaskErrorCategory.Message,
+     //  Text = (string) newtag.ToolTipContent,
+     //  Category = TaskCategory.BuildCompile,
+     //  Document = file,
+     //  HelpKeyword = Help
+     //});
     }
 
     private DeadAnnotationTag FindStmtTag(DareResult r, Program p) {
@@ -600,7 +626,8 @@ namespace DafnyLanguage.Refactoring
       return from span in spans
         from tag in _deadAnnotations
         let tagSpan = tag.TrackingReplacementSpan.GetSpan(activeSnapshot)
-        where tagSpan.IntersectsWith(span)
+        where span.OverlapsWith(tagSpan)
+        //where tagSpan.IntersectsWith(span)
         select new TagSpan<DeadAnnotationTag>(tag.WarnSpan, tag);
     }
 
