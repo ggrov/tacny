@@ -32,8 +32,7 @@ namespace DafnyLanguage
     private ITagAggregator<DafnyTokenTag> _aggregator;
     private ITextBuffer _buffer;
 
-    public DafnyQuickInfoSource(ITextBuffer buffer, ITagAggregator<DafnyTokenTag> aggregator)
-    {
+    public DafnyQuickInfoSource(ITextBuffer buffer, ITagAggregator<DafnyTokenTag> aggregator) {
       _aggregator = aggregator;
       _buffer = buffer;
     }
@@ -56,6 +55,8 @@ namespace DafnyLanguage
           quickInfoContent.Add(s);
         }
       }
+
+      DeadAnnotationTooltip.TestForAndAddHoverText(ref applicableToSpan, _buffer, triggerPoint, quickInfoContent);
 
       if (applicableToSpan == null)
         TacticsHoverText.TestForAndAddHoverText(ref applicableToSpan, triggerPoint, _buffer, quickInfoContent);

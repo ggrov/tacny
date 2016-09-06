@@ -95,17 +95,20 @@ namespace DafnyLanguage.Refactoring
   {
     public static IClassificationType Type;
     public string ErrorType => PredefinedErrorTypeNames.OtherError;
-    public object ToolTipContent => $"Dead {TypeName} can safely be removed";
-
+    public object ToolTipContent => $"{_adjective} {TypeName} can safely be {_action}";
+    private readonly string _action;
+    private readonly string _adjective;
     public readonly string Replacement;
     public readonly SnapshotSpan WarnSpan;
     public readonly ITrackingSpan TrackingReplacementSpan;
     public readonly ITextSnapshot OriginalSnapshot;
     public readonly string TypeName;
     public readonly Program Program;
-    
+
     public DeadAnnotationTag(ITextSnapshot originalSnapshot, int warnStart, int warnLength,
       int replaceStart, int replaceLength, string replacement, string typeName, Program program) : base(Type) {
+      _action = string.IsNullOrEmpty(replacement) ? "removed" : "simplified";
+      _adjective = string.IsNullOrEmpty(replacement) ? "Dead" : "Overspecific";
       OriginalSnapshot = originalSnapshot;
       Replacement = replacement;
       WarnSpan = new SnapshotSpan(originalSnapshot, warnStart, warnLength);
@@ -597,7 +600,7 @@ namespace DafnyLanguage.Refactoring
       return from span in spans
         from tag in _deadAnnotations
         let tagSpan = tag.TrackingReplacementSpan.GetSpan(activeSnapshot)
-        where span.OverlapsWith(tagSpan)
+        where tagSpan.IntersectsWith(span)
         select new TagSpan<DeadAnnotationTag>(tag.WarnSpan, tag);
     }
 
