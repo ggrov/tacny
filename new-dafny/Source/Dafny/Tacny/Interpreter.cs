@@ -263,7 +263,7 @@ namespace Tacny {
       } else if(stmt is TacnyCasesBlockStmt) {
         //TODO: tmatch
         //not sure, why not static consider to make all atomic and eatomic as static
-        enumerable = new Tacny.Atomic.Match(stmt).Generate(stmt, state);
+        enumerable = new Tacny.Atomic.Match(stmt).Generate((TacnyCasesBlockStmt)stmt, state);
       } else if (stmt is TStatement) {
         //TODO: Evaluate tactic statement
       } else if (stmt is IfStmt || stmt is WhileStmt) {
@@ -530,7 +530,7 @@ namespace Tacny {
           } else if(exprRhs?.Expr is Dafny.NameSegment){
             var name = ((Dafny.NameSegment) exprRhs.Expr).Name;
             if(state.HasLocalValue(name))
-            // in the case that referring to an exisiting tacny, dereference it
+            // in the case that referring to an exisiting tvar, dereference it
             state.AddLocal(declaration.Locals[index], state.GetLocalValue(name));
           } else {
             state.AddLocal(declaration.Locals[index], exprRhs?.Expr);
