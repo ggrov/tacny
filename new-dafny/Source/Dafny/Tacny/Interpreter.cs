@@ -289,7 +289,7 @@ namespace Tacny {
     }
 
 
-    private static IEnumerable<ProofState> ResolvePredicateStmt(PredicateStmt predicate, ProofState state) {
+    public static IEnumerable<ProofState> ResolvePredicateStmt(PredicateStmt predicate, ProofState state) {
       Contract.Requires<ArgumentNullException>(predicate != null, "predicate");
       foreach (var result in EvaluateTacnyExpression(state, predicate.Expr)) {
         var resultExpression = result is IVariable ? Util.VariableToExpression(result as IVariable) : result as Expression;
@@ -499,7 +499,7 @@ namespace Tacny {
       return evaluator.Generate(stmt, state);
     }
 
-    private static IEnumerable<ProofState> RegisterVariable(TacticVarDeclStmt declaration, ProofState state) {
+    public static IEnumerable<ProofState> RegisterVariable(TacticVarDeclStmt declaration, ProofState state) {
       if (declaration.Update == null) yield break;
       var rhs = declaration.Update as UpdateStmt;
       if (rhs == null) {

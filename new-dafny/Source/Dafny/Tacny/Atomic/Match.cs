@@ -65,35 +65,97 @@ namespace Tacny.Atomic {
       var srcVarData = state.GetVariable(srcVar.Name);
       var datatype = state.GetVariableType(srcVar.Name).AsDatatype;
 
+
+      //generate block stmts for each cases
+
+      //generate a blockstmt c
+     // state.AddNewFrame();
       //state.GetVariableType (datatype);
-      Console.WriteLine("line");
+      //Console.WriteLine("line");
 
       //generate a test program to check which cases need to apply tacny
       var p = new Printer(Console.Out);
       bool[] ctorFlags;
       int ctor; // current active match case
       InitCtorFlags(datatype, out ctorFlags);
-      
-      MatchStmt ms = GenerateMatchStmt(state.TacticApplication.Tok.line, srcVar.Copy(), datatype);
-      //for each brnache, generate code but assume false state for other branches
 
-      //verify t
-      p.PrintStatement(ms, 0);
-      state.AddStatement(ms);
+      List<Func<int, List<Statement>>> fList = new List<Func<int, List<Statement>>>();
 
-      var bodyList = new Dictionary<ProofState, BlockStmt>();
-        bodyList.Add(state, Util.InsertCode(state,
+      int i;
+      for(i = 0; i < datatype.Ctors.Count; i++) {
+        fList.Add(GenerateAssumeFalseStmtAsStmtList);
+      }
+      //find the first case which fails to verify
+      for(i = 0; i < datatype.Ctors.Count; i++){
+        var state0 = state.Copy();
+        fList[i] = _ => new List<Statement>();
+        MatchStmt ms = GenerateMatchStmt(state0.TacticApplication.Tok.line, srcVar.Copy(), datatype, fList);
+        state0.AddStatement(ms);
+        var bodyList = new Dictionary<ProofState, BlockStmt>();
+        bodyList.Add(state0, Util.InsertCode(state0,
           new Dictionary<UpdateStmt, List<Statement>>() {
-              {state.TacticApplication, state.GetGeneratedCode()}
+              {state0.TacticApplication, state0.GetGeneratedCode()}
           }));
-      
-      var memberList = Util.GenerateMembers(state, bodyList);
-      var prog = Util.GenerateDafnyProgram(state, memberList.Values.ToList());
-      p.PrintProgram(prog, false);
-      var result = Util.ResolveAndVerify(prog, null);
 
-      throw new NotImplementedException();
+        var memberList = Util.GenerateMembers(state0, bodyList);
+        var prog = Util.GenerateDafnyProgram(state0, memberList.Values.ToList());
+        p.PrintProgram(prog, false);
+        var result = Util.ResolveAndVerify(prog, null);
+
+        if (result.Count != 0)
+          break;
+      }
+
+      
+     //MatchStmt ms = GenerateMatchStmt(state.TacticApplication.Tok.line, srcVar.Copy(), datatype, fList);
+     //for each branch, generate code but assume false state for other branches
+
+     //verify t
+     // p.PrintStatement(ms, 0);
+
+     foreach(var stmt0 in stmt.Body.SubStatements) {
+        if(stmt0 is TacticVarDeclStmt) {
+          var enumerable = Interpreter.RegisterVariable(stmt0 as TacticVarDeclStmt, state);
+          var e = enumerable.GetEnumerator();
+          e.MoveNext();
+          state = e.Current;
+        } else if(stmt0 is PredicateStmt){
+          fList[i] = GenerateAssumeFalseStmtAsStmtList;
+        }
+      }
+      var finalMs = GenerateMatchStmt(state.TacticApplication.Tok.line, srcVar.Copy(), datatype, fList);
+      state.AddStatement(finalMs);
+      state.IfVerify = true;
+
+      yield return state;
+
+
+      // throw new NotImplementedException();
     }
+
+    private IEnumerable<ProofState> StmtHandler(List<Statement> stmts, ProofState state){
+      IEnumerable<ProofState> enumerable = null;
+      ProofState ret = state;
+
+      foreach (var stmt in stmts){
+        if (stmt is TacticVarDeclStmt){
+          enumerable = Interpreter.RegisterVariable(stmt as TacticVarDeclStmt, ret);
+          var e = enumerable.GetEnumerator();
+          e.MoveNext();
+          ret = e.Current;
+        }
+        else if (stmt is PredicateStmt){
+          enumerable = Interpreter.ResolvePredicateStmt((PredicateStmt) stmt, ret);
+          var e = enumerable.GetEnumerator();
+          e.MoveNext();
+          ret = e.Current;
+        }
+      }
+
+      foreach(var item in enumerable)
+        yield return item.Copy();
+    }
+
 
     private static void InitCtorFlags(DatatypeDecl datatype, out bool[] flags, bool value = false) {
       flags = new bool[datatype.Ctors.Count];
@@ -102,16 +164,29 @@ namespace Tacny.Atomic {
       }
     }
 
-    private MatchStmt GenerateMatchStmt (int line, NameSegment ns, DatatypeDecl datatype) {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="line"></param>
+    /// <param name="ns"></param>
+    /// <param name="datatype"></param>
+    /// <param name="f"></param>a function list which contains a function to generate stetment list with given line number
+    /// <returns></returns>
+    private MatchStmt GenerateMatchStmt (int line, NameSegment ns, DatatypeDecl datatype, List<Func<int, List<Statement>>> fL) {
       Contract.Requires(ns != null);
       Contract.Requires(datatype != null);
       Contract.Ensures(Contract.Result<MatchStmt>() != null);
       List<MatchCaseStmt> cases = new List<MatchCaseStmt>();
       int index = line + 1;
       int i = 0;
-      
-      foreach(DatatypeCtor dc in datatype.Ctors) {
-        MatchCaseStmt mcs = GenerateMatchCaseStmt(index, dc);
+
+
+      for (int j = 0; j < datatype.Ctors.Count; j++){
+        var dc = datatype.Ctors[j];
+        Func<int, List<Statement>> f = _=> new List<Statement>();
+        if (j < fL.Count) f = fL[j];
+
+        MatchCaseStmt mcs = GenerateMatchCaseStmt(index, dc, f);
 
         cases.Add(mcs);
         line += mcs.Body.Count + 1;
@@ -123,8 +198,14 @@ namespace Tacny.Atomic {
         ns, cases, false);
     }
 
-
-    private MatchCaseStmt GenerateMatchCaseStmt(int line, DatatypeCtor dtc) {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="line"></param>
+    /// <param name="dtc"></param>
+    /// <param name="f"></param>
+    /// <returns></returns>
+    private MatchCaseStmt GenerateMatchCaseStmt(int line, DatatypeCtor dtc,  Func<int,List<Statement>> f) {
       Contract.Requires(dtc != null);
       List<CasePattern> casePatterns = new List<CasePattern>();
       MatchCaseStmt mcs;
@@ -136,13 +217,19 @@ namespace Tacny.Atomic {
         casePatterns.Add(cp);
       }
 
-      List<Statement> body = new List<Statement>();
-      body.Add(GenerateAssumeFalseStmt(line));
+      //List<Statement> body = new List<Statement>();
+      //body.Add(GenerateAssumeFalseStmt(line));
          mcs = new MatchCaseStmt(new Token(line, 0) { val = "cases" },
-        dtc.CompileName, casePatterns, body);
+        dtc.CompileName, casePatterns, f(line));
       return mcs;
     }
-    
+
+    private List<Statement> GenerateAssumeFalseStmtAsStmtList(int line){
+      var l =  new List<Statement>();
+      l.Add(GenerateAssumeFalseStmt(line));
+      return l;
+    } 
+
     private AssumeStmt GenerateAssumeFalseStmt(int line){
       return new AssumeStmt(new Token(line, 0){val = "assume"},
         new Token(line, 0){val = ";"},

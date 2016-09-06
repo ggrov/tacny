@@ -127,7 +127,7 @@ namespace Tacny {
             continue;
         }
         var proofState = enumerator.Current;
-        //check if any new added code is reuqires to call the dafny to verity, or reach the last line of code
+        //check if any new added code reuqires to call the dafny to verity, or reach the last line of code
         if (proofState.IfVerify || proofState.IsEvaluated()) {
           proofState.IfVerify = false;
           switch (VerifyState(proofState, er)){
