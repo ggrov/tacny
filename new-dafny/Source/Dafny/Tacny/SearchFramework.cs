@@ -77,22 +77,33 @@ namespace Tacny {
 
     private static List<ProofState> _proofList;
     internal static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
-      if (_proofList == null)
-        _proofList = new List<ProofState>();
-      if (_proofList.Count + 1 < SolutionCounter) {
-        _proofList.Add(state);
-        return VerifyResult.Cached;
-      } else {
-        _proofList.Add(state);
-        var bodyList = new Dictionary<ProofState, BlockStmt>();
-        foreach (var proofState in _proofList) {
-          bodyList.Add(proofState, Util.InsertCode(proofState,
-            new Dictionary<UpdateStmt, List<Statement>>() {
-              {proofState.TacticApplication, proofState.GetGeneratedCode()}
-            }));
-        }
-        var memberList = Util.GenerateMembers(state, bodyList);
+      /*      if (_proofList == null)
+              _proofList = new List<ProofState>();
+            if (_proofList.Count + 1 < SolutionCounter) {
+              _proofList.Add(state);
+              return VerifyResult.Cached;
+            } else {
+              _proofList.Add(state);
+              var bodyList = new Dictionary<ProofState, BlockStmt>();
+              foreach (var proofState in _proofList) {
+                bodyList.Add(proofState, Util.InsertCode(proofState,
+                  new Dictionary<UpdateStmt, List<Statement>>() {
+                    {proofState.TacticApplication, proofState.GetGeneratedCode()}
+                  }));
+              }
+       */
+      var bodyList = new Dictionary<ProofState, BlockStmt>();
+      bodyList.Add(state, Util.InsertCode(state,
+        new Dictionary<UpdateStmt, List<Statement>>(){
+          {state.TacticApplication, state.GetGeneratedCode()}
+        }));
+    
+            var memberList = Util.GenerateMembers(state, bodyList);
         var prog = Util.GenerateDafnyProgram(state, memberList.Values.ToList());
+
+        var printer = new Printer(Console.Out);
+        printer.PrintProgram(prog, false);
+
         var result = Util.ResolveAndVerify(prog, errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); });
         if (result.Count == 0)
           return VerifyResult.Verified;
@@ -104,7 +115,6 @@ namespace Tacny {
           return VerifyResult.Failed;
         }
       }
-    }
   }
 
   internal class BreadthFirstSeach : BaseSearchStrategy {

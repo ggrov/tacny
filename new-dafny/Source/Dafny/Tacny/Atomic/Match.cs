@@ -43,6 +43,10 @@ namespace Tacny.Atomic {
       return n;
     }
 
+    public Match(){
+      _names = new List<string>();
+    }
+
     public Match(Statement stmt) {
       _names = ParseDefaultCasesNames(stmt);
     }

@@ -190,6 +190,7 @@ namespace Tacny {
       var r = new Resolver(program);
       //var start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       r.ResolveProgram(program);
+      //TODO: get program.reporter to check resolving result before verifying
       //var end = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds
       var boogieProg = Translate(program, program.Name, er);
       PipelineStatistics stats;

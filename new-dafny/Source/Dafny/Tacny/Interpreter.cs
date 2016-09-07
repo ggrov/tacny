@@ -251,10 +251,27 @@ namespace Tacny {
         var us = stmt as UpdateStmt;
         if (state.IsLocalAssignment(us)) {
           enumerable = UpdateLocalValue(us, state);
-        } else if (state.IsArgumentApplication(us)) {
+        } else  if (state.IsArgumentApplication(us)){
           //TODO: argument application
-        } else if (state.IsTacticCall(us)) {
+         // not sure what this is for
+        }
+        else if (state.IsTacticCall(us)){
           enumerable = ApplyNestedTactic(state.Copy(), state.DafnyVars(), us);
+        }
+        else{// apply atomic
+          string sig = Util.GetSignature(us);
+          //Firstly, check if this is a projection function
+          var types =
+            Assembly.GetAssembly(typeof(Atomic.Atomic))
+              .GetTypes()
+              .Where(t => t.IsSubclassOf(typeof(Atomic.Atomic)));
+          foreach(var fType in types) {
+            var porjInst = Activator.CreateInstance(fType) as Atomic.Atomic;
+            if(sig == porjInst?.Signature) {
+              //TODO: validate input countx
+              enumerable = porjInst?.Generate(us, state);
+            }
+          }
         }
       } else if (stmt is AssignSuchThatStmt) {
         enumerable = EvaluateSuchThatStmt((AssignSuchThatStmt)stmt, state);

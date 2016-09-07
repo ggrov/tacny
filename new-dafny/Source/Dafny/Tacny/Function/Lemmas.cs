@@ -19,7 +19,8 @@ namespace Tacny.Function{
     /// <returns></returns>
     public override IEnumerable<object> Generate(Expression expression, ProofState proofState){
       var ls = proofState.Members.Values.ToList().Where(IsLemma);
-      yield return ls;
+
+      yield return ls.ToList();
     }
   }
 }
