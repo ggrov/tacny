@@ -539,13 +539,21 @@ namespace DafnyLanguage.Refactoring
     }
 
     private Positions StmtReplacementPositions(int tokPos, int tokLen, bool hasReplace) {
-      var line = Snapshot.GetLineFromPosition(tokPos);
-      var wordAtEndOfTag = _tsn.GetExtentOfWord(new SnapshotPoint(Snapshot, tokPos + tokLen)).Span;
-      var finalTaggedSegment = _tsn.GetSpanOfNextSibling(wordAtEndOfTag).GetText();
-      var trailingSemiBrace = finalTaggedSegment.LastOrDefault(x => x==';' || x == '}');
-      var actualLength = trailingSemiBrace != new char() ? tokLen+1 : tokLen;
+      var lineAtEndOfTag = Snapshot.GetLineFromPosition(tokPos + tokLen);
+      var lineAtEndOfTagLen = lineAtEndOfTag.End.Position - lineAtEndOfTag.Start.Position;
+      var lineAtEndOfTagText = lineAtEndOfTag.GetText();
+      var currentPos = tokPos + tokLen - lineAtEndOfTag.Start.Position;
+      var trailingSemiBrace = false;
+      for (;currentPos < lineAtEndOfTagLen;currentPos++) {
+        var trailingSymbol = lineAtEndOfTagText[currentPos];
+        if (" \t".Contains(trailingSymbol)) continue;
+        trailingSemiBrace = trailingSymbol == ';' || trailingSymbol == '}';
+        break;
+      }
+      var actualLength = trailingSemiBrace ? tokLen + 1 : tokLen;
       if (hasReplace) return new Positions(tokPos, actualLength);
 
+      var line = Snapshot.GetLineFromPosition(tokPos);
       var lineText = line.Extent.GetText();
       var trimmedLineLength = lineText.Trim().Length; 
       var replacementSpan = new SnapshotSpan(Snapshot, tokPos, actualLength).GetText();
