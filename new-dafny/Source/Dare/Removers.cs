@@ -24,6 +24,9 @@ namespace Dare
             try {
                 return TryValidateProgram(program, errorDelegate);
             }
+            catch (FileNotFoundException e) {
+                throw e;
+            }
             catch (Exception) {
                 return false;
             }
