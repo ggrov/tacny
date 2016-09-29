@@ -83,6 +83,23 @@ namespace Tacny {
       return body;
     }
 
+    public static MemberDecl GenDeclFromTacCode(ProofState state, Dictionary<UpdateStmt, List<Statement>> code) {
+      Contract.Requires<ArgumentNullException>(state != null, "state");
+      Contract.Requires<ArgumentNullException>(code != null, "code");
+      var prog = state.GetDafnyProgram();
+      var tld = prog.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x.Name == state.ActiveClass.Name) as ClassDecl;
+      Contract.Assert(tld != null);
+      var member = tld.Members.FirstOrDefault(x => x.Name == state.TargetMethod.Name) as Method;
+      var body = member?.Body;
+
+      foreach(var kvp in code) {
+        body = InsertCodeInternal(body, kvp.Value, kvp.Key);
+      }
+      var r = new Resolver(prog);
+      r.ResolveProgram(prog);
+      return member;
+    }
+
     private static BlockStmt InsertCodeInternal(BlockStmt body, List<Statement> code, UpdateStmt tacticCall) {
       Contract.Requires<ArgumentNullException>(body != null, "body ");
       Contract.Requires<ArgumentNullException>(tacticCall != null, "'tacticCall");
@@ -167,7 +184,7 @@ namespace Tacny {
       var printer = new Printer(tw);
       printer.PrintTopLevelDecls(prog.DefaultModuleDef.TopLevelDecls, 0, filePath);
       tw.Close();
-      Parser.ParseCheck(new List<string>() { filePath}, prog.Name, out prog);
+      Parser.ParseOnly(new List<string>() { filePath}, prog.Name, out prog);
       return prog;
     }
 
@@ -195,8 +212,13 @@ namespace Tacny {
       var boogieProg = Translate(program, program.Name, er);
       PipelineStatistics stats;
       List<ErrorInformation> errorList;
-      PipelineOutcome tmp = BoogiePipeline(boogieProg, new List<string> {program.Name}, program.Name, er, out stats, out errorList, program);
-      return errorList;
+      
+      
+      PipelineOutcome tmp = BoogiePipeline(boogieProg,
+        new List<string> {program.Name}, program.Name, er,
+        out stats, out errorList, program);
+
+        return errorList;
     }
 
     public static Bpl.Program Translate(Program dafnyProgram, string uniqueIdPrefix, ErrorReporterDelegate er) {
@@ -277,7 +299,7 @@ namespace Tacny {
     /// <summary>
     /// Returns null on success, or an error string otherwise.
     /// </summary>
-    public static string ParseCheck(IList<string/*!*/>/*!*/ fileNames, string/*!*/ programName, out Program program) {
+    public static string ParseOnly(IList<string/*!*/>/*!*/ fileNames, string/*!*/ programName, out Program program) {
       Contract.Requires(programName != null);
       Contract.Requires(fileNames != null);
       program = null;

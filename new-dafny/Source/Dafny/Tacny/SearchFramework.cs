@@ -1,6 +1,7 @@
 ﻿using Microsoft.Dafny;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using Microsoft.Boogie;
@@ -76,7 +77,7 @@ namespace Tacny {
     }
 
     private static List<ProofState> _proofList;
-    internal static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
+    public static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
       /*      if (_proofList == null)
               _proofList = new List<ProofState>();
             if (_proofList.Count + 1 < SolutionCounter) {
@@ -101,10 +102,12 @@ namespace Tacny {
             var memberList = Util.GenerateMembers(state, bodyList);
         var prog = Util.GenerateDafnyProgram(state, memberList.Values.ToList());
 
+        Console.WriteLine("*********************Tacny Generated Prog*****************");
         var printer = new Printer(Console.Out);
         printer.PrintProgram(prog, false);
+        Console.WriteLine("*********************Prog END*****************");
 
-        var result = Util.ResolveAndVerify(prog, errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); });
+      var result = Util.ResolveAndVerify(prog, errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); });
         if (result.Count == 0)
           return VerifyResult.Verified;
         else {

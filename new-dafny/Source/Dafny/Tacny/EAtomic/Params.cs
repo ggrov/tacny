@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
 
-namespace Tacny.Function {
-  class Params : Projection {
+namespace Tacny.EAtomic {
+  class Params : EAtomic {
     public override string Signature => "params";
     public override int ArgsCount => 0;
 

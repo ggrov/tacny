@@ -32,14 +32,16 @@ namespace Tacny.Atomic {
     public static List<string> ParseDefaultCasesNames(Statement stmt) {
 
       List<string> n = new List<string>();
-      if(stmt.Attributes.Name == "vars") {
-        foreach(Expression x in stmt.Attributes.Args) {
-          if(x is NameSegment) {
+      if (stmt.Attributes != null) { 
+      if (stmt.Attributes.Name == "vars"){
+        foreach (Expression x in stmt.Attributes.Args){
+          if (x is NameSegment){
             var y = x as NameSegment;
             n.Add(y.Name);
           }
         }
       }
+    }
       return n;
     }
 
@@ -53,7 +55,7 @@ namespace Tacny.Atomic {
 
     public override IEnumerable<ProofState> Generate(Statement statement, ProofState state) {   
       var stmt = statement as TacnyCasesBlockStmt;
-
+      var p = new Printer(Console.Out);
       NameSegment caseVar;
 
       //get guards
@@ -78,7 +80,6 @@ namespace Tacny.Atomic {
       //Console.WriteLine("line");
 
       //generate a test program to check which cases need to apply tacny
-      var p = new Printer(Console.Out);
       bool[] ctorFlags;
       int ctor; // current active match case
       InitCtorFlags(datatype, out ctorFlags);
@@ -103,7 +104,7 @@ namespace Tacny.Atomic {
 
         var memberList = Util.GenerateMembers(state0, bodyList);
         var prog = Util.GenerateDafnyProgram(state0, memberList.Values.ToList());
-        p.PrintProgram(prog, false);
+   //     p.PrintProgram(prog, false);
         var result = Util.ResolveAndVerify(prog, null);
 
         if (result.Count != 0)
@@ -123,10 +124,13 @@ namespace Tacny.Atomic {
           var e = enumerable.GetEnumerator();
           e.MoveNext();
           state = e.Current;
-        } else if(stmt0 is PredicateStmt){
+        } else if (stmt0 is PredicateStmt){
           fList[i] = GenerateAssumeFalseStmtAsStmtList;
         }
-      }
+        else{ //ATomic, only support explore at the moment
+
+        }
+     }
       var finalMs = GenerateMatchStmt(state.TacticApplication.Tok.line, srcVar.Copy(), datatype, fList);
       state.AddStatement(finalMs);
       state.IfVerify = true;

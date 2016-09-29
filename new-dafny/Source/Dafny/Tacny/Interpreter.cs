@@ -50,6 +50,7 @@ namespace Tacny {
 
       var p = new Printer(Console.Out);
       p.PrintMembers(new List<MemberDecl>() { result }, 0, "");
+
       _errorReporterDelegate = null;
       return result;
     }
@@ -104,10 +105,14 @@ namespace Tacny {
 
 
         _state.ResultCache.Add(new ProofState.TacticCache(method?.Name, _resultList.Copy()));
+
+    //    var method2 = Util.GenDeclFromTacCode(_state, _resultList) as Method;
+        
         var body = Util.InsertCode(_state, _resultList);
         method.Body.Body.Clear();
         if (body != null)
           method.Body.Body.AddRange(body.Body);
+        
       }
       return method;
     }
@@ -142,7 +147,8 @@ namespace Tacny {
           if (_state.IsTacticCall(us)) {
             var list = StackToDict(_frame);
             var result = ApplyTactic(_state, list, us);
-            _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
+            if (result != null)
+             _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
           }
         } else if (stmt is BlockStmt) {
           //TODO:
@@ -365,15 +371,15 @@ namespace Tacny {
           }
         }
         else{
-          // get the keywprd of this application
+          // get the keyword of this application
           string sig = Util.GetSignature(aps);
           //Firstly, check if this is a projection function
           var types =
-            Assembly.GetAssembly(typeof(Function.Projection))
+            Assembly.GetAssembly(typeof(EAtomic.EAtomic))
               .GetTypes()
-              .Where(t => t.IsSubclassOf(typeof(Function.Projection)));
+              .Where(t => t.IsSubclassOf(typeof(EAtomic.EAtomic)));
           foreach (var fType in types){
-            var porjInst = Activator.CreateInstance(fType) as Function.Projection;
+            var porjInst = Activator.CreateInstance(fType) as EAtomic.EAtomic;
             if (sig == porjInst?.Signature){
               //TODO: validate input countx
               var enumerable = porjInst?.Generate(aps, state);

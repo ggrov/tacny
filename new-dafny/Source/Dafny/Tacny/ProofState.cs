@@ -50,7 +50,8 @@ namespace Tacny {
       _topLevelClasses = new List<TopLevelClassDeclaration>();
       Reporter = reporter;
       if (unresolvedProgram == null) {
-        var err = Parser.ParseCheck(new List<string>() { program.Name }, program.Name, out _original);
+        //note the differences between this ParseCheck and the one at the top level. This function only parses but the other one resolves.
+        var err = Parser.ParseOnly(new List<string>() { program.Name }, program.Name, out _original);
         if (err != null)
           reporter.Error(MessageSource.Tacny, program.DefaultModuleDef.tok, $"Error parsing a fresh Tacny program: {err}");
       } else {
