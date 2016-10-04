@@ -123,7 +123,10 @@ namespace Microsoft.Dafny {
     readonly ISet<string> abstractTypes = new HashSet<string>();
     readonly ISet<string> opaqueTypes = new HashSet<string>();
     FuelContext fuelContext = null;
+
+    //TODO: tidy up unnecessary variables
     Program program, unresolvedProgram;
+    private Resolver r;
 
     [ContractInvariantMethod]
     void ObjectInvariant()
@@ -480,12 +483,13 @@ namespace Microsoft.Dafny {
       return new Bpl.IdentifierExpr(tok, var.AssignUniqueName(currentDeclaration.IdGenerator), TrType(var.Type));
     }
 
-    public Bpl.Program Translate(Program p, Program unresolved = null) {
+    public Bpl.Program Translate(Program p, Program unresolved = null, Resolver r = null) {
       Contract.Requires(p != null);
       Contract.Ensures(Contract.Result<Bpl.Program>() != null);
-
+      
       program = p;
       unresolvedProgram = unresolved;
+      this.r = r;
 
       if (sink == null || predef == null) {
         // something went wrong during construction, which reads the prelude; an error has
@@ -1467,7 +1471,7 @@ namespace Microsoft.Dafny {
         } else if (member is Method) {
           Method m = (Method)member;
             if (TacticEvaluationIsEnabled && m.CallsTactic) {
-            m = Tacny.Interpreter.FindAndApplyTactic(program, m, _tacnyDelegate, unresolvedProgram) as Method;
+            m = Tacny.Interpreter.FindAndApplyTactic(program, m, _tacnyDelegate, unresolvedProgram, r) as Method;
           }
           FuelContext oldFuelContext = this.fuelContext;
           this.fuelContext = FuelSetting.NewFuelContext(m);

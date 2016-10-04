@@ -78,8 +78,9 @@ namespace Tacny {
       foreach (var kvp in code) {
         body = InsertCodeInternal(body, kvp.Value, kvp.Key);
       }
-      var r = new Resolver(prog);
-      r.ResolveProgram(prog);
+
+      //var r = new Resolver(prog);
+      //r.ResolveProgram(prog);
       return body;
     }
 

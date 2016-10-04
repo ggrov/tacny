@@ -22,12 +22,14 @@ namespace Tacny {
     private readonly ErrorReporter _errorReporter;
 
     private static ErrorReporterDelegate _errorReporterDelegate;
+    private Program _program;
 
     private readonly Dictionary<UpdateStmt, List<Statement>> _resultList;
     private Interpreter(Program program, Program unresolvedProgram = null) {
       Contract.Requires(tcce.NonNull(program));
       // initialize state
       _errorReporter = new ConsoleErrorReporter();
+      _program = program;
       _state = new ProofState(program, _errorReporter, unresolvedProgram);
       _frame = new Stack<Dictionary<IVariable, Type>>();
       _resultList = new Dictionary<UpdateStmt, List<Statement>>();
@@ -41,12 +43,12 @@ namespace Tacny {
       Contract.Invariant(_errorReporter != null);
     }
 
-    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null) {
+    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null, Resolver r = null) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
       _i = new Interpreter(program, unresolvedProgram);
       _errorReporterDelegate = erd;
-      var result = _i.FindTacticApplication(target);
+      var result = _i.FindTacticApplication(target, r);
 
       var p = new Printer(Console.Out);
       p.PrintMembers(new List<MemberDecl>() { result }, 0, "");
@@ -85,7 +87,7 @@ namespace Tacny {
     }
 
 
-    private MemberDecl FindTacticApplication(MemberDecl target) {
+    private MemberDecl FindTacticApplication(MemberDecl target, Resolver r) {
       Contract.Requires(tcce.NonNull(target));
       // initialize new stack for variables
       _frame = new Stack<Dictionary<IVariable, Type>>();
@@ -105,14 +107,16 @@ namespace Tacny {
 
 
         _state.ResultCache.Add(new ProofState.TacticCache(method?.Name, _resultList.Copy()));
-
-    //    var method2 = Util.GenDeclFromTacCode(_state, _resultList) as Method;
         
         var body = Util.InsertCode(_state, _resultList);
         method.Body.Body.Clear();
         if (body != null)
           method.Body.Body.AddRange(body.Body);
-        
+
+        // use the original resolver of the resoved program, as it contains all the necessary type info
+        r.ResolveMethodBody(method);
+        //Console.WriteLine("Errors: " + _program.reporter.Count(ErrorLevel.Error));
+
       }
       return method;
     }

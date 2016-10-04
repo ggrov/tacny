@@ -4631,7 +4631,7 @@ namespace Microsoft.Dafny
     /// <summary>
     /// Assumes type parameters have already been pushed
     /// </summary>
-    void ResolveMethod(Method m) {
+   void ResolveMethod(Method m) {
       Contract.Requires(m != null);
 
       try
@@ -4639,8 +4639,8 @@ namespace Microsoft.Dafny
         currentMethod = m;
         if (m is Tactic)
             return;
-                // Add in-parameters to the scope, but don't care about any duplication errors, since they have already been reported
-                scope.PushMarker();
+        // Add in-parameters to the scope, but don't care about any duplication errors, since they have already been reported
+        scope.PushMarker();
         if (m.IsStatic) {
           scope.AllowInstance = false;
         }
@@ -4713,6 +4713,18 @@ namespace Microsoft.Dafny
       {
         currentMethod = null;
       }
+    }
+
+    public void ResolveMethodBody(Method m){
+      scope.PushMarker();
+      if(m.IsStatic) {
+        scope.AllowInstance = false;
+      }
+      foreach(Formal p in m.Ins) {
+        scope.Push(p.Name, p);
+      }
+      ResolveBlockStatement(m.Body, m);
+      scope.PopMarker();
     }
 
     void ResolveCtorSignature(DatatypeCtor ctor, List<TypeParameter> dtTypeArguments) {

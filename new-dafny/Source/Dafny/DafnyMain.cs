@@ -84,7 +84,6 @@ namespace Microsoft.Dafny {
       Dafny.Resolver r = new Dafny.Resolver(program);
       r.ResolveProgram(program);
       MaybePrintProgram(program, DafnyOptions.O.DafnyPrintResolvedFile, true);
-
       if (reporter.Count(ErrorLevel.Error) != 0) {
         return string.Format("{0} resolution/type errors detected in {1}", reporter.Count(ErrorLevel.Error), program.Name);
       }
@@ -92,6 +91,23 @@ namespace Microsoft.Dafny {
       return null;  // success
     }
 
+
+    public static string Resolve(Program program, ErrorReporter reporter, out Resolver r) {
+      if (Bpl.CommandLineOptions.Clo.NoResolve || Bpl.CommandLineOptions.Clo.NoTypecheck){
+        r = null;
+        return null;
+      }
+
+      r = new Dafny.Resolver(program);
+      r.ResolveProgram(program);
+      MaybePrintProgram(program, DafnyOptions.O.DafnyPrintResolvedFile, true);
+
+      if(reporter.Count(ErrorLevel.Error) != 0){
+        r = null;
+        return string.Format("{0} resolution/type errors detected in {1}", reporter.Count(ErrorLevel.Error), program.Name);
+      }
+      return null;  // success
+    }
     // Lower-case file names before comparing them, since Windows uses case-insensitive file names
     private class IncludeComparer : IComparer<Include> {
       public int Compare(Include x, Include y) {
