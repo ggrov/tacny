@@ -102,7 +102,7 @@ namespace Tacny {
             var memberList = Util.GenerateMembers(state, bodyList);
         var prog = Util.GenerateDafnyProgram(state, memberList.Values.ToList());
 
-        Console.WriteLine("*********************Tacny Generated Prog*****************");
+        Console.WriteLine("*********************Verifying Tacny Generated Prog*****************");
         var printer = new Printer(Console.Out);
         printer.PrintProgram(prog, false);
         Console.WriteLine("*********************Prog END*****************");
