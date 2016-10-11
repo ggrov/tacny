@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -11,14 +12,13 @@ using Formal = Microsoft.Dafny.Formal;
 using Type = Microsoft.Dafny.Type;
 
 namespace Tacny.Atomic {
-  class Match : Atomic {
-    public override string Signature => "tmatch";
-    public override int ArgsCount => -1;
-
-    private List<string> _names;
-  
+  class Match {
+    public string Signature => "tmatch";
+    
     private Dictionary<string, Type> _ctorTypes;
 
+    /*
+    private List<string> _names;
     private string PopCaseName(){
 
       if (_names.Count > 0){
@@ -29,6 +29,7 @@ namespace Tacny.Atomic {
       else
         return null;
     }
+
     public static List<string> ParseDefaultCasesNames(Statement stmt) {
 
       List<string> n = new List<string>();
@@ -44,16 +45,119 @@ namespace Tacny.Atomic {
     }
       return n;
     }
-
+    
     public Match(){
       _names = new List<string>();
     }
-
+    
     public Match(Statement stmt) {
       _names = ParseDefaultCasesNames(stmt);
     }
+    */
 
-    public override IEnumerable<ProofState> Generate(Statement statement, ProofState state) {   
+    public Match(){
+    }
+
+
+    public static bool IsTerminated(List<List<Statement>> raw){
+      Contract.Requires(raw != null);
+      Contract.Requires(raw.Count > 0);
+      Contract.Requires(raw[0]!=null && raw[0].Count == 1 && raw[0][0] is MatchStmt);
+
+      //raw[0] is the match case stmt with assume false for each case
+      //raw[1..] the actual code to bt inserted in the case statement
+
+       return (raw[0][0] as MatchStmt).Cases.Count + 1== raw.Count;
+    }
+
+    public static List<Statement> Assemble(List<List<Statement>> raw){
+      //Contract.Requires(IsTerminated(raw));
+
+      var matchStmt = raw[0][0] as MatchStmt;
+
+      for (int i = 1; i < raw.Count; i++){
+        matchStmt.Cases[i-1].Body.Clear();
+        matchStmt.Cases[i - 1].Body.AddRange(raw[i]);
+      }
+      var ret =  new List<Statement>();
+      ret.Add(matchStmt);
+      return ret;
+    }
+
+    public IEnumerable<ProofState> EvalNext(Statement statement, ProofState state0){
+      Contract.Requires(statement != null);
+      Contract.Requires(statement is TacnyCasesBlockStmt);
+      var state = state0.Copy();
+
+      var stmt = statement as TacnyCasesBlockStmt;
+      state.AddNewFrame(stmt.Body.Body);
+      //with this flag set to true, dafny will check the case branch before evaluates any tacny code
+      state.IfVerify = true;
+      yield return state;
+     
+    }
+
+    public IEnumerable<ProofState> EvalInit(Statement statement, ProofState state0){
+      Contract.Requires(statement != null);
+      Contract.Requires(statement is TacnyCasesBlockStmt);
+      var state = state0.Copy();
+
+      var stmt = statement as TacnyCasesBlockStmt;
+      var p = new Printer(Console.Out);
+      NameSegment caseVar;
+
+      //get guards
+      Debug.Assert(stmt != null, "stmt != null");
+      var guard = stmt.Guard as ParensExpression;
+
+      if(guard == null)
+        caseVar = stmt.Guard as NameSegment;
+      else
+        caseVar = guard.E as NameSegment;
+
+      //TODO: need to check the datatype pf caseGuard, 
+      // also need to consider the case that caseVar is a tac var
+      var srcVar = state.GetLocalValue(caseVar) as NameSegment;
+      var srcVarData = state.GetVariable(srcVar.Name);
+      var datatype = state.GetVariableType(srcVar.Name).AsDatatype;
+
+
+      //generate a test program to check which cases need to apply tacny
+      bool[] ctorFlags;
+      int ctor; // current active match case
+      InitCtorFlags(datatype, out ctorFlags);
+
+      List<Func<int, List<Statement>>> fList = new List<Func<int, List<Statement>>>();
+
+      int i;
+      for(i = 0; i < datatype.Ctors.Count; i++) {
+        fList.Add(GenerateAssumeFalseStmtAsStmtList);
+      }
+
+      //var matchStmt = GenerateMatchStmt(state.TacticApplication.Tok.line, srcVar.Copy(), datatype, fList);
+      var matchStmt = GenerateMatchStmt(Interpreter.TACNY_CODE_TOK_LINE, srcVar.Copy(), datatype, fList);
+
+      //use a dummystmt to creat a frame for match, note that this stmts is never be evaluated
+      var dummystmt = new List<Statement>();
+      for(i = 0; i < datatype.Ctors.Count; i++) {
+        dummystmt.Add(stmt);
+      }
+
+      state.AddNewFrame(dummystmt, Signature);
+      //add raw[0]
+      state.AddStatement(matchStmt);
+
+      //push a frame for the first case
+      //TODO: add case variable to frame, so that variable () can refer to it
+      state.AddNewFrame(stmt.Body.Body);
+
+      //with this flag set to true, dafny will check the case brnach before evaluates any tacny code
+      state.IfVerify = true;
+      yield return state;
+    }
+
+
+    public IEnumerable<ProofState> Generate0(Statement statement, ProofState state) {   
       var stmt = statement as TacnyCasesBlockStmt;
       var p = new Printer(Console.Out);
       NameSegment caseVar;
@@ -71,13 +175,6 @@ namespace Tacny.Atomic {
       var srcVarData = state.GetVariable(srcVar.Name);
       var datatype = state.GetVariableType(srcVar.Name).AsDatatype;
 
-
-      //generate block stmts for each cases
-
-      //generate a blockstmt c
-     // state.AddNewFrame();
-      //state.GetVariableType (datatype);
-      //Console.WriteLine("line");
 
       //generate a test program to check which cases need to apply tacny
       bool[] ctorFlags;
@@ -153,7 +250,7 @@ namespace Tacny.Atomic {
           ret = e.Current;
         }
         else if (stmt is PredicateStmt){
-          enumerable = Interpreter.ResolvePredicateStmt((PredicateStmt) stmt, ret);
+          enumerable = Interpreter.EvalPredicateStmt((PredicateStmt) stmt, ret);
           var e = enumerable.GetEnumerator();
           e.MoveNext();
           ret = e.Current;
@@ -185,7 +282,7 @@ namespace Tacny.Atomic {
       Contract.Requires(datatype != null);
       Contract.Ensures(Contract.Result<MatchStmt>() != null);
       List<MatchCaseStmt> cases = new List<MatchCaseStmt>();
-      int index = line + 1;
+      int index = Interpreter.TACNY_CODE_TOK_LINE;//line + 1;
       int i = 0;
 
 

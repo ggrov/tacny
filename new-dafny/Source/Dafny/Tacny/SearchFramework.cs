@@ -99,7 +99,7 @@ namespace Tacny {
           {state.TacticApplication, state.GetGeneratedCode()}
         }));
     
-            var memberList = Util.GenerateMembers(state, bodyList);
+        var memberList = Util.GenerateMembers(state, bodyList);
         var prog = Util.GenerateDafnyProgram(state, memberList.Values.ToList());
 
         Console.WriteLine("*********************Verifying Tacny Generated Prog*****************");
@@ -153,13 +153,11 @@ namespace Tacny {
               }
               continue;
             case VerifyResult.Verified:
-              // in a controal block which can be returned
-              if (proofState.IsCurrentCntlTermianted()){
+              proofState.MarkCurFrameAsTerminated();
+              if (proofState.IsVerified()){
                  yield return proofState;
                  yield break;
               }
-             // more stmt block need to be evaluaed in the queue, pop the current frame and continue to evalaute
-              proofState.RemoveFrame();
               queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
               break;
             case VerifyResult.Failed:
@@ -201,13 +199,11 @@ namespace Tacny {
           proofState.IfVerify = false;
           switch(VerifyState(proofState, er)) {
             case VerifyResult.Verified:
-              // in a controal block which can be returned
-              if(proofState.IsCurrentCntlTermianted()) {
+              proofState.MarkCurFrameAsTerminated();
+              if(proofState.IsVerified()) {
                 yield return proofState;
                 yield break;
-              }
-              // more stmt block need to be evalauted in the stack, pop the current frame and continue to evalaute
-              proofState.RemoveFrame();
+             }
               stack.Push(enumerator);
               enumerator = (Interpreter.EvalStep(proofState).GetEnumerator());
               break;

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics.Contracts;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using Dfy = Microsoft.Dafny;
 using Microsoft.Dafny;
@@ -14,13 +16,12 @@ namespace Tacny {
     private readonly Program _original;
     public List<TacticCache> ResultCache;
 
-
-
     // Dynamic State
     public Dictionary<string, VariableData> DafnyVariables;
     public MemberDecl TargetMethod;
     public ErrorReporter Reporter;
 
+    //not all the eval step requires to be verified, e.g. var decl
     public bool IfVerify { set; get; } = false;
 
     public UpdateStmt TacticApplication;
@@ -40,8 +41,6 @@ namespace Tacny {
       }
     }
     private Stack<Frame> _scope;
-
-
 
     public ProofState(Program program, ErrorReporter reporter, Program unresolvedProgram = null) {
       Contract.Requires(program != null);
@@ -157,47 +156,49 @@ namespace Tacny {
       }
     }
 
-
-    public void AddNewFrames(List<BlockStmt> bodyList, string kind = "default", bool canTermin = false) {
-      //reverse the list to fit the order of the stack, i.e. list[0] should be pused last
-      bodyList.Reverse();
+    
+    public void AddNewFrame(List<Statement> stmts, string kind = "default") {
       var parent = _scope.Peek();
-      foreach (var body in bodyList){
-        _scope.Push(new Frame(parent, body.Body, kind, canTermin));
-      }
+      _scope.Push(new Frame(parent, stmts, kind));
     }
 
-
-    public void AddNewFrame(BlockStmt body, string kind = "default", bool canTerminate = true) {
-      Contract.Requires<ArgumentNullException>(body != null, "body");
-      var bodyList = new List<BlockStmt>();
-      bodyList.Add(body);
-      AddNewFrames(bodyList, kind, true);
-    }
 
     public bool RemoveFrame() {
-      List<Statement> generatedStmt;
-      try {
-        switch (_scope.Peek().BlockKind){
-          case "TacnyCasesBlockStmt":
-            //TODO: call the generated function to gen the blcokstmt code
-            generatedStmt = _scope.Peek().GetGeneratedCode();
-            break;
-          default:
-            generatedStmt = _scope.Peek().GetGeneratedCode();
-            break;
-        }
+      // at least one frame in the proof state
+      if (_scope.Count > 1){
         _scope.Pop();
-        if (generatedStmt.Count != 0)
-          _scope.Peek().AddGeneratedCode(generatedStmt);
         return true;
-      } catch (InvalidOperationException) {
-        return false;
       }
+      return false;
+    }
+   
+
+    public void MarkCurFrameAsTerminated() {
+      //assmeb code in the top frame
+      _scope.Peek().MarkAsVerified();
+
+      // add the assembled code to the parent frame
+      if(_scope.Peek().Parent != null) {
+        _scope.Peek().Parent.AddGeneratedCode(_scope.Peek().GetAssembledCode());
+        _scope.Pop();
+        if (_scope.Peek().IsTerminated())
+          MarkCurFrameAsTerminated();
+      }
+    }
+
+    // various getters
+    #region GETTERS
+
+    /// <summary>
+    /// a proof state is verified if there is only one frame in the stack and _genratedCode is not null (raw code are assembled)
+    /// </summary>
+    /// <returns></returns>
+    public bool IsVerified() {
+      return _scope.Count == 1 && _scope.Peek().GetAssembledCode() != null;
     }
 
     /// <summary>
-    /// Check if the current frame is fully interpreted
+    /// Check if the current frame is fully interpreted by tracking counts of stmts
     /// </summary>
     /// <returns></returns>
     public bool IsEvaluated() {
@@ -205,15 +206,16 @@ namespace Tacny {
     }
 
     /// <summary>
-    /// Check if the frame on top of the stack is partially evaluated
+    /// TODO
     /// </summary>
     /// <returns></returns>
     public bool IsPartiallyEvaluated() {
       return _scope.Peek().IsPartiallyEvaluated;
     }
 
-    // various getters
-    #region GETTERS
+    public string GetCurFrameTyp(){
+      return _scope.Peek().WhatKind;
+    }
 
     public List<Statement> GetGeneratedCode() {
       Contract.Ensures(Contract.Result<List<Statement>>() != null);
@@ -396,10 +398,6 @@ namespace Tacny {
     }
     #endregion HELPERS
 
-    public bool IsCurrentCntlTermianted(){
-      return _scope.Peek().CanTerminate;
-    }
-
     /// <summary>
     /// Check in an updateStmt is local assignment
     /// </summary>
@@ -519,7 +517,7 @@ namespace Tacny {
       // for some special blck, sucha as caseblock, it need to construct a new block stmt and then return
       // based on the BlcokKind, the sysytem will call the related TBlockStmtCOdeGenerator to handle this varation
       private int _bodyCounter;
-      public readonly string BlockKind; 
+      public readonly string WhatKind; 
       public Statement CurStmt => _bodyCounter >= Body.Count ? null : Body[_bodyCounter];
       public readonly Frame Parent;
       private readonly Dictionary<string, object> _declaredVariables;
@@ -527,10 +525,12 @@ namespace Tacny {
       public bool IsPartiallyEvaluated { get; set; } = false;
       public bool IsEvaluated => _bodyCounter >= Body.Count;
       public TacticInformation TacticInfo;
-      private readonly List<Statement> _generatedCode;
+      //a funtion with the right kind will be able to th generated code to List of statment
+      private List<Statement> _generatedCode;
+      //store the tempratry code to be combined, e.g. case statments for match
+      private readonly List<List<Statement>> _rawCodeList;
 
       private readonly ErrorReporter _reporter;
-      public readonly bool CanTerminate;
 
       /// <summary>
       /// Initialize the top level frame
@@ -549,12 +549,12 @@ namespace Tacny {
         ParseTacticAttributes(((MemberDecl)ActiveTactic).Attributes);
         _reporter = reporter;
         _declaredVariables = new Dictionary<string, object>();
-        _generatedCode = new List<Statement>();
-        CanTerminate = true;
-        BlockKind = "default";
+        _generatedCode = null;
+        _rawCodeList = new List<List<Statement>>();
+        WhatKind = "default";
       }
 
-      public Frame(Frame parent, List<Statement> body, string kind, bool canTermin) {
+      public Frame(Frame parent, List<Statement> body, string kind) {
         Contract.Requires<ArgumentNullException>(parent != null);
         Contract.Requires<ArgumentNullException>(tcce.NonNullElements(body), "body");
         // carry over the tactic info
@@ -564,26 +564,15 @@ namespace Tacny {
         Parent = parent;
         ActiveTactic = parent.ActiveTactic;
         _reporter = parent._reporter;
-        CanTerminate = canTermin;
-        BlockKind = kind;
+        _generatedCode = null;
+        _rawCodeList = new List<List<Statement>>();
+        WhatKind = kind;
       }
 
       public bool IncCounter() {
         _bodyCounter++;
         return _bodyCounter + 1 < Body.Count;
       }
-
-      internal List<Statement> GetGeneratedCode() {
-        Contract.Ensures(Contract.Result<List<Statement>>() != null);
-        if (Parent == null)
-          return _generatedCode.Copy();
-        else{
-          var code = Parent.GetGeneratedCode();
-          code.AddRange(_generatedCode);
-          return code;
-        }
-      }
-
 
       private void ParseTacticAttributes(Attributes attr) {
         // incase TacticInformation is not created
@@ -674,28 +663,101 @@ namespace Tacny {
 
 
       /// <summary>
-      /// Add new dafny stmt to the top level frame
+      /// Add new dafny stmt to the current frame
       /// </summary>
       /// <param name="newStmt"></param>
       internal void AddGeneratedCode(Statement newStmt) {
-       // if (Parent == null)
-          _generatedCode.Add(newStmt);
-       // else
-       //   Parent.AddGeneratedCode(newStmt);
+        var l = new List<Statement>();
+        l.Add(newStmt);
+        _rawCodeList.Add(l);
       }
 
       /// <summary>
-      /// Add new dafny stmt to the top level frame
+      /// Add new dafny stmt to the current frame
       /// </summary>
       /// <param name="newStmt"></param>
       internal void AddGeneratedCode(List<Statement> newStmt) {
-      // if (Parent == null)
-          _generatedCode.AddRange(newStmt);
-      //  else
-      //    Parent.AddGeneratedCode(newStmt);
-  
+        _rawCodeList.Add(newStmt);
       }
 
+      /// <summary>
+      /// assemble the list of stataemnt list (raw code) to statment list, depending on the current frame kind
+      /// </summary>
+      /// <returns></returns>
+      internal static List<Statement> AssembleStmts(List<List<Statement>> raw, string whatKind){
+        List<Statement> code;
+
+        switch(whatKind) {
+          case "tmatch":
+            code = Tacny.Atomic.Match.Assemble(raw);          
+            break;
+          default:
+            code = raw.SelectMany(x => x).ToList();
+            break;
+        }
+        return code;
+      }
+
+      // only call it after verification is successful, this check if the current frame is terminated, after the poped child frame is termianted
+      internal bool IsTerminated() {
+        bool ret;
+
+        switch(WhatKind) {
+          case "tmatch":
+            ret = Tacny.Atomic.Match.IsTerminated(_rawCodeList);
+            break;
+          default:
+            ret = true;
+            break;
+        }
+        return ret;
+      }
+
+
+      internal void MarkAsVerified() {
+        _generatedCode = AssembleStmts(_rawCodeList, WhatKind);
+      }
+
+      internal List<Statement> GetAssembledCode(){
+        return _generatedCode;
+      }
+
+      internal List<Statement> GetGeneratedCode(List<Statement> stmts = null){
+        var code = GetGeneratedCode0(stmts);
+        /*
+        Printer p = new Printer(Console.Out);
+        Console.WriteLine("--- Print out the generated code:");
+        foreach (var x in code){
+          p.PrintStatement(x, 1);
+          Console.Write("\n");
+        }
+        Console.WriteLine("--- End of printing");
+        */
+        return code;
+      }
+
+      internal List<Statement> GetGeneratedCode0(List<Statement> stmts = null ) {
+        Contract.Ensures(Contract.Result<List<Statement>>() != null);
+        List<Statement> code;
+        if (_generatedCode != null) // terminated, so just use the assembly code
+          code = _generatedCode;
+        else if (stmts != null){ // for the case when code are addded by child, and the child has assembly the code for parent
+          code = stmts;
+        }
+        else{ // new code from child and not terminated, assmeble now
+          code = AssembleStmts(_rawCodeList, WhatKind);
+        }
+          
+        if(Parent == null)
+          return code.Copy();
+        else {
+          // parent is always not yet terminated, so assmebly code for it
+          var parRawCode = Parent._rawCodeList.Copy();
+          parRawCode.Add(code);
+          var parCode = AssembleStmts(parRawCode, Parent.WhatKind);
+          return Parent.GetGeneratedCode0(parCode);
+        }
+      }
     }
 
     public class VariableData {

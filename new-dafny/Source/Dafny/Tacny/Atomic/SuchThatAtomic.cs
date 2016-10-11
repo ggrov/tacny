@@ -60,7 +60,7 @@ namespace Tacny.Atomic {
           case BinaryExpr.Opcode.In:
            // Contract.Assert(var != null, Error.MkErr(bexp, 6, declaration.Name));
           //  Contract.Assert(var.Name == declaration.Name, Error.MkErr(bexp, 6, var.Name));
-            foreach (var result in Interpreter.EvaluateTacnyExpression(state, bexp.E1)) {
+            foreach (var result in Interpreter.EvalTacnyExpression(state, bexp.E1)) {
               if (result is IEnumerable) {
                 foreach (var item in (IEnumerable)result) {
                   yield return item;
@@ -74,7 +74,7 @@ namespace Tacny.Atomic {
               var copy = state.Copy();
               copy.AddLocal(declaration, item);
               // resolve the rhs expression
-              foreach (var res in Interpreter.EvaluateTacnyExpression(copy, bexp.E1)) {
+              foreach (var res in Interpreter.EvalTacnyExpression(copy, bexp.E1)) {
                 LiteralExpr lit = res as LiteralExpr;
                 // sanity check
                 Contract.Assert(lit != null);

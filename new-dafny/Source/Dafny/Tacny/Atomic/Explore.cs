@@ -29,7 +29,7 @@ namespace Tacny.Atomic {
 
       //TODO: implement this properly
       //var members = state.GetLocalValue(callArguments[0] as NameSegment) as IEnumerable<MemberDecl>;
-      var members0 = Interpreter.EvaluateTacnyExpression(state, callArguments[0]).GetEnumerator();
+      var members0 = Interpreter.EvalTacnyExpression(state, callArguments[0]).GetEnumerator();
       members0.MoveNext();
       var members = members0.Current as List<MemberDecl>;
 
@@ -53,7 +53,7 @@ namespace Tacny.Atomic {
         else
           Contract.Assert(false, "In Explore Atomic call," + callArguments[0] + "is netierh Method or Function");
 
-        var instArgs = Interpreter.EvaluateTacnyExpression(state, callArguments[1]);
+        var instArgs = Interpreter.EvalTacnyExpression(state, callArguments[1]);
         foreach(var ovars in instArgs) {
           Contract.Assert(ovars != null, "In Explore Atomic call," + callArguments[1] + "is not variable");
 

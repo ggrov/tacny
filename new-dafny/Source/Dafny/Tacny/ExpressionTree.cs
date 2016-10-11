@@ -458,7 +458,7 @@ namespace Tacny {
 
     public static IEnumerable<object> EvaluateLeaf(ExpressionTree expt, ProofState state) {
       Contract.Requires(expt != null && expt.IsLeaf());
-      foreach (var item in Interpreter.EvaluateTacnyExpression(state, expt.Data))
+      foreach (var item in Interpreter.EvalTacnyExpression(state, expt.Data))
         yield return item;
     }
 

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Dafny;
 using dfy = Microsoft.Dafny;
 using System.Diagnostics.Contracts;
-
+/*
 namespace Tacny.Language {
   public class IfStmt : FlowControlStmt {
     public override IEnumerable<ProofState> Generate(Statement statement, ProofState state) {
@@ -98,3 +98,4 @@ namespace Tacny.Language {
     }
   }
 }
+*/
