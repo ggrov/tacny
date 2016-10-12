@@ -32,7 +32,7 @@ namespace Dare
             }
         }
 
-        private static bool TryValidateProgram(Program program, ErrorReporterDelegate errorDelegate)
+        public static bool TryValidateProgram(Program program, ErrorReporterDelegate errorDelegate)
         {
             var translator = new Translator(new InvisibleErrorReporter());
             var programCopy = SimpleCloner.CloneProgram(program);
@@ -861,6 +861,12 @@ namespace Dare
                 throw new UnableToDetermineTypeException();
         }
 
+        //required for slow removals if regular removals fail
+        public void DecreaseIndex()
+        {
+            _index--;
+        }
+
         public void CombineRequiredSubexpressions()
         {
             if (RequiredItems.Count == 0) return;
@@ -997,7 +1003,7 @@ namespace Dare
                 EmptyHintBody(_calcStmt.Hints[_hintIndex]);
                 _lastRemovedHint = _calcStmt.Hints[_hintIndex];
                 _lastRemovedCalcOp = _calcStmt.StepOps[_hintIndex];
-                _hintIndex++;
+                _hintIndex++; //todo will this mess up?
             }
         }
 
@@ -1013,19 +1019,29 @@ namespace Dare
 
         public void FailureOccured()
         {
+            FailureOccured(true);
+        }
+
+        public void FailureOccuredDontUpdateIndexes()
+        {
+            FailureOccured(false);
+        }
+
+        private void FailureOccured(bool updateIndexes)
+        {
             if (_dealtWithError) {
                 return;
             }
             _dealtWithError = true;
             if (!_linesComplete) {
-                ReinsertLastLineAndHint();
+                ReinsertLastLineAndHint(updateIndexes);
             }
             else {
                 RefillLastHintBody();
             }
         }
 
-        private void ReinsertLastLineAndHint()
+        private void ReinsertLastLineAndHint(bool updateIndexes)
         {
             _calcStmt.Lines.Insert(_lineIndex, _lastRemovedLine);
             _calcStmt.Hints.Insert(_hintIndex, _lastRemovedHint);
@@ -1035,7 +1051,8 @@ namespace Dare
             _lastHintBody = null;
             _lastRemovedCalcOp = null;
 
-            UpdateIndexes();
+            if(updateIndexes)
+                UpdateIndexes();
         }
 
         private void UpdateIndexes()
@@ -1067,6 +1084,7 @@ namespace Dare
         private readonly Program _program;
         private AllRemovableTypes _allRemovableTypes;
         private int _index;
+        private bool _verificationException = false;
 
         private Dictionary<MemberDecl, SimplificationItemInMethod> _removedItemsOnRun =
             new Dictionary<MemberDecl, SimplificationItemInMethod>();
@@ -1225,23 +1243,16 @@ namespace Dare
                     break;
                 }
                 VerifyProgram();
-                var verifier = new SimpleVerifier();
-                if (_cannotFindMemberException) {
-                    
+                if (_cannotFindMemberException || _verificationException) {
                     //Sometimes there can be a token somewhere other than in the method
-                    //but it gets fixed by another token that is in the method
+                    //but it gets fixed by another token that is in the method.
+                    //There are also cases where simultaneous removal fails so a SLow remove is tried instead
+                    //if the program is not valid
+                    var verifier = new SimpleVerifier();
                     if (!verifier.IsProgramValid(_program))
                         SlowRemoveInLeftOverMethods();
-                    _cannotFindMemberException = false;
                 }
-                if (!verifier.IsProgramValid(_program)) {
-                    using (TextWriter tw = File.CreateText("C:\\Users\\Duncan\\Documents\\testP1.dfy"))
-                    {
-                        Printer printer = new Printer(tw);
-                        printer.PrintProgram(_program, false);
-                    }
-                    throw new Exception("Program not valid after verification and insertion!");
-                }
+                _cannotFindMemberException = false;
                 GatherSimpData(simpData);
                 Reset();
             }
@@ -1252,25 +1263,39 @@ namespace Dare
 
         private void SlowRemoveInLeftOverMethods()
         {
+            //This method is to improve stability if something goes wrong
+            //It should allow the process to complete successfully but will be a lot slower.
+            //TODO some kind of logging system could help id the errors
+
             SimpleVerifier verifier = new SimpleVerifier();
-
-
             
-
             foreach (var item in _removedItemsOnRun.Values)
-                {
-                    var wrap = item.GetItem();
-                    if (wrap is Wrap<Statement>)
-                        (wrap as Wrap<Statement>).Reinsert();
-                    else if (wrap is Wrap<MaybeFreeExpression>)
-                        (wrap as Wrap<MaybeFreeExpression>).Reinsert();
-                    else if (wrap is Wrap<Expression>)
-                        (wrap as Wrap<Expression>).Reinsert();
-                    else throw new UnableToDetermineTypeException();
-                }
+            {
+                var wrap = item.GetItem();
+                if (wrap is Wrap<Statement>)
+                    (wrap as Wrap<Statement>).Reinsert();
+                else if (wrap is Wrap<MaybeFreeExpression>)
+                    (wrap as Wrap<MaybeFreeExpression>).Reinsert();
+                else if (wrap is Wrap<Expression>)
+                    (wrap as Wrap<Expression>).Reinsert();
+                else throw new UnableToDetermineTypeException();
+            }
+
+            foreach (var removedBrokenItem in _removedBrokenItems.Values) {
+                removedBrokenItem.ReinsertLast();
+                removedBrokenItem.DecreaseIndex();
+            }
+
+            foreach (var wildCardDecreasese in _wildCardDecreasesRemovedOnRun.Values) {
+                wildCardDecreasese.ExpressionWrap.Reinsert();
+            }
+
+            foreach (var simplifiedCalc in _simplifiedCalcs.Values) {
+                simplifiedCalc.FailureOccuredDontUpdateIndexes(); //TODO undo the indexing stuff.
+            }
 
             if(!verifier.IsProgramValid(_program))
-                throw new CannotFindMemberException();
+                throw new Exception("Program not valid after all reinsertions");
 
             foreach (var item in _removedItemsOnRun) {
                 var wrap = item.Value.GetItem();
@@ -1298,14 +1323,29 @@ namespace Dare
 //                else if (wrap is Wrap<Expression>)
 //                    (wrap as Wrap<Expression>).Reinsert();
             
-            foreach (var removedBrokenItem in _removedBrokenItems.Values) {
-                //todo
+            foreach (var member in _removedBrokenItems.Keys) {
+                var conjunction = _removedBrokenItems[member];
+                conjunction.RemoveNext(_removedBrokenItems);
+                if (!verifier.IsProgramValid(_program))
+                    conjunction.ReinsertLast();
+                else {
+                    if (!_allConjunctions.ContainsKey(member))
+                        _allConjunctions.Add(member, new List<ConjunctionData>());
+                    if (!_allConjunctions[member].Contains(conjunction))
+                        _allConjunctions[member].Add(conjunction);
+                    _removedBrokenItems.Remove(member);
+                }
             }
             foreach (var wildCardDecreasese in _wildCardDecreasesRemovedOnRun.Values) {
-                //this shouldn't happen for wildcard decreases todo fiure out
+                wildCardDecreasese.ExpressionWrap.Remove();
+                if (verifier.IsProgramValid(_program)) continue;
+                wildCardDecreasese.ExpressionWrap.Reinsert();
+                wildCardDecreasese.CantBeRemoved = true;
             }
             foreach (var simplifiedCalc in _simplifiedCalcs.Values) {
-                //todo
+                simplifiedCalc.RemoveNext();
+                if (!verifier.IsProgramValid(_program))
+                    simplifiedCalc.FailureOccured();
             }
         }
 
@@ -1487,6 +1527,9 @@ namespace Dare
 
         private bool SimplifyCalcs(MemberDecl member)
         {
+            if (_index == 13) {
+                Console.WriteLine("test");
+            }
             var calcs = _allRemovableTypes.RemovableTypesInMethods[member].Calcs;
             if (calcs.Count == 0) return true;
 
@@ -1578,8 +1621,12 @@ namespace Dare
 
         private void VerifyProgram()
         {
-            var verifier = new SimpleVerifier();
-            verifier.IsProgramValid(_program, ErrorInformation);
+            try {
+                SimpleVerifier.TryValidateProgram(_program, ErrorInformation);
+            }
+            catch (Exception) {
+                _verificationException = true;
+            }
         }
     }
 
