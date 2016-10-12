@@ -12,6 +12,7 @@ using Bpl = Microsoft.Boogie;
 using BplParser = Microsoft.Boogie.Parser;
 using System.Text;
 using Microsoft.Boogie;
+using Tacny;
 
 namespace Microsoft.Dafny {
 
@@ -101,6 +102,7 @@ namespace Microsoft.Dafny {
     private ErrorReporterDelegate _tacnyDelegate;
     [NotDelayed]
     public Translator(ErrorReporter reporter, ErrorReporterDelegate tacnyDelegate = null) {
+      Interpreter.ResetTacnyResultList();
       this.reporter = reporter;
       InsertChecksums = 0 < CommandLineOptions.Clo.VerifySnapshots;
       Bpl.Program boogieProgram = ReadPrelude();

@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Security.Permissions;
 using System.Text;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
@@ -17,17 +18,33 @@ using Type = Microsoft.Dafny.Type;
 namespace Tacny {
   public class Interpreter {
     public static int TACNY_CODE_TOK_LINE = -1;
-
     private static Interpreter _i;
+    private static ErrorReporterDelegate _errorReporterDelegate;
+    private static Dictionary<UpdateStmt, List<Statement>> _resultList;
+
     private Stack<Dictionary<IVariable, Type>> _frame;
 
     private readonly ProofState _state;
     private readonly ErrorReporter _errorReporter;
 
-    private static ErrorReporterDelegate _errorReporterDelegate;
     private Program _program;
 
-    private readonly Dictionary<UpdateStmt, List<Statement>> _resultList;
+    public static void ResetTacnyResultList(){
+      if (_resultList == null)
+        _resultList = new Dictionary<UpdateStmt, List<Statement>>();
+      else
+        _resultList.Clear();
+    }
+
+    public static Dictionary<IToken, List<Statement>> GetTacnyResultList(){
+      Dictionary<IToken, List<Statement>> bufferList = new Dictionary<IToken, List<Statement>>();
+
+      foreach (var e in _resultList){
+        bufferList.Add(e.Key.Tok, e.Value);
+      }
+      return bufferList;
+    }
+
     private Interpreter(Program program, Program unresolvedProgram = null) {
       Contract.Requires(tcce.NonNull(program));
       // initialize state
@@ -35,7 +52,7 @@ namespace Tacny {
       _program = program;
       _state = new ProofState(program, _errorReporter, unresolvedProgram);
       _frame = new Stack<Dictionary<IVariable, Type>>();
-      _resultList = new Dictionary<UpdateStmt, List<Statement>>();
+      //_resultList = new Dictionary<UpdateStmt, List<Statement>>();
     }
 
 
@@ -110,7 +127,7 @@ namespace Tacny {
         Contract.Assert(_frame.Count == 0);
 
 
-        _state.ResultCache.Add(new ProofState.TacticCache(method?.Name, _resultList.Copy()));
+       // _state.ResultCache.Add(new ProofState.TacticCache(method?.Name, _resultList.Copy()));
 
         var body = Util.InsertCode(_state, _resultList);
         method.Body.Body.Clear();

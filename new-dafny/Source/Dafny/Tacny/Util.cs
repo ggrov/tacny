@@ -84,23 +84,6 @@ namespace Tacny {
       return body;
     }
 
-    public static MemberDecl GenDeclFromTacCode(ProofState state, Dictionary<UpdateStmt, List<Statement>> code) {
-      Contract.Requires<ArgumentNullException>(state != null, "state");
-      Contract.Requires<ArgumentNullException>(code != null, "code");
-      var prog = state.GetDafnyProgram();
-      var tld = prog.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x.Name == state.ActiveClass.Name) as ClassDecl;
-      Contract.Assert(tld != null);
-      var member = tld.Members.FirstOrDefault(x => x.Name == state.TargetMethod.Name) as Method;
-      var body = member?.Body;
-
-      foreach(var kvp in code) {
-        body = InsertCodeInternal(body, kvp.Value, kvp.Key);
-      }
-      var r = new Resolver(prog);
-      r.ResolveProgram(prog);
-      return member;
-    }
-
     private static BlockStmt InsertCodeInternal(BlockStmt body, List<Statement> code, UpdateStmt tacticCall) {
       Contract.Requires<ArgumentNullException>(body != null, "body ");
       Contract.Requires<ArgumentNullException>(tacticCall != null, "'tacticCall");
