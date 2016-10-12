@@ -26,15 +26,25 @@ namespace Tacny.Atomic {
       IVariable lv;
       InitArgs(state, statement, out lv, out callArguments);
 
+      state.IfVerify = true;
+
 
       //TODO: implement this properly
       //var members = state.GetLocalValue(callArguments[0] as NameSegment) as IEnumerable<MemberDecl>;
+      //evaluate the argument (methods/lemma)
       var members0 = Interpreter.EvalTacnyExpression(state, callArguments[0]).GetEnumerator();
       members0.MoveNext();
       var members = members0.Current as List<MemberDecl>;
 
+      if (members == null){
+        yield break;
+      }
+
       foreach(var member in members) {
         MemberDecl md;
+        mdIns.Clear();
+        args.Clear();
+
         if(member is NameSegment) {
           //TODO:
           Console.WriteLine("double check this");
@@ -53,6 +63,7 @@ namespace Tacny.Atomic {
         else
           Contract.Assert(false, "In Explore Atomic call," + callArguments[0] + "is netierh Method or Function");
 
+        //evaluate the arguemnts for the lemma to be called
         var instArgs = Interpreter.EvalTacnyExpression(state, callArguments[1]);
         foreach(var ovars in instArgs) {
           Contract.Assert(ovars != null, "In Explore Atomic call," + callArguments[1] + "is not variable");
@@ -60,8 +71,10 @@ namespace Tacny.Atomic {
           List<IVariable> vars = ovars as List<IVariable> ?? new List<IVariable>();
           //Contract.Assert(vars != null, Util.Error.MkErr(call_arguments[0], 1, typeof(List<IVariable>)));
 
-
-
+          //for the case when no args, just add an empty list
+          if (mdIns.Count == 0){
+            args.Add(new List<IVariable>());
+          }
           for(int i = 0; i < mdIns.Count; i++) {
             var item = mdIns[i];
             args.Add(new List<IVariable>());
@@ -93,7 +106,6 @@ namespace Tacny.Atomic {
           }
 
           foreach(var result in PermuteArguments(args, 0, new List<NameSegment>())) {
-
             // create new fresh list of items to remove multiple references to the same object
             List<Expression> newList = result.Cast<Expression>().ToList().Copy();
             //TODO: need to double check wirh Vito, why can't use copy ?
@@ -163,6 +175,10 @@ namespace Tacny.Atomic {
         yield break;
       if(depth == args.Count) {
         yield return current;
+        yield break;
+      }
+      if (args[depth].Count == 0){
+        yield return new List<NameSegment>();
         yield break;
       }
       for(int i = 0; i < args[depth].Count; ++i) {
