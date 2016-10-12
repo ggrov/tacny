@@ -36,8 +36,13 @@ namespace Tacny {
         _resultList.Clear();
     }
 
-    public static Dictionary<UpdateStmt, List<Statement>> GetTacnyResultList(){
-      return _resultList;
+    public static Dictionary<IToken, List<Statement>> GetTacnyResultList(){
+      Dictionary<IToken, List<Statement>> bufferList = new Dictionary<IToken, List<Statement>>();
+
+      foreach (var e in _resultList){
+        bufferList.Add(e.Key.Tok, e.Value);
+      }
+      return bufferList;
     }
 
     private Interpreter(Program program, Program unresolvedProgram = null) {
