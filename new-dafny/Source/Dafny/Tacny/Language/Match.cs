@@ -1,17 +1,14 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using Microsoft.Boogie;
-using Microsoft.Dafny;
+using Tacny;
 using Formal = Microsoft.Dafny.Formal;
 using Type = Microsoft.Dafny.Type;
 
-namespace Tacny.Atomic {
+namespace Microsoft.Dafny.Tacny.Language {
   class Match {
     public string Signature => "tmatch";
     
@@ -194,15 +191,15 @@ namespace Tacny.Atomic {
         MatchStmt ms = GenerateMatchStmt(state0.TacticApplication.Tok.line, srcVar.Copy(), datatype, fList);
         state0.AddStatement(ms);
         var bodyList = new Dictionary<ProofState, BlockStmt>();
-        bodyList.Add(state0, Util.InsertCode(state0,
+        bodyList.Add(state0, global::Tacny.Util.InsertCode(state0,
           new Dictionary<UpdateStmt, List<Statement>>() {
               {state0.TacticApplication, state0.GetGeneratedCode()}
           }));
 
-        var memberList = Util.GenerateMembers(state0, bodyList);
-        var prog = Util.GenerateDafnyProgram(state0, memberList.Values.ToList());
+        var memberList = global::Tacny.Util.GenerateMembers(state0, bodyList);
+        var prog = global::Tacny.Util.GenerateDafnyProgram(state0, memberList.Values.ToList());
    //     p.PrintProgram(prog, false);
-        var result = Util.ResolveAndVerify(prog, null);
+        var result = global::Tacny.Util.ResolveAndVerify(prog, null);
 
         if (result.Count != 0)
           break;
