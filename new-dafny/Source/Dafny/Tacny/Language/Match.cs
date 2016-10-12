@@ -7,8 +7,11 @@ using Microsoft.Boogie;
 using Tacny;
 using Formal = Microsoft.Dafny.Formal;
 using Type = Microsoft.Dafny.Type;
+using Microsoft.Dafny;
+using dfy = Microsoft.Dafny;
+using System.Diagnostics.Contracts;
 
-namespace Microsoft.Dafny.Tacny.Language {
+namespace Tacny.Language {
   class Match {
     public string Signature => "tmatch";
     

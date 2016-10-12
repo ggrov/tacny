@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
+using Tacny.Language;
 //using LiteralExpr = Microsoft.Dafny.LiteralExpr;
 using Dafny = Microsoft.Dafny;
 using Program = Microsoft.Dafny.Program;
@@ -276,7 +277,7 @@ namespace Tacny {
       IEnumerable<ProofState> ret;
       switch(state.GetCurFrameTyp()) {
         case "tmatch":
-          ret = new Tacny.Atomic.Match().EvalNext (stmt as TacnyCasesBlockStmt, state);
+          ret = new Match().EvalNext (stmt as TacnyCasesBlockStmt, state);
           break;
         default:
           ret = null;
@@ -336,7 +337,7 @@ namespace Tacny {
         }
         else if (IsFlowControl(stmt)){
           if (stmt is TacnyCasesBlockStmt){
-            enumerable = new Tacny.Atomic.Match().EvalInit(stmt, state);
+            enumerable = new Match().EvalInit(stmt, state);
           }
           //TODO: to implement if and while control flow
         }

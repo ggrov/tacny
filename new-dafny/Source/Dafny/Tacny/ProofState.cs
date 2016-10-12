@@ -6,6 +6,7 @@ using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using Dfy = Microsoft.Dafny;
 using Microsoft.Dafny;
+using Tacny.Language;
 
 namespace Tacny {
   public class ProofState {
@@ -714,7 +715,7 @@ namespace Tacny {
 
         switch(whatKind) {
           case "tmatch":
-            code = Tacny.Atomic.Match.Assemble(raw);          
+            code = Match.Assemble(raw);          
             break;
           default:
             code = raw.SelectMany(x => x).ToList();
@@ -729,7 +730,7 @@ namespace Tacny {
 
         switch(WhatKind) {
           case "tmatch":
-            ret = Tacny.Atomic.Match.IsTerminated(_rawCodeList);
+            ret = Match.IsTerminated(_rawCodeList);
             break;
           default:
             ret = true;

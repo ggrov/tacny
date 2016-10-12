@@ -174,7 +174,6 @@
     <Compile Include="Reporting.cs" />
     <Compile Include="Tacny\Atomic\Atomic.cs" />
     <Compile Include="Tacny\Atomic\Explore.cs" />
-    <Compile Include="Tacny\Atomic\Match.cs" />
     <Compile Include="Tacny\Atomic\SuchThatAtomic.cs" />
     <Compile Include="Tacny\BaseTactic.cs" />
     <Compile Include="Tacny\EAtomic\EAtomic.cs" />
@@ -185,6 +184,7 @@
     <Compile Include="Tacny\Interpreter.cs" />
     <Compile Include="Tacny\Language\FlowControlStmt.cs" />
     <Compile Include="Tacny\Language\IfStmt.cs" />
+    <Compile Include="Tacny\Language\Match.cs" />
     <Compile Include="Tacny\ProofState.cs" />
     <Compile Include="Tacny\SearchFramework.cs" />
     <Compile Include="Tacny\Solution.cs" />
