@@ -1297,6 +1297,7 @@ namespace Dare
             if(!verifier.IsProgramValid(_program))
                 throw new Exception("Program not valid after all reinsertions");
 
+            var itemsToRemove = new List<MemberDecl>();
             foreach (var item in _removedItemsOnRun) {
                 var wrap = item.Value.GetItem();
                 if (wrap is Wrap<Statement>)
@@ -1314,15 +1315,17 @@ namespace Dare
                         (wrap as Wrap<MaybeFreeExpression>).Reinsert();
                     else
                         (wrap as Wrap<Expression>).Reinsert();
-                    _removedItemsOnRun.Remove(item.Key);
+                    itemsToRemove.Add(item.Key);
+                    
                 }
-
             }
-//                else if(wrap is Wrap<MaybeFreeExpression>)
-//                    (wrap as Wrap<MaybeFreeExpression>).Reinsert();
-//                else if (wrap is Wrap<Expression>)
-//                    (wrap as Wrap<Expression>).Reinsert();
-            
+
+            //remove items (can't do them in previous foreach)
+            foreach (var key in itemsToRemove) {
+                _removedItemsOnRun.Remove(key);
+            }
+
+            itemsToRemove = new List<MemberDecl>();
             foreach (var member in _removedBrokenItems.Keys) {
                 var conjunction = _removedBrokenItems[member];
                 conjunction.RemoveNext(_removedBrokenItems);
@@ -1333,9 +1336,14 @@ namespace Dare
                         _allConjunctions.Add(member, new List<ConjunctionData>());
                     if (!_allConjunctions[member].Contains(conjunction))
                         _allConjunctions[member].Add(conjunction);
-                    _removedBrokenItems.Remove(member);
+                    itemsToRemove.Add(member);
                 }
             }
+
+            foreach (var member in itemsToRemove) {
+                _removedBrokenItems.Remove(member);
+            }
+
             foreach (var wildCardDecreasese in _wildCardDecreasesRemovedOnRun.Values) {
                 wildCardDecreasese.ExpressionWrap.Remove();
                 if (verifier.IsProgramValid(_program)) continue;

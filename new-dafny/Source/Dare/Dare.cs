@@ -181,7 +181,7 @@ namespace Dare
             var newAllRemovables = new AllRemovableTypes();
             foreach (var member in members) {
                 if(!AllRemovableTypes.RemovableTypesInMethods.ContainsKey(member))
-                    throw new Exception("Could not find the method");
+                    continue;
                 newAllRemovables.RemovableTypesInMethods.Add(member, AllRemovableTypes.RemovableTypesInMethods[member]);
             }
             var simpData = remover.Remove(newAllRemovables, stopChecker);
