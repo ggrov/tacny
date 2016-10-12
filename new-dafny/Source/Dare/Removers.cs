@@ -616,7 +616,7 @@ namespace Dare
         public SimplificationData FullSimplify(MemberDecl member)
         {
             var removableTypeFinder = new RemovableTypeFinder(_program);
-            var removableTypesInMember = removableTypeFinder.FindRemovableTypesInMember(member);
+            var removableTypesInMember = removableTypeFinder.FindRemovableTypesInSingleMember(member);
 
             var simpData = new SimplificationData();
             foreach (var assert in RemoveItems(removableTypesInMember.Asserts))

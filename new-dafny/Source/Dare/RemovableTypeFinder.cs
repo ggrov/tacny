@@ -27,11 +27,23 @@ namespace Dare
             return _allRemovableTypes;
         }
 
-        public RemovableTypesInMember FindRemovableTypesInMember(MemberDecl member)
+        public RemovableTypesInMember FindRemovableTypesInSingleMember(MemberDecl member)
         {
             IdentifyModule(Program.DefaultModuleDef);
-            FindRemovableTypesInMember(member, (ClassDecl) member.EnclosingClass);
+            ClassDecl classDecl = FindClassOfMember(member);
+            FindRemovableTypesInMember(member, classDecl);
             return _allRemovableTypes.RemovableTypesInMethods[member];
+        }
+
+        private ClassDecl FindClassOfMember(MemberDecl memberDecl)
+        {
+            foreach (var classDict in _allMethods.Values) {
+                foreach (var classDecl in classDict.Keys) {
+                    if(classDict[classDecl].Contains(memberDecl))
+                        return classDecl;
+                }
+            }
+            throw new Exception("Failed to find class!");
         }
 
         private void IdentifyModule(ModuleDefinition module)
