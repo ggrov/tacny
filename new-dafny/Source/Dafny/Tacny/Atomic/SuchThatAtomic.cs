@@ -44,7 +44,7 @@ namespace Tacny.Atomic {
       foreach (var local in locals) {
         foreach (var item in ResolveExpression(state, bexp, local)) {
           var copy = state.Copy();
-          copy.UpdateLocal(local, item);
+          copy.UpdateTacnyVar(local, item);
           yield return copy;
         }
       }
@@ -72,7 +72,7 @@ namespace Tacny.Atomic {
             // for each item in the resolved lhs of the expression
             foreach (var item in ResolveExpression(state, bexp.E0, declaration)) {
               var copy = state.Copy();
-              copy.AddLocal(declaration, item);
+              copy.AddTacnyVar(declaration, item);
               // resolve the rhs expression
               foreach (var res in Interpreter.EvalTacnyExpression(copy, bexp.E1)) {
                 LiteralExpr lit = res as LiteralExpr;

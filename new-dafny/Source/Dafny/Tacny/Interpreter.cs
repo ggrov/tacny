@@ -563,13 +563,13 @@ namespace Tacny {
         // check if rhs is SuchThatStmt
         if(declaration.Update is AssignSuchThatStmt) {
           foreach(var item in declaration.Locals)
-            state.AddLocal(item, null);
+            state.AddTacnyVar(item, null);
           foreach(var item in EvalSuchThatStmt(declaration.Update as AssignSuchThatStmt, state)) {
             yield return item.Copy();
           }
         } else {
           foreach(var item in declaration.Locals)
-            state.AddLocal(item, null);
+            state.AddTacnyVar(item, null);
         }
       } else {
         foreach(var item in rhs.Rhss) {
@@ -579,17 +579,17 @@ namespace Tacny {
           if(exprRhs?.Expr is ApplySuffix) {
             var aps = (ApplySuffix)exprRhs.Expr;
             foreach(var result in EvalTacnyExpression(state, aps)) {
-              state.AddLocal(declaration.Locals[index], result);
+              state.AddTacnyVar(declaration.Locals[index], result);
             }
           } else if(exprRhs?.Expr is Dafny.LiteralExpr) {
-            state.AddLocal(declaration.Locals[index], (Dafny.LiteralExpr)exprRhs?.Expr);
+            state.AddTacnyVar(declaration.Locals[index], (Dafny.LiteralExpr)exprRhs?.Expr);
           } else if(exprRhs?.Expr is Dafny.NameSegment) {
             var name = ((Dafny.NameSegment)exprRhs.Expr).Name;
             if(state.ContainTacnyVal(name))
               // in the case that referring to an exisiting tvar, dereference it
-              state.AddLocal(declaration.Locals[index], state.GetTacnyVarValue(name));
+              state.AddTacnyVar(declaration.Locals[index], state.GetTacnyVarValue(name));
           } else {
-            state.AddLocal(declaration.Locals[index], exprRhs?.Expr);
+            state.AddTacnyVar(declaration.Locals[index], exprRhs?.Expr);
           }
         }
       }
@@ -608,12 +608,12 @@ namespace Tacny {
         if(exprRhs?.Expr is ApplySuffix) {
           var aps = (ApplySuffix)exprRhs.Expr;
           foreach(var result in EvalTacnyExpression(state, aps)) {
-            state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, result);
+            state.UpdateTacnyVar(((NameSegment)us.Lhss[index]).Name, result);
           }
         } else if(exprRhs?.Expr is Dafny.LiteralExpr) {
-          state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, (Dafny.LiteralExpr)exprRhs?.Expr);
+          state.UpdateTacnyVar(((NameSegment)us.Lhss[index]).Name, (Dafny.LiteralExpr)exprRhs?.Expr);
         } else {
-          state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, exprRhs?.Expr);
+          state.UpdateTacnyVar(((NameSegment)us.Lhss[index]).Name, exprRhs?.Expr);
         }
       }
       yield return state.Copy();

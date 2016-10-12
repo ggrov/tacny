@@ -84,13 +84,30 @@ namespace Tacny.Language {
       return ret;
     }
 
+    internal int GetNthCaseIdx(List<List<Statement>> raw) {
+      Contract.Requires(raw != null);
+      Contract.Requires(raw.Count > 0);
+      Contract.Requires(raw[0] != null && raw[0].Count == 1 && raw[0][0] is MatchStmt);
+      return raw[0].Count - 1;
+
+    }
     public IEnumerable<ProofState> EvalNext(Statement statement, ProofState state0){
       Contract.Requires(statement != null);
       Contract.Requires(statement is TacnyCasesBlockStmt);
       var state = state0.Copy();
 
       var stmt = statement as TacnyCasesBlockStmt;
+      var raw = state.GetGeneratedaRawCode();
+
+
       state.AddNewFrame(stmt.Body.Body);
+
+      var matchStmt = raw[0][0] as MatchStmt;
+
+      var idx = GetNthCaseIdx(raw);
+      foreach(var tmp in matchStmt.Cases[idx].CasePatterns) {
+        state.AddDafnyVar(tmp.Var.Name, new ProofState.VariableData { Variable = tmp.Var, Type = tmp.Var.Type });
+      }
       //with this flag set to true, dafny will check the case branch before evaluates any tacny code
       state.IfVerify = true;
       yield return state;
@@ -151,6 +168,9 @@ namespace Tacny.Language {
       //TODO: add case variable to frame, so that variable () can refer to it
       state.AddNewFrame(stmt.Body.Body);
 
+      foreach(var tmp in matchStmt.Cases[0].CasePatterns) {
+        state.AddDafnyVar(tmp.Var.Name, new ProofState.VariableData { Variable = tmp.Var, Type = tmp.Var.Type });
+      }
       //with this flag set to true, dafny will check the case brnach before evaluates any tacny code
       state.IfVerify = true;
       yield return state;

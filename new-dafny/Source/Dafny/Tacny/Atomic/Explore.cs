@@ -114,7 +114,7 @@ namespace Tacny.Atomic {
               newList);
             if(lv != null) {
               var newState = state.Copy();
-              newState.AddLocal(lv, aps);
+              newState.AddTacnyVar(lv, aps);
               yield return newState;
             } else {
               var newState = state.Copy();

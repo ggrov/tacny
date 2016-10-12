@@ -149,7 +149,7 @@ namespace Tacny {
       _scope.Push(new Frame(parent, stmts, kind));
     }
 
-
+/*
     public bool RemoveFrame() {
       // at least one frame in the proof state
       if (_scope.Count > 1){
@@ -158,7 +158,7 @@ namespace Tacny {
       }
       return false;
     }
-   
+  */ 
 
     public void MarkCurFrameAsTerminated() {
       //assmeb code in the top frame
@@ -205,9 +205,15 @@ namespace Tacny {
     }
 
     public List<Statement> GetGeneratedCode() {
-      Contract.Ensures(Contract.Result<List<Statement>>() != null);
+     // Contract.Ensures(Contract.Result<List<Statement>>() != null);
       return _scope.Peek().GetGeneratedCode();
     }
+
+    public List<List<Statement>> GetGeneratedaRawCode() {
+     // Contract.Ensures(Contract.Result<List<Statement>>() != null);
+      return _scope.Peek().GetRawCode();
+    }
+
 
     /// <summary>
     ///   Check if Dafny key exists in the current context
@@ -425,10 +431,10 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    public void AddLocal(IVariable key, object value) {
+    public void AddTacnyVar(IVariable key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
       Contract.Requires<ArgumentException>(!ContainTacnyVal(key.Name));
-      AddLocal(key.Name, value);
+      AddTacnyVar(key.Name, value);
     }
 
     /// <summary>
@@ -436,7 +442,7 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    public void AddLocal(string key, object value) {
+    public void AddTacnyVar(string key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
       Contract.Requires<ArgumentException>(!ContainTacnyVal(key));
       _scope.Peek().AddTacnyVar(key, value);
@@ -447,9 +453,9 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    public void UpdateLocal(IVariable key, object value) {
+    public void UpdateTacnyVar(IVariable key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
-      UpdateLocal(key.Name, value);
+      UpdateTacnyVar(key.Name, value);
     }
 
     /// <summary>
@@ -457,11 +463,19 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    public void UpdateLocal(string key, object value) {
+    public void UpdateTacnyVar(string key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
       _scope.Peek().UpdateLocalTacnyVar(key, value);
     }
 
+    /// <summary>
+    /// add a dafny variable to the top frame
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="var"></param>
+    public void AddDafnyVar(string name, VariableData var){
+      _scope.Peek().AddDafnyVar(name, var);
+    }
     /// <summary>
     /// Add new dafny stmt to the top frame
     /// </summary>
@@ -744,6 +758,9 @@ namespace Tacny {
         _generatedCode = AssembleStmts(_rawCodeList, WhatKind);
       }
 
+      internal List<List<Statement>> GetRawCode(){
+        return _rawCodeList;
+      }
       internal List<Statement> GetAssembledCode(){
         return _generatedCode;
       }
