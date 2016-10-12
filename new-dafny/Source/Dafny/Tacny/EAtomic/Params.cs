@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
 
-namespace Tacny.Function {
-  class Params : Projection {
+namespace Tacny.EAtomic {
+  class Params : EAtomic {
     public override string Signature => "params";
     public override int ArgsCount => 0;
 
@@ -25,7 +24,7 @@ namespace Tacny.Function {
     /// <param name="proofState"></param>
     /// <returns></returns>
     public override IEnumerable<object> Generate(Expression expression, ProofState proofState) {
-      var vars = proofState.DafnyVariables.Values.ToList().Where(IsParam);
+      var vars = proofState.GetAllDafnyVars().Values.ToList().Where(IsParam);
       yield return vars.Select(x => x.Variable).ToList();
     }
   }

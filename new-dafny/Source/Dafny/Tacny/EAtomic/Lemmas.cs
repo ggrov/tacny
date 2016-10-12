@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Diagnostics.Contracts;
 using Microsoft.Dafny;
 
-namespace Tacny.Function{
-  class Lemmas : Projection{
+namespace Tacny.EAtomic {
+  class Lemmas : EAtomic {
     public override string Signature => "lemmas";
     public override int ArgsCount => 0;
 

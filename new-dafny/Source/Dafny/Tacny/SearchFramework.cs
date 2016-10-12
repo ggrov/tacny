@@ -1,6 +1,7 @@
 ﻿using Microsoft.Dafny;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using Microsoft.Boogie;
@@ -76,7 +77,7 @@ namespace Tacny {
     }
 
     private static List<ProofState> _proofList;
-    internal static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
+    public static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
       /*      if (_proofList == null)
               _proofList = new List<ProofState>();
             if (_proofList.Count + 1 < SolutionCounter) {
@@ -98,13 +99,15 @@ namespace Tacny {
           {state.TacticApplication, state.GetGeneratedCode()}
         }));
     
-            var memberList = Util.GenerateMembers(state, bodyList);
+        var memberList = Util.GenerateMembers(state, bodyList);
         var prog = Util.GenerateDafnyProgram(state, memberList.Values.ToList());
 
+        Console.WriteLine("*********************Verifying Tacny Generated Prog*****************");
         var printer = new Printer(Console.Out);
         printer.PrintProgram(prog, false);
+        Console.WriteLine("*********************Prog END*****************");
 
-        var result = Util.ResolveAndVerify(prog, errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); });
+      var result = Util.ResolveAndVerify(prog, errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); });
         if (result.Count == 0)
           return VerifyResult.Verified;
         else {
@@ -150,13 +153,11 @@ namespace Tacny {
               }
               continue;
             case VerifyResult.Verified:
-              // in a controal block which can be returned
-              if (proofState.IsCurrentCntlTermianted()){
+              proofState.MarkCurFrameAsTerminated();
+              if (proofState.IsVerified()){
                  yield return proofState;
                  yield break;
               }
-             // more stmt block need to be evaluaed in the queue, pop the current frame and continue to evalaute
-              proofState.RemoveFrame();
               queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
               break;
             case VerifyResult.Failed:
@@ -198,13 +199,11 @@ namespace Tacny {
           proofState.IfVerify = false;
           switch(VerifyState(proofState, er)) {
             case VerifyResult.Verified:
-              // in a controal block which can be returned
-              if(proofState.IsCurrentCntlTermianted()) {
+              proofState.MarkCurFrameAsTerminated();
+              if(proofState.IsVerified()) {
                 yield return proofState;
                 yield break;
-              }
-              // more stmt block need to be evalauted in the stack, pop the current frame and continue to evalaute
-              proofState.RemoveFrame();
+             }
               stack.Push(enumerator);
               enumerator = (Interpreter.EvalStep(proofState).GetEnumerator());
               break;

@@ -458,7 +458,7 @@ namespace Tacny {
 
     public static IEnumerable<object> EvaluateLeaf(ExpressionTree expt, ProofState state) {
       Contract.Requires(expt != null && expt.IsLeaf());
-      foreach (var item in Interpreter.EvaluateTacnyExpression(state, expt.Data))
+      foreach (var item in Interpreter.EvalTacnyExpression(state, expt.Data))
         yield return item;
     }
 
@@ -470,8 +470,8 @@ namespace Tacny {
       foreach (var leaf in leafs) {
         if (leaf is NameSegment) {
           var ns = leaf as NameSegment;
-          if (state.HasLocalValue(ns)) {
-            var local = state.GetLocalValue(ns);
+          if (state.ContainTacnyVal(ns)) {
+            var local = state.GetTacnyVarValue(ns);
             if (local is ApplySuffix || local is IVariable || local is NameSegment || local is Statement)
               return false;
           } else {

@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
+using Tacny.Language;
 //using LiteralExpr = Microsoft.Dafny.LiteralExpr;
 using Dafny = Microsoft.Dafny;
 using Program = Microsoft.Dafny.Program;
@@ -15,6 +16,8 @@ using Type = Microsoft.Dafny.Type;
 
 namespace Tacny {
   public class Interpreter {
+    public static int TACNY_CODE_TOK_LINE = -1;
+
     private static Interpreter _i;
     private Stack<Dictionary<IVariable, Type>> _frame;
 
@@ -22,12 +25,14 @@ namespace Tacny {
     private readonly ErrorReporter _errorReporter;
 
     private static ErrorReporterDelegate _errorReporterDelegate;
+    private Program _program;
 
     private readonly Dictionary<UpdateStmt, List<Statement>> _resultList;
     private Interpreter(Program program, Program unresolvedProgram = null) {
       Contract.Requires(tcce.NonNull(program));
       // initialize state
       _errorReporter = new ConsoleErrorReporter();
+      _program = program;
       _state = new ProofState(program, _errorReporter, unresolvedProgram);
       _frame = new Stack<Dictionary<IVariable, Type>>();
       _resultList = new Dictionary<UpdateStmt, List<Statement>>();
@@ -41,15 +46,16 @@ namespace Tacny {
       Contract.Invariant(_errorReporter != null);
     }
 
-    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null) {
+    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null, Resolver r = null) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
       _i = new Interpreter(program, unresolvedProgram);
       _errorReporterDelegate = erd;
-      var result = _i.FindTacticApplication(target);
+      var result = _i.FindTacticApplication(target, r);
 
       var p = new Printer(Console.Out);
       p.PrintMembers(new List<MemberDecl>() { result }, 0, "");
+
       _errorReporterDelegate = null;
       return result;
     }
@@ -69,7 +75,8 @@ namespace Tacny {
       Contract.Requires(tcce.NonNull(target));
       _frame = new Stack<Dictionary<IVariable, Type>>();
       var method = target as Method;
-      if (method == null) return null;
+      if(method == null)
+        return null;
       _state.SetTopLevelClass(method.EnclosingClass?.Name);
       _state.TargetMethod = target;
       var dict = method.Ins.Concat(method.Outs)
@@ -84,14 +91,14 @@ namespace Tacny {
     }
 
 
-    private MemberDecl FindTacticApplication(MemberDecl target) {
+    private MemberDecl FindTacticApplication(MemberDecl target, Resolver r) {
       Contract.Requires(tcce.NonNull(target));
       // initialize new stack for variables
       _frame = new Stack<Dictionary<IVariable, Type>>();
       // clean up the result list
       _resultList.Clear();
       var method = target as Method;
-      if (method != null) {
+      if(method != null) {
         _state.SetTopLevelClass(method.EnclosingClass?.Name);
         _state.TargetMethod = target;
         var dict = method.Ins.Concat(method.Outs)
@@ -104,10 +111,16 @@ namespace Tacny {
 
 
         _state.ResultCache.Add(new ProofState.TacticCache(method?.Name, _resultList.Copy()));
+
         var body = Util.InsertCode(_state, _resultList);
         method.Body.Body.Clear();
-        if (body != null)
+        if(body != null)
           method.Body.Body.AddRange(body.Body);
+
+        // use the original resolver of the resoved program, as it contains all the necessary type info
+        r.ResolveMethodBody(method);
+        //Console.WriteLine("Errors: " + _program.reporter.Count(ErrorLevel.Error));
+
       }
       return method;
     }
@@ -115,36 +128,40 @@ namespace Tacny {
     // Find tactic application and resolve it
     private void SearchBlockStmt(BlockStmt body) {
       Contract.Requires(tcce.NonNull(body));
-            
+
       BaseSearchStrategy.ResetProofList();
       _frame.Push(new Dictionary<IVariable, Type>());
-      foreach (var stmt in body.Body) {
-        if (stmt is VarDeclStmt) {
+      foreach(var stmt in body.Body) {
+        if(stmt is VarDeclStmt) {
           var vds = stmt as VarDeclStmt;
           // register local variable declarations
-          foreach (var local in vds.Locals) {
+          foreach(var local in vds.Locals) {
             try {
               _frame.Peek().Add(local, local.Type);
-            } catch (Exception e) {
+            } catch(Exception e) {
               //TODO: some error handling when target is not resolved
               Console.Out.WriteLine(e.Message);
             }
           }
-        } else if (stmt is IfStmt) {
+        } else if(stmt is IfStmt) {
           var ifStmt = stmt as IfStmt;
           SearchIfStmt(ifStmt);
 
-        } else if (stmt is WhileStmt) {
+        } else if(stmt is WhileStmt) {
           var whileStmt = stmt as WhileStmt;
           SearchBlockStmt(whileStmt.Body);
-        } else if (stmt is UpdateStmt) {
+        } else if(stmt is UpdateStmt) {
           var us = stmt as UpdateStmt;
-          if (_state.IsTacticCall(us)) {
+          if(_state.IsTacticCall(us)) {
             var list = StackToDict(_frame);
             var result = ApplyTactic(_state, list, us);
-            _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
+            if (result != null)
+              _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
+            else{// when no results, just return a empty stmt list
+              _resultList.Add(us.Copy(), new List<Statement>());
+            }
           }
-        } else if (stmt is BlockStmt) {
+        } else if(stmt is BlockStmt) {
           //TODO:
         }
       }
@@ -154,11 +171,12 @@ namespace Tacny {
     private void SearchIfStmt(IfStmt ifStmt) {
       Contract.Requires(tcce.NonNull(ifStmt));
       SearchBlockStmt(ifStmt.Thn);
-      if (ifStmt.Els == null) return;
+      if(ifStmt.Els == null)
+        return;
       var els = ifStmt.Els as BlockStmt;
-      if (els != null) {
+      if(els != null) {
         SearchBlockStmt(els);
-      } else if (ifStmt.Els is IfStmt) {
+      } else if(ifStmt.Els is IfStmt) {
         SearchIfStmt((IfStmt)ifStmt.Els);
       }
     }
@@ -167,7 +185,7 @@ namespace Tacny {
       Contract.Requires(stack != null);
       Contract.Ensures(Contract.Result<Dictionary<IVariable, Type>>() != null);
       var result = new Dictionary<IVariable, Type>();
-      foreach (var dict in stack) {
+      foreach(var dict in stack) {
         dict.ToList().ForEach(x => result.Add(x.Key, x.Value));
       }
       return result;
@@ -175,7 +193,7 @@ namespace Tacny {
 
     public static bool ParsePartialAttribute(Attributes attr) {
       Contract.Requires(attr != null);
-      if (attr.Name == "partial")
+      if(attr.Name == "partial")
         return true;
 
       return attr.Prev != null && ParsePartialAttribute(attr.Prev);
@@ -183,7 +201,7 @@ namespace Tacny {
 
     public static bool IsPartial(ProofState state, UpdateStmt tacticApplication) {
       //still need to check the localtion of the application, is it the last call ? is it a neswted call ?
-      if (state.TacticInfo.IsPartial) {
+      if(state.TacticInfo.IsPartial) {
         return true;
       }
 
@@ -198,46 +216,74 @@ namespace Tacny {
       state.InitState(tacticApplication, variables);
 
       var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, !IsPartial(state, tacticApplication));
-      return search.Search(state, _errorReporterDelegate).FirstOrDefault();
+      var ret =  search.Search(state, _errorReporterDelegate).FirstOrDefault();
+      return ret;
     }
-
+ 
     public static IEnumerable<ProofState> ApplyNestedTactic(ProofState state, Dictionary<IVariable, Type> variables,
       UpdateStmt tacticApplication) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
       Contract.Requires<ArgumentNullException>(tcce.NonNull(tacticApplication));
       Contract.Requires<ArgumentNullException>(state != null, "state");
+      
+      // not meant to be called, should not distinghish nested tactic call 
+      Contract.Assert(false);
+      
       state.InitState(tacticApplication, variables);
       var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, false);
-      foreach (var result in search.Search(state, _errorReporterDelegate)) {
+      foreach(var result in search.Search(state, _errorReporterDelegate)) {
         var c = state.Copy();
         c.AddStatementRange(result.GetGeneratedCode());
         yield return c;
+      
       }
     }
-
-    public static IEnumerable<ProofState> EvaluateBlockStmt(ProofState state, BlockStmt blockStmt) {
-      Contract.Requires<ArgumentNullException>(state != null, "state");
-      Contract.Requires<ArgumentNullException>(blockStmt != null, "stmt");
-      state.AddNewFrame(blockStmt);
-      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, false);
-      foreach (var result in search.Search(state, _errorReporterDelegate)) {
-        var c = state.Copy();
-        c.AddStatementRange(result.GetGeneratedCode());
-        yield return c;
-      }
-      if (!state.RemoveFrame()) {
-        throw new InvalidOperationException("tried to pop more frames than were pushed");
-      }
+    /*
+        public static IEnumerable<ProofState> EvaluateBlockStmt(ProofState state, BlockStmt blockStmt) {
+          Contract.Requires<ArgumentNullException>(state != null, "state");
+          Contract.Requires<ArgumentNullException>(blockStmt != null, "stmt");
+          state.AddNewFrame(blockStmt);
+          var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, false);
+          foreach(var result in search.Search(state, _errorReporterDelegate)) {
+            var c = state.Copy();
+            c.AddStatementRange(result.GetGeneratedCode());
+            yield return c;
+          }
+          if(!state.RemoveFrame()) {
+            throw new InvalidOperationException("tried to pop more frames than were pushed");
+          }
+        }
+    */
+    /*
+        public static void PrepareFrame(BlockStmt body, ProofState state) {
+          Contract.Requires<ArgumentNullException>(body != null, "body");
+          Contract.Requires<ArgumentNullException>(state != null, "state");
+          state.AddNewFrame(body);
+          // call the search engine
+          var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
+          search.Search(state, _errorReporterDelegate);
+          state.RemoveFrame();
+        }
+    */
+    private static bool IsFlowControl(Statement stmt) {
+      return stmt is IfStmt || stmt is WhileStmt || stmt is TacnyCasesBlockStmt;
+    }
+    private static bool IsFlowControlFrame(ProofState state){
+      var typ = state.GetCurFrameTyp();
+      return typ == "tmatch";
     }
 
-    public static void PrepareFrame(BlockStmt body, ProofState state) {
-      Contract.Requires<ArgumentNullException>(body != null, "body");
-      Contract.Requires<ArgumentNullException>(state != null, "state");
-      state.AddNewFrame(body);
-      // call the search engine
-      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
-      search.Search(state, _errorReporterDelegate);
-      state.RemoveFrame();
+    private static IEnumerable<ProofState> EvalNextControlFlow(Statement stmt, ProofState state){
+      IEnumerable<ProofState> ret;
+      switch(state.GetCurFrameTyp()) {
+        case "tmatch":
+          ret = new Match().EvalNext (stmt as TacnyCasesBlockStmt, state);
+          break;
+        default:
+          ret = null;
+          break;
+      }
+      return ret;
     }
 
     public static IEnumerable<ProofState> EvalStep(ProofState state) {
@@ -245,58 +291,70 @@ namespace Tacny {
 
       IEnumerable<ProofState> enumerable = null;
       var stmt = state.GetStmt();
-      if (stmt is TacticVarDeclStmt) {
-        enumerable = RegisterVariable(stmt as TacticVarDeclStmt, state);
-      } else if (stmt is UpdateStmt) {
-        var us = stmt as UpdateStmt;
-        if (state.IsLocalAssignment(us)) {
-          enumerable = UpdateLocalValue(us, state);
-        } else  if (state.IsArgumentApplication(us)){
-          //TODO: argument application
-         // not sure what this is for
+
+      //if the current frame is a control flow, e.g. match, no need to get stmt
+      if (IsFlowControlFrame(state)){
+        enumerable = EvalNextControlFlow(stmt, state);
+      }
+      else {
+        if (stmt is TacticVarDeclStmt){
+          enumerable = RegisterVariable(stmt as TacticVarDeclStmt, state);
         }
-        else if (state.IsTacticCall(us)){
-          enumerable = ApplyNestedTactic(state.Copy(), state.DafnyVars(), us);
-        }
-        else{// apply atomic
-          string sig = Util.GetSignature(us);
-          //Firstly, check if this is a projection function
-          var types =
-            Assembly.GetAssembly(typeof(Atomic.Atomic))
-              .GetTypes()
-              .Where(t => t.IsSubclassOf(typeof(Atomic.Atomic)));
-          foreach(var fType in types) {
-            var porjInst = Activator.CreateInstance(fType) as Atomic.Atomic;
-            if(sig == porjInst?.Signature) {
-              //TODO: validate input countx
-              enumerable = porjInst?.Generate(us, state);
+        else if (stmt is UpdateStmt){
+          var us = stmt as UpdateStmt;
+          if (state.IsLocalAssignment(us)){
+            enumerable = UpdateLocalValue(us, state);
+          }
+          else if (state.IsArgumentApplication(us)){
+            //TODO: argument application
+            // not sure what this is for
+          }
+          else if (state.IsTacticCall(us)){
+            //enumerable = ApplyNestedTactic(state.Copy(), state.DafnyVars(), us);
+          }
+          else{
+// apply atomic
+            string sig = Util.GetSignature(us);
+            //Firstly, check if this is a projection function
+            var types =
+              Assembly.GetAssembly(typeof(Atomic.Atomic))
+                .GetTypes()
+                .Where(t => t.IsSubclassOf(typeof(Atomic.Atomic)));
+            foreach (var fType in types){
+              var porjInst = Activator.CreateInstance(fType) as Atomic.Atomic;
+              if (sig == porjInst?.Signature){
+                //TODO: validate input countx
+                enumerable = porjInst?.Generate(us, state);
+              }
             }
           }
         }
-      } else if (stmt is AssignSuchThatStmt) {
-        enumerable = EvaluateSuchThatStmt((AssignSuchThatStmt)stmt, state);
-      } else if (stmt is PredicateStmt) {
-        enumerable = ResolvePredicateStmt((PredicateStmt)stmt, state);
-      } else if(stmt is TacnyCasesBlockStmt) {
-        //TODO: tmatch
-        enumerable = new Tacny.Atomic.Match(stmt).Generate((TacnyCasesBlockStmt)stmt, state);
-      } else if (stmt is TStatement) {
-        //TODO: Evaluate tactic statement
-      } else if (stmt is IfStmt || stmt is WhileStmt) {
-        enumerable = ResolveFlowControlStmt(stmt, state);
-      }else {
-        enumerable = DefaultAction(stmt, state);
+        else if (stmt is AssignSuchThatStmt){
+          enumerable = EvalSuchThatStmt((AssignSuchThatStmt) stmt, state);
+        }
+        else if (stmt is PredicateStmt){
+          enumerable = EvalPredicateStmt((PredicateStmt) stmt, state);
+        }
+        else if (IsFlowControl(stmt)){
+          if (stmt is TacnyCasesBlockStmt){
+            enumerable = new Match().EvalInit(stmt, state);
+          }
+          //TODO: to implement if and while control flow
+        }
+        else{
+          enumerable = DefaultAction(stmt, state);
+        }
       }
-
-      foreach (var item in enumerable)
+      foreach(var item in enumerable)
         yield return item.Copy();
     }
-
+ /*
     private static IEnumerable<ProofState> ResolveFlowControlStmt(Statement stmt, ProofState state) {
       Language.FlowControlStmt fcs = null;
-      if (stmt is IfStmt) {
-        fcs = new Language.IfStmt();
-      } else if (stmt is WhileStmt) {
+      if(stmt is IfStmt) {
+        //fcs = new Language.IfStmt();
+        //TODO: if statemenet
+      } else if(stmt is WhileStmt) {
         //TODO: while statemenet
       } else {
         Contract.Assert(false);
@@ -304,17 +362,24 @@ namespace Tacny {
       }
       return fcs.Generate(stmt, state);
     }
+*/
 
-
-    public static IEnumerable<ProofState> ResolvePredicateStmt(PredicateStmt predicate, ProofState state) {
+    public static IEnumerable<ProofState> EvalPredicateStmt(PredicateStmt predicate, ProofState state) {
       Contract.Requires<ArgumentNullException>(predicate != null, "predicate");
-      foreach (var result in EvaluateTacnyExpression(state, predicate.Expr)) {
+      foreach(var result in EvalTacnyExpression(state, predicate.Expr)) {
         var resultExpression = result is IVariable ? Util.VariableToExpression(result as IVariable) : result as Expression;
         PredicateStmt newPredicate;
-        if (predicate is AssertStmt) {
-          newPredicate = new AssertStmt(predicate.Tok, predicate.EndTok, resultExpression, predicate.Attributes);
+
+        var tok = predicate.Tok.Copy();
+        tok.line = TACNY_CODE_TOK_LINE;
+
+        var endTok = predicate.EndTok.Copy();
+        endTok.line = TACNY_CODE_TOK_LINE;
+
+        if(predicate is AssertStmt) {
+          newPredicate = new AssertStmt(tok, endTok, resultExpression, predicate.Attributes);
         } else {
-          newPredicate = new AssumeStmt(predicate.Tok, predicate.EndTok, resultExpression, predicate.Attributes);
+          newPredicate = new AssumeStmt(tok, endTok, resultExpression, predicate.Attributes);
         }
         var copy = state.Copy();
         copy.AddStatement(newPredicate);
@@ -322,107 +387,81 @@ namespace Tacny {
         yield return copy;
       }
     }
-/*
-    public static IEnumerable<object> GenerateFromApplySuffix(string sig, System.Type typ, ProofState state, ApplySuffix aps) {
-      var types =
-        Assembly.GetAssembly(typ).GetTypes().Where(t => t.IsSubclassOf(typ));
-      foreach (var type in types){
-        var resolverInstance = Activator.CreateInstance(type) as EAtomic.EAtomic;
-        if (sig == resolverInstance?.Signature){
-          //TODO: validate input countx, as well types of hte the args
-          foreach (var item in resolverInstance?.Generate(aps, state))
-            yield return item;
-        }
-      }
-    }
-*/
-    public static IEnumerable<object> EvaluateTacnyExpression(ProofState state, Expression expr) {
+
+    public static IEnumerable<object> EvalTacnyExpression(ProofState state, Expression expr) {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       Contract.Requires<ArgumentNullException>(expr != null, "expr");
       if(expr is NameSegment) {
         var ns = (NameSegment)expr;
-        if(state.HasLocalValue(ns.Name)) {
-          yield return state.GetLocalValue(ns.Name);
+        if(state.ContainTacnyVal(ns.Name)) {
+          yield return state.GetTacnyVarValue(ns.Name);
         } else {
           yield return ns;
         }
       } else if(expr is ApplySuffix) {
         var aps = (ApplySuffix)expr;
         if(state.IsTacticCall(aps)) {
+          /*
           var us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>() { aps.Lhs },
             new List<AssignmentRhs>() { new ExprRhs(aps) });
           foreach(var item in ApplyNestedTactic(state, state.DafnyVars(), us).Select(x => x.GetGeneratedCode())) {
             yield return item;
           }
-        } else if (aps.Lhs is ExprDotName){
-          foreach (var item in EvaluateTacnyExpression(state, aps.Lhs)){
-            if (item is Expression){
-              yield return new ApplySuffix(aps.tok, (Expression) item, aps.Args);
-            }
-            else{
+          */
+        } else if(aps.Lhs is ExprDotName) {
+          foreach(var item in EvalTacnyExpression(state, aps.Lhs)) {
+            if(item is Expression) {
+              yield return new ApplySuffix(aps.tok, (Expression)item, aps.Args);
+            } else {
               Contract.Assert(false, "Unexpected ExprNotName case");
             }
           }
-        }
-        else{
-          // get the keywprd of this application
+        } else {
+          // get the keyword of this application
           string sig = Util.GetSignature(aps);
-          //Firstly, check if this is a projection function
+          // Try to evaluate as tacny expression
+          // using reflection find all classes that extend EAtomic
           var types =
-            Assembly.GetAssembly(typeof(Function.Projection))
+            Assembly.GetAssembly(typeof(EAtomic.EAtomic))
               .GetTypes()
-              .Where(t => t.IsSubclassOf(typeof(Function.Projection)));
-          foreach (var fType in types){
-            var porjInst = Activator.CreateInstance(fType) as Function.Projection;
-            if (sig == porjInst?.Signature){
+              .Where(t => t.IsSubclassOf(typeof(EAtomic.EAtomic)));
+          foreach(var eType in types) {
+            var eatomInst = Activator.CreateInstance(eType) as EAtomic.EAtomic;
+            if(sig == eatomInst?.Signature) {
               //TODO: validate input countx
-              var enumerable = porjInst?.Generate(aps, state);
-              if (enumerable != null)
-                foreach (var item in enumerable)
+              var enumerable = eatomInst?.Generate(aps, state);
+              if(enumerable != null)
+                foreach(var item in enumerable) {
                   yield return item;
+                  yield break;
+                }
             }
-            //If not projection, then try to evaluate as tacny expression
-            // using reflection find all classes that extend EAtomic
-            types =
-              Assembly.GetAssembly(typeof(EAtomic.EAtomic))
-                .GetTypes()
-                .Where(t => t.IsSubclassOf(typeof(EAtomic.EAtomic)));
-            foreach (var eType in types){
-              var eatomInst = Activator.CreateInstance(eType) as EAtomic.EAtomic;
-              if (sig == eatomInst?.Signature){
-                //TODO: validate input countx
-                var enumerable = eatomInst?.Generate(aps, state);
-                if (enumerable != null)
-                  foreach (var item in enumerable)
-                    yield return item;
-              }
-              // if we reached this point, rewrite  the apply suffix
-              foreach (var item in EvaluateTacnyExpression(state, aps.Lhs)){
-                if (!(item is NameSegment)){
-                  //TODO: warning
-                }
-                else{
-                  var argList = new List<Expression>();
-                  foreach (var arg in aps.Args){
-                    foreach (var result in EvaluateTacnyExpression(state, arg)){
-                      if (result is Expression)
-                        argList.Add(result as Expression);
-                      else
-                        argList.Add(Util.VariableToExpression(result as IVariable));
-                      break;
-                    }
-                  }
-                  yield return new ApplySuffix(aps.tok, aps.Lhs, argList);
+          }
+
+          // if we reached this point, rewrite  the apply suffix
+          foreach(var item in EvalTacnyExpression(state, aps.Lhs)) {
+            if(!(item is NameSegment)) {
+              //TODO: warning
+            } else {
+              var argList = new List<Expression>();
+              foreach(var arg in aps.Args) {
+                foreach(var result in EvalTacnyExpression(state, arg)) {
+                  if(result is Expression)
+                    argList.Add(result as Expression);
+                  else
+                    argList.Add(Util.VariableToExpression(result as IVariable));
+                  break;
                 }
               }
+              yield return new ApplySuffix(aps.tok, aps.Lhs, argList);
             }
           }
         }
       } else if(expr is ExprDotName) {
         var edn = (ExprDotName)expr;
         var ns = edn.Lhs as NameSegment;
-        if(ns != null && state.ContainsVariable(ns)) {
-          var newLhs = state.GetLocalValue(ns);
+        if(ns != null && state.ContainDafnyVar(ns)) {
+          var newLhs = state.GetTacnyVarValue(ns);
           var lhs = newLhs as Expression;
           if(lhs != null)
             yield return new ExprDotName(edn.tok, lhs, edn.SuffixName, edn.OptTypeArguments);
@@ -430,7 +469,7 @@ namespace Tacny {
         yield return edn;
       } else if(expr is UnaryOpExpr) {
         var op = (UnaryOpExpr)expr;
-        foreach(var result in EvaluateTacnyExpression(state, op.E)) {
+        foreach(var result in EvalTacnyExpression(state, op.E)) {
           switch(op.Op) {
             case UnaryOpExpr.Opcode.Cardinality:
               if(!(result is IEnumerable)) {
@@ -469,7 +508,7 @@ namespace Tacny {
         if(dexpr.Elements.Count == 0) {
           yield return dexpr.Copy();
         } else {
-          foreach(var item in ResolveDisplayExpression(state, dexpr)) {
+          foreach(var item in EvalDisplayExpression(state, dexpr)) {
             yield return item;
           }
 
@@ -478,11 +517,11 @@ namespace Tacny {
     }
 
 
-    public static IEnumerable<IList<Expression>> ResolveDisplayExpression(ProofState state, DisplayExpression list) {
+    public static IEnumerable<IList<Expression>> EvalDisplayExpression(ProofState state, DisplayExpression list) {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       Contract.Requires<ArgumentNullException>(list != null, "list");
       Contract.Ensures(Contract.Result<IEnumerable<IList<Expression>>>() != null);
-      var dict = list.Elements.ToDictionary(element => element, element => EvaluateTacnyExpression(state, element));
+      var dict = list.Elements.ToDictionary(element => element, element => EvalTacnyExpression(state, element));
       return GenerateList(dict, null);
     }
 
@@ -492,8 +531,8 @@ namespace Tacny {
 
       var tmp = list ?? new List<Expression>();
       var kvp = elements.FirstOrDefault();
-      if (kvp.Equals(default(KeyValuePair<Expression, IEnumerable<Object>>))) {
-        if (list != null)
+      if(kvp.Equals(default(KeyValuePair<Expression, IEnumerable<Object>>))) {
+        if(list != null)
           yield return list;
         else {
           yield return new List<Expression>();
@@ -501,35 +540,36 @@ namespace Tacny {
       } else {
 
         elements.Remove(kvp.Key);
-        foreach (var result in kvp.Value) {
+        foreach(var result in kvp.Value) {
           var resultExpr = result is IVariable ? Util.VariableToExpression(result as IVariable) : result as Expression;
           tmp.Add(resultExpr);
-          foreach (var value in GenerateList(elements, tmp)) {
+          foreach(var value in GenerateList(elements, tmp)) {
             yield return value;
           }
         }
       }
     }
 
-    public static IEnumerable<ProofState> EvaluateSuchThatStmt(AssignSuchThatStmt stmt, ProofState state) {
+    public static IEnumerable<ProofState> EvalSuchThatStmt(AssignSuchThatStmt stmt, ProofState state) {
       var evaluator = new Atomic.SuchThatAtomic();
       return evaluator.Generate(stmt, state);
     }
 
     public static IEnumerable<ProofState> RegisterVariable(TacticVarDeclStmt declaration, ProofState state) {
-      if (declaration.Update == null) yield break;
+      if(declaration.Update == null)
+        yield break;
       var rhs = declaration.Update as UpdateStmt;
-      if (rhs == null) {
+      if(rhs == null) {
         // check if rhs is SuchThatStmt
-        if (declaration.Update is AssignSuchThatStmt) {
-          foreach (var item in declaration.Locals)
-            state.AddLocal(item, null);
-          foreach (var item in EvaluateSuchThatStmt(declaration.Update as AssignSuchThatStmt, state)) {
+        if(declaration.Update is AssignSuchThatStmt) {
+          foreach(var item in declaration.Locals)
+            state.AddTacnyVar(item, null);
+          foreach(var item in EvalSuchThatStmt(declaration.Update as AssignSuchThatStmt, state)) {
             yield return item.Copy();
           }
         } else {
-          foreach (var item in declaration.Locals)
-            state.AddLocal(item, null);
+          foreach(var item in declaration.Locals)
+            state.AddTacnyVar(item, null);
         }
       } else {
         foreach(var item in rhs.Rhss) {
@@ -538,18 +578,18 @@ namespace Tacny {
           var exprRhs = item as ExprRhs;
           if(exprRhs?.Expr is ApplySuffix) {
             var aps = (ApplySuffix)exprRhs.Expr;
-            foreach(var result in EvaluateTacnyExpression(state, aps)) {
-              state.AddLocal(declaration.Locals[index], result);
+            foreach(var result in EvalTacnyExpression(state, aps)) {
+              state.AddTacnyVar(declaration.Locals[index], result);
             }
           } else if(exprRhs?.Expr is Dafny.LiteralExpr) {
-            state.AddLocal(declaration.Locals[index], (Dafny.LiteralExpr)exprRhs?.Expr);
-          } else if(exprRhs?.Expr is Dafny.NameSegment){
-            var name = ((Dafny.NameSegment) exprRhs.Expr).Name;
-            if(state.HasLocalValue(name))
-            // in the case that referring to an exisiting tvar, dereference it
-            state.AddLocal(declaration.Locals[index], state.GetLocalValue(name));
+            state.AddTacnyVar(declaration.Locals[index], (Dafny.LiteralExpr)exprRhs?.Expr);
+          } else if(exprRhs?.Expr is Dafny.NameSegment) {
+            var name = ((Dafny.NameSegment)exprRhs.Expr).Name;
+            if(state.ContainTacnyVal(name))
+              // in the case that referring to an exisiting tvar, dereference it
+              state.AddTacnyVar(declaration.Locals[index], state.GetTacnyVarValue(name));
           } else {
-            state.AddLocal(declaration.Locals[index], exprRhs?.Expr);
+            state.AddTacnyVar(declaration.Locals[index], exprRhs?.Expr);
           }
         }
       }
@@ -561,19 +601,19 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       Contract.Requires<ArgumentException>(state.IsLocalAssignment(us), "stmt");
 
-      foreach (var item in us.Rhss) {
+      foreach(var item in us.Rhss) {
         int index = us.Rhss.IndexOf(item);
         Contract.Assert(us.Lhss.ElementAtOrDefault(index) != null, "register var err");
         var exprRhs = item as ExprRhs;
-        if (exprRhs?.Expr is ApplySuffix) {
+        if(exprRhs?.Expr is ApplySuffix) {
           var aps = (ApplySuffix)exprRhs.Expr;
-          foreach (var result in EvaluateTacnyExpression(state, aps)) {
-            state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, result);
+          foreach(var result in EvalTacnyExpression(state, aps)) {
+            state.UpdateTacnyVar(((NameSegment)us.Lhss[index]).Name, result);
           }
-        } else if (exprRhs?.Expr is Dafny.LiteralExpr) {
-          state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, (Dafny.LiteralExpr)exprRhs?.Expr);
+        } else if(exprRhs?.Expr is Dafny.LiteralExpr) {
+          state.UpdateTacnyVar(((NameSegment)us.Lhss[index]).Name, (Dafny.LiteralExpr)exprRhs?.Expr);
         } else {
-          state.UpdateLocal(((NameSegment)us.Lhss[index]).Name, exprRhs?.Expr);
+          state.UpdateTacnyVar(((NameSegment)us.Lhss[index]).Name, exprRhs?.Expr);
         }
       }
       yield return state.Copy();
@@ -593,3 +633,4 @@ namespace Tacny {
     }
   }
 }
+

@@ -28,7 +28,7 @@ namespace Tacny.Atomic {
         foreach (var item in suchThat.Lhss) {
           if (item is IdentifierExpr) {
             var id = (IdentifierExpr)item;
-            if (state.HasLocalValue(id.Name))
+            if (state.ContainTacnyVal(id.Name))
               locals.Add(id.Name);
             else {
               //TODO: error
@@ -44,7 +44,7 @@ namespace Tacny.Atomic {
       foreach (var local in locals) {
         foreach (var item in ResolveExpression(state, bexp, local)) {
           var copy = state.Copy();
-          copy.UpdateLocal(local, item);
+          copy.UpdateTacnyVar(local, item);
           yield return copy;
         }
       }
@@ -60,7 +60,7 @@ namespace Tacny.Atomic {
           case BinaryExpr.Opcode.In:
            // Contract.Assert(var != null, Error.MkErr(bexp, 6, declaration.Name));
           //  Contract.Assert(var.Name == declaration.Name, Error.MkErr(bexp, 6, var.Name));
-            foreach (var result in Interpreter.EvaluateTacnyExpression(state, bexp.E1)) {
+            foreach (var result in Interpreter.EvalTacnyExpression(state, bexp.E1)) {
               if (result is IEnumerable) {
                 foreach (var item in (IEnumerable)result) {
                   yield return item;
@@ -72,9 +72,9 @@ namespace Tacny.Atomic {
             // for each item in the resolved lhs of the expression
             foreach (var item in ResolveExpression(state, bexp.E0, declaration)) {
               var copy = state.Copy();
-              copy.AddLocal(declaration, item);
+              copy.AddTacnyVar(declaration, item);
               // resolve the rhs expression
-              foreach (var res in Interpreter.EvaluateTacnyExpression(copy, bexp.E1)) {
+              foreach (var res in Interpreter.EvalTacnyExpression(copy, bexp.E1)) {
                 LiteralExpr lit = res as LiteralExpr;
                 // sanity check
                 Contract.Assert(lit != null);

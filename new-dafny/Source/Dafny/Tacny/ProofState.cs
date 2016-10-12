@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics.Contracts;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using Dfy = Microsoft.Dafny;
 using Microsoft.Dafny;
+using Tacny.Language;
 
 namespace Tacny {
   public class ProofState {
@@ -14,13 +17,11 @@ namespace Tacny {
     private readonly Program _original;
     public List<TacticCache> ResultCache;
 
-
-
     // Dynamic State
-    public Dictionary<string, VariableData> DafnyVariables;
     public MemberDecl TargetMethod;
     public ErrorReporter Reporter;
 
+    //not all the eval step requires to be verified, e.g. var decl
     public bool IfVerify { set; get; } = false;
 
     public UpdateStmt TacticApplication;
@@ -41,8 +42,6 @@ namespace Tacny {
     }
     private Stack<Frame> _scope;
 
-
-
     public ProofState(Program program, ErrorReporter reporter, Program unresolvedProgram = null) {
       Contract.Requires(program != null);
       // get a new program instance
@@ -50,7 +49,8 @@ namespace Tacny {
       _topLevelClasses = new List<TopLevelClassDeclaration>();
       Reporter = reporter;
       if (unresolvedProgram == null) {
-        var err = Parser.ParseCheck(new List<string>() { program.Name }, program.Name, out _original);
+        //note the differences between this ParseCheck and the one at the top level. This function only parses but the other one resolves.
+        var err = Parser.ParseOnly(new List<string>() { program.Name }, program.Name, out _original);
         if (err != null)
           reporter.Error(MessageSource.Tacny, program.DefaultModuleDef.tok, $"Error parsing a fresh Tacny program: {err}");
       } else {
@@ -76,13 +76,20 @@ namespace Tacny {
         Reporter.Error(MessageSource.Tacny, tacAps.Tok,
           $"Wrong number of method arguments (got {aps.Args.Count}, expected {tactic.Ins.Count})");
       var frame = new Frame(tactic, Reporter);
+
+      foreach(var item in variables) {
+        if(!frame.ContainDafnyVar(item.Key.Name))
+          frame.AddDafnyVar(item.Key.Name, new VariableData { Variable = item.Key, Type = item.Value });
+        else
+          throw new ArgumentException($"Dafny variable {item.Key.Name} is already declared in the current context");
+      }
+
       for (int index = 0; index < aps.Args.Count; index++) {
         var arg = aps.Args[index];
-        frame.AddLocalVariable(tactic.Ins[index].Name, arg);
+        frame.AddTacnyVar(tactic.Ins[index].Name, arg);
       }
 
       _scope.Push(frame);
-      FillSourceState(variables);
       TacticApplication = tacAps.Copy();
     }
 
@@ -96,10 +103,6 @@ namespace Tacny {
       Contract.Ensures(Contract.Result<Program>() != null);
       var copy = _original.Copy();
       return copy;
-    }
-
-    public Dictionary<IVariable, Dfy.Type> DafnyVars() {
-      return DafnyVariables.ToDictionary(kvp => kvp.Value.Variable, kvp => kvp.Value.Type);
     }
 
     /// <summary>
@@ -140,63 +143,49 @@ namespace Tacny {
       }
     }
 
-    /// <summary>
-    ///   Fill the state information for the program member, from which the tactic call was made
-    /// </summary>
-    /// <param name="variables">Dictionary of key, key type pairs</param>
-    /// <exception cref="ArgumentException">Variable has been declared in the context</exception>
-    public void FillSourceState(Dictionary<IVariable, Dfy.Type> variables) {
-      Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
-      DafnyVariables = new Dictionary<string, VariableData>();
-      foreach (var item in variables) {
-        if (!DafnyVariables.ContainsKey(item.Key.Name))
-          DafnyVariables.Add(item.Key.Name, new VariableData { Variable = item.Key, Type = item.Value });
-        else
-          throw new ArgumentException($"Dafny variable {item.Key.Name} is already declared in the current context");
-      }
-    }
-
-
-    public void AddNewFrames(List<BlockStmt> bodyList, string kind = "default", bool canTermin = false) {
-      //reverse the list to fit the order of the stack, i.e. list[0] should be pused last
-      bodyList.Reverse();
+    
+    public void AddNewFrame(List<Statement> stmts, string kind = "default") {
       var parent = _scope.Peek();
-      foreach (var body in bodyList){
-        _scope.Push(new Frame(parent, body.Body, kind, canTermin));
-      }
+      _scope.Push(new Frame(parent, stmts, kind));
     }
 
-
-    public void AddNewFrame(BlockStmt body, string kind = "default", bool canTerminate = true) {
-      Contract.Requires<ArgumentNullException>(body != null, "body");
-      var bodyList = new List<BlockStmt>();
-      bodyList.Add(body);
-      AddNewFrames(bodyList, kind, true);
-    }
-
+/*
     public bool RemoveFrame() {
-      List<Statement> generatedStmt;
-      try {
-        switch (_scope.Peek().BlockKind){
-          case "TacnyCasesBlockStmt":
-            //TODO: call the generated function to gen the blcokstmt code
-            generatedStmt = _scope.Peek().GetGeneratedCode();
-            break;
-          default:
-            generatedStmt = _scope.Peek().GetGeneratedCode();
-            break;
-        }
+      // at least one frame in the proof state
+      if (_scope.Count > 1){
         _scope.Pop();
-        if (generatedStmt.Count != 0)
-          _scope.Peek().AddGeneratedCode(generatedStmt);
         return true;
-      } catch (InvalidOperationException) {
-        return false;
       }
+      return false;
+    }
+  */ 
+
+    public void MarkCurFrameAsTerminated() {
+      //assmeb code in the top frame
+      _scope.Peek().MarkAsVerified();
+
+      // add the assembled code to the parent frame
+      if(_scope.Peek().Parent != null) {
+        _scope.Peek().Parent.AddGeneratedCode(_scope.Peek().GetAssembledCode());
+        _scope.Pop();
+        if (_scope.Peek().IsTerminated())
+          MarkCurFrameAsTerminated();
+      }
+    }
+
+    // various getters
+    #region GETTERS
+
+    /// <summary>
+    /// a proof state is verified if there is only one frame in the stack and _genratedCode is not null (raw code are assembled)
+    /// </summary>
+    /// <returns></returns>
+    public bool IsVerified() {
+      return _scope.Count == 1 && _scope.Peek().GetAssembledCode() != null;
     }
 
     /// <summary>
-    /// Check if the current frame is fully interpreted
+    /// Check if the current frame is fully interpreted by tracking counts of stmts
     /// </summary>
     /// <returns></returns>
     public bool IsEvaluated() {
@@ -204,19 +193,48 @@ namespace Tacny {
     }
 
     /// <summary>
-    /// Check if the frame on top of the stack is partially evaluated
+    /// TODO
     /// </summary>
     /// <returns></returns>
     public bool IsPartiallyEvaluated() {
       return _scope.Peek().IsPartiallyEvaluated;
     }
 
-    // various getters
-    #region GETTERS
+    public string GetCurFrameTyp(){
+      return _scope.Peek().WhatKind;
+    }
 
     public List<Statement> GetGeneratedCode() {
-      Contract.Ensures(Contract.Result<List<Statement>>() != null);
+     // Contract.Ensures(Contract.Result<List<Statement>>() != null);
       return _scope.Peek().GetGeneratedCode();
+    }
+
+    public List<List<Statement>> GetGeneratedaRawCode() {
+     // Contract.Ensures(Contract.Result<List<Statement>>() != null);
+      return _scope.Peek().GetRawCode();
+    }
+
+
+    /// <summary>
+    ///   Check if Dafny key exists in the current context
+    /// </summary>
+    /// <param name="key">Variable name</param>
+    /// <returns>bool</returns>
+    public bool ContainDafnyVar(string key) {
+      Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
+      return _scope.Peek().ContainDafnyVar(key);
+    }
+
+
+    /// <summary>
+    ///   Check if Dafny key exists in the current context
+    /// </summary>
+    /// <param name="key">Variable</param>
+    /// <returns>bool</returns>
+
+   public bool ContainDafnyVar(NameSegment key) {
+      Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
+      return ContainDafnyVar(key.Name);
     }
 
     /// <summary>
@@ -225,11 +243,11 @@ namespace Tacny {
     /// <param name="key">Variable name</param>
     /// <returns>bool</returns>
     /// <exception cref="KeyNotFoundException">Variable does not exist in the current context</exception>
-    public IVariable GetVariable(string key) {
+    public IVariable GetDafnyVar(string key) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
       Contract.Ensures(Contract.Result<IVariable>() != null);
-      if (DafnyVariables.ContainsKey(key))
-        return DafnyVariables[key].Variable;
+      if(ContainDafnyVar(key))
+        return _scope.Peek().GetDafnyVariableData(key).Variable;
       throw new KeyNotFoundException($"Dafny variable {key} does not exist in the current context");
     } 
     
@@ -239,30 +257,17 @@ namespace Tacny {
     /// <param name="key">Variable name</param>
     /// <returns>bool</returns>
     /// <exception cref="KeyNotFoundException">Variable does not exist in the current context</exception>
-    public IVariable GetVariable(NameSegment key) {
+    public IVariable GetDafnyVar(NameSegment key) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
       Contract.Ensures(Contract.Result<IVariable>() != null);
-      return GetVariable(key.Name);
+      return GetDafnyVar(key.Name);
     }
-
     /// <summary>
-    ///   Check if Dafny key exists in the current context
+    /// get a dictionary containing all the dafny variable in current scope, including all the frame. If the variable will be ignore, if it confilts with some other top frames
     /// </summary>
-    /// <param name="key">Variable</param>
-    /// <returns>bool</returns>
-    public bool ContainsVariable(NameSegment key) {
-      Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
-      return ContainsVariable(key.Name);
-    }
-    
-    /// <summary>
-    ///   Check if Dafny key exists in the current context
-    /// </summary>
-    /// <param name="key">Variable name</param>
-    /// <returns>bool</returns>
-    public bool ContainsVariable(string key) {
-      Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
-      return DafnyVariables.ContainsKey(key);
+    /// <returns></returns>
+    public Dictionary<string, VariableData> GetAllDafnyVars() {
+      return _scope.Peek().GetAllDafnyVars(new Dictionary<string, VariableData>());
     }
 
     /// <summary>
@@ -271,10 +276,10 @@ namespace Tacny {
     /// <param name="variable">key</param>
     /// <returns>null if type is not known</returns>
     /// <exception cref="KeyNotFoundException">Variable does not exist in the current context</exception>
-    public Dfy.Type GetVariableType(IVariable variable) {
+    public Dfy.Type GetDafnyVarType(IVariable variable) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(variable));
       Contract.Ensures(Contract.Result<Dfy.Type>() != null);
-      return GetVariableType(variable.Name);
+      return GetDafnyVarType(variable.Name);
     }
 
     /// <summary>
@@ -283,11 +288,11 @@ namespace Tacny {
     /// <param name="key">name of the key</param>
     /// <returns>null if type is not known</returns>
     /// <exception cref="KeyNotFoundException">Variable does not exist in the current context</exception>
-    public Dfy.Type GetVariableType(string key) {
+    public Dfy.Type GetDafnyVarType(string key) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
       Contract.Ensures(Contract.Result<Dfy.Type>() != null);
-      if (DafnyVariables.ContainsKey(key))
-        return DafnyVariables[key].Type;
+      if (ContainDafnyVar(key))
+        return GetDafnyVar(key).Type;
       throw new KeyNotFoundException($"Dafny variable {key} does not exist in the current context");
     }
 
@@ -296,10 +301,10 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public object GetLocalValue(NameSegment key) {
+    public object GetTacnyVarValue(NameSegment key) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
       Contract.Ensures(Contract.Result<object>() != null);
-      return GetLocalValue(key.Name);
+      return GetTacnyVarValue(key.Name);
     }
 
     /// <summary>
@@ -307,15 +312,15 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public object GetLocalValue(string key) {
+    public object GetTacnyVarValue(string key) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
       Contract.Ensures(Contract.Result<object>() != null);
-      return _scope.Peek().GetLocalValue(key);
+      return _scope.Peek().GetTacnyValData(key);
     }
 
-    public bool HasLocalValue(NameSegment key) {
+    public bool ContainTacnyVal(NameSegment key) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
-      return HasLocalValue(key.Name);
+      return ContainTacnyVal(key.Name);
     }
 
     /// <summary>
@@ -323,9 +328,9 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public bool HasLocalValue(string key) {
+    public bool ContainTacnyVal(string key) {
       Contract.Requires<ArgumentNullException>(!string.IsNullOrEmpty(key), "key");
-      return _scope.Peek().HasLocal(key);
+      return _scope.Peek().ContainTacnyVars(key);
     }
 
     private ITactic GetTactic(string name) {
@@ -395,10 +400,6 @@ namespace Tacny {
     }
     #endregion HELPERS
 
-    public bool IsCurrentCntlTermianted(){
-      return _scope.Peek().CanTerminate;
-    }
-
     /// <summary>
     /// Check in an updateStmt is local assignment
     /// </summary>
@@ -411,7 +412,7 @@ namespace Tacny {
       foreach (var lhs in us.Lhss) {
         if (!(lhs is NameSegment))
           return false;
-        if (!_scope.Peek().IsDeclared((lhs as NameSegment).Name))
+        if (!_scope.Peek().ContainTacnyVars((lhs as NameSegment).Name))
           return false;
       }
 
@@ -422,19 +423,7 @@ namespace Tacny {
     public bool IsArgumentApplication(UpdateStmt us) {
       Contract.Requires<ArgumentNullException>(us != null, "us");
       var ns = Util.GetNameSegment(us);
-      return _scope.Peek().HasLocal(ns);
-    }
-
-
-    /// <summary>
-    /// Add a varialbe to the top level frame
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="value"></param>
-    public void AddLocal(IVariable key, object value) {
-      Contract.Requires<ArgumentNullException>(key != null, "key");
-      Contract.Requires<ArgumentException>(!HasLocalValue(key.Name));
-      AddLocal(key.Name, value);
+      return _scope.Peek().ContainTacnyVars(ns.Name);
     }
 
     /// <summary>
@@ -442,10 +431,21 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    public void AddLocal(string key, object value) {
+    public void AddTacnyVar(IVariable key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
-      Contract.Requires<ArgumentException>(!HasLocalValue(key));
-      _scope.Peek().AddLocalVariable(key, value);
+      Contract.Requires<ArgumentException>(!ContainTacnyVal(key.Name));
+      AddTacnyVar(key.Name, value);
+    }
+
+    /// <summary>
+    /// Add a varialbe to the top level frame
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    public void AddTacnyVar(string key, object value) {
+      Contract.Requires<ArgumentNullException>(key != null, "key");
+      Contract.Requires<ArgumentException>(!ContainTacnyVal(key));
+      _scope.Peek().AddTacnyVar(key, value);
     }
 
     /// <summary>
@@ -453,9 +453,9 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    public void UpdateLocal(IVariable key, object value) {
+    public void UpdateTacnyVar(IVariable key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
-      UpdateLocal(key.Name, value);
+      UpdateTacnyVar(key.Name, value);
     }
 
     /// <summary>
@@ -463,11 +463,19 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    public void UpdateLocal(string key, object value) {
+    public void UpdateTacnyVar(string key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
-      _scope.Peek().UpdateVariable(key, value);
+      _scope.Peek().UpdateLocalTacnyVar(key, value);
     }
 
+    /// <summary>
+    /// add a dafny variable to the top frame
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="var"></param>
+    public void AddDafnyVar(string name, VariableData var){
+      _scope.Peek().AddDafnyVar(name, var);
+    }
     /// <summary>
     /// Add new dafny stmt to the top frame
     /// </summary>
@@ -518,18 +526,21 @@ namespace Tacny {
       // for some special blck, sucha as caseblock, it need to construct a new block stmt and then return
       // based on the BlcokKind, the sysytem will call the related TBlockStmtCOdeGenerator to handle this varation
       private int _bodyCounter;
-      public readonly string BlockKind; 
+      public readonly string WhatKind; 
       public Statement CurStmt => _bodyCounter >= Body.Count ? null : Body[_bodyCounter];
       public readonly Frame Parent;
-      private readonly Dictionary<string, object> _declaredVariables;
+      private readonly Dictionary<string, object> _declaredVariables; // tacny variables
+      private readonly Dictionary<string, VariableData> _DafnyVariables; // dafny variables
       public readonly ITactic ActiveTactic;
       public bool IsPartiallyEvaluated { get; set; } = false;
       public bool IsEvaluated => _bodyCounter >= Body.Count;
       public TacticInformation TacticInfo;
-      private readonly List<Statement> _generatedCode;
+      //a funtion with the right kind will be able to th generated code to List of statment
+      private List<Statement> _generatedCode;
+      //store the tempratry code to be combined, e.g. case statments for match
+      private readonly List<List<Statement>> _rawCodeList;
 
       private readonly ErrorReporter _reporter;
-      public readonly bool CanTerminate;
 
       /// <summary>
       /// Initialize the top level frame
@@ -548,41 +559,32 @@ namespace Tacny {
         ParseTacticAttributes(((MemberDecl)ActiveTactic).Attributes);
         _reporter = reporter;
         _declaredVariables = new Dictionary<string, object>();
-        _generatedCode = new List<Statement>();
-        CanTerminate = true;
-        BlockKind = "default";
+        _DafnyVariables = new Dictionary<string, VariableData>();
+        _generatedCode = null;
+        _rawCodeList = new List<List<Statement>>();
+        WhatKind = "default";
       }
 
-      public Frame(Frame parent, List<Statement> body, string kind, bool canTermin) {
+      public Frame(Frame parent, List<Statement> body, string kind) {
         Contract.Requires<ArgumentNullException>(parent != null);
         Contract.Requires<ArgumentNullException>(tcce.NonNullElements(body), "body");
         // carry over the tactic info
         TacticInfo = parent.TacticInfo;
         Body = body;
         _declaredVariables = new Dictionary<string, object>();
+        _DafnyVariables = new Dictionary<string, VariableData>();
         Parent = parent;
         ActiveTactic = parent.ActiveTactic;
         _reporter = parent._reporter;
-        CanTerminate = canTermin;
-        BlockKind = kind;
+        _generatedCode = null;
+        _rawCodeList = new List<List<Statement>>();
+        WhatKind = kind;
       }
 
       public bool IncCounter() {
         _bodyCounter++;
         return _bodyCounter + 1 < Body.Count;
       }
-
-      internal List<Statement> GetGeneratedCode() {
-        Contract.Ensures(Contract.Result<List<Statement>>() != null);
-        if (Parent == null)
-          return _generatedCode.Copy();
-        else{
-          var code = Parent.GetGeneratedCode();
-          code.AddRange(_generatedCode);
-          return code;
-        }
-      }
-
 
       private void ParseTacticAttributes(Attributes attr) {
         // incase TacticInformation is not created
@@ -614,87 +616,191 @@ namespace Tacny {
       }
 
       [Pure]
-      internal bool IsDeclared(string name) {
+
+      internal VariableData GetLocalDafnyVar(string name) {
+        //Contract.Requires(_DafnyVariables.ContainsKey(name));
+        return _DafnyVariables[name];
+      }
+
+      internal void AddDafnyVar(string name, VariableData var) {
+        Contract.Requires<ArgumentNullException>(name != null, "key");
+        if(_DafnyVariables.All(v => v.Key != name)) {
+          _DafnyVariables.Add(name, var);
+        } else {
+          throw new ArgumentException($"dafny var {name} is already declared in the scope");
+        }
+      }
+
+      internal bool ContainDafnyVar(string name) {
+        Contract.Requires<ArgumentNullException>(name != null, "name");
+        // base case
+        if(Parent == null)
+          return _DafnyVariables.Any(kvp => kvp.Key == name);
+        return _DafnyVariables.Any(kvp => kvp.Key == name) || Parent.ContainDafnyVar(name);
+      }
+
+
+      internal VariableData GetDafnyVariableData(string name){
+//     Contract.Requires(ContainDafnyVars(name));
+        if (_DafnyVariables.ContainsKey(name))
+          return _DafnyVariables[name];
+        else{
+          return Parent.GetDafnyVariableData(name);
+        }
+      }
+
+      internal Dictionary<string, VariableData> GetAllDafnyVars(Dictionary<string, VariableData> toDict){
+        _DafnyVariables.Where(x => !toDict.ContainsKey(x.Key)).ToList().ForEach(x => toDict.Add(x.Key, x.Value));
+        if (Parent == null)
+          return toDict;
+        else{
+          return Parent.GetAllDafnyVars(toDict);
+        }
+      }
+
+
+      internal bool ContainTacnyVars(string name) {
         Contract.Requires<ArgumentNullException>(name != null, "name");
         // base case
         if (Parent == null)
           return _declaredVariables.Any(kvp => kvp.Key == name);
-        return _declaredVariables.Any(kvp => kvp.Key == name) || Parent.IsDeclared(name);
+        return _declaredVariables.Any(kvp => kvp.Key == name) || Parent.ContainTacnyVars(name);
       }
 
-      internal void AddLocalVariable(string variable, object value) {
+      internal void AddTacnyVar(string variable, object value) {
         Contract.Requires<ArgumentNullException>(variable != null, "key");
-        if (!_declaredVariables.Any(v => v.Key == variable)) {
+        if (_declaredVariables.All(v => v.Key != variable)) {
           _declaredVariables.Add(variable, value);
         } else {
-          throw new ArgumentException($"{variable} is already declared in the scope");
+          throw new ArgumentException($"tacny var {variable} is already declared in the scope");
         }
       }
 
-      internal void UpdateVariable(IVariable key, object value) {
+      internal void UpdateLocalTacnyVar(IVariable key, object value) {
         Contract.Requires<ArgumentNullException>(key != null, "key");
-        Contract.Requires<ArgumentException>(IsDeclared(key.Name));//, $"{key} is not declared in the current scope".ToString());
-        UpdateVariable(key.Name, value);
+        Contract.Requires<ArgumentException>(ContainTacnyVars(key.Name));//, $"{key} is not declared in the current scope".ToString());
+        UpdateLocalTacnyVar(key.Name, value);
       }
 
-      internal void UpdateVariable(string key, object value) {
+      internal void UpdateLocalTacnyVar(string key, object value) {
         Contract.Requires<ArgumentNullException>(key != null, "key");
-        Contract.Requires<ArgumentException>(IsDeclared(key));//, $"{key} is not declared in the current scope");
-        // base case
-        if (Parent == null) {
-          // this is safe otherwise the contract would fail
-          _declaredVariables[key] = value;
-        } else {
-          if (_declaredVariables.ContainsKey(key))
-            _declaredVariables[key] = value;
-          else {
-            Parent.UpdateVariable(key, value);
-          }
-        }
+        //Contract.Requires<ArgumentException>(_declaredVariables.ContainsKey(key));
+         _declaredVariables[key] = value;
       }
 
-      internal object GetLocalValue(string key) {
-        Contract.Requires<ArgumentNullException>(key != null, "key");
-        Contract.Requires<ArgumentException>(IsDeclared(key));
+      internal object GetTacnyValData(string name) {
+        Contract.Requires<ArgumentNullException>(name != null, "key");
+        //Contract.Requires<ArgumentException>(ContainTacnyVars(key));
         Contract.Ensures(Contract.Result<object>() != null);
-        return Parent == null ? _declaredVariables[key] : Parent.GetLocalValue(key);
+        if (_declaredVariables.ContainsKey(name))
+          return _declaredVariables[name];
+        else{
+          return Parent.GetTacnyValData(name);
+        }
       }
 
-      internal bool HasLocal(NameSegment key) {
-        Contract.Requires<ArgumentNullException>(key != null, "key");
-        return HasLocal(key.Name);
-      }
-
-      internal bool HasLocal(string key) {
-        Contract.Requires<ArgumentNullException>(key != null, "key");
-        return Parent?.HasLocal(key) ?? _declaredVariables.ContainsKey(key);
-      }
 
 
 
       /// <summary>
-      /// Add new dafny stmt to the top level frame
+      /// Add new dafny stmt to the current frame
       /// </summary>
       /// <param name="newStmt"></param>
       internal void AddGeneratedCode(Statement newStmt) {
-       // if (Parent == null)
-          _generatedCode.Add(newStmt);
-       // else
-       //   Parent.AddGeneratedCode(newStmt);
+        var l = new List<Statement>();
+        l.Add(newStmt);
+        _rawCodeList.Add(l);
       }
 
       /// <summary>
-      /// Add new dafny stmt to the top level frame
+      /// Add new dafny stmt to the current frame
       /// </summary>
       /// <param name="newStmt"></param>
       internal void AddGeneratedCode(List<Statement> newStmt) {
-      // if (Parent == null)
-          _generatedCode.AddRange(newStmt);
-      //  else
-      //    Parent.AddGeneratedCode(newStmt);
-  
+        _rawCodeList.Add(newStmt);
       }
 
+      /// <summary>
+      /// assemble the list of stataemnt list (raw code) to statment list, depending on the current frame kind
+      /// </summary>
+      /// <returns></returns>
+      internal static List<Statement> AssembleStmts(List<List<Statement>> raw, string whatKind){
+        List<Statement> code;
+
+        switch(whatKind) {
+          case "tmatch":
+            code = Match.Assemble(raw);          
+            break;
+          default:
+            code = raw.SelectMany(x => x).ToList();
+            break;
+        }
+        return code;
+      }
+
+      // only call it after verification is successful, this check if the current frame is terminated, after the poped child frame is termianted
+      internal bool IsTerminated() {
+        bool ret;
+
+        switch(WhatKind) {
+          case "tmatch":
+            ret = Match.IsTerminated(_rawCodeList);
+            break;
+          default:
+            ret = true;
+            break;
+        }
+        return ret;
+      }
+
+
+      internal void MarkAsVerified() {
+        _generatedCode = AssembleStmts(_rawCodeList, WhatKind);
+      }
+
+      internal List<List<Statement>> GetRawCode(){
+        return _rawCodeList;
+      }
+      internal List<Statement> GetAssembledCode(){
+        return _generatedCode;
+      }
+
+      internal List<Statement> GetGeneratedCode(List<Statement> stmts = null){
+        var code = GetGeneratedCode0(stmts);
+        /*
+        Printer p = new Printer(Console.Out);
+        Console.WriteLine("--- Print out the generated code:");
+        foreach (var x in code){
+          p.PrintStatement(x, 1);
+          Console.Write("\n");
+        }
+        Console.WriteLine("--- End of printing");
+        */
+        return code;
+      }
+
+      internal List<Statement> GetGeneratedCode0(List<Statement> stmts = null ) {
+        Contract.Ensures(Contract.Result<List<Statement>>() != null);
+        List<Statement> code;
+        if (_generatedCode != null) // terminated, so just use the assembly code
+          code = _generatedCode;
+        else if (stmts != null){ // for the case when code are addded by child, and the child has assembly the code for parent
+          code = stmts;
+        }
+        else{ // new code from child and not terminated, assmeble now
+          code = AssembleStmts(_rawCodeList, WhatKind);
+        }
+          
+        if(Parent == null)
+          return code.Copy();
+        else {
+          // parent is always not yet terminated, so assmebly code for it
+          var parRawCode = Parent._rawCodeList.Copy();
+          parRawCode.Add(code);
+          var parCode = AssembleStmts(parRawCode, Parent.WhatKind);
+          return Parent.GetGeneratedCode0(parCode);
+        }
+      }
     }
 
     public class VariableData {

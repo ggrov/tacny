@@ -1527,9 +1527,6 @@ namespace Dare
 
         private bool SimplifyCalcs(MemberDecl member)
         {
-            if (_index == 13) {
-                Console.WriteLine("test");
-            }
             var calcs = _allRemovableTypes.RemovableTypesInMethods[member].Calcs;
             if (calcs.Count == 0) return true;
 

@@ -170,19 +170,28 @@ namespace Microsoft.Dafny
       }
       
       Dafny.Program dafnyProgram;
+      Resolver r = null;
       string programName = dafnyFileNames.Count == 1 ? dafnyFileNames[0] : "the program";
-      string err = Dafny.Main.ParseCheck(dafnyFileNames, programName, reporter, out dafnyProgram);
-      if (err != null) {
+
+      //Same as ParseCheck, except for the instance of out Resolver 
+      string err = Dafny.Main.Parse(dafnyFileNames, programName, reporter, out dafnyProgram);
+      if (err == null){
+         err = Dafny.Main.Resolve(dafnyProgram, reporter, out r);
+      }
+      
+      if(err != null) {
         exitValue = ExitValue.DAFNY_ERROR;
         ExecutionEngine.printer.ErrorWriteLine(Console.Out, err);
       } else if (dafnyProgram != null && !CommandLineOptions.Clo.NoResolve && !CommandLineOptions.Clo.NoTypecheck
           && DafnyOptions.O.DafnyVerify) {
+   
+        Bpl.Program boogieProgram = Translate(dafnyProgram, r);
 
-        Bpl.Program boogieProgram = Translate(dafnyProgram);
 
         PipelineStatistics stats;
         PipelineOutcome oc;
         var verified = Boogie(dafnyFileNames, boogieProgram, programId, out stats, out oc);
+
         Compile(dafnyFileNames[0], otherFileNames, dafnyProgram, oc, stats, verified);
 
         exitValue = verified ? ExitValue.VERIFIED : ExitValue.NOT_VERIFIED;
@@ -197,10 +206,10 @@ namespace Microsoft.Dafny
       return exitValue;
     }
 
-    public static Bpl.Program Translate(Program dafnyProgram)
+    public static Bpl.Program Translate(Program dafnyProgram, Resolver r = null)
     {
       Dafny.Translator translator = new Dafny.Translator(dafnyProgram.reporter);
-      Bpl.Program boogieProgram = translator.Translate(dafnyProgram);
+      Bpl.Program boogieProgram = translator.Translate(dafnyProgram, null, r);
       if (CommandLineOptions.Clo.PrintFile != null)
       {
         ExecutionEngine.PrintBplFile(CommandLineOptions.Clo.PrintFile, boogieProgram, false, false, CommandLineOptions.Clo.PrettyPrint);
