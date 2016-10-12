@@ -309,7 +309,7 @@ namespace Tacny {
             // not sure what this is for
           }
           else if (state.IsTacticCall(us)){
-            enumerable = ApplyNestedTactic(state.Copy(), state.DafnyVars(), us);
+            //enumerable = ApplyNestedTactic(state.Copy(), state.DafnyVars(), us);
           }
           else{
 // apply atomic
@@ -392,19 +392,21 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(expr != null, "expr");
       if(expr is NameSegment) {
         var ns = (NameSegment)expr;
-        if(state.HasLocalValue(ns.Name)) {
-          yield return state.GetLocalValue(ns.Name);
+        if(state.ContainTacnyVal(ns.Name)) {
+          yield return state.GetTacnyVarValue(ns.Name);
         } else {
           yield return ns;
         }
       } else if(expr is ApplySuffix) {
         var aps = (ApplySuffix)expr;
         if(state.IsTacticCall(aps)) {
+          /*
           var us = new UpdateStmt(aps.tok, aps.tok, new List<Expression>() { aps.Lhs },
             new List<AssignmentRhs>() { new ExprRhs(aps) });
           foreach(var item in ApplyNestedTactic(state, state.DafnyVars(), us).Select(x => x.GetGeneratedCode())) {
             yield return item;
           }
+          */
         } else if(aps.Lhs is ExprDotName) {
           foreach(var item in EvalTacnyExpression(state, aps.Lhs)) {
             if(item is Expression) {
@@ -457,8 +459,8 @@ namespace Tacny {
       } else if(expr is ExprDotName) {
         var edn = (ExprDotName)expr;
         var ns = edn.Lhs as NameSegment;
-        if(ns != null && state.ContainsVariable(ns)) {
-          var newLhs = state.GetLocalValue(ns);
+        if(ns != null && state.ContainDafnyVar(ns)) {
+          var newLhs = state.GetTacnyVarValue(ns);
           var lhs = newLhs as Expression;
           if(lhs != null)
             yield return new ExprDotName(edn.tok, lhs, edn.SuffixName, edn.OptTypeArguments);
@@ -582,9 +584,9 @@ namespace Tacny {
             state.AddLocal(declaration.Locals[index], (Dafny.LiteralExpr)exprRhs?.Expr);
           } else if(exprRhs?.Expr is Dafny.NameSegment) {
             var name = ((Dafny.NameSegment)exprRhs.Expr).Name;
-            if(state.HasLocalValue(name))
+            if(state.ContainTacnyVal(name))
               // in the case that referring to an exisiting tvar, dereference it
-              state.AddLocal(declaration.Locals[index], state.GetLocalValue(name));
+              state.AddLocal(declaration.Locals[index], state.GetTacnyVarValue(name));
           } else {
             state.AddLocal(declaration.Locals[index], exprRhs?.Expr);
           }

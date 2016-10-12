@@ -12,7 +12,7 @@ namespace Tacny.EAtomic {
     public override int ArgsCount => 0;
 
     public override IEnumerable<object> Generate(Expression expression, ProofState proofState) {
-      var vars = proofState.DafnyVariables.Values.ToList();
+      var vars = proofState.GetAllDafnyVars().Values.ToList();
       yield return vars.Select(x => x.Variable).ToList();
     }
   }

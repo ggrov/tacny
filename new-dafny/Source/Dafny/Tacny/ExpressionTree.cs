@@ -470,8 +470,8 @@ namespace Tacny {
       foreach (var leaf in leafs) {
         if (leaf is NameSegment) {
           var ns = leaf as NameSegment;
-          if (state.HasLocalValue(ns)) {
-            var local = state.GetLocalValue(ns);
+          if (state.ContainTacnyVal(ns)) {
+            var local = state.GetTacnyVarValue(ns);
             if (local is ApplySuffix || local is IVariable || local is NameSegment || local is Statement)
               return false;
           } else {

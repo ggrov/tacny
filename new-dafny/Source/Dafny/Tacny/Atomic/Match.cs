@@ -117,9 +117,9 @@ namespace Tacny.Atomic {
 
       //TODO: need to check the datatype pf caseGuard, 
       // also need to consider the case that caseVar is a tac var
-      var srcVar = state.GetLocalValue(caseVar) as NameSegment;
-      var srcVarData = state.GetVariable(srcVar.Name);
-      var datatype = state.GetVariableType(srcVar.Name).AsDatatype;
+      var srcVar = state.GetTacnyVarValue(caseVar) as NameSegment;
+      var srcVarData = state.GetDafnyVar(srcVar.Name);
+      var datatype = state.GetDafnyVarType(srcVar.Name).AsDatatype;
 
 
       //generate a test program to check which cases need to apply tacny
@@ -171,9 +171,9 @@ namespace Tacny.Atomic {
 
       //TODO: need to check the datatype pf caseGuard, 
       // also need to consider the case that caseVar is a tac var
-      var srcVar = state.GetLocalValue(caseVar) as NameSegment;
-      var srcVarData = state.GetVariable(srcVar.Name);
-      var datatype = state.GetVariableType(srcVar.Name).AsDatatype;
+      var srcVar = state.GetTacnyVarValue(caseVar) as NameSegment;
+      var srcVarData = state.GetDafnyVar(srcVar.Name);
+      var datatype = state.GetDafnyVarType(srcVar.Name).AsDatatype;
 
 
       //generate a test program to check which cases need to apply tacny

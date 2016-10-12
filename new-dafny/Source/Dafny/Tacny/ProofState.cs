@@ -17,7 +17,6 @@ namespace Tacny {
     public List<TacticCache> ResultCache;
 
     // Dynamic State
-    public Dictionary<string, VariableData> DafnyVariables;
     public MemberDecl TargetMethod;
     public ErrorReporter Reporter;
 
@@ -76,13 +75,20 @@ namespace Tacny {
         Reporter.Error(MessageSource.Tacny, tacAps.Tok,
           $"Wrong number of method arguments (got {aps.Args.Count}, expected {tactic.Ins.Count})");
       var frame = new Frame(tactic, Reporter);
+
+      foreach(var item in variables) {
+        if(!frame.ContainDafnyVar(item.Key.Name))
+          frame.AddDafnyVar(item.Key.Name, new VariableData { Variable = item.Key, Type = item.Value });
+        else
+          throw new ArgumentException($"Dafny variable {item.Key.Name} is already declared in the current context");
+      }
+
       for (int index = 0; index < aps.Args.Count; index++) {
         var arg = aps.Args[index];
-        frame.AddLocalVariable(tactic.Ins[index].Name, arg);
+        frame.AddTacnyVar(tactic.Ins[index].Name, arg);
       }
 
       _scope.Push(frame);
-      FillSourceState(variables);
       TacticApplication = tacAps.Copy();
     }
 
@@ -96,10 +102,6 @@ namespace Tacny {
       Contract.Ensures(Contract.Result<Program>() != null);
       var copy = _original.Copy();
       return copy;
-    }
-
-    public Dictionary<IVariable, Dfy.Type> DafnyVars() {
-      return DafnyVariables.ToDictionary(kvp => kvp.Value.Variable, kvp => kvp.Value.Type);
     }
 
     /// <summary>
@@ -137,22 +139,6 @@ namespace Tacny {
           if (dd != null)
             Datatypes.Add(dd.Name, dd);
         }
-      }
-    }
-
-    /// <summary>
-    ///   Fill the state information for the program member, from which the tactic call was made
-    /// </summary>
-    /// <param name="variables">Dictionary of key, key type pairs</param>
-    /// <exception cref="ArgumentException">Variable has been declared in the context</exception>
-    public void FillSourceState(Dictionary<IVariable, Dfy.Type> variables) {
-      Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
-      DafnyVariables = new Dictionary<string, VariableData>();
-      foreach (var item in variables) {
-        if (!DafnyVariables.ContainsKey(item.Key.Name))
-          DafnyVariables.Add(item.Key.Name, new VariableData { Variable = item.Key, Type = item.Value });
-        else
-          throw new ArgumentException($"Dafny variable {item.Key.Name} is already declared in the current context");
       }
     }
 
@@ -223,16 +209,38 @@ namespace Tacny {
     }
 
     /// <summary>
+    ///   Check if Dafny key exists in the current context
+    /// </summary>
+    /// <param name="key">Variable name</param>
+    /// <returns>bool</returns>
+    public bool ContainDafnyVar(string key) {
+      Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
+      return _scope.Peek().ContainDafnyVar(key);
+    }
+
+
+    /// <summary>
+    ///   Check if Dafny key exists in the current context
+    /// </summary>
+    /// <param name="key">Variable</param>
+    /// <returns>bool</returns>
+
+   public bool ContainDafnyVar(NameSegment key) {
+      Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
+      return ContainDafnyVar(key.Name);
+    }
+
+    /// <summary>
     ///   Return Dafny key
     /// </summary>
     /// <param name="key">Variable name</param>
     /// <returns>bool</returns>
     /// <exception cref="KeyNotFoundException">Variable does not exist in the current context</exception>
-    public IVariable GetVariable(string key) {
+    public IVariable GetDafnyVar(string key) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
       Contract.Ensures(Contract.Result<IVariable>() != null);
-      if (DafnyVariables.ContainsKey(key))
-        return DafnyVariables[key].Variable;
+      if(ContainDafnyVar(key))
+        return _scope.Peek().GetDafnyVariableData(key).Variable;
       throw new KeyNotFoundException($"Dafny variable {key} does not exist in the current context");
     } 
     
@@ -242,30 +250,17 @@ namespace Tacny {
     /// <param name="key">Variable name</param>
     /// <returns>bool</returns>
     /// <exception cref="KeyNotFoundException">Variable does not exist in the current context</exception>
-    public IVariable GetVariable(NameSegment key) {
+    public IVariable GetDafnyVar(NameSegment key) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
       Contract.Ensures(Contract.Result<IVariable>() != null);
-      return GetVariable(key.Name);
+      return GetDafnyVar(key.Name);
     }
-
     /// <summary>
-    ///   Check if Dafny key exists in the current context
+    /// get a dictionary containing all the dafny variable in current scope, including all the frame. If the variable will be ignore, if it confilts with some other top frames
     /// </summary>
-    /// <param name="key">Variable</param>
-    /// <returns>bool</returns>
-    public bool ContainsVariable(NameSegment key) {
-      Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
-      return ContainsVariable(key.Name);
-    }
-    
-    /// <summary>
-    ///   Check if Dafny key exists in the current context
-    /// </summary>
-    /// <param name="key">Variable name</param>
-    /// <returns>bool</returns>
-    public bool ContainsVariable(string key) {
-      Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
-      return DafnyVariables.ContainsKey(key);
+    /// <returns></returns>
+    public Dictionary<string, VariableData> GetAllDafnyVars() {
+      return _scope.Peek().GetAllDafnyVars(new Dictionary<string, VariableData>());
     }
 
     /// <summary>
@@ -274,10 +269,10 @@ namespace Tacny {
     /// <param name="variable">key</param>
     /// <returns>null if type is not known</returns>
     /// <exception cref="KeyNotFoundException">Variable does not exist in the current context</exception>
-    public Dfy.Type GetVariableType(IVariable variable) {
+    public Dfy.Type GetDafnyVarType(IVariable variable) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(variable));
       Contract.Ensures(Contract.Result<Dfy.Type>() != null);
-      return GetVariableType(variable.Name);
+      return GetDafnyVarType(variable.Name);
     }
 
     /// <summary>
@@ -286,11 +281,11 @@ namespace Tacny {
     /// <param name="key">name of the key</param>
     /// <returns>null if type is not known</returns>
     /// <exception cref="KeyNotFoundException">Variable does not exist in the current context</exception>
-    public Dfy.Type GetVariableType(string key) {
+    public Dfy.Type GetDafnyVarType(string key) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(key));
       Contract.Ensures(Contract.Result<Dfy.Type>() != null);
-      if (DafnyVariables.ContainsKey(key))
-        return DafnyVariables[key].Type;
+      if (ContainDafnyVar(key))
+        return GetDafnyVar(key).Type;
       throw new KeyNotFoundException($"Dafny variable {key} does not exist in the current context");
     }
 
@@ -299,10 +294,10 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public object GetLocalValue(NameSegment key) {
+    public object GetTacnyVarValue(NameSegment key) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
       Contract.Ensures(Contract.Result<object>() != null);
-      return GetLocalValue(key.Name);
+      return GetTacnyVarValue(key.Name);
     }
 
     /// <summary>
@@ -310,15 +305,15 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public object GetLocalValue(string key) {
+    public object GetTacnyVarValue(string key) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
       Contract.Ensures(Contract.Result<object>() != null);
-      return _scope.Peek().GetLocalValue(key);
+      return _scope.Peek().GetTacnyValData(key);
     }
 
-    public bool HasLocalValue(NameSegment key) {
+    public bool ContainTacnyVal(NameSegment key) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
-      return HasLocalValue(key.Name);
+      return ContainTacnyVal(key.Name);
     }
 
     /// <summary>
@@ -326,9 +321,9 @@ namespace Tacny {
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public bool HasLocalValue(string key) {
+    public bool ContainTacnyVal(string key) {
       Contract.Requires<ArgumentNullException>(!string.IsNullOrEmpty(key), "key");
-      return _scope.Peek().HasLocal(key);
+      return _scope.Peek().ContainTacnyVars(key);
     }
 
     private ITactic GetTactic(string name) {
@@ -410,7 +405,7 @@ namespace Tacny {
       foreach (var lhs in us.Lhss) {
         if (!(lhs is NameSegment))
           return false;
-        if (!_scope.Peek().IsDeclared((lhs as NameSegment).Name))
+        if (!_scope.Peek().ContainTacnyVars((lhs as NameSegment).Name))
           return false;
       }
 
@@ -421,9 +416,8 @@ namespace Tacny {
     public bool IsArgumentApplication(UpdateStmt us) {
       Contract.Requires<ArgumentNullException>(us != null, "us");
       var ns = Util.GetNameSegment(us);
-      return _scope.Peek().HasLocal(ns);
+      return _scope.Peek().ContainTacnyVars(ns.Name);
     }
-
 
     /// <summary>
     /// Add a varialbe to the top level frame
@@ -432,7 +426,7 @@ namespace Tacny {
     /// <param name="value"></param>
     public void AddLocal(IVariable key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
-      Contract.Requires<ArgumentException>(!HasLocalValue(key.Name));
+      Contract.Requires<ArgumentException>(!ContainTacnyVal(key.Name));
       AddLocal(key.Name, value);
     }
 
@@ -443,8 +437,8 @@ namespace Tacny {
     /// <param name="value"></param>
     public void AddLocal(string key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
-      Contract.Requires<ArgumentException>(!HasLocalValue(key));
-      _scope.Peek().AddLocalVariable(key, value);
+      Contract.Requires<ArgumentException>(!ContainTacnyVal(key));
+      _scope.Peek().AddTacnyVar(key, value);
     }
 
     /// <summary>
@@ -464,7 +458,7 @@ namespace Tacny {
     /// <param name="value"></param>
     public void UpdateLocal(string key, object value) {
       Contract.Requires<ArgumentNullException>(key != null, "key");
-      _scope.Peek().UpdateVariable(key, value);
+      _scope.Peek().UpdateLocalTacnyVar(key, value);
     }
 
     /// <summary>
@@ -520,7 +514,8 @@ namespace Tacny {
       public readonly string WhatKind; 
       public Statement CurStmt => _bodyCounter >= Body.Count ? null : Body[_bodyCounter];
       public readonly Frame Parent;
-      private readonly Dictionary<string, object> _declaredVariables;
+      private readonly Dictionary<string, object> _declaredVariables; // tacny variables
+      private readonly Dictionary<string, VariableData> _DafnyVariables; // dafny variables
       public readonly ITactic ActiveTactic;
       public bool IsPartiallyEvaluated { get; set; } = false;
       public bool IsEvaluated => _bodyCounter >= Body.Count;
@@ -549,6 +544,7 @@ namespace Tacny {
         ParseTacticAttributes(((MemberDecl)ActiveTactic).Attributes);
         _reporter = reporter;
         _declaredVariables = new Dictionary<string, object>();
+        _DafnyVariables = new Dictionary<string, VariableData>();
         _generatedCode = null;
         _rawCodeList = new List<List<Statement>>();
         WhatKind = "default";
@@ -561,6 +557,7 @@ namespace Tacny {
         TacticInfo = parent.TacticInfo;
         Body = body;
         _declaredVariables = new Dictionary<string, object>();
+        _DafnyVariables = new Dictionary<string, VariableData>();
         Parent = parent;
         ActiveTactic = parent.ActiveTactic;
         _reporter = parent._reporter;
@@ -604,61 +601,89 @@ namespace Tacny {
       }
 
       [Pure]
-      internal bool IsDeclared(string name) {
+
+      internal VariableData GetLocalDafnyVar(string name) {
+        //Contract.Requires(_DafnyVariables.ContainsKey(name));
+        return _DafnyVariables[name];
+      }
+
+      internal void AddDafnyVar(string name, VariableData var) {
+        Contract.Requires<ArgumentNullException>(name != null, "key");
+        if(_DafnyVariables.All(v => v.Key != name)) {
+          _DafnyVariables.Add(name, var);
+        } else {
+          throw new ArgumentException($"dafny var {name} is already declared in the scope");
+        }
+      }
+
+      internal bool ContainDafnyVar(string name) {
+        Contract.Requires<ArgumentNullException>(name != null, "name");
+        // base case
+        if(Parent == null)
+          return _DafnyVariables.Any(kvp => kvp.Key == name);
+        return _DafnyVariables.Any(kvp => kvp.Key == name) || Parent.ContainDafnyVar(name);
+      }
+
+
+      internal VariableData GetDafnyVariableData(string name){
+//     Contract.Requires(ContainDafnyVars(name));
+        if (_DafnyVariables.ContainsKey(name))
+          return _DafnyVariables[name];
+        else{
+          return Parent.GetDafnyVariableData(name);
+        }
+      }
+
+      internal Dictionary<string, VariableData> GetAllDafnyVars(Dictionary<string, VariableData> toDict){
+        _DafnyVariables.Where(x => !toDict.ContainsKey(x.Key)).ToList().ForEach(x => toDict.Add(x.Key, x.Value));
+        if (Parent == null)
+          return toDict;
+        else{
+          return Parent.GetAllDafnyVars(toDict);
+        }
+      }
+
+
+      internal bool ContainTacnyVars(string name) {
         Contract.Requires<ArgumentNullException>(name != null, "name");
         // base case
         if (Parent == null)
           return _declaredVariables.Any(kvp => kvp.Key == name);
-        return _declaredVariables.Any(kvp => kvp.Key == name) || Parent.IsDeclared(name);
+        return _declaredVariables.Any(kvp => kvp.Key == name) || Parent.ContainTacnyVars(name);
       }
 
-      internal void AddLocalVariable(string variable, object value) {
+      internal void AddTacnyVar(string variable, object value) {
         Contract.Requires<ArgumentNullException>(variable != null, "key");
-        if (!_declaredVariables.Any(v => v.Key == variable)) {
+        if (_declaredVariables.All(v => v.Key != variable)) {
           _declaredVariables.Add(variable, value);
         } else {
-          throw new ArgumentException($"{variable} is already declared in the scope");
+          throw new ArgumentException($"tacny var {variable} is already declared in the scope");
         }
       }
 
-      internal void UpdateVariable(IVariable key, object value) {
+      internal void UpdateLocalTacnyVar(IVariable key, object value) {
         Contract.Requires<ArgumentNullException>(key != null, "key");
-        Contract.Requires<ArgumentException>(IsDeclared(key.Name));//, $"{key} is not declared in the current scope".ToString());
-        UpdateVariable(key.Name, value);
+        Contract.Requires<ArgumentException>(ContainTacnyVars(key.Name));//, $"{key} is not declared in the current scope".ToString());
+        UpdateLocalTacnyVar(key.Name, value);
       }
 
-      internal void UpdateVariable(string key, object value) {
+      internal void UpdateLocalTacnyVar(string key, object value) {
         Contract.Requires<ArgumentNullException>(key != null, "key");
-        Contract.Requires<ArgumentException>(IsDeclared(key));//, $"{key} is not declared in the current scope");
-        // base case
-        if (Parent == null) {
-          // this is safe otherwise the contract would fail
-          _declaredVariables[key] = value;
-        } else {
-          if (_declaredVariables.ContainsKey(key))
-            _declaredVariables[key] = value;
-          else {
-            Parent.UpdateVariable(key, value);
-          }
-        }
+        //Contract.Requires<ArgumentException>(_declaredVariables.ContainsKey(key));
+         _declaredVariables[key] = value;
       }
 
-      internal object GetLocalValue(string key) {
-        Contract.Requires<ArgumentNullException>(key != null, "key");
-        Contract.Requires<ArgumentException>(IsDeclared(key));
+      internal object GetTacnyValData(string name) {
+        Contract.Requires<ArgumentNullException>(name != null, "key");
+        //Contract.Requires<ArgumentException>(ContainTacnyVars(key));
         Contract.Ensures(Contract.Result<object>() != null);
-        return Parent == null ? _declaredVariables[key] : Parent.GetLocalValue(key);
+        if (_declaredVariables.ContainsKey(name))
+          return _declaredVariables[name];
+        else{
+          return Parent.GetTacnyValData(name);
+        }
       }
 
-      internal bool HasLocal(NameSegment key) {
-        Contract.Requires<ArgumentNullException>(key != null, "key");
-        return HasLocal(key.Name);
-      }
-
-      internal bool HasLocal(string key) {
-        Contract.Requires<ArgumentNullException>(key != null, "key");
-        return Parent?.HasLocal(key) ?? _declaredVariables.ContainsKey(key);
-      }
 
 
 

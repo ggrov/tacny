@@ -80,7 +80,7 @@ namespace Tacny.Atomic {
             args.Add(new List<IVariable>());
             foreach(var arg in vars) {
               // get variable type
-              Type type = state.GetVariableType(arg.Name);
+              Type type = state.GetDafnyVarType(arg.Name);
               if(type != null) {
                 if(type is UserDefinedType && item.Type is UserDefinedType) {
                   var udt1 = type as UserDefinedType;
@@ -158,9 +158,9 @@ namespace Tacny.Atomic {
           callArguments = GetCallArguments(us);
         else {
           var ns = (NameSegment)us.Lhss[0];
-          if(ps.HasLocalValue(ns)) {
+          if(ps.ContainTacnyVal(ns)) {
             //TODO: need to doubel check this
-            lv = ps.GetLocalValue(ns) as IVariable;
+            lv = ps.GetTacnyVarValue(ns) as IVariable;
             callArguments = GetCallArguments(us);
           }
         }
