@@ -39,7 +39,7 @@ namespace DafnyLanguage.Refactoring
       var proofState = errorInfo.S;
       var tmpProgram = ((CompoundErrorInformation)errorInfo.E).P;
       var innerError = ((CompoundErrorInformation)errorInfo.E).E;
-      var tmpModule = (DefaultClassDecl)tmpProgram.DefaultModuleDef.TopLevelDecls.FirstOrDefault();
+      var tmpModule = (DefaultClassDecl)tmpProgram.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x.CompileName== "__default");
 
       _errTok = (Bpl.Token)innerError.Tok;
       _errMessage = innerError.FullMsg;
