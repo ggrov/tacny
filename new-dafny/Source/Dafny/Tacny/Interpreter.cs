@@ -112,8 +112,7 @@ namespace Tacny {
       Contract.Requires(tcce.NonNull(target));
       // initialize new stack for variables
       _frame = new Stack<Dictionary<IVariable, Type>>();
-      // clean up the result list
-      _resultList.Clear();
+
       var method = target as Method;
       if(method != null) {
         _state.SetTopLevelClass(method.EnclosingClass?.Name);
