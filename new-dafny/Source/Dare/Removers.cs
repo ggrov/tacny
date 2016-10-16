@@ -1717,7 +1717,10 @@ namespace Dare
             if (!wrap.Removed)
                 wrap.Remove();
             //Insert the item
-            wrap.ParentList.Insert(wrap.Index, newItem);
+            if(wrap.Index < wrap.ParentList.Count)
+                wrap.ParentList.Insert(wrap.Index, newItem);
+            else
+                wrap.ParentList.Add(newItem);
             //Wrap the new item
             var newWrap = new Wrap<T>(newItem, wrap.ParentList);
             return newWrap;
