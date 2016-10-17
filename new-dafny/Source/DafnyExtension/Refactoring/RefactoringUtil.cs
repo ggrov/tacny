@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.IO;
 using System.Linq;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Text;
@@ -86,6 +87,11 @@ namespace DafnyLanguage.Refactoring
     public static string RazeFringe(string body, string fringe) {
       Contract.Requires(body.Length > fringe.Length);
       return body.Substring(0, fringe.Length) == fringe ? body.Substring(fringe.Length) : body;
+    }
+
+    public static bool TokenEquals(Microsoft.Boogie.IToken t, Microsoft.Boogie.IToken u) {
+      return t.IsValid == u.IsValid && t.col == u.col && t.filename == u.filename
+             && t.kind == u.kind && t.line == u.line && t.pos == u.pos && t.val == u.val;
     }
     
     public static TacticReplaceStatus GetTacticCallAtPosition(Method m, int p, out Tuple<UpdateStmt, int, int> us) {

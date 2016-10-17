@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics.Contracts;
 using System.IO;
+using System.Linq;
 using DafnyLanguage.DafnyMenu;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio;
@@ -14,8 +15,8 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
+using Tacny;
 using Printer = Microsoft.Dafny.Printer;
-using Program = Microsoft.Dafny.Program;
 
 namespace DafnyLanguage.Refactoring
 {
@@ -114,7 +115,7 @@ namespace DafnyLanguage.Refactoring
       _activePeekSession.Add(file, new ActivePeekSessionData {
         TriggerPoint = triggerPoint,
         ExpandedTactic = expanded,
-        ActiveTactic = tra.ActiveTacticName
+        ActiveTactic = tra.GetActiveTacticName()
       });
       session.Start();
       return NotifyOfReplacement(TacticReplaceStatus.Success);
@@ -167,7 +168,8 @@ namespace DafnyLanguage.Refactoring
       string expanded;
       var position = session.TriggerPoint.GetPosition(snapshot);
       var tra = new TacticReplacerActor(snapshot.TextBuffer, position);
-      if(tra.ActiveTacticName!=session.ActiveTactic) session.Updater?.Invoke(null);
+      var name = tra.GetActiveTacticName();
+      if(name!=session.ActiveTactic) session.Updater?.Invoke(null);
       if (tra.LoadStatus != TacticReplaceStatus.Success) return NotifyOfReplacement(tra.LoadStatus);
       var status = tra.ExpandSingleTacticCall(position, out expanded);
       if (status != TacticReplaceStatus.Success)
@@ -194,11 +196,21 @@ namespace DafnyLanguage.Refactoring
 
       methodName = new SnapshotSpan(buffer.CurrentSnapshot, tra.MemberNameStart, tra.MemberName.Length);
       string expanded;
-      tra.ExpandTactic(out expanded);
+      if (position > tra.MemberBodyStart)
+        tra.ExpandSingleTacticCall(position, out expanded);
+      else
+        tra.ExpandTacticByMember(out expanded);
       return expanded;
     }
 
-    public static bool NotifyOfReplacement(TacticReplaceStatus t)
+    public bool CanExpandAtThisPosition(IWpfTextView tv)
+    {
+      var caret = tv.Caret.Position.BufferPosition.Position;
+      var methodName = new SnapshotSpan(tv.TextSnapshot, 0, 0);
+      return !string.IsNullOrEmpty( GetExpandedForPreview(caret, tv.TextBuffer, ref methodName));
+    }
+
+    private static bool NotifyOfReplacement(TacticReplaceStatus t)
     {
       if (_status == null) return false;
       switch (t)
@@ -227,7 +239,6 @@ namespace DafnyLanguage.Refactoring
 
   internal class TacticReplacerActor
   {
-    private readonly Program _program, _unresolvedProgram;
     private readonly DefaultClassDecl _tld;
     private readonly IEnumerator<MemberDecl> _tldMembers;
     private MemberDecl _member;
@@ -238,9 +249,16 @@ namespace DafnyLanguage.Refactoring
     public int MemberNameStart => _member.tok.pos;
     public string MemberName => _member.CompileName;
     public bool MemberReady => _member!=null && _member.CallsTactic;
-    public string ActiveTacticName
-      => ((NameSegment) ((ApplySuffix) ((ExprRhs) _tacticCall.Item1.Rhss[0]).Expr).Lhs).Name;
-    public TacticReplaceStatus LoadStatus;
+
+    public string GetActiveTacticName() {
+      if (_tacticCall == null) return null;
+      var rightHandSide = _tacticCall.Item1.Rhss[0] as ExprRhs;
+      var suffix = rightHandSide?.Expr as ApplySuffix;
+      var nameseg = suffix?.Lhs as NameSegment;
+      return nameseg?.Name;
+    }
+
+    public readonly TacticReplaceStatus LoadStatus;
 
     public TacticReplacerActor(ITextBuffer tb, int position = -1)
     {
@@ -248,9 +266,8 @@ namespace DafnyLanguage.Refactoring
       string currentFileName;
       LoadStatus = RefactoringUtil.LoadAndCheckDocument(tb, out currentFileName) ? TacticReplaceStatus.Success : TacticReplaceStatus.NoDocumentPersistence;
       if(LoadStatus!=TacticReplaceStatus.Success) return;
-      _program = RefactoringUtil.GetReparsedProgram(tb, currentFileName, true);
-      _unresolvedProgram = RefactoringUtil.GetReparsedProgram(tb, currentFileName, false);
-      _tld = RefactoringUtil.GetTld(_program);
+      var program = RefactoringUtil.GetReparsedProgram(tb, currentFileName, true);
+      _tld = RefactoringUtil.GetTld(program);
       _tldMembers = _tld?.Members.GetEnumerator();
       LoadStatus = _tld != null ? TacticReplaceStatus.Success : TacticReplaceStatus.NotResolved;
       if (LoadStatus != TacticReplaceStatus.Success) return;
@@ -309,41 +326,42 @@ namespace DafnyLanguage.Refactoring
       return status==TacticReplaceStatus.Success ? ExpandSingleTacticCall(us.Item1, out expanded) : status;
     }
 
-    private TacticReplaceStatus ExpandSingleTacticCall(UpdateStmt us, out string expanded)
-    {
+    private TacticReplaceStatus ExpandSingleTacticCall(UpdateStmt us, out string expanded) {
       expanded = "";
-      var status = TacticReplaceStatus.Success;
-      var newStmts = Tacny.Interpreter.FindSingleTactic(_program, _member, us,
-        errorInfo => { status = TacticReplaceStatus.TranslatorFail; }, _unresolvedProgram);
-      if (status != TacticReplaceStatus.Success) return status;
-      if (newStmts == null) return TacticReplaceStatus.NoTactic;
-
-      var sr = new StringWriter();
-      var pr = new Printer(sr);
-      for(var i = 0; i < newStmts.Count-1; i++)
-      {
-        pr.PrintStatement(newStmts[i], 4);
-        sr.WriteLine();
-      }
-      pr.PrintStatement(newStmts[newStmts.Count-1], 4);
-      expanded += sr;
-      return TacticReplaceStatus.Success;
-    }
-
-    public TacticReplaceStatus ExpandTactic(out string expandedTactic)
-    {
-      expandedTactic = null;
-      if (!MemberReady) return TacticReplaceStatus.NoTactic;
-
-      var status = TacticReplaceStatus.Success;
-      var evaluatedMember = Tacny.Interpreter.FindAndApplyTactic(_program, _member, errorInfo => { status = TacticReplaceStatus.TranslatorFail; }, _unresolvedProgram);
-      if (evaluatedMember == null || status != TacticReplaceStatus.Success) return TacticReplaceStatus.TranslatorFail;
-
+      var l = Interpreter.GetTacnyResultList();
+      var result = l.FirstOrDefault(pair => RefactoringUtil.TokenEquals(pair.Key,us.Tok));
+      if (result.Value == null) return TacticReplaceStatus.NoTactic;
       var sr = new StringWriter();
       var printer = new Printer(sr);
-      printer.PrintMembers(new List<MemberDecl> { evaluatedMember }, 0, _program.FullName);
-      expandedTactic = RefactoringUtil.StripExtraContentFromExpanded(sr.ToString());
-      return !string.IsNullOrEmpty(expandedTactic) ? TacticReplaceStatus.Success : TacticReplaceStatus.NoTactic;
+      result.Value.ForEach(stmt => printer.PrintStatement(stmt, 4));
+      expanded = sr.ToString();
+      return !string.IsNullOrEmpty(expanded) ? TacticReplaceStatus.Success : TacticReplaceStatus.NoTactic;
+    }
+    
+    public TacticReplaceStatus ExpandTacticByMember(out string expandedTactic) {
+      expandedTactic = "";
+      var l = Interpreter.GetTacnyResultList();
+      var x = _member as Method;
+      if (x == null) return TacticReplaceStatus.NoTactic;
+      var sr = new StringWriter();
+      var printer = new Printer(sr);
+      var hasTactic = false;
+      foreach (var stmt in x.Body.SubStatements)
+      {
+        var result = l.FirstOrDefault(pair => RefactoringUtil.TokenEquals(pair.Key, stmt.Tok));
+        if (result.Key==null)
+        {
+          printer.PrintStatement(stmt,0);
+        }
+        else
+        {
+          hasTactic = true;
+          result.Value.ForEach(foundStmt => printer.PrintStatement(foundStmt, 0));
+        }
+        sr.Write("\n");
+      }
+      expandedTactic = hasTactic ? sr.ToString() : "";
+      return TacticReplaceStatus.Success;
     }
   }
 }

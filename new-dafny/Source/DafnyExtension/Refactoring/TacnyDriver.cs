@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Text;
+using Tacny;
 using Errors = Microsoft.Dafny.Errors;
 using Parser = Microsoft.Dafny.Parser;
 using Program = Microsoft.Dafny.Program;
@@ -54,7 +55,9 @@ namespace DafnyLanguage.Refactoring
         InsertChecksums = true,
         UniqueIdPrefix = uniqueIdPrefix
       };
-      var boogieProgram = translator.Translate(dafnyProgram, unresolvedProgram);
+      //Interpreter.ResetTacnyResultList();
+      var translatorResolver = new Resolver(dafnyProgram);
+      var boogieProgram = translator.Translate(dafnyProgram, unresolvedProgram, translatorResolver);
       resolver.ReInitializeVerificationErrors(requestId, boogieProgram.Implementations);
       var outcome = BoogiePipeline(boogieProgram, 1 < CommandLineOptions.Clo.VerifySnapshots ? uniqueIdPrefix : null, requestId, er);
       return outcome == PipelineOutcome.Done || outcome == PipelineOutcome.VerificationCompleted;

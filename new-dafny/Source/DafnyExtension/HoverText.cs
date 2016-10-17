@@ -56,7 +56,7 @@ namespace DafnyLanguage
         }
       }
 
-      //DeadAnnotationTooltip.TestForAndAddHoverText(ref applicableToSpan, _buffer, triggerPoint, quickInfoContent);
+      DeadAnnotationTooltip.TestForAndAddHoverText(ref applicableToSpan, _buffer, triggerPoint, quickInfoContent);
 
       if (applicableToSpan == null)
         TacticsHoverText.TestForAndAddHoverText(ref applicableToSpan, triggerPoint, _buffer, quickInfoContent);
