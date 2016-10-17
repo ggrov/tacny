@@ -77,6 +77,7 @@ namespace DafnyLanguage.DafnyMenu
     bool UpdateRot(string file, ITextSnapshot snapshot);
     bool ClearPeekSession(IPeekSession session);
     Tuple<string, string> GetExpandedForPeekSession(IPeekSession session);
+    bool CanExpandAtThisPosition(IWpfTextView tv);
   }
 
   public interface IDeadCodeMenuProxy
@@ -257,10 +258,12 @@ namespace DafnyLanguage.DafnyMenu
         #region refactoring context menu
         var contextExpandTacticsCommandId = new CommandID(GuidList.guidRefactoringMenuCmdSet, (int)PkgCmdIDList.cmdidContextExpandTactics);
         contextExpandTacticsCommand = new OleMenuCommand(TacticReplaceCallback, contextExpandTacticsCommandId);
+        contextExpandTacticsCommand.BeforeQueryStatus += RefactorTacticsContextBeforeQuery;
         mcs.AddCommand(contextExpandTacticsCommand);
 
         var contextExpandRotCommandId = new CommandID(GuidList.guidRefactoringMenuCmdSet, (int)PkgCmdIDList.cmdidContextExpandRot);
         contextExpandRotCommand = new OleMenuCommand(ShowRotCallback, contextExpandRotCommandId);
+        contextExpandRotCommand.BeforeQueryStatus += RefactorTacticsContextBeforeQuery;
         mcs.AddCommand(contextExpandRotCommand);
 
         var contextRemoveDeadCodeCommandId = new CommandID(GuidList.guidRefactoringMenuCmdSet, (int)PkgCmdIDList.cmdidContextRemoveDeadCode);
@@ -655,6 +658,13 @@ namespace DafnyLanguage.DafnyMenu
       toggleCommand.Text = result + " Automatic Tactic Verification";
     }
 
+    private void RefactorTacticsContextBeforeQuery(object sender, EventArgs e)
+    {
+      var atv = ActiveTextView;
+      var menuitem = sender as OleMenuCommand;
+      if (TacnyMenuProxy == null || atv?.TextBuffer == null || menuitem==null) return;
+      menuitem.Enabled = TacnyMenuProxy.CanExpandAtThisPosition(atv);
+    }
     #endregion
 
     #region dead code analysis
