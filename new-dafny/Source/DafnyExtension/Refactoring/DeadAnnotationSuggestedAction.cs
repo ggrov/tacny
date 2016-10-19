@@ -52,7 +52,7 @@ namespace DafnyLanguage.Refactoring
 
       var first = _agg.GetTags(range).FirstOrDefault();
       if (first != null) {
-        actionList.Add(new RemoveDeadAnnotationSuggestedAction(first.Tag.TrackingReplacementSpan, currentSnapshot, first.Tag.Replacement, first.Tag.TypeName));
+        actionList.Add(new RemoveDeadAnnotationSuggestedAction(currentSnapshot, first.Tag));
       }
 
       Program p;
@@ -65,14 +65,14 @@ namespace DafnyLanguage.Refactoring
         var methodSpan = RefactoringUtil.GetRangeOfMember(currentSnapshot, md);
         var tagSpans = _agg.GetTags(methodSpan);
         var tags = (from ts in tagSpans
-                    select new RemoveDeadAnnotationSuggestedAction(ts.Tag.TrackingReplacementSpan, currentSnapshot, ts.Tag.Replacement, ts.Tag.TypeName)).ToList();
+                    select new RemoveDeadAnnotationSuggestedAction(currentSnapshot, ts.Tag)).ToList();
         if(tags.Count > 0)
           actionList.Add(new RemoveMultipleDeadAnnotationsSuggestedAction(currentSnapshot.TextBuffer, tags, DeadAnnotationLocation.Block));
       }
       
       var snapshotWideSpan = new SnapshotSpan(currentSnapshot, 0, currentSnapshot.Length);
       var allTags = _agg.GetTags(snapshotWideSpan);
-      var list = allTags.Select(ts => new RemoveDeadAnnotationSuggestedAction(ts.Tag.TrackingReplacementSpan, currentSnapshot, ts.Tag.Replacement, ts.Tag.TypeName)).ToList();
+      var list = allTags.Select(ts => new RemoveDeadAnnotationSuggestedAction(currentSnapshot, ts.Tag)).ToList();
       if (list.Count > 0)
         actionList.Add(new RemoveMultipleDeadAnnotationsSuggestedAction(currentSnapshot.TextBuffer, list, DeadAnnotationLocation.File));
       
@@ -92,7 +92,7 @@ namespace DafnyLanguage.Refactoring
   {
     public readonly DeadAnnotationLocation Where;
     protected readonly ITextBuffer Tb;
-    public DeadAnnotationSuggestedAction(ITextBuffer tb, DeadAnnotationLocation where) {
+    protected DeadAnnotationSuggestedAction(ITextBuffer tb, DeadAnnotationLocation where) {
       Tb = tb;
       Where = where;
     }
@@ -110,29 +110,26 @@ namespace DafnyLanguage.Refactoring
   internal sealed class RemoveDeadAnnotationSuggestedAction : DeadAnnotationSuggestedAction, ISuggestedAction
   {
     private readonly string _replacement;
-    public string DisplayText => $"{_action} this {_adjective} {_typename}";
-    private readonly string _action;
-    private readonly string _adjective;
-    private readonly string _typename;
-    private readonly SnapshotSpan _snapSpan;
+    public string DisplayText { get; }
+    private readonly DeadAnnotationTag _tag;
 
-    public RemoveDeadAnnotationSuggestedAction(ITrackingSpan span, ITextSnapshot snap, string replacement, string typename):base(snap.TextBuffer, DeadAnnotationLocation.Single) {
-      _action = string.IsNullOrEmpty(replacement) ? "Remove" : "Simplify";
-      _adjective = string.IsNullOrEmpty(replacement) ? "dead" : "overspecific";
-      _snapSpan = span.GetSpan(snap);
-      _replacement = replacement;
-      _typename = typename;
+    public RemoveDeadAnnotationSuggestedAction(ITextSnapshot snap, DeadAnnotationTag tag):base(snap.TextBuffer, DeadAnnotationLocation.Single) {
+      DisplayText = tag.ActionContent;
+      _replacement = tag.Replacement;
+      _tag = tag;
     }
 
     public void Invoke(CancellationToken cancellationToken) {
       var tedit = Tb.CreateEdit();
-      tedit.Replace(_snapSpan, _replacement);
+      Invoke(tedit);
       if (cancellationToken.CanBeCanceled && cancellationToken.IsCancellationRequested) { tedit.Dispose(); }
       tedit.Apply();
     }
-
+    
     internal void Invoke(ITextEdit tedit) {
-      tedit.Replace(_snapSpan, _replacement);
+      var snapSpan = _tag.TrackingReplacementSpan.GetSpan(Tb.CurrentSnapshot);
+      tedit.Replace(snapSpan, _replacement);
+      _tag.DisposeTask();
     }
   }
   

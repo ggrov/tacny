@@ -314,7 +314,6 @@
     <Compile Include="MenuProxy.cs" />
     <Compile Include="OutliningTagger.cs" />
     <Compile Include="ProgressMargin.cs" />
-    <Compile Include="Refactoring\DeadAnnotationTooltip.cs" />
     <Compile Include="Refactoring\RefactoringUtil.cs" />
     <Compile Include="ResolverTagger.cs" />
     <Compile Include="Refactoring\DeadAnnotationSuggestedAction.cs" />
