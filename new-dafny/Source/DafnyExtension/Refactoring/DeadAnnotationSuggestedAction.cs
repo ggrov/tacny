@@ -129,7 +129,6 @@ namespace DafnyLanguage.Refactoring
     internal void Invoke(ITextEdit tedit) {
       var snapSpan = _tag.TrackingReplacementSpan.GetSpan(Tb.CurrentSnapshot);
       tedit.Replace(snapSpan, _replacement);
-      _tag.DisposeTask();
     }
   }
   

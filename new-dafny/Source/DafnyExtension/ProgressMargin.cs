@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define DEBUGTHROW
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
@@ -374,8 +376,10 @@ namespace DafnyLanguage
       var unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ReParse(false);
       var success = true;
 
+#if !DEBUGTHROW
       try
       {
+#endif
         success = TacnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
         {
           if (_disposed) return;
@@ -421,7 +425,8 @@ namespace DafnyLanguage
             new DafnyError("$$program$$", 0, 0, ErrorCategory.InternalError, "Verification process error", snapshot, false),
           "$$program$$", requestId);
         }
-      }
+#if !DEBUGTHROW  
+      }    
       catch (Exception e)
       {
         errorListHolder.FatalVerificationError = new DafnyError("$$program$$", 0, 0,
@@ -429,13 +434,14 @@ namespace DafnyLanguage
       }
       finally
       {
-        ITextSnapshot s;
-        RequestIdToSnapshot.TryGetValue(requestId, out s);
+#endif
+        ITextSnapshot snap;
+        RequestIdToSnapshot.TryGetValue(requestId, out snap);
         if (tacticsErrorList.Count>0){
           success = false;
           try {
             tacticsErrorList.ForEach(errorInfo => new TacticErrorReportingResolver(errorInfo)
-              .AddTacticErrors(errorListHolder, s, requestId, _document.FilePath));
+              .AddTacticErrors(errorListHolder, snap, requestId, _document.FilePath));
           } catch (TacticErrorResolutionException e) {
             errorListHolder.AddError(
               new DafnyError("$$program_tactics$$", 0, 0, ErrorCategory.InternalError,
@@ -444,8 +450,9 @@ namespace DafnyLanguage
           }
         }
         DafnyDriver.SetDiagnoseTimeouts(!diagnoseTimeouts);
+#if !DEBUGTHROW
       }
-
+#endif
       lock (this) {
         bufferChangesPreVerificationStart.Clear();
         verificationInProgress = false;

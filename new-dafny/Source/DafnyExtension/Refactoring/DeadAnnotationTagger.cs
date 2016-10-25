@@ -105,25 +105,18 @@ namespace DafnyLanguage.Refactoring
     public readonly string Replacement;
     public readonly ITrackingSpan TrackingReplacementSpan;
     private readonly string Filename;
-    private readonly ErrorListProvider ErrList;
     private readonly string TypeName;
 
-    public void DisposeTask() {
-      if(ErrList.Tasks.Contains(Task))
-        ErrList.Tasks.Remove(Task);
-    }
-
     public DeadAnnotationTag(ITextSnapshot originalSnapshot, int replaceStart, int replaceLength,
-        string replacement, string typeName, string file, ErrorListProvider elp) : base(Type) {
+        string replacement, string typeName, string file) : base(Type) {
       Replacement = replacement;
       TrackingReplacementSpan = originalSnapshot.CreateTrackingSpan(
         new SnapshotSpan(originalSnapshot, replaceStart, replaceLength),
         SpanTrackingMode.EdgeExclusive, TrackingFidelityMode.Forward);
       TypeName = typeName;
       Filename = file;
-      ErrList = elp;
-      UpdateTask(originalSnapshot);
       UpdateStrings();
+      UpdateTask(originalSnapshot);
     }
 
     private void UpdateStrings() {
@@ -252,7 +245,12 @@ namespace DafnyLanguage.Refactoring
     }
 
     private void BufferChangedInterrupt(object s, TextContentChangedEventArgs e) {
-      if (!Enabled) return;
+      if (!Enabled)
+      {
+        if(_deadAnnotations.Count>0)
+          ClearTags();
+        return;
+      }
       if (IsCurrentlyActive) {
         lock (_activityLock) {
           IsCurrentlyActive = false;
@@ -268,11 +266,41 @@ namespace DafnyLanguage.Refactoring
       toremove.ForEach(_errList.Tasks.Remove);
       foreach (var change in e.Changes.ToList()) {
         _changesSinceLastSuccessfulRun.Add(change.NewPosition);
-        _deadAnnotations.RemoveAll(tag => tag.TrackingReplacementSpan.GetSpan(e.After).OverlapsWith(change.NewSpan));
-        var changeSpan = new SnapshotSpan(Snapshot, change.NewSpan);
-        TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(changeSpan));
+        _deadAnnotations.RemoveAll(tag =>
+          {
+            var snapspan = tag.TrackingReplacementSpan.GetSpan(Snapshot);
+            return snapspan.IntersectsWith(change.NewSpan);
+          }
+        );
+        TagsOnLineChanged(change.NewPosition);
+        TagsOnLineChanged(change.OldPosition);
       }
       _deadAnnotations.ForEach(t => _errList.Tasks.Add(t.UpdateTask(Snapshot)));
+    }
+
+    private void ClearTags()
+    {
+      var toremove = _errList.Tasks.Cast<Task>().Where(task => task.HelpKeyword == DeadAnnotationTag.Help).ToList();
+      toremove.ForEach(_errList.Tasks.Remove);
+      var removedLines = new List<SnapshotSpan>();
+      _deadAnnotations.ForEach(tag =>
+      {
+        var snapspan = tag.TrackingReplacementSpan.GetSpan(Snapshot);
+        removedLines.Add(snapspan);
+      });
+      _deadAnnotations.Clear();
+      removedLines.ForEach(line => TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(line)));
+    }
+
+    private void TagsOnLineChanged(int position)
+    {
+      try
+      {
+        var line = Snapshot.GetLineFromPosition(position);
+        var changeSpan = new SnapshotSpan(Snapshot, line.Start, line.Length);
+        TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(changeSpan));
+      }
+      catch (ArgumentOutOfRangeException) { }
     }
 
     private void UpdateFilename(string filename) {
@@ -536,14 +564,14 @@ namespace DafnyLanguage.Refactoring
     private DeadAnnotationTag FindStmtTag(DareResult r) {
       var replacement = FindReplacement(r.Replace, r.StartTok.pos, r.TypeOfRemovable);
       var pos = StmtReplacementPositions(r.StartTok.pos, r.Length, r.Replace != null);
-      return new DeadAnnotationTag(Snapshot, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, r.StartTok.filename,_errList);
+      return new DeadAnnotationTag(Snapshot, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, r.StartTok.filename);
     }
     
     private DeadAnnotationTag FindExprTag(DareResult r) {
       var actualTokPos = InvarDecStartPosition(r);
       var replacement = FindReplacement(r.Replace, actualTokPos, r.TypeOfRemovable);
       var pos = ExprReplacementPositions(r, actualTokPos, r.Replace!=null);
-      return new DeadAnnotationTag(Snapshot, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, r.StartTok.filename, _errList);
+      return new DeadAnnotationTag(Snapshot, pos.ReplaceStart, pos.ReplaceLength, replacement, r.TypeOfRemovable, r.StartTok.filename);
     }
 
     private Positions ExprReplacementPositions(DareResult r, int tokPos, bool hasReplacement) {
