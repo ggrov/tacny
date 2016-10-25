@@ -186,23 +186,30 @@ namespace Tacny {
     }
 
 
-    public static List<ErrorInformation> ResolveAndVerify(Program program, ErrorReporterDelegate er) {
+    public static bool ResolveAndVerify(Program program, ErrorReporterDelegate er) {
       Contract.Requires<ArgumentNullException>(program != null);
       var r = new Resolver(program);
       //var start = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
       r.ResolveProgram(program);
       //TODO: get program.reporter to check resolving result before verifying
       //var end = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds
+
+      // check if resolution fails
+      if (program.reporter.Count(ErrorLevel.Error) != 0){
+        Console.Write("Fail ro resolve tacny prog !!!");
+        return false;
+
+      }
       var boogieProg = Translate(program, program.Name, er);
       PipelineStatistics stats;
       List<ErrorInformation> errorList;
       
-      
+      //Console.WriteLine("call verifier in Tacny !!!");
       PipelineOutcome tmp = BoogiePipeline(boogieProg,
         new List<string> {program.Name}, program.Name, er,
         out stats, out errorList, program);
 
-        return errorList;
+      return errorList.Count == 0;
     }
 
     public static Bpl.Program Translate(Program dafnyProgram, string uniqueIdPrefix, ErrorReporterDelegate er) {

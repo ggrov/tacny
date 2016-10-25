@@ -108,7 +108,7 @@ namespace Tacny {
         Console.WriteLine("*********************Prog END*****************");
 
       var result = Util.ResolveAndVerify(prog, errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); });
-        if (result.Count == 0)
+        if (result)
           return VerifyResult.Verified;
         else {
           //TODO: find which proof state verified (if any)
