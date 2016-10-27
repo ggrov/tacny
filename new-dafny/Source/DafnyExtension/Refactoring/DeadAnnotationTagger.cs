@@ -246,11 +246,7 @@ namespace DafnyLanguage.Refactoring
 
     private void BufferChangedInterrupt(object s, TextContentChangedEventArgs e) {
       if (!Enabled)
-      {
-        if(_deadAnnotations.Count>0)
-          ClearTags();
         return;
-      }
       if (IsCurrentlyActive) {
         lock (_activityLock) {
           IsCurrentlyActive = false;
@@ -276,20 +272,6 @@ namespace DafnyLanguage.Refactoring
         TagsOnLineChanged(change.OldPosition);
       }
       _deadAnnotations.ForEach(t => _errList.Tasks.Add(t.UpdateTask(Snapshot)));
-    }
-
-    private void ClearTags()
-    {
-      var toremove = _errList.Tasks.Cast<Task>().Where(task => task.HelpKeyword == DeadAnnotationTag.Help).ToList();
-      toremove.ForEach(_errList.Tasks.Remove);
-      var removedLines = new List<SnapshotSpan>();
-      _deadAnnotations.ForEach(tag =>
-      {
-        var snapspan = tag.TrackingReplacementSpan.GetSpan(Snapshot);
-        removedLines.Add(snapspan);
-      });
-      _deadAnnotations.Clear();
-      removedLines.ForEach(line => TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(line)));
     }
 
     private void TagsOnLineChanged(int position)
@@ -683,7 +665,25 @@ namespace DafnyLanguage.Refactoring
     #endregion
 
     #region tagging
+    private List<ITagSpan<DeadAnnotationTag>> Disable() //TODO this is a temp fix for demoing the extension. turn this into an event, RE issue #47
+    {
+      _hasNeverRun = true;
+      var toremove = _errList.Tasks.Cast<Task>().Where(task => task.HelpKeyword == DeadAnnotationTag.Help).ToList();
+      toremove.ForEach(_errList.Tasks.Remove);
+      var removedLines = new List<SnapshotSpan>();
+      _deadAnnotations.ForEach(tag =>
+      {
+        var snapspan = tag.TrackingReplacementSpan.GetSpan(Snapshot);
+        removedLines.Add(snapspan);
+      });
+      _deadAnnotations.Clear();
+      removedLines.ForEach(line => TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(line)));
+      return new List<ITagSpan<DeadAnnotationTag>>();
+    }
+
     public IEnumerable<ITagSpan<DeadAnnotationTag>> GetTags(NormalizedSnapshotSpanCollection spans) {
+      if (!Enabled)
+        return Disable();
       if (spans.Count <= 0 || _deadAnnotations.Count <= 0) return new List<ITagSpan<DeadAnnotationTag>>();
       var activeSnapshot = spans[0].Snapshot;
       return from span in spans

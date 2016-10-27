@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Boogie;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Text;
-using Tacny;
 using Errors = Microsoft.Dafny.Errors;
 using Parser = Microsoft.Dafny.Parser;
 using Program = Microsoft.Dafny.Program;
@@ -14,13 +12,10 @@ namespace DafnyLanguage.Refactoring
   {
     public TacnyDriver(ITextBuffer buffer, string filename) : base(buffer, filename){}
     
-    private static bool _tacticEvaluationIsEnabled = true;
-
     public static bool ToggleTacticEvaluation()
     {
-      _tacticEvaluationIsEnabled = !_tacticEvaluationIsEnabled;
-      Translator.TacticEvaluationIsEnabled = _tacticEvaluationIsEnabled;
-      return _tacticEvaluationIsEnabled;
+      Translator.TacticEvaluationIsEnabled = !Translator.TacticEvaluationIsEnabled;
+      return Translator.TacticEvaluationIsEnabled;
     }
     
     public Program ReParse(bool runResolver)
@@ -41,26 +36,13 @@ namespace DafnyLanguage.Refactoring
       return errorReporter.Count(ErrorLevel.Error) == 0 ? program : null;
     }
 
-    public bool GetExistingProgramFromBuffer(out Program program) {
+    public static bool GetExistingProgramFromBuffer(ITextBuffer buffer, out Program program) {
       program = null;
       Tuple<ITextSnapshot, Program, List<DafnyError>> parseResult;
-      if (!_buffer.Properties.TryGetProperty(bufferDafnyKey, out parseResult) || (parseResult.Item1 != _snapshot))
+      if (!buffer.Properties.TryGetProperty(bufferDafnyKey, out parseResult) || (parseResult.Item1 != buffer.CurrentSnapshot))
         return false;
       program = parseResult.Item2;
       return program!=null;
-    }
-
-    public static bool Verify(Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er, Program unresolvedProgram) {
-      var translator = new Translator(dafnyProgram.reporter, er) {
-        InsertChecksums = true,
-        UniqueIdPrefix = uniqueIdPrefix
-      };
-      //Interpreter.ResetTacnyResultList();
-      var translatorResolver = new Resolver(dafnyProgram);
-      var boogieProgram = translator.Translate(dafnyProgram, unresolvedProgram, translatorResolver);
-      resolver.ReInitializeVerificationErrors(requestId, boogieProgram.Implementations);
-      var outcome = BoogiePipeline(boogieProgram, 1 < CommandLineOptions.Clo.VerifySnapshots ? uniqueIdPrefix : null, requestId, er);
-      return outcome == PipelineOutcome.Done || outcome == PipelineOutcome.VerificationCompleted;
     }
   }
 }

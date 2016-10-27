@@ -1,4 +1,4 @@
-﻿//#define DEBUGTHROW
+﻿#define DEBUGTHROW
 
 using System;
 using System.Collections.Concurrent;
@@ -373,14 +373,19 @@ namespace DafnyLanguage
       DafnyDriver.SetDiagnoseTimeouts(diagnoseTimeouts);
       errorListHolder.FatalVerificationError = null;
       var tacticsErrorList = new List<Tacny.CompoundErrorInformation>();
+      
       var unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ReParse(false);
+      //Dafny.Program unresolvedProgram = null;
+     // if (!TacnyDriver.GetExistingProgramFromBuffer(snapshot.TextBuffer, out unresolvedProgram))
+    //  unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ReParse(false);
+
       var success = true;
 
 #if !DEBUGTHROW
       try
       {
 #endif
-        success = TacnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
+        success = DafnyDriver.Verify(program, errorListHolder, GetHashCode().ToString(), requestId, errorInfo =>
         {
           if (_disposed) return;
 
