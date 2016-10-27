@@ -68,7 +68,7 @@ namespace Tacny {
       Contract.Requires(target != null);
       _i = new Interpreter(program, unresolvedProgram);
       _errorReporterDelegate = erd;
-      var result = _i.FindTacticApplication(target, r);
+      var result = _i.EvalTacticApplication(target, r);
 
       var p = new Printer(Console.Out);
       p.PrintMembers(new List<MemberDecl>() { result }, 0, "");
@@ -77,38 +77,8 @@ namespace Tacny {
       return result;
     }
 
-    public static List<Statement> FindSingleTactic(Program program, MemberDecl target,
-      UpdateStmt chosenTacticCall, ErrorReporterDelegate erd, Program unresolvedProgram) {
-      Contract.Requires(program != null);
-      Contract.Requires(target != null);
-      var i = new Interpreter(program, unresolvedProgram);
-      _errorReporterDelegate = erd;
-      var list = i.FindSingleTacticApplication(target, chosenTacticCall);
-      _errorReporterDelegate = null;
-      return list;
-    }
 
-    private List<Statement> FindSingleTacticApplication(MemberDecl target, UpdateStmt chosenTacticCall) {
-      Contract.Requires(tcce.NonNull(target));
-      _frame = new Stack<Dictionary<IVariable, Type>>();
-      var method = target as Method;
-      if(method == null)
-        return null;
-      _state.SetTopLevelClass(method.EnclosingClass?.Name);
-      _state.TargetMethod = target;
-      var dict = method.Ins.Concat(method.Outs)
-        .ToDictionary<IVariable, IVariable, Type>(item => item, item => item.Type);
-      _frame.Push(dict);
-      SearchBlockStmt(method.Body);
-      _frame.Pop();
-      Contract.Assert(_frame.Count == 0);
-      return (from r in _resultList
-              where r.Key.Tok.pos == chosenTacticCall.Tok.pos
-              select r.Value).FirstOrDefault();
-    }
-
-
-    private MemberDecl FindTacticApplication(MemberDecl target, Resolver r) {
+    private MemberDecl EvalTacticApplication(MemberDecl target, Resolver r) {
       Contract.Requires(tcce.NonNull(target));
       // initialize new stack for variables
       _frame = new Stack<Dictionary<IVariable, Type>>();
@@ -125,15 +95,13 @@ namespace Tacny {
         // sanity check
         Contract.Assert(_frame.Count == 0);
 
-
-       // _state.ResultCache.Add(new ProofState.TacticCache(method?.Name, _resultList.Copy()));
-
         var body = Util.InsertCode(_state, _resultList);
         method.Body.Body.Clear();
         if(body != null)
           method.Body.Body.AddRange(body.Body);
 
         // use the original resolver of the resoved program, as it contains all the necessary type info
+        //TODO: how about pre and post ??
         r.ResolveMethodBody(method);
         //Console.WriteLine("Errors: " + _program.reporter.Count(ErrorLevel.Error));
 
@@ -145,7 +113,7 @@ namespace Tacny {
     private void SearchBlockStmt(BlockStmt body) {
       Contract.Requires(tcce.NonNull(body));
 
-      BaseSearchStrategy.ResetProofList();
+     // BaseSearchStrategy.ResetProofList();
       _frame.Push(new Dictionary<IVariable, Type>());
       foreach(var stmt in body.Body) {
         if(stmt is VarDeclStmt) {
@@ -170,7 +138,7 @@ namespace Tacny {
           var us = stmt as UpdateStmt;
           if(_state.IsTacticCall(us)) {
             var list = StackToDict(_frame);
-            var result = ApplyTactic(_state, list, us);
+            var result = EvalTactic(_state, list, us);
             if (result != null)
               _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
             else{// when no results, just return a empty stmt list
@@ -224,7 +192,7 @@ namespace Tacny {
       return tacticApplication.Rhss[0].Attributes != null && ParsePartialAttribute(tacticApplication.Rhss[0].Attributes);
     }
 
-    public static ProofState ApplyTactic(ProofState state, Dictionary<IVariable, Type> variables,
+    public static ProofState EvalTactic(ProofState state, Dictionary<IVariable, Type> variables,
       UpdateStmt tacticApplication) {
       Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
       Contract.Requires<ArgumentNullException>(tcce.NonNull(tacticApplication));
@@ -254,33 +222,7 @@ namespace Tacny {
       
       }
     }
-    /*
-        public static IEnumerable<ProofState> EvaluateBlockStmt(ProofState state, BlockStmt blockStmt) {
-          Contract.Requires<ArgumentNullException>(state != null, "state");
-          Contract.Requires<ArgumentNullException>(blockStmt != null, "stmt");
-          state.AddNewFrame(blockStmt);
-          var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, false);
-          foreach(var result in search.Search(state, _errorReporterDelegate)) {
-            var c = state.Copy();
-            c.AddStatementRange(result.GetGeneratedCode());
-            yield return c;
-          }
-          if(!state.RemoveFrame()) {
-            throw new InvalidOperationException("tried to pop more frames than were pushed");
-          }
-        }
-    */
-    /*
-        public static void PrepareFrame(BlockStmt body, ProofState state) {
-          Contract.Requires<ArgumentNullException>(body != null, "body");
-          Contract.Requires<ArgumentNullException>(state != null, "state");
-          state.AddNewFrame(body);
-          // call the search engine
-          var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, true);
-          search.Search(state, _errorReporterDelegate);
-          state.RemoveFrame();
-        }
-    */
+
     private static bool IsFlowControl(Statement stmt) {
       return stmt is IfStmt || stmt is WhileStmt || stmt is TacnyCasesBlockStmt;
     }

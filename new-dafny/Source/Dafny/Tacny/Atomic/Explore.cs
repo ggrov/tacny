@@ -61,7 +61,7 @@ namespace Tacny.Atomic {
         else if(md is Microsoft.Dafny.Function)
           mdIns.AddRange(((Microsoft.Dafny.Function)md).Formals);
         else
-          Contract.Assert(false, "In Explore Atomic call," + callArguments[0] + "is netierh Method or Function");
+          Contract.Assert(false, "In Explore Atomic call," + callArguments[0] + "is neither a Method or a Function");
 
         //evaluate the arguemnts for the lemma to be called
         var instArgs = Interpreter.EvalTacnyExpression(state, callArguments[1]);

@@ -70,14 +70,15 @@ namespace Tacny {
       }
       return enumerable;
     }
-
+/*
     public static void ResetProofList()
     {
         _proofList = null;
     }
 
     private static List<ProofState> _proofList;
-    public static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
+*/
+      public static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
       /*      if (_proofList == null)
               _proofList = new List<ProofState>();
             if (_proofList.Count + 1 < SolutionCounter) {
@@ -104,8 +105,11 @@ namespace Tacny {
 
         Console.WriteLine("*********************Verifying Tacny Generated Prog*****************");
         var printer = new Printer(Console.Out);
-        printer.PrintProgram(prog, false);
-        Console.WriteLine("*********************Prog END*****************");
+      //  printer.PrintProgram(prog, false);
+        foreach (var stmt in state.GetGeneratedCode()){
+          printer.PrintStatement(stmt,0);
+        }
+        Console.WriteLine("\n*********************Prog END*****************");
 
       var result = Util.ResolveAndVerify(prog, errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); });
         if (result)
@@ -144,14 +148,6 @@ namespace Tacny {
         if (proofState.IfVerify || proofState.IsEvaluated()) {
           proofState.IfVerify = false;
           switch (VerifyState(proofState, er)){
-            case VerifyResult.Cached:
-              //TODO: is this code active ?
-              Console.WriteLine("Verify Cached is indeed in use ?!");
-              if (proofState.IsPartiallyEvaluated()){
-                yield return proofState;
-                queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
-              }
-              continue;
             case VerifyResult.Verified:
               proofState.MarkCurFrameAsTerminated();
               if (proofState.IsVerified()){
@@ -183,8 +179,6 @@ namespace Tacny {
     internal new static IEnumerable<ProofState> Search(ProofState rootState, ErrorReporterDelegate er){
       var stack = new Stack<IEnumerator<ProofState>>();
       stack.Push(Interpreter.EvalStep(rootState).GetEnumerator());
-
-
       IEnumerator<ProofState> enumerator = Enumerable.Empty<ProofState>().GetEnumerator();
 
       while(stack.Count > 0) {
@@ -219,6 +213,7 @@ namespace Tacny {
        * otherwise, continue to evaluate the next stmt
        */
         if(!proofState.IsEvaluated()) {
+          //move to the next stmt
           stack.Push(enumerator);
           enumerator = (Interpreter.EvalStep(proofState).GetEnumerator());
         }

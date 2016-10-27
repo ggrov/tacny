@@ -187,7 +187,6 @@
     <Compile Include="Tacny\Language\Match.cs" />
     <Compile Include="Tacny\ProofState.cs" />
     <Compile Include="Tacny\SearchFramework.cs" />
-    <Compile Include="Tacny\Solution.cs" />
     <Compile Include="Tacny\tcce.cs" />
     <Compile Include="Tacny\Util.cs" />
     <Compile Include="Triggers\QuantifiersCollection.cs" />

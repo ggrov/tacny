@@ -162,7 +162,7 @@ namespace Tacny {
 
     public void MarkCurFrameAsTerminated() {
       //assmeb code in the top frame
-      _scope.Peek().MarkAsVerified();
+      _scope.Peek().MarkAsEvaluated();
 
       // add the assembled code to the parent frame
       if(_scope.Peek().Parent != null) {
@@ -537,7 +537,8 @@ namespace Tacny {
       public TacticInformation TacticInfo;
       //a funtion with the right kind will be able to th generated code to List of statment
       private List<Statement> _generatedCode;
-      //store the tempratry code to be combined, e.g. case statments for match
+      //store the tempratry code to be combined, e.g. case statments for match, wit a boolean tag indicating whether is verified
+      //private readonly List<Tuple<bool, List<Statement>>> _rawCodeList;
       private readonly List<List<Statement>> _rawCodeList;
 
       private readonly ErrorReporter _reporter;
@@ -753,8 +754,10 @@ namespace Tacny {
         return ret;
       }
 
-
-      internal void MarkAsVerified() {
+      /// <summary>
+      /// this will assemble the raw code
+      /// </summary>
+      internal void MarkAsEvaluated() {
         _generatedCode = AssembleStmts(_rawCodeList, WhatKind);
       }
 
