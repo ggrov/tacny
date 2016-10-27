@@ -223,26 +223,7 @@ namespace Tacny {
       }
     }
 
-    private static bool IsFlowControl(Statement stmt) {
-      return stmt is IfStmt || stmt is WhileStmt || stmt is TacnyCasesBlockStmt;
-    }
-    private static bool IsFlowControlFrame(ProofState state){
-      var typ = state.GetCurFrameTyp();
-      return typ == "tmatch";
-    }
 
-    private static IEnumerable<ProofState> EvalNextControlFlow(Statement stmt, ProofState state){
-      IEnumerable<ProofState> ret;
-      switch(state.GetCurFrameTyp()) {
-        case "tmatch":
-          ret = new Match().EvalNext (stmt as TacnyCasesBlockStmt, state);
-          break;
-        default:
-          ret = null;
-          break;
-      }
-      return ret;
-    }
 
     public static IEnumerable<ProofState> EvalStep(ProofState state) {
       Contract.Requires<ArgumentNullException>(state != null, "state");
@@ -251,8 +232,8 @@ namespace Tacny {
       var stmt = state.GetStmt();
 
       //if the current frame is a control flow, e.g. match, no need to get stmt
-      if (IsFlowControlFrame(state)){
-        enumerable = EvalNextControlFlow(stmt, state);
+      if (FlowControlMng.IsFlowControlFrame(state)){
+        enumerable = FlowControlMng.EvalNextControlFlow(stmt, state);
       }
       else {
         if (stmt is TacticVarDeclStmt){
@@ -271,7 +252,7 @@ namespace Tacny {
             //enumerable = ApplyNestedTactic(state.Copy(), state.DafnyVars(), us);
           }
           else{
-// apply atomic
+            // apply atomic
             string sig = Util.GetSignature(us);
             //Firstly, check if this is a projection function
             var types =
@@ -293,7 +274,7 @@ namespace Tacny {
         else if (stmt is PredicateStmt){
           enumerable = EvalPredicateStmt((PredicateStmt) stmt, state);
         }
-        else if (IsFlowControl(stmt)){
+        else if (FlowControlMng.IsFlowControl(stmt)){
           if (stmt is TacnyCasesBlockStmt){
             enumerable = new Match().EvalInit(stmt, state);
           }

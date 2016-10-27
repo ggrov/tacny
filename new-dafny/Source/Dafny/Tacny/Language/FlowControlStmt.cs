@@ -11,6 +11,32 @@ using Tacny.Atomic;
 using Tacny.Language;
 
 namespace Tacny.Language {
+  public class FlowControlMng{
+
+    public static bool IsFlowControl(Statement stmt) {
+      return stmt is IfStmt || stmt is WhileStmt || stmt is TacnyCasesBlockStmt;
+    }
+
+    public static bool IsFlowControlFrame(ProofState state) {
+      var typ = state.GetCurFrameTyp();
+      //more control frame should be added here
+      return (typ == "tmatch");
+    }
+
+    public static IEnumerable<ProofState> EvalNextControlFlow(Statement stmt, ProofState state) {
+      IEnumerable<ProofState> ret;
+      switch(state.GetCurFrameTyp()) {
+        case "tmatch":
+          ret = new Match().EvalNext(stmt as TacnyCasesBlockStmt, state);
+          break;
+        default:
+          ret = null;
+          break;
+      }
+      return ret;
+    }
+  }
+
   [ContractClass(typeof(FlowControlStmtContract))]
   public abstract class FlowControlStmt : BaseTactic {
     public override string Signature { get; }

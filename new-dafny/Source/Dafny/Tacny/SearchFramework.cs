@@ -188,7 +188,7 @@ namespace Tacny {
             continue;
         }
         var proofState = enumerator.Current;
-        //check if any new added coded reuqires to call the dafny to verity, or reach the last line of code
+        //check if any new added coded reuqires to call verifier, or reach the last line of code
         if(proofState.IfVerify || proofState.IsEvaluated()) {
           proofState.IfVerify = false;
           switch(VerifyState(proofState, er)) {
@@ -214,8 +214,8 @@ namespace Tacny {
        */
         if(!proofState.IsEvaluated()) {
           //move to the next stmt
-          stack.Push(enumerator);
           enumerator = (Interpreter.EvalStep(proofState).GetEnumerator());
+          stack.Push(enumerator);
         }
       }
     }

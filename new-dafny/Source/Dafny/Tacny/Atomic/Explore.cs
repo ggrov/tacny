@@ -88,8 +88,8 @@ namespace Tacny.Atomic {
                   if(udt1.Name == udt2.Name)
                     args[i].Add(arg);
                 } else {
-                  // if variable type and current argument types match
-                  if(item.Type.ToString() == type.ToString())
+                  // if variable type and current argument types match, or the type is yet to be inferred
+                  if(item.Type.ToString() == type.ToString() || type is InferredTypeProxy)
                     args[i].Add(arg);
                 }
               } else

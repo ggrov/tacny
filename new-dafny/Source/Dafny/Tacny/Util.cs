@@ -196,7 +196,7 @@ namespace Tacny {
 
       // check if resolution fails
       if (program.reporter.Count(ErrorLevel.Error) != 0){
-        Console.Write("Fail ro resolve tacny prog !!!");
+        Console.Write("Fail to resolve prog, skip verifier ! \n");
         return false;
 
       }

@@ -8,8 +8,7 @@ using Tacny;
 using Formal = Microsoft.Dafny.Formal;
 using Type = Microsoft.Dafny.Type;
 using Microsoft.Dafny;
-using dfy = Microsoft.Dafny;
-using System.Diagnostics.Contracts;
+
 
 namespace Tacny.Language {
   class Match {
@@ -88,7 +87,7 @@ namespace Tacny.Language {
       Contract.Requires(raw != null);
       Contract.Requires(raw.Count > 0);
       Contract.Requires(raw[0] != null && raw[0].Count == 1 && raw[0][0] is MatchStmt);
-      return raw[0].Count - 1;
+      return raw.Count - 1;
 
     }
     public IEnumerable<ProofState> EvalNext(Statement statement, ProofState state0){
