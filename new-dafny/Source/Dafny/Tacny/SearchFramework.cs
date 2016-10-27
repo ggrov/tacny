@@ -198,8 +198,8 @@ namespace Tacny {
                 yield return proofState;
                 yield break;
              }
-              stack.Push(enumerator);
-              enumerator = (Interpreter.EvalStep(proofState).GetEnumerator());
+              //stack.Push(enumerator);
+              //enumerator = (Interpreter.EvalStep(proofState).GetEnumerator());
               break;
             case VerifyResult.Failed:
               break;
@@ -213,9 +213,10 @@ namespace Tacny {
        * otherwise, continue to evaluate the next stmt
        */
         if(!proofState.IsEvaluated()) {
+          //push the current one to the stack
+          stack.Push(enumerator);
           //move to the next stmt
           enumerator = (Interpreter.EvalStep(proofState).GetEnumerator());
-          stack.Push(enumerator);
         }
       }
     }
