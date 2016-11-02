@@ -4715,6 +4715,19 @@ namespace Microsoft.Dafny
       }
     }
 
+    /// <summary>
+    /// For tacny use, set the current class, so that, when resolving types, resover can refer to the right definition. 
+    /// This is not a ideal solution.
+    /// </summary>
+    /// <param name="cl"></param>
+    public void SetCurClass(ClassDecl cl){
+      currentClass = cl;
+    }
+    /// <summary>
+    /// For tacny use, when a new method is generated, tacny need to resove that method only
+    /// more need to be done for 1, pushing type parameters 2, pre and post rewrite ?
+    /// </summary>
+    /// <param name="m"></param>
     public void ResolveMethodBody(Method m){
       scope.PushMarker();
       if(m.IsStatic) {
@@ -6882,9 +6895,44 @@ namespace Microsoft.Dafny
       }
 
       foreach (var a in update.ResolvedStatements) {
-        ResolveStatement(a, codeContext);
+/*
+        if (a is CallStmt){
+         Type ta = (a as CallStmt).Args[0].Type;
+          //Type tb = SubstType((a as CallStmt).Method.Ins[0].Type, (a as CallStmt).MethodSelect.TypeArgumentSubstitutions());
+          Type tb = (a as CallStmt).Method.Ins[0].Type;
+          tmp_debug_type(ta);
+
+        }
+*/
+      ResolveStatement(a, codeContext);
       }
     }
+/*
+    void tmp_debug_type(Type ta){
+      Dictionary<string, MemberDecl> members;
+      MemberDecl member = null;
+     
+      classMembers.TryGetValue(currentClass, out members);
+      members.TryGetValue("dummyLemma", out member);
+
+      Type tb = (member as Method).Ins[0].Type;
+      tmp_debug_type(ta, tb);
+    }
+    public void tmp_debug_type(Type ta, Type tb){
+      Console.WriteLine("++++this is ok");
+      //Type ta = (a as CallStmt).Args[0].Type;
+      //Type tb = SubstType((a as CallStmt).Method.Ins[0].Type, (a as CallStmt).MethodSelect.TypeArgumentSubstitutions());
+      //Type tb = (a as CallStmt).Method.Ins[0].Type;
+     // ta = ta.NormalizeExpand();
+      //tb = tb.NormalizeExpand();
+      var taa = (UserDefinedType)ta;
+      var rca = taa.ResolvedClass;
+      var tbb = (UserDefinedType)tb;
+      var rcb = tbb.ResolvedClass;
+      Console.WriteLine("++++Debugging !: " +
+                       Object.ReferenceEquals(rca, rcb));
+    }
+    */
 
     private void ResolveAssignSuchThatStmt(AssignSuchThatStmt s, ICodeContext codeContext) {
       Contract.Requires(s != null);

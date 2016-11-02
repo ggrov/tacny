@@ -70,30 +70,79 @@ namespace Tacny {
       }
       return enumerable;
     }
-/*
-    public static void ResetProofList()
-    {
-        _proofList = null;
-    }
 
-    private static List<ProofState> _proofList;
-*/
-      public static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
-      /*      if (_proofList == null)
-              _proofList = new List<ProofState>();
-            if (_proofList.Count + 1 < SolutionCounter) {
-              _proofList.Add(state);
-              return VerifyResult.Cached;
-            } else {
-              _proofList.Add(state);
-              var bodyList = new Dictionary<ProofState, BlockStmt>();
-              foreach (var proofState in _proofList) {
-                bodyList.Add(proofState, Util.InsertCode(proofState,
-                  new Dictionary<UpdateStmt, List<Statement>>() {
-                    {proofState.TacticApplication, proofState.GetGeneratedCode()}
-                  }));
-              }
-       */
+    /*
+    public static VerifyResult VerifyState0(ProofState state, ErrorReporterDelegate er) {
+      var bodyList = new Dictionary<ProofState, BlockStmt>();
+      bodyList.Add(state, Util.InsertCode(state,
+        new Dictionary<UpdateStmt, List<Statement>>(){
+          {state.TacticApplication, state.GetGeneratedCode()}
+        }));
+
+      var memberList = Util.GenerateMembers(state, bodyList);
+
+
+      var prog = state.GetDafnyProgram();
+      var r = new Resolver(prog);
+      r.ResolveProgram(prog);
+
+      var results = new Dictionary<UpdateStmt, List<Statement>>();
+      results.Add(state.TacticApplication, state.GetGeneratedCode().Copy());
+      var body = Util.InsertCode(state, results);
+
+      Method dest_md = null;
+      foreach (var m in prog.DefaultModuleDef.TopLevelDecls){
+        if (m.WhatKind == "class"){
+          foreach (var method in (m as DefaultClassDecl).Members){
+            if(method.FullName == state.TargetMethod.FullName){
+              dest_md = (method as Method);
+              dest_md.Body.Body.Clear();
+              dest_md.Body.Body.AddRange(body.Body);
+            }
+          }
+        }
+      }
+      dest_md.CallsTactic = false;
+
+      //(currentClass != null && classMembers.TryGetValue(currentClass, out members) && members.TryGetValue(expr.Name, out member))
+
+      r.ResolveMethodBody(dest_md);
+      //r.ResolveMethod(dest_md);
+
+      Console.WriteLine("*********************Verifying Tacny Generated Prog*****************");
+      var printer = new Printer(Console.Out);
+      //printer.PrintProgram(prog, false);
+      foreach(var stmt in state.GetGeneratedCode()) {
+        printer.PrintStatement(stmt, 0);
+      }
+      Console.WriteLine("\n*********************Prog END*****************");
+
+
+      ErrorReporterDelegate tmp_er =
+        errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); };
+      var boogieProg = Util.Translate(prog, prog.Name, tmp_er);
+      PipelineStatistics stats;
+      List<ErrorInformation> errorList;
+
+      //Console.WriteLine("call verifier in Tacny !!!");
+      PipelineOutcome tmp = Util.BoogiePipeline(boogieProg,
+        new List<string> { prog.Name }, prog.Name, tmp_er,
+        out stats, out errorList, prog);
+
+
+      // var result = Util.ResolveAndVerify(prog, );
+      if(errorList.Count == 0)
+        return VerifyResult.Verified;
+      else {
+        //TODO: find which proof state verified (if any)
+        //TODO: update verification results
+
+        //  er();
+        return VerifyResult.Failed;
+      }
+    }
+  */
+  public static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
       var bodyList = new Dictionary<ProofState, BlockStmt>();
       bodyList.Add(state, Util.InsertCode(state,
         new Dictionary<UpdateStmt, List<Statement>>(){
@@ -103,16 +152,17 @@ namespace Tacny {
         var memberList = Util.GenerateMembers(state, bodyList);
         var prog = Util.GenerateDafnyProgram(state, memberList.Values.ToList());
 
-        Console.WriteLine("*********************Verifying Tacny Generated Prog*****************");
+        Console.WriteLine("*********************Verifying Tacny Generated Lines *****************");
         var printer = new Printer(Console.Out);
       //  printer.PrintProgram(prog, false);
         foreach (var stmt in state.GetGeneratedCode()){
           printer.PrintStatement(stmt,0);
         }
-        Console.WriteLine("\n*********************Prog END*****************");
-
       var result = Util.ResolveAndVerify(prog, errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); });
-        if (result)
+
+      Console.WriteLine("\n*********************END*****************");
+
+      if (result)
           return VerifyResult.Verified;
         else {
           //TODO: find which proof state verified (if any)
@@ -123,6 +173,7 @@ namespace Tacny {
         }
       }
   }
+
 
   internal class BreadthFirstSeach : BaseSearchStrategy {
 

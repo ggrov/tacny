@@ -102,6 +102,9 @@ namespace Tacny {
 
         // use the original resolver of the resoved program, as it contains all the necessary type info
         //TODO: how about pre and post ??
+        method.CallsTactic = false; // set the tactic call lable to be false, no actual consequence
+        // set the current class in the resolver, so that it can refer to the memberdecl correctly
+        r.SetCurClass(method.EnclosingClass as ClassDecl);
         r.ResolveMethodBody(method);
         //Console.WriteLine("Errors: " + _program.reporter.Count(ErrorLevel.Error));
 
