@@ -8,6 +8,7 @@ using System.Linq;
 using Microsoft.Boogie;
 using Microsoft.Dafny;
 using Microsoft.VisualStudio.Text;
+using Tacny;
 using Bpl = Microsoft.Boogie;
 using Dafny = Microsoft.Dafny;
 
@@ -283,12 +284,14 @@ namespace DafnyLanguage
       return Dafny.DafnyOptions.O.Induction == 3;
     }
 
-    public static bool Verify(Dafny.Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er) {
+    public static bool Verify(Dafny.Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er, Dafny.Program unresolvedProgram) {
       Dafny.Translator translator = new Dafny.Translator(dafnyProgram.reporter, er);
       translator.InsertChecksums = true;
       translator.UniqueIdPrefix = uniqueIdPrefix;
-      Bpl.Program boogieProgram = translator.Translate(dafnyProgram);
+      var translatorResolver = new Resolver(dafnyProgram);
+      Bpl.Program boogieProgram = translator.Translate(dafnyProgram, unresolvedProgram, translatorResolver);
 
+      //Interpreter.ResetTacnyResultList();
       resolver.ReInitializeVerificationErrors(requestId, boogieProgram.Implementations);
 
       // TODO(wuestholz): Maybe we should use a fixed program ID to limit the memory overhead due to the program cache in Boogie.

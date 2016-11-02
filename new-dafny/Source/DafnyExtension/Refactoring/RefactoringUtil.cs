@@ -40,9 +40,7 @@ namespace DafnyLanguage.Refactoring
     public static bool GetExistingProgram(ITextBuffer tb, out Program p) {
       p = null;
       string file;
-      if(!LoadAndCheckDocument(tb, out file)) return false;
-      var driver = new TacnyDriver(tb, file);
-      return driver.GetExistingProgramFromBuffer(out p);
+      return LoadAndCheckDocument(tb, out file) && TacnyDriver.GetExistingProgramFromBuffer(tb, out p);
     }
 
     public static bool ProgramIsVerified(ITextBuffer tb) {
