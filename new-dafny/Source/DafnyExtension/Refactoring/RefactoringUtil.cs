@@ -101,12 +101,9 @@ namespace DafnyLanguage.Refactoring
               let name = expr?.Lhs as NameSegment
               where name != null
               let start = expr.tok.pos - name.Name.Length
-              let end = rhs.Tok.pos + 3
-              let attrib = rhs?.Attributes as UserSuppliedAttributes
-              let attribClose = attrib?.CloseBrace?.pos + 2
-              let trueEnd = attribClose ?? end
-              where start < p && p < trueEnd
-              select new Tuple<UpdateStmt, int, int>(stmt as UpdateStmt, start, trueEnd))
+              let end = stmt.EndTok.pos + 1
+              where start <= p && p <= end
+              select new Tuple<UpdateStmt, int, int>(stmt as UpdateStmt, start, end))
           .FirstOrDefault();
       } catch (ArgumentNullException) { us = null; }
       return us != null ? TacticReplaceStatus.Success : TacticReplaceStatus.NoTactic;
