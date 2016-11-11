@@ -90,12 +90,17 @@ namespace Tacny {
         var dict = method.Ins.Concat(method.Outs)
           .ToDictionary<IVariable, IVariable, Type>(item => item, item => item.Type);
         _frame.Push(dict);
+
+        var pre_res = _resultList.Keys.Copy();
+
         SearchBlockStmt(method.Body);
         dict = _frame.Pop();
         // sanity check
         Contract.Assert(_frame.Count == 0);
 
-        var body = Util.InsertCode(_state, _resultList);
+        var new_rets = _resultList.Where(kvp => !pre_res.Contains(kvp.Key)).ToDictionary(i=>i.Key,i=>i.Value);
+        Contract.Assert(new_rets.Count != 0);
+        var body = Util.InsertCode(_state, new_rets);
         method.Body.Body.Clear();
         if(body != null)
           method.Body.Body.AddRange(body.Body);

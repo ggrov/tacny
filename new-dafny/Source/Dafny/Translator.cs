@@ -1474,7 +1474,7 @@ namespace Microsoft.Dafny {
           Method m = (Method)member;
             if (TacticEvaluationIsEnabled && m.CallsTactic) {
             m = Tacny.Interpreter.FindAndApplyTactic(program, m, _tacnyDelegate, unresolvedProgram, r) as Method;
-          }
+            }
           FuelContext oldFuelContext = this.fuelContext;
           this.fuelContext = FuelSetting.NewFuelContext(m);
 

@@ -69,6 +69,8 @@ namespace Tacny {
     public static BlockStmt InsertCode(ProofState state, Dictionary<UpdateStmt, List<Statement>> code) {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       Contract.Requires<ArgumentNullException>(code != null, "code");
+
+
       var prog = state.GetDafnyProgram();
       var tld = prog.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x.Name == state.ActiveClass.Name) as ClassDecl;
       Contract.Assert(tld != null);
@@ -186,6 +188,74 @@ namespace Tacny {
     }
 
 
+
+    public static void SetVerifyFalseAttr(MemberDecl memb) {
+      var args = new List<Expression>();
+      var f = new Microsoft.Dafny.LiteralExpr(new Token(Interpreter.TACNY_CODE_TOK_LINE, 0) { val = "false" }, false);
+      args.Add(f);
+      Attributes newattr = new Attributes("verify", args, memb.Attributes);
+      memb.Attributes = newattr;
+    }
+
+
+    public static Program GenerateResovedProg(ProofState state) {
+      var prog = state.GetDafnyProgram();
+      var r = new Resolver(prog);
+      r.ResolveProgram(prog);
+      //get the generated code
+      var results = new Dictionary<UpdateStmt, List<Statement>>();
+      results.Add(state.TacticApplication, state.GetGeneratedCode().Copy());
+      var body = Util.InsertCode(state, results);
+      // find the membcl in the resoved prog
+      Method dest_md = null;
+      foreach(var m in prog.DefaultModuleDef.TopLevelDecls) {
+        if(m.WhatKind == "class") {
+          foreach(var method in (m as DefaultClassDecl).Members) {
+            if(method.FullName == state.TargetMethod.FullName) {
+              dest_md = (method as Method);
+              dest_md.Body.Body.Clear();
+              dest_md.Body.Body.AddRange(body.Body);
+            } else //set other memberdecl as verify false
+              Util.SetVerifyFalseAttr(method);
+          }
+        }
+      }
+
+      Console.WriteLine("*********************Verifying Tacny Generated Prog*****************");
+      var printer = new Printer(Console.Out);
+      //printer.PrintProgram(prog, false);
+      foreach(var stmt in state.GetGeneratedCode()) {
+        printer.PrintStatement(stmt, 0);
+      }
+      Console.WriteLine("\n*********************Prog END*****************");
+
+      dest_md.CallsTactic = false;
+      r.SetCurClass(dest_md.EnclosingClass as ClassDecl);
+      r.ResolveMethodBody(dest_md);
+
+      if (prog.reporter.Count(ErrorLevel.Error) != 0){
+        Console.Write("Fail to resolve prog, skip verifier ! \n");
+        return null;
+      }
+      else
+        return prog;
+    }
+
+    public static bool VerifyResovedProg(Program program, ErrorReporterDelegate er) {
+      Contract.Requires<ArgumentNullException>(program != null);
+      
+      var boogieProg = Translate(program, program.Name, er);
+      PipelineStatistics stats;
+      List<ErrorInformation> errorList;
+
+      //Console.WriteLine("call verifier in Tacny !!!");
+      PipelineOutcome tmp = BoogiePipeline(boogieProg,
+        new List<string> { program.Name }, program.Name, er,
+        out stats, out errorList, program);
+
+      return errorList.Count == 0;
+    }
+    /*
     public static bool ResolveAndVerify(Program program, ErrorReporterDelegate er) {
       Contract.Requires<ArgumentNullException>(program != null);
       var r = new Resolver(program);
@@ -211,7 +281,7 @@ namespace Tacny {
 
       return errorList.Count == 0;
     }
-
+    */
     public static Bpl.Program Translate(Program dafnyProgram, string uniqueIdPrefix, ErrorReporterDelegate er) {
       Contract.Requires<ArgumentNullException>(dafnyProgram != null, "dafnyProgram");
       Contract.Requires<ArgumentNullException>(uniqueIdPrefix != null, "uniqueIdPrefix");

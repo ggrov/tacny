@@ -71,53 +71,24 @@ namespace Tacny {
       return enumerable;
     }
 
-    /*
-    public static VerifyResult VerifyState0(ProofState state, ErrorReporterDelegate er) {
-      var bodyList = new Dictionary<ProofState, BlockStmt>();
+
+
+
+    public static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
+      /*var bodyList = new Dictionary<ProofState, BlockStmt>();
       bodyList.Add(state, Util.InsertCode(state,
         new Dictionary<UpdateStmt, List<Statement>>(){
           {state.TacticApplication, state.GetGeneratedCode()}
         }));
 
-      var memberList = Util.GenerateMembers(state, bodyList);
-
-
-      var prog = state.GetDafnyProgram();
-      var r = new Resolver(prog);
-      r.ResolveProgram(prog);
-
-      var results = new Dictionary<UpdateStmt, List<Statement>>();
-      results.Add(state.TacticApplication, state.GetGeneratedCode().Copy());
-      var body = Util.InsertCode(state, results);
-
-      Method dest_md = null;
-      foreach (var m in prog.DefaultModuleDef.TopLevelDecls){
-        if (m.WhatKind == "class"){
-          foreach (var method in (m as DefaultClassDecl).Members){
-            if(method.FullName == state.TargetMethod.FullName){
-              dest_md = (method as Method);
-              dest_md.Body.Body.Clear();
-              dest_md.Body.Body.AddRange(body.Body);
-            }
-          }
-        }
-      }
-      dest_md.CallsTactic = false;
-
-      //(currentClass != null && classMembers.TryGetValue(currentClass, out members) && members.TryGetValue(expr.Name, out member))
-
-      r.ResolveMethodBody(dest_md);
-      //r.ResolveMethod(dest_md);
-
-      Console.WriteLine("*********************Verifying Tacny Generated Prog*****************");
-      var printer = new Printer(Console.Out);
-      //printer.PrintProgram(prog, false);
-      foreach(var stmt in state.GetGeneratedCode()) {
-        printer.PrintStatement(stmt, 0);
-      }
-      Console.WriteLine("\n*********************Prog END*****************");
-
-
+*/
+     var prog =  Util.GenerateResovedProg(state);
+      if (prog == null)
+        return VerifyResult.Failed;
+      ErrorReporterDelegate tmp_er =
+        errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); };
+      var result = Util.VerifyResovedProg(prog, tmp_er);
+/*
       ErrorReporterDelegate tmp_er =
         errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); };
       var boogieProg = Util.Translate(prog, prog.Name, tmp_er);
@@ -128,21 +99,17 @@ namespace Tacny {
       PipelineOutcome tmp = Util.BoogiePipeline(boogieProg,
         new List<string> { prog.Name }, prog.Name, tmp_er,
         out stats, out errorList, prog);
+*/
 
-
-      // var result = Util.ResolveAndVerify(prog, );
-      if(errorList.Count == 0)
+      if(result)
         return VerifyResult.Verified;
       else {
-        //TODO: find which proof state verified (if any)
-        //TODO: update verification results
-
-        //  er();
         return VerifyResult.Failed;
       }
     }
-  */
-  public static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
+  /*
+  public static VerifyResult VerifyState0(ProofState state, ErrorReporterDelegate er) {
+      //TODO: remove body list, only nedd one
       var bodyList = new Dictionary<ProofState, BlockStmt>();
       bodyList.Add(state, Util.InsertCode(state,
         new Dictionary<UpdateStmt, List<Statement>>(){
@@ -172,9 +139,10 @@ namespace Tacny {
           return VerifyResult.Failed;
         }
       }
+      */
   }
 
-
+    
   internal class BreadthFirstSeach : BaseSearchStrategy {
 
     internal new static IEnumerable<ProofState> Search(ProofState rootState, ErrorReporterDelegate er){
@@ -205,7 +173,7 @@ namespace Tacny {
                  yield return proofState;
                  yield break;
               }
-              queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
+              //queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
               break;
             case VerifyResult.Failed:
               break;
