@@ -127,7 +127,7 @@ namespace Microsoft.Dafny {
     FuelContext fuelContext = null;
 
     //TODO: tidy up unnecessary variables
-    Program program, unresolvedProgram;
+    Program program;
     private Resolver r;
 
     [ContractInvariantMethod]
@@ -485,12 +485,11 @@ namespace Microsoft.Dafny {
       return new Bpl.IdentifierExpr(tok, var.AssignUniqueName(currentDeclaration.IdGenerator), TrType(var.Type));
     }
 
-    public Bpl.Program Translate(Program p, Program unresolved = null, Resolver r = null) {
+    public Bpl.Program Translate(Program p, Resolver r = null) {
       Contract.Requires(p != null);
       Contract.Ensures(Contract.Result<Bpl.Program>() != null);
       
       program = p;
-      unresolvedProgram = unresolved;
       this.r = r;
 
       if (sink == null || predef == null) {
@@ -1473,7 +1472,7 @@ namespace Microsoft.Dafny {
         } else if (member is Method) {
           Method m = (Method)member;
             if (TacticEvaluationIsEnabled && m.CallsTactic) {
-            m = Tacny.Interpreter.FindAndApplyTactic(program, m, _tacnyDelegate, unresolvedProgram, r) as Method;
+            m = Tacny.Interpreter.FindAndApplyTactic(program, m, _tacnyDelegate, r) as Method;
             }
           FuelContext oldFuelContext = this.fuelContext;
           this.fuelContext = FuelSetting.NewFuelContext(m);

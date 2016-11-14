@@ -374,7 +374,7 @@ namespace DafnyLanguage
       errorListHolder.FatalVerificationError = null;
       var tacticsErrorList = new List<Tacny.CompoundErrorInformation>();
       
-      var unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ReParse(false);
+      //var unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ReParse(false);
       //Dafny.Program unresolvedProgram = null;
      // if (!TacnyDriver.GetExistingProgramFromBuffer(snapshot.TextBuffer, out unresolvedProgram))
     //  unresolvedProgram = new TacnyDriver(snapshot.TextBuffer, _document.FilePath).ReParse(false);
@@ -423,7 +423,7 @@ namespace DafnyLanguage
                 System.IO.Path.GetFullPath(_document.FilePath) == aux.Tok.filename),
               errorInfo.ImplementationName, requestId);
           }
-        }, unresolvedProgram);
+        });
         if (!success)
         {
           errorListHolder.AddError(

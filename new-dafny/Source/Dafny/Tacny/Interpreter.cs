@@ -45,12 +45,12 @@ namespace Tacny {
       return bufferList;
     }
 
-    private Interpreter(Program program, Program unresolvedProgram = null) {
+    private Interpreter(Program program) {
       Contract.Requires(tcce.NonNull(program));
       // initialize state
       _errorReporter = new ConsoleErrorReporter();
       _program = program;
-      _state = new ProofState(program, _errorReporter, unresolvedProgram);
+      _state = new ProofState(program, _errorReporter);
       _frame = new Stack<Dictionary<IVariable, Type>>();
       //_resultList = new Dictionary<UpdateStmt, List<Statement>>();
     }
@@ -63,10 +63,10 @@ namespace Tacny {
       Contract.Invariant(_errorReporter != null);
     }
 
-    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Program unresolvedProgram = null, Resolver r = null) {
+    public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Resolver r = null) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
-      _i = new Interpreter(program, unresolvedProgram);
+      _i = new Interpreter(program);
       _errorReporterDelegate = erd;
       var result = _i.EvalTacticApplication(target, r);
 

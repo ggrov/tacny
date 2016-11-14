@@ -284,12 +284,12 @@ namespace DafnyLanguage
       return Dafny.DafnyOptions.O.Induction == 3;
     }
 
-    public static bool Verify(Dafny.Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er, Dafny.Program unresolvedProgram) {
+    public static bool Verify(Dafny.Program dafnyProgram, ResolverTagger resolver, string uniqueIdPrefix, string requestId, ErrorReporterDelegate er) {
       Dafny.Translator translator = new Dafny.Translator(dafnyProgram.reporter, er);
       translator.InsertChecksums = true;
       translator.UniqueIdPrefix = uniqueIdPrefix;
       var translatorResolver = new Resolver(dafnyProgram);
-      Bpl.Program boogieProgram = translator.Translate(dafnyProgram, unresolvedProgram, translatorResolver);
+      Bpl.Program boogieProgram = translator.Translate(dafnyProgram, translatorResolver);
 
       //Interpreter.ResetTacnyResultList();
       resolver.ReInitializeVerificationErrors(requestId, boogieProgram.Implementations);

@@ -114,7 +114,7 @@ namespace Microsoft.Dafny
       { Contract.Assert(file != null);
         string extension = Path.GetExtension(file);
         if (extension != null) { extension = extension.ToLower(); }
-        if (extension == ".dfy" || extension == ".tacny") {
+        if (extension == ".dfy") {
           dafnyFiles.Add(file);
         }
         else if ((extension == ".cs") || (extension == ".dll")) {
@@ -209,7 +209,7 @@ namespace Microsoft.Dafny
     public static Bpl.Program Translate(Program dafnyProgram, Resolver r = null)
     {
       Dafny.Translator translator = new Dafny.Translator(dafnyProgram.reporter);
-      Bpl.Program boogieProgram = translator.Translate(dafnyProgram, null, r);
+      Bpl.Program boogieProgram = translator.Translate(dafnyProgram, r);
       if (CommandLineOptions.Clo.PrintFile != null)
       {
         ExecutionEngine.PrintBplFile(CommandLineOptions.Clo.PrintFile, boogieProgram, false, false, CommandLineOptions.Clo.PrettyPrint);

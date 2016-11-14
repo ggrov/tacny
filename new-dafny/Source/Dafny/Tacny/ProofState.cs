@@ -42,20 +42,18 @@ namespace Tacny {
     }
     private Stack<Frame> _scope;
 
-    public ProofState(Program program, ErrorReporter reporter, Program unresolvedProgram = null) {
+    public ProofState(Program program, ErrorReporter reporter) {
       Contract.Requires(program != null);
       // get a new program instance
       Datatypes = new Dictionary<string, DatatypeDecl>();
       _topLevelClasses = new List<TopLevelClassDeclaration>();
       Reporter = reporter;
-      if (unresolvedProgram == null) {
-        //note the differences between this ParseCheck and the one at the top level. This function only parses but the other one resolves.
-        var err = Parser.ParseOnly(new List<string>() { program.Name }, program.Name, out _original);
-        if (err != null)
-          reporter.Error(MessageSource.Tacny, program.DefaultModuleDef.tok, $"Error parsing a fresh Tacny program: {err}");
-      } else {
-        _original = unresolvedProgram ;
-      }
+
+      //note the differences between this ParseCheck and the one at the top level. This function only parses but the other one resolves.
+      var err = Parser.ParseOnly(new List<string>() { program.FullName }, program.Name, out _original);
+      if (err != null)
+        reporter.Error(MessageSource.Tacny, program.DefaultModuleDef.tok, $"Error parsing a fresh Tacny program: {err}");
+    
       ResultCache = new List<TacticCache>();
       // fill state
       FillStaticState(program);
@@ -608,7 +606,7 @@ namespace Tacny {
             TacticInfo.IsPartial = true;
             break;
           default:
-            _reporter.Warning(MessageSource.Tacny, ((MemberDecl)ActiveTactic).tok, $"Unrecognized attribute {attr.Name}");
+            //_reporter.Warning(MessageSource.Tacny, ((MemberDecl)ActiveTactic).tok, $"Unrecognized attribute {attr.Name}");
             break;
         }
 
