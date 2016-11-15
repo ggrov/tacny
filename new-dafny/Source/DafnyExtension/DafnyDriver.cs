@@ -289,7 +289,7 @@ namespace DafnyLanguage
       translator.InsertChecksums = true;
       translator.UniqueIdPrefix = uniqueIdPrefix;
       var translatorResolver = new Resolver(dafnyProgram);
-      Bpl.Program boogieProgram = translator.Translate(dafnyProgram, translatorResolver);
+      Bpl.Program boogieProgram = translator.Translate(dafnyProgram, r:translatorResolver);
 
       //Interpreter.ResetTacnyResultList();
       resolver.ReInitializeVerificationErrors(requestId, boogieProgram.Implementations);

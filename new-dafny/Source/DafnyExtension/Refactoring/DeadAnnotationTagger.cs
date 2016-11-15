@@ -65,7 +65,8 @@ namespace DafnyLanguage.Refactoring
         var agg = AggregatorFactory.CreateTagAggregator<ProgressGlyphTag>(buffer);
         var elp = new ErrorListProvider(Isp);
 
-        return new DeadAnnotationTagger(buffer, status, tsn, agg, elp) as ITagger<T>;
+        Func<ITagger<T>> sc = () => new DeadAnnotationTagger(buffer, status, tsn, agg, elp) as ITagger<T>;
+        return buffer.Properties.GetOrCreateSingletonProperty(typeof(DeadAnnotationTagger), sc);
       };
       return buffer.Properties.GetOrCreateSingletonProperty(typeof(DeadAnnotationTagger), taggerProperty);
     }
@@ -170,8 +171,8 @@ namespace DafnyLanguage.Refactoring
     }
 
     public bool Toggle() {
-      DeadAnnotationTagger.Checkers.ForEach(x => x.Stop=true);
       DeadAnnotationTagger.Enabled = !DeadAnnotationTagger.Enabled;
+      DeadAnnotationTagger.Taggers.ForEach(t => t.UpdateActiveState());
       return DeadAnnotationTagger.Enabled;
     }
   }
@@ -180,7 +181,7 @@ namespace DafnyLanguage.Refactoring
   {
     #region fields and properties
     internal static bool Enabled = false;
-    internal static List<StopChecker> Checkers = new List<StopChecker>();
+    internal static List<DeadAnnotationTagger> Taggers = new List<DeadAnnotationTagger>();
 
     private readonly ITextBuffer _tb;
     private readonly IVsStatusbar _status;
@@ -223,7 +224,11 @@ namespace DafnyLanguage.Refactoring
       _timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle) { Interval = TimeSpan.FromSeconds(10) };
       _timer.Tick += IdleTick;
       _tb.Changed += BufferChangedInterrupt;
-      _timer.Start();
+
+      if (Enabled)
+        _timer.Start();
+
+      Taggers.Add(this);
     }
     
     #region events
@@ -295,6 +300,9 @@ namespace DafnyLanguage.Refactoring
     }
 
     public void Dispose() {
+      if(_currentStopper!=null)
+        _currentStopper.Stop = true;
+      Finish();
       _thread?.Abort();
       _timer?.Stop();
       if(_timer!=null) _timer.Tick -= IdleTick;
@@ -302,6 +310,28 @@ namespace DafnyLanguage.Refactoring
       if(_errList==null) return;
       var toremove = _errList.Tasks.Cast<Task>().Where(task => task.HelpKeyword == DeadAnnotationTag.Help).ToList();
       toremove.ForEach(_errList.Tasks.Remove);
+      Taggers.Remove(this);
+    }
+
+    public void UpdateActiveState() {
+      if (Enabled)
+      {
+        _timer.Start();
+      }
+      else
+      {
+        _timer.Stop();
+        _currentStopper.Stop = true;
+        _hasNeverRun = true;
+        _lastRunFailed = false;
+        _lastRunChangeCount = 0;
+        _changesSinceLastSuccessfulRun.Clear();
+        var toremove = _errList.Tasks.Cast<Task>().Where(task => task.HelpKeyword == DeadAnnotationTag.Help).ToList();
+        toremove.ForEach(_errList.Tasks.Remove);
+        _deadAnnotations.Clear();
+        var changeSpan = new SnapshotSpan(Snapshot, 0, Snapshot.Length);
+        TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(changeSpan));
+      }
     }
     #endregion
 
@@ -355,7 +385,6 @@ namespace DafnyLanguage.Refactoring
 
     private void Begin() {
       lock (_activityLock) {
-        Checkers.Add(_currentStopper);
         IsCurrentlyActive = true;
         _timer.Stop();
       }
@@ -363,7 +392,6 @@ namespace DafnyLanguage.Refactoring
 
     private void Finish() {
       lock (_activityLock) {
-        Checkers.Remove(_currentStopper);
         IsCurrentlyActive = false;
         _timer.Start();
       }
