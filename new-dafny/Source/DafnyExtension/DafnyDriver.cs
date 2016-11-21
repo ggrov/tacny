@@ -23,7 +23,7 @@ namespace DafnyLanguage
     protected readonly ITextBuffer _buffer;
     protected Dafny.Program _program;
     protected static object bufferDafnyKey = new object();
-
+    public Resolver MostRecentResolver { get; private set; }
     protected List<DafnyError> _errors = new List<DafnyError>();
     public List<DafnyError> Errors { get { return _errors; } }
 
@@ -151,6 +151,7 @@ namespace DafnyLanguage
 
       var r = new Resolver(program);
       r.ResolveProgram(program);
+      MostRecentResolver = r;
       if (errorReporter.Count(ErrorLevel.Error) != 0)
         return false;
 
@@ -288,8 +289,7 @@ namespace DafnyLanguage
       Dafny.Translator translator = new Dafny.Translator(dafnyProgram.reporter, er);
       translator.InsertChecksums = true;
       translator.UniqueIdPrefix = uniqueIdPrefix;
-      var translatorResolver = new Resolver(dafnyProgram);
-      Bpl.Program boogieProgram = translator.Translate(dafnyProgram, r:translatorResolver);
+      Bpl.Program boogieProgram = translator.Translate(dafnyProgram, r: resolver.MostRecentResolver);
 
       //Interpreter.ResetTacnyResultList();
       resolver.ReInitializeVerificationErrors(requestId, boogieProgram.Implementations);

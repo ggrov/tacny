@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -41,7 +42,8 @@ namespace DafnyLanguage.Refactoring
       var innerError = ((CompoundErrorInformation)errorInfo.E).E;
       var tmpModule = (DefaultClassDecl)tmpProgram.DefaultModuleDef.TopLevelDecls.FirstOrDefault(x => x.CompileName== "__default");
 
-      _errTok = (Bpl.Token)innerError.Tok;
+      var tok = innerError.Tok as NestedToken;
+      _errTok = tok != null ? (Bpl.Token) tok.Inner : (Bpl.Token) innerError.Tok;
       _errMessage = innerError.FullMsg;
 
       _implTargetName = MethodNameFromImpl(innerError.ImplementationName);
@@ -105,29 +107,32 @@ namespace DafnyLanguage.Refactoring
       FailingLine = failing.line;
     }
 
-    public void AddTacticErrors(ResolverTagger errorListHolder, ITextSnapshot snap, string requestId, string file)
+    public void AddTacticErrors(List<DafnyError> existingErrors, ITextSnapshot snap, string file)
     {
-      Contract.Requires(errorListHolder != null);
       Contract.Requires(snap != null);
-      Contract.Requires(!string.IsNullOrEmpty(requestId));
+      Contract.Requires(existingErrors!=null);
       Contract.Requires(!string.IsNullOrEmpty(file));
       if (!(FoundCalling && FoundTactic)) return;
 
-      errorListHolder.AddError(
-        new DafnyError(_errTok.filename, _errTok.line -1, _errTok.col - 1, ErrorCategory.AuxInformation, 
-         $"Tacny Generated File: {_errMessage} at ({_errTok.line},{_errTok.col - 1})", null, false, null, false),
-        "$$program_tactics$$", requestId);
-      
-      errorListHolder.AddError(
-        new DafnyError(file, CallingLine - 1, CallingCol - 1, ErrorCategory.TacticError,
-        "Failing Call to " + _activeTactic, snap, true, ""),
-        "$$program_tactics$$", requestId);
-      
-      errorListHolder.AddError(
-        new DafnyError(file, (FoundFailing ? FailingLine : TacticLine) - 1,
+      var callingError = new DafnyError(file, CallingLine - 1, CallingCol - 1, ErrorCategory.TacticError,
+        "Failing Call to " + _activeTactic, snap, true, "");
+      var actualError = new DafnyError(file, (FoundFailing ? FailingLine : TacticLine) - 1,
         (FoundFailing ? FailingCol : TacticCol) - 1, ErrorCategory.TacticError,
-        _errMessage, snap, true, ""),
-        "$$program_tactics$$", requestId);
+        _errMessage, snap, true, "");
+      
+      CheckAndAddDupe(callingError, existingErrors);
+      CheckAndAddDupe(actualError, existingErrors);
+    }
+
+    private static void CheckAndAddDupe(DafnyError newErr, ICollection<DafnyError> oldErrs) {
+      var x = (from e in oldErrs
+               where e.Filename == newErr.Filename
+               && e.Column == newErr.Column
+               && e.Line == newErr.Line
+               && e.Message == newErr.Message
+               select e).FirstOrDefault();
+      if (x != null) return;
+      oldErrs.Add(newErr);
     }
   }
 }

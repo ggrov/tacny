@@ -238,6 +238,7 @@ namespace DafnyLanguage
     }
 
     public static readonly IDictionary<ITextBuffer, ResolverTagger> ResolverTaggers = new ConcurrentDictionary<ITextBuffer, ResolverTagger>();
+    public Dafny.Resolver MostRecentResolver { get; private set; }
 
     internal ResolverTagger(ITextBuffer buffer, IServiceProvider serviceProvider, ITextDocumentFactoryService textDocumentFactory)
     {
@@ -351,6 +352,7 @@ namespace DafnyLanguage
       try
       {
         program = driver.ProcessResolution(RunResolver);
+        MostRecentResolver = driver.MostRecentResolver;
         newErrors = driver.Errors;
       }
       catch (Exception e)
