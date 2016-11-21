@@ -198,7 +198,7 @@ namespace Tacny {
     }
 
 
-    public static Program GenerateResovedProg(ProofState state) {
+    public static Program GenerateResolvedProg(ProofState state) {
       var prog = state.GetDafnyProgram();
       var r = new Resolver(prog);
       r.ResolveProgram(prog);
@@ -211,12 +211,20 @@ namespace Tacny {
       foreach(var m in prog.DefaultModuleDef.TopLevelDecls) {
         if(m.WhatKind == "class") {
           foreach(var method in (m as DefaultClassDecl).Members) {
-            if(method.FullName == state.TargetMethod.FullName) {
+            if (method.FullName == state.TargetMethod.FullName){
               dest_md = (method as Method);
               dest_md.Body.Body.Clear();
               dest_md.Body.Body.AddRange(body.Body);
-            } else //set other memberdecl as verify false
+            }// if some other method has tactic call, then empty the body
+            else if(method.CallsTactic){
+              method.CallsTactic = false;
+              (method as Method).Body.Body.Clear();
               Util.SetVerifyFalseAttr(method);
+
+            } else {
+              //set other memberdecl as verify false
+              Util.SetVerifyFalseAttr(method);
+            }
           }
         }
       }
@@ -241,7 +249,7 @@ namespace Tacny {
         return prog;
     }
 
-    public static bool VerifyResovedProg(Program program, ErrorReporterDelegate er) {
+    public static bool VerifyResolvedProg(Program program, ErrorReporterDelegate er) {
       Contract.Requires<ArgumentNullException>(program != null);
       
       var boogieProg = Translate(program, program.Name, er);
@@ -540,3 +548,4 @@ namespace Tacny {
   }
 
 }
+

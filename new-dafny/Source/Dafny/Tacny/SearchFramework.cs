@@ -82,12 +82,12 @@ namespace Tacny {
         }));
 
 */
-     var prog =  Util.GenerateResovedProg(state);
+     var prog =  Util.GenerateResolvedProg(state);
       if (prog == null)
         return VerifyResult.Failed;
       ErrorReporterDelegate tmp_er =
         errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); };
-      var result = Util.VerifyResovedProg(prog, tmp_er);
+      var result = Util.VerifyResolvedProg(prog, tmp_er);
 /*
       ErrorReporterDelegate tmp_er =
         errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); };
