@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Numerics;
@@ -66,12 +67,18 @@ namespace Tacny {
     public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Resolver r = null) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
+     Stopwatch watch = new Stopwatch();
+     watch.Start();
       _i = new Interpreter(program);
       _errorReporterDelegate = erd;
+
       var result = _i.EvalTacticApplication(target, r);
 
       var p = new Printer(Console.Out);
       p.PrintMembers(new List<MemberDecl>() { result }, 0, "");
+
+      watch.Stop();
+      Console.WriteLine("Time Used: " + watch.Elapsed.TotalSeconds.ToString());
 
       _errorReporterDelegate = null;
       return result;
@@ -193,7 +200,7 @@ namespace Tacny {
 
     public static bool IsPartial(ProofState state, UpdateStmt tacticApplication) {
       //still need to check the localtion of the application, is it the last call ? is it a neswted call ?
-      if(state.TacticInfo.IsPartial) {
+      if(state.FrameCtrlInfo.IsPartial) {
         return true;
       }
 
@@ -207,7 +214,7 @@ namespace Tacny {
       Contract.Requires<ArgumentNullException>(state != null, "state");
       state.InitState(tacticApplication, variables);
 
-      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, !IsPartial(state, tacticApplication));
+      var search = new BaseSearchStrategy(state.FrameCtrlInfo.SearchStrategy, !IsPartial(state, tacticApplication));
       var ret =  search.Search(state, _errorReporterDelegate).FirstOrDefault();
       return ret;
     }
@@ -222,7 +229,7 @@ namespace Tacny {
       Contract.Assert(false);
       
       state.InitState(tacticApplication, variables);
-      var search = new BaseSearchStrategy(state.TacticInfo.SearchStrategy, false);
+      var search = new BaseSearchStrategy(state.FrameCtrlInfo.SearchStrategy, false);
       foreach(var result in search.Search(state, _errorReporterDelegate)) {
         var c = state.Copy();
         c.AddStatementRange(result.GetGeneratedCode());

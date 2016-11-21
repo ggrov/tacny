@@ -13,7 +13,7 @@ using Microsoft.Dafny;
 namespace Tacny.Language {
   class Match {
     public string Signature => "tmatch";
-    
+    public bool IsPartial = false;
     private Dictionary<string, Type> _ctorTypes;
 
     /*
@@ -58,7 +58,7 @@ namespace Tacny.Language {
     }
 
 
-    public static bool IsTerminated(List<List<Statement>> raw){
+    public static bool IsTerminated(List<List<Statement>> raw, bool b){
       Contract.Requires(raw != null);
       Contract.Requires(raw.Count > 0);
       Contract.Requires(raw[0]!=null && raw[0].Count == 1 && raw[0][0] is MatchStmt);
@@ -99,7 +99,7 @@ namespace Tacny.Language {
       var raw = state.GetGeneratedaRawCode();
 
 
-      state.AddNewFrame(stmt.Body.Body);
+      state.AddNewFrame(stmt.Body.Body, IsPartial);
 
       var matchStmt = raw[0][0] as MatchStmt;
 
@@ -159,13 +159,13 @@ namespace Tacny.Language {
         dummystmt.Add(stmt);
       }
 
-      state.AddNewFrame(dummystmt, Signature);
+      state.AddNewFrame(dummystmt, IsPartial, Signature);
       //add raw[0]
       state.AddStatement(matchStmt);
 
       //push a frame for the first case
       //TODO: add case variable to frame, so that variable () can refer to it
-      state.AddNewFrame(stmt.Body.Body);
+      state.AddNewFrame(stmt.Body.Body, IsPartial);
 
       foreach(var tmp in matchStmt.Cases[0].CasePatterns) {
         state.AddDafnyVar(tmp.Var.Name, new ProofState.VariableData { Variable = tmp.Var, Type = tmp.Var.Type });

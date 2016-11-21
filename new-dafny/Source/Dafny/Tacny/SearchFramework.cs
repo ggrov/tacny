@@ -6,6 +6,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using Microsoft.Boogie;
 
+
 namespace Tacny {
 
 
@@ -22,9 +23,9 @@ namespace Tacny {
   }
 
   public enum VerifyResult {
-    Cached, // solution is cached for multi solution resolution
+    Unresolved, // failed to resolve
     Verified,
-    Failed,
+    Failed, // resoved but cannot be proved
     Partial, //TODO: partial when tactic and dafny succeed, but boogie fails
   }
 
@@ -84,7 +85,7 @@ namespace Tacny {
 */
      var prog =  Util.GenerateResolvedProg(state);
       if (prog == null)
-        return VerifyResult.Failed;
+        return VerifyResult.Unresolved;
       ErrorReporterDelegate tmp_er =
         errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); };
       var result = Util.VerifyResolvedProg(prog, tmp_er);
@@ -168,15 +169,25 @@ namespace Tacny {
           proofState.IfVerify = false;
           switch (VerifyState(proofState, er)){
             case VerifyResult.Verified:
-              proofState.MarkCurFrameAsTerminated();
-              if (proofState.IsVerified()){
+              proofState.MarkCurFrameAsTerminated(true);
+              if (proofState.IsTerminated()){
                  yield return proofState;
                  yield break;
               }
               //queue.Enqueue(Interpreter.EvalStep(proofState).GetEnumerator());
               break;
             case VerifyResult.Failed:
+              if (proofState.IsEvaluated()){
+                proofState.MarkCurFrameAsTerminated(false);
+                if(proofState.IsTerminated()) {
+                  yield return proofState;
+                  yield break;
+                }
+              }
               break;
+            case VerifyResult.Unresolved:
+              //discharge current branch if fails to resolve
+              continue;
             default:
               throw new ArgumentOutOfRangeException();
           }
@@ -212,8 +223,8 @@ namespace Tacny {
           proofState.IfVerify = false;
           switch(VerifyState(proofState, er)) {
             case VerifyResult.Verified:
-              proofState.MarkCurFrameAsTerminated();
-              if(proofState.IsVerified()) {
+              proofState.MarkCurFrameAsTerminated(true);
+              if(proofState.IsTerminated()) {
                 yield return proofState;
                 yield break;
              }
@@ -221,7 +232,17 @@ namespace Tacny {
               //enumerator = (Interpreter.EvalStep(proofState).GetEnumerator());
               break;
             case VerifyResult.Failed:
+              if(proofState.IsEvaluated()) {
+                proofState.MarkCurFrameAsTerminated(false);
+                if(proofState.IsTerminated()) {
+                  yield return proofState;
+                  yield break;
+                }
+              }
               break;
+            case VerifyResult.Unresolved:
+              //discharge current branch if fails to resolve
+              continue;
             default:
               throw new ArgumentOutOfRangeException();
           }

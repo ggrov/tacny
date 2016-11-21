@@ -15,7 +15,6 @@ namespace Tacny {
     public TopLevelClassDeclaration ActiveClass;
     private readonly List<TopLevelClassDeclaration> _topLevelClasses;
     private readonly Program _original;
-    public List<TacticCache> ResultCache;
 
     // Dynamic State
     public MemberDecl TargetMethod;
@@ -33,11 +32,11 @@ namespace Tacny {
       }
     }
 
-    public TacticInformation TacticInfo {
+    public CtrlInfo FrameCtrlInfo {
       get {
         Contract.Assert(_scope != null);
         Contract.Assert(_scope.Count > 0);
-        return _scope.Peek().TacticInfo;
+        return _scope.Peek().FrameCtrlInfo;
       }
     }
     private Stack<Frame> _scope;
@@ -54,7 +53,6 @@ namespace Tacny {
       if (err != null)
         reporter.Error(MessageSource.Tacny, program.DefaultModuleDef.tok, $"Error parsing a fresh Tacny program: {err}");
     
-      ResultCache = new List<TacticCache>();
       // fill state
       FillStaticState(program);
     }
@@ -142,44 +140,38 @@ namespace Tacny {
     }
 
     
-    public void AddNewFrame(List<Statement> stmts, string kind = "default") {
+    public void AddNewFrame(List<Statement> stmts, bool partial, string kind = "default") {
       var parent = _scope.Peek();
-      _scope.Push(new Frame(parent, stmts, kind));
+      _scope.Push(new Frame(parent, stmts, partial, kind));
     }
 
-/*
-    public bool RemoveFrame() {
-      // at least one frame in the proof state
-      if (_scope.Count > 1){
-        _scope.Pop();
-        return true;
-      }
-      return false;
-    }
-  */ 
-
-    public void MarkCurFrameAsTerminated() {
+    public void MarkCurFrameAsTerminated(bool curFrameProved) {
       //assmeb code in the top frame
-      _scope.Peek().MarkAsEvaluated();
+      _scope.Peek().MarkAsEvaluated(curFrameProved);
+
+      var code = _scope.Peek().GetFinalCode();
 
       // add the assembled code to the parent frame
-      if(_scope.Peek().Parent != null) {
-        _scope.Peek().Parent.AddGeneratedCode(_scope.Peek().GetAssembledCode());
+      if(code!= null && _scope.Peek().Parent != null) {
+        _scope.Peek().Parent.AddGeneratedCode(code);
         _scope.Pop();
-        if (_scope.Peek().IsTerminated())
-          MarkCurFrameAsTerminated();
+        if (_scope.Peek().IsFrameTerminated(curFrameProved))
+          MarkCurFrameAsTerminated(curFrameProved);
       }
     }
 
     // various getters
     #region GETTERS
 
+    public bool IsCurFramePartial(){
+      return _scope.Peek().FrameCtrlInfo.IsPartial;
+    }
     /// <summary>
     /// a proof state is verified if there is only one frame in the stack and _genratedCode is not null (raw code are assembled)
     /// </summary>
     /// <returns></returns>
-    public bool IsVerified() {
-      return _scope.Count == 1 && _scope.Peek().GetAssembledCode() != null;
+    public bool IsTerminated(){
+      return _scope.Count == 1 && _scope.Peek().GetFinalCode() != null;
     }
 
     /// <summary>
@@ -190,13 +182,6 @@ namespace Tacny {
       return _scope.Peek().IsEvaluated;
     }
 
-    /// <summary>
-    /// TODO
-    /// </summary>
-    /// <returns></returns>
-    public bool IsPartiallyEvaluated() {
-      return _scope.Peek().IsPartiallyEvaluated;
-    }
 
     public string GetCurFrameTyp(){
       return _scope.Peek().WhatKind;
@@ -530,9 +515,8 @@ namespace Tacny {
       private readonly Dictionary<string, object> _declaredVariables; // tacny variables
       private readonly Dictionary<string, VariableData> _DafnyVariables; // dafny variables
       public readonly ITactic ActiveTactic;
-      public bool IsPartiallyEvaluated { get; set; } = false;
       public bool IsEvaluated => _bodyCounter >= Body.Count;
-      public TacticInformation TacticInfo;
+      public CtrlInfo FrameCtrlInfo; // tactic and flowcontrol info
       //a funtion with the right kind will be able to th generated code to List of statment
       private List<Statement> _generatedCode;
       //store the tempratry code to be combined, e.g. case statments for match, wit a boolean tag indicating whether is verified
@@ -540,7 +524,7 @@ namespace Tacny {
       private readonly List<List<Statement>> _rawCodeList;
 
       private readonly ErrorReporter _reporter;
-
+      
       /// <summary>
       /// Initialize the top level frame
       /// </summary>
@@ -564,11 +548,10 @@ namespace Tacny {
         WhatKind = "default";
       }
 
-      public Frame(Frame parent, List<Statement> body, string kind) {
+      public Frame(Frame parent, List<Statement> body, bool partial, string kind) {
         Contract.Requires<ArgumentNullException>(parent != null);
         Contract.Requires<ArgumentNullException>(tcce.NonNullElements(body), "body");
         // carry over the tactic info
-        TacticInfo = parent.TacticInfo;
         Body = body;
         _declaredVariables = new Dictionary<string, object>();
         _DafnyVariables = new Dictionary<string, VariableData>();
@@ -578,6 +561,8 @@ namespace Tacny {
         _generatedCode = null;
         _rawCodeList = new List<List<Statement>>();
         WhatKind = kind;
+        FrameCtrlInfo = parent.FrameCtrlInfo;
+        FrameCtrlInfo.IsPartial = FrameCtrlInfo.IsPartial || partial;
       }
 
       public bool IncCounter() {
@@ -587,7 +572,7 @@ namespace Tacny {
 
       private void ParseTacticAttributes(Attributes attr) {
         // incase TacticInformation is not created
-        TacticInfo = TacticInfo ?? new TacticInformation();
+        FrameCtrlInfo = FrameCtrlInfo ?? new CtrlInfo();
         if (attr == null)
           return;
         switch (attr.Name) {
@@ -596,14 +581,14 @@ namespace Tacny {
             string stratName = (expr as NameSegment)?.Name;
             Contract.Assert(stratName != null);
             try {
-              TacticInfo.SearchStrategy = (Strategy)Enum.Parse(typeof(Strategy), stratName, true); // TODO: change to ENUM
+              FrameCtrlInfo.SearchStrategy = (Strategy)Enum.Parse(typeof(Strategy), stratName, true); // TODO: change to ENUM
             } catch {
               _reporter.Warning(MessageSource.Tacny, ((MemberDecl)ActiveTactic).tok, $"Unsupported search strategy {stratName}; Defaulting to DFS");
-              TacticInfo.SearchStrategy = Strategy.Dfs;
+              FrameCtrlInfo.SearchStrategy = Strategy.Dfs;
             }
             break;
            case "partial":
-            TacticInfo.IsPartial = true;
+            FrameCtrlInfo.IsPartial = true;
             break;
           default:
             //_reporter.Warning(MessageSource.Tacny, ((MemberDecl)ActiveTactic).tok, $"Unrecognized attribute {attr.Name}");
@@ -615,7 +600,6 @@ namespace Tacny {
       }
 
       [Pure]
-
       internal VariableData GetLocalDafnyVar(string name) {
         //Contract.Requires(_DafnyVariables.ContainsKey(name));
         return _DafnyVariables[name];
@@ -737,32 +721,35 @@ namespace Tacny {
         return code;
       }
 
-      // only call it after verification is successful, this check if the current frame is terminated, after the poped child frame is termianted
-      internal bool IsTerminated() {
+      // only call it when verification is successful, this check if the current frame is terminated, 
+      // when the popped child frame is termianted
+      internal bool IsFrameTerminated(bool latestChildFrameRes) {
         bool ret;
 
         switch(WhatKind) {
           case "tmatch":
-            ret = Match.IsTerminated(_rawCodeList);
+            ret = Match.IsTerminated(_rawCodeList, latestChildFrameRes);
             break;
           default:
-            ret = true;
+            ret = latestChildFrameRes;
             break;
         }
         return ret;
       }
 
       /// <summary>
-      /// this will assemble the raw code
+      /// this will assemble the raw code if the raw code can be verified or parital is allowed
       /// </summary>
-      internal void MarkAsEvaluated() {
-        _generatedCode = AssembleStmts(_rawCodeList, WhatKind);
+      internal void MarkAsEvaluated(bool curFrameProved) {
+        if (curFrameProved || FrameCtrlInfo.IsPartial){
+          _generatedCode = AssembleStmts(_rawCodeList, WhatKind);
+        }
       }
 
       internal List<List<Statement>> GetRawCode(){
         return _rawCodeList;
       }
-      internal List<Statement> GetAssembledCode(){
+      internal List<Statement> GetFinalCode(){
         return _generatedCode;
       }
 
@@ -828,23 +815,11 @@ namespace Tacny {
     }
 
     // tactic attribute information goes here
-    public class TacticInformation {
+    public class CtrlInfo {
       public Strategy SearchStrategy { get; set; } = Strategy.Dfs;
       public bool IsPartial { get; set; } = false;
     }
 
-    public class TacticCache {
-      public TacticCache(string name, Dictionary<UpdateStmt, List<Statement>> resultList) { 
-        Name = name;
-        ResultList = resultList;
-      }
-      public Dictionary<UpdateStmt, List<Statement>> ResultList { get; }
-      /// <summary>
-      /// Member name from which the tactic was called
-      /// </summary>
-      public readonly string Name;
 
-
-    }
   }
 }

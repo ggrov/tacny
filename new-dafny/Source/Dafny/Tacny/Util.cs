@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define _TACTIC_DEBUG
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
@@ -219,16 +221,17 @@ namespace Tacny {
             else if(method.CallsTactic){
               method.CallsTactic = false;
               (method as Method).Body.Body.Clear();
-              Util.SetVerifyFalseAttr(method);
+              SetVerifyFalseAttr(method);
 
             } else {
               //set other memberdecl as verify false
-              Util.SetVerifyFalseAttr(method);
+              SetVerifyFalseAttr(method);
             }
           }
         }
       }
 
+#if _TACTIC_DEBUG
       Console.WriteLine("*********************Verifying Tacny Generated Prog*****************");
       var printer = new Printer(Console.Out);
       //printer.PrintProgram(prog, false);
@@ -236,13 +239,17 @@ namespace Tacny {
         printer.PrintStatement(stmt, 0);
       }
       Console.WriteLine("\n*********************Prog END*****************");
+#endif
 
       dest_md.CallsTactic = false;
       r.SetCurClass(dest_md.EnclosingClass as ClassDecl);
       r.ResolveMethodBody(dest_md);
 
       if (prog.reporter.Count(ErrorLevel.Error) != 0){
+
+#if _TACTIC_DEBUG
         Console.Write("Fail to resolve prog, skip verifier ! \n");
+#endif
         return null;
       }
       else
@@ -363,7 +370,7 @@ namespace Tacny {
     }
   }
 
-  #region Parser
+#region Parser
   public static class Parser {
     /// <summary>
     /// Returns null on success, or an error string otherwise.
@@ -374,6 +381,7 @@ namespace Tacny {
       program = null;
       ModuleDecl module = new LiteralModuleDecl(new DefaultModuleDecl(), null);
       BuiltIns builtIns = new BuiltIns();
+  
       foreach (string dafnyFileName in fileNames) {
         Contract.Assert(dafnyFileName != null);
 
@@ -443,7 +451,7 @@ namespace Tacny {
       }
       return null; // Success
     }
-    #endregion
+#endregion
   }
 
 
