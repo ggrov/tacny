@@ -442,11 +442,13 @@ namespace DafnyLanguage
 #endif
         ITextSnapshot snap;
         RequestIdToSnapshot.TryGetValue(requestId, out snap);
+        var addedErrors = new List<DafnyError>();
         if (tacticsErrorList.Count>0){
           success = false;
           try {
             tacticsErrorList.ForEach(errorInfo => new TacticErrorReportingResolver(errorInfo)
-              .AddTacticErrors(errorListHolder, snap, requestId, _document.FilePath));
+              .AddTacticErrors(addedErrors, snap, _document.FilePath));
+            addedErrors.ForEach(error => errorListHolder.AddError(error, "$$program_tactics$$", requestId));
           } catch (TacticErrorResolutionException e) {
             errorListHolder.AddError(
               new DafnyError("$$program_tactics$$", 0, 0, ErrorCategory.InternalError,
