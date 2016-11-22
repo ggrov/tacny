@@ -1,4 +1,4 @@
-﻿//#define _TACTIC_DEBUG
+﻿#define _TACTIC_DEBUG
 
 using System;
 using System.Collections.Generic;
