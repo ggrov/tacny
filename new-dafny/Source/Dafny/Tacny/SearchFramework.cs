@@ -76,19 +76,16 @@ namespace Tacny {
 
 
     public static VerifyResult VerifyState(ProofState state, ErrorReporterDelegate er) {
-      /*var bodyList = new Dictionary<ProofState, BlockStmt>();
-      bodyList.Add(state, Util.InsertCode(state,
-        new Dictionary<UpdateStmt, List<Statement>>(){
-          {state.TacticApplication, state.GetGeneratedCode()}
-        }));
+      // at the momemnt,we don't propagate errors from buanches to user, no need to use er, in the future this will
+      // come to play when repair kicks in
 
-*/
-     var prog =  Util.GenerateResolvedProg(state);
+      var prog =  Util.GenerateResolvedProg(state);
       if (prog == null)
         return VerifyResult.Unresolved;
-      ErrorReporterDelegate tmp_er =
-        errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); };
-      var result = Util.VerifyResolvedProg(prog, tmp_er);
+
+   //   ErrorReporterDelegate tmp_er =
+     //   errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); };
+      var result = Util.VerifyResolvedProg(prog, null);
 /*
       ErrorReporterDelegate tmp_er =
         errorInfo => { er?.Invoke(new CompoundErrorInformation(errorInfo.Tok, errorInfo.Msg, errorInfo, state)); };
