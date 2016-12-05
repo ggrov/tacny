@@ -30,17 +30,17 @@ namespace Tacny {
 
     private Program _program;
 
-    public static void ResetTacnyResultList(){
-      if (_resultList == null)
+    public static void ResetTacnyResultList() {
+      if(_resultList == null)
         _resultList = new Dictionary<UpdateStmt, List<Statement>>();
       else
         _resultList.Clear();
     }
 
-    public static Dictionary<IToken, List<Statement>> GetTacnyResultList(){
+    public static Dictionary<IToken, List<Statement>> GetTacnyResultList() {
       Dictionary<IToken, List<Statement>> bufferList = new Dictionary<IToken, List<Statement>>();
 
-      foreach (var e in _resultList){
+      foreach(var e in _resultList) {
         bufferList.Add(e.Key.Tok, e.Value);
       }
       return bufferList;
@@ -63,12 +63,21 @@ namespace Tacny {
       Contract.Invariant(tcce.NonNull(_frame));
       Contract.Invariant(_errorReporter != null);
     }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="program"></param>
+    /// <param name="target"></param>
+    /// <param name="erd"></param>
+    ///  only used this to report error, local errors which are genereaed during searching should not use this
 
+    /// <param name="r"></param>
+    /// <returns></returns>
     public static MemberDecl FindAndApplyTactic(Program program, MemberDecl target, ErrorReporterDelegate erd, Resolver r = null) {
       Contract.Requires(program != null);
       Contract.Requires(target != null);
-     Stopwatch watch = new Stopwatch();
-     watch.Start();
+      Stopwatch watch = new Stopwatch();
+      watch.Start();
       _i = new Interpreter(program);
       _errorReporterDelegate = erd;
 
@@ -105,7 +114,7 @@ namespace Tacny {
         // sanity check
         Contract.Assert(_frame.Count == 0);
 
-        var new_rets = _resultList.Where(kvp => !pre_res.Contains(kvp.Key)).ToDictionary(i=>i.Key,i=>i.Value);
+        var new_rets = _resultList.Where(kvp => !pre_res.Contains(kvp.Key)).ToDictionary(i => i.Key, i => i.Value);
         Contract.Assert(new_rets.Count != 0);
         var body = Util.InsertCode(_state, new_rets);
         method.Body.Body.Clear();
@@ -128,7 +137,7 @@ namespace Tacny {
     private void SearchBlockStmt(BlockStmt body) {
       Contract.Requires(tcce.NonNull(body));
 
-     // BaseSearchStrategy.ResetProofList();
+      // BaseSearchStrategy.ResetProofList();
       _frame.Push(new Dictionary<IVariable, Type>());
       foreach(var stmt in body.Body) {
         if(stmt is VarDeclStmt) {
@@ -154,9 +163,9 @@ namespace Tacny {
           if(_state.IsTacticCall(us)) {
             var list = StackToDict(_frame);
             var result = EvalTactic(_state, list, us);
-            if (result != null)
+            if(result != null)
               _resultList.Add(us.Copy(), result.GetGeneratedCode().Copy());
-            else{// when no results, just return a empty stmt list
+            else {// when no results, just return a empty stmt list
               _resultList.Add(us.Copy(), new List<Statement>());
             }
           }
@@ -215,29 +224,9 @@ namespace Tacny {
       state.InitState(tacticApplication, variables);
 
       var search = new BaseSearchStrategy(state.FrameCtrlInfo.SearchStrategy, !IsPartial(state, tacticApplication));
-      var ret =  search.Search(state, _errorReporterDelegate).FirstOrDefault();
+      var ret = search.Search(state, _errorReporterDelegate).FirstOrDefault();
       return ret;
     }
- 
-    public static IEnumerable<ProofState> ApplyNestedTactic(ProofState state, Dictionary<IVariable, Type> variables,
-      UpdateStmt tacticApplication) {
-      Contract.Requires<ArgumentNullException>(tcce.NonNull(variables));
-      Contract.Requires<ArgumentNullException>(tcce.NonNull(tacticApplication));
-      Contract.Requires<ArgumentNullException>(state != null, "state");
-      
-      // not meant to be called, should not distinghish nested tactic call 
-      Contract.Assert(false);
-      
-      state.InitState(tacticApplication, variables);
-      var search = new BaseSearchStrategy(state.FrameCtrlInfo.SearchStrategy, false);
-      foreach(var result in search.Search(state, _errorReporterDelegate)) {
-        var c = state.Copy();
-        c.AddStatementRange(result.GetGeneratedCode());
-        yield return c;
-      
-      }
-    }
-
 
 
     public static IEnumerable<ProofState> EvalStep(ProofState state) {
@@ -247,26 +236,20 @@ namespace Tacny {
       var stmt = state.GetStmt();
 
       //if the current frame is a control flow, e.g. match, no need to get stmt
-      if (FlowControlMng.IsFlowControlFrame(state)){
+      if(FlowControlMng.IsFlowControlFrame(state)) {
         enumerable = FlowControlMng.EvalNextControlFlow(stmt, state);
-      }
-      else {
-        if (stmt is TacticVarDeclStmt){
+      } else {
+        if(stmt is TacticVarDeclStmt) {
           enumerable = RegisterVariable(stmt as TacticVarDeclStmt, state);
-        }
-        else if (stmt is UpdateStmt){
+        } else if(stmt is UpdateStmt) {
           var us = stmt as UpdateStmt;
-          if (state.IsLocalAssignment(us)){
+          if(state.IsLocalAssignment(us)) {
             enumerable = UpdateLocalValue(us, state);
-          }
-          else if (state.IsArgumentApplication(us)){
-            //TODO: argument application
-            // not sure what this is for
-          }
-          else if (state.IsTacticCall(us)){
-            //enumerable = ApplyNestedTactic(state.Copy(), state.DafnyVars(), us);
-          }
-          else{
+          } else if(state.IsArgumentApplication(us)) {
+            //TODO: argument application ??
+          } else if(state.IsTacticCall(us)){
+            enumerable = EvalTacApp(us, state);
+          } else {
             // apply atomic
             string sig = Util.GetSignature(us);
             //Firstly, check if this is a projection function
@@ -274,49 +257,51 @@ namespace Tacny {
               Assembly.GetAssembly(typeof(Atomic.Atomic))
                 .GetTypes()
                 .Where(t => t.IsSubclassOf(typeof(Atomic.Atomic)));
-            foreach (var fType in types){
+            foreach(var fType in types) {
               var porjInst = Activator.CreateInstance(fType) as Atomic.Atomic;
-              if (sig == porjInst?.Signature){
+              if(sig == porjInst?.Signature) {
                 //TODO: validate input countx
                 enumerable = porjInst?.Generate(us, state);
               }
             }
           }
-        }
-        else if (stmt is AssignSuchThatStmt){
-          enumerable = EvalSuchThatStmt((AssignSuchThatStmt) stmt, state);
-        }
-        else if (stmt is PredicateStmt){
-          enumerable = EvalPredicateStmt((PredicateStmt) stmt, state);
-        }
-        else if (FlowControlMng.IsFlowControl(stmt)){
-          if (stmt is TacnyCasesBlockStmt){
+        } else if(stmt is AssignSuchThatStmt) {
+          enumerable = EvalSuchThatStmt((AssignSuchThatStmt)stmt, state);
+        } else if(stmt is PredicateStmt) {
+          enumerable = EvalPredicateStmt((PredicateStmt)stmt, state);
+        } else if(FlowControlMng.IsFlowControl(stmt)) {
+          if(stmt is TacnyCasesBlockStmt) {
             enumerable = new Match().EvalInit(stmt, state);
           }
           //TODO: to implement if and while control flow
-        }
-        else{
+        } else {
           enumerable = DefaultAction(stmt, state);
         }
       }
       foreach(var item in enumerable)
         yield return item.Copy();
     }
- /*
-    private static IEnumerable<ProofState> ResolveFlowControlStmt(Statement stmt, ProofState state) {
-      Language.FlowControlStmt fcs = null;
-      if(stmt is IfStmt) {
-        //fcs = new Language.IfStmt();
-        //TODO: if statemenet
-      } else if(stmt is WhileStmt) {
-        //TODO: while statemenet
-      } else {
-        Contract.Assert(false);
-        return null;
-      }
-      return fcs.Generate(stmt, state);
+    /*
+       private static IEnumerable<ProofState> ResolveFlowControlStmt(Statement stmt, ProofState state) {
+         Language.FlowControlStmt fcs = null;
+         if(stmt is IfStmt) {
+           //fcs = new Language.IfStmt();
+           //TODO: if statemenet
+         } else if(stmt is WhileStmt) {
+           //TODO: while statemenet
+         } else {
+           Contract.Assert(false);
+           return null;
+         }
+         return fcs.Generate(stmt, state);
+       }
+   */
+
+    public static IEnumerable<ProofState> EvalTacApp(UpdateStmt stmt, ProofState state){
+      var state0 = state.Copy();
+      state0.InitTacFrame(stmt, true);
+      yield return state0;
     }
-*/
 
     public static IEnumerable<ProofState> EvalPredicateStmt(PredicateStmt predicate, ProofState state) {
       Contract.Requires<ArgumentNullException>(predicate != null, "predicate");

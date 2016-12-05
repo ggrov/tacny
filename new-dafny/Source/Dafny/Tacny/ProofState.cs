@@ -65,12 +65,15 @@ namespace Tacny {
     public void InitState(UpdateStmt tacAps, Dictionary<IVariable, Dfy.Type> variables) {
       // clear the scope  
       _scope = new Stack<Frame>();
+
+
       var tactic = GetTactic(tacAps) as Tactic;
 
-      var aps = ((ExprRhs) tacAps.Rhss[0]).Expr as ApplySuffix;
-      if (aps.Args.Count != tactic.Ins.Count)
+      var aps = ((ExprRhs)tacAps.Rhss[0]).Expr as ApplySuffix;
+      if(aps.Args.Count != tactic.Ins.Count)
         Reporter.Error(MessageSource.Tacny, tacAps.Tok,
           $"Wrong number of method arguments (got {aps.Args.Count}, expected {tactic.Ins.Count})");
+
       var frame = new Frame(tactic, Reporter);
 
       foreach(var item in variables) {
@@ -80,7 +83,7 @@ namespace Tacny {
           throw new ArgumentException($"Dafny variable {item.Key.Name} is already declared in the current context");
       }
 
-      for (int index = 0; index < aps.Args.Count; index++) {
+      for(int index = 0; index < aps.Args.Count; index++) {
         var arg = aps.Args[index];
         frame.AddTacnyVar(tactic.Ins[index].Name, arg);
       }
@@ -89,6 +92,35 @@ namespace Tacny {
       TacticApplication = tacAps.Copy();
     }
 
+    public void InitTacFrame(UpdateStmt tacAps, bool partial) {
+      var aps = ((ExprRhs)tacAps.Rhss[0]).Expr as ApplySuffix;
+      var tactic = GetTactic(tacAps) as Tactic;
+
+      if(aps.Args.Count != tactic.Ins.Count)
+        Reporter.Error(MessageSource.Tacny, tacAps.Tok,
+          $"Wrong number of method arguments (got {aps.Args.Count}, expected {tactic.Ins.Count})");
+
+      AddNewFrame(tactic.Body.Body, partial);
+      for(int index = 0; index < aps.Args.Count; index++) {
+        var arg = aps.Args[index];
+
+        if (arg is Microsoft.Dafny.NameSegment) {
+        var name = ((Microsoft.Dafny.NameSegment)arg).Name;
+        if(ContainTacnyVal(name))
+          // in the case that referring to an exisiting tvar, dereference it
+         arg = GetTacnyVarValue(name) as Expression;
+        else{
+          Reporter.Error(MessageSource.Tacny, tacAps.Tok,
+            $"Fail to dereferenen argument({name})");
+        }
+      }
+
+      _scope.Peek().AddTacnyVar(tactic.Ins[index].Name, arg);
+
+
+      }
+    }
+  
     // Permanent state information
     public Dictionary<string, ITactic> Tactics => ActiveClass.Tactics;
     public Dictionary<string, MemberDecl> Members => ActiveClass.Members;
